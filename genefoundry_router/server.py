@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from typing import Any
 
 import structlog
@@ -12,11 +13,14 @@ from fastmcp import FastMCP
 from genefoundry_router.auth import build_auth
 from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
+from genefoundry_router.discovery import PollingRefresher
+from genefoundry_router.normalization import apply_normalizations
 from genefoundry_router.observability import (
     MetricsMiddleware,
     configure_logging,
     register_health,
     register_metrics,
+    set_backend_up,
 )
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.security import add_origin_validation
@@ -62,18 +66,38 @@ def build_app(
     registry: list[BackendDef],
     proxy_targets: dict[str, Any] | None = None,
 ) -> FastAPI:
-    """Build the FastAPI host: /health + Origin validation + mounted MCP app.
+    """Build the FastAPI host with a composed lifespan.
 
-    NOTE (extended in later tasks): Task 17 adds /metrics + MetricsMiddleware; Task 23
-    replaces the bare ``lifespan=mcp_app.lifespan`` with a composed lifespan that also
-    runs async normalization (Task 15) and starts/stops the polling refresher (Task 22).
+    On startup (inside the MCP app's own lifespan so the session manager initializes):
+    run async normalization (R1.2) -> apply tool-search after it (ordering, Task 16) ->
+    seed /health reachability -> start the polling refresher (R1.7). On shutdown: stop it.
     """
     configure_logging(settings.GF_LOG_LEVEL)
-    # enable_search=False: the composed lifespan (Task 23) applies tool-search AFTER
-    # normalization so the BM25 index reflects final names/tags.
+    # enable_search=False: the composed lifespan applies tool-search AFTER normalization
+    # so the BM25 index reflects final names/tags.
     server = build_server(settings, registry, proxy_targets=proxy_targets, enable_search=False)
-    mcp_app = server.http_app(path="/")  # ASGI sub-app; lifespan must be forwarded
-    app = FastAPI(title="GeneFoundry Router", lifespan=mcp_app.lifespan)
+    mcp_app = server.http_app(path="/")  # ASGI sub-app; its lifespan must be entered
+
+    async def _relist() -> None:
+        await apply_normalizations(server, registry)
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> Any:
+        async with mcp_app.lifespan(_app):
+            await apply_normalizations(server, registry)  # R1.2 — async, after mount
+            apply_tool_search(server, settings)  # ordering: after normalization
+            targets = proxy_targets or {}
+            for b in registry:  # seed /health reachability
+                if b.enabled:
+                    set_backend_up(b, up=targets.get(b.name) is not None or b.url is not None)
+            refresher = PollingRefresher(settings.GF_POLL_INTERVAL, _relist)
+            await refresher.start()
+            try:
+                yield
+            finally:
+                await refresher.stop()
+
+    app = FastAPI(title="GeneFoundry Router", lifespan=lifespan)
     app.add_middleware(CorrelationIdMiddleware)
     add_origin_validation(app, settings.GF_ALLOWED_ORIGINS)  # R1.4 — MCP Origin MUST
     register_health(app, registry)
