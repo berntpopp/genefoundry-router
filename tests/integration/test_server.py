@@ -20,7 +20,10 @@ def test_build_server_skips_disabled_and_urlless(gnomad_fake):
 async def test_built_server_exposes_namespaced_tools(gnomad_fake):
     settings = RouterSettings(_env_file=None)
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
-    server = build_server(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+    # enable_search=False so raw namespaced names are listed (search would hide them).
+    server = build_server(
+        settings, registry, proxy_targets={"gnomad": gnomad_fake}, enable_search=False
+    )
     async with Client(server) as client:
         names = {t.name for t in await client.list_tools()}
     assert "gnomad_get_variant_details" in names
