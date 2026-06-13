@@ -11,7 +11,7 @@ import uvicorn
 from rich.console import Console
 
 from genefoundry_router.config import RouterSettings, load_registry
-from genefoundry_router.registry import BackendDef
+from genefoundry_router.registry import MAX_QUALIFIED_NAME_LEN, BackendDef
 from genefoundry_router.server import build_app
 
 app = typer.Typer(help="GeneFoundry Router — federate the -link MCP fleet.", no_args_is_help=True)
@@ -73,6 +73,34 @@ def doctor(
 
 async def _gather_probes(backends: list[BackendDef]) -> list[dict[str, object]]:
     return [await _probe_backend(b) for b in backends]
+
+
+async def _list_federated_tools(settings: RouterSettings, registry: list[BackendDef]) -> list[str]:
+    """Build the gateway (search disabled) and return all namespaced tool names."""
+    from fastmcp import Client
+
+    from genefoundry_router.server import build_server
+
+    server = build_server(settings, registry, enable_search=False)
+    async with Client(server) as client:
+        return [t.name for t in await client.list_tools()]
+
+
+@app.command("list-tools")
+def list_tools(
+    namespace: str = typer.Option(None, help="Filter to a single namespace."),
+    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+) -> None:
+    """Enumerate federated tools (post-namespace, post-transform); flag >64-char names."""
+    settings = RouterSettings(GF_SERVERS_FILE=servers_file)
+    registry = load_registry(servers_file, os.environ)
+    names = asyncio.run(_list_federated_tools(settings, registry))
+    if namespace:
+        names = [n for n in names if n.startswith(f"{namespace}_")]
+    for name in sorted(names):
+        flag = "  [red]OVER 64[/red]" if len(name) > MAX_QUALIFIED_NAME_LEN else ""
+        console.print(f"{name}{flag}")
+    console.print(f"\n[bold]{len(names)} tools[/bold]")
 
 
 def main() -> None:
