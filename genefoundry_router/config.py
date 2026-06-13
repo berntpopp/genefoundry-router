@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import field_validator
+import yaml
+from pydantic import ValidationError, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+from genefoundry_router.exceptions import RegistryError
+from genefoundry_router.registry import BackendDef
 
 AuthMode = Literal["none", "jwt", "oauth"]
 
@@ -60,3 +66,44 @@ class RouterSettings(BaseSettings):
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]
         return v
+
+
+def load_registry(path: str | Path, environ: Mapping[str, str]) -> list[BackendDef]:
+    """Parse servers.yaml, merge ``defaults`` into each server, and resolve URLs.
+
+    URLs come from ``environ[server.url_env]`` when present; a missing var leaves
+    ``url=None`` (the caller decides whether to skip/warn). Raises RegistryError on
+    a missing/malformed file, an invalid backend, or a duplicate namespace.
+    """
+    path = Path(path)
+    if not path.exists():
+        raise RegistryError(f"registry file not found: {path}")
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as exc:  # pragma: no cover - exercised via malformed yaml
+        raise RegistryError(f"invalid YAML in {path}: {exc}") from exc
+
+    if not isinstance(raw, dict):
+        raise RegistryError(f"{path} must be a mapping with 'servers'")
+
+    defaults = raw.get("defaults") or {}
+    servers = raw.get("servers")
+    if not isinstance(servers, list) or not servers:
+        raise RegistryError(f"{path} must define a non-empty 'servers' list")
+
+    backends: list[BackendDef] = []
+    seen_namespaces: set[str] = set()
+    for entry in servers:
+        if not isinstance(entry, dict):
+            raise RegistryError(f"each server entry must be a mapping, got {entry!r}")
+        merged = {**defaults, **entry}
+        try:
+            backend = BackendDef(**merged)
+        except ValidationError as exc:
+            raise RegistryError(f"invalid backend {entry.get('name', entry)!r}: {exc}") from exc
+        if backend.namespace in seen_namespaces:
+            raise RegistryError(f"duplicate namespace: {backend.namespace!r}")
+        seen_namespaces.add(backend.namespace)
+        backend.url = environ.get(backend.url_env)
+        backends.append(backend)
+    return backends

@@ -1,0 +1,9 @@
+defaults:
+  enabled: true
+  cache_ttl: 300
+  tags: []
+servers:
+  - { name: gnomad, url_env: GF_GNOMAD_URL, namespace: gnomad, tags: [variant] }
+  - { name: hgnc, url_env: GF_HGNC_URL, namespace: hgnc, enabled: false }
+  - { name: pubtator, url_env: GF_PUBTATOR_URL, namespace: pubtator, cache_ttl: 600,
+      transform: { strip_prefix: "pubtator_" } }
