@@ -1,0 +1,100 @@
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config
+
+.DEFAULT_GOAL := help
+
+PKG := genefoundry_router
+DOCKER_COMPOSE := $(shell if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
+
+help: ## Display this help message
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+install: ## Install project and development dependencies with uv
+	uv sync --group dev
+
+sync: install ## Alias for install
+
+lock: ## Resolve and update uv.lock
+	uv lock
+
+upgrade: ## Upgrade locked dependencies
+	uv lock --upgrade
+
+format: ## Format Python code
+	uv run ruff format $(PKG) tests
+
+format-check: ## Check formatting without writing
+	uv run ruff format --check $(PKG) tests
+
+lint: ## Lint Python code
+	uv run ruff check $(PKG) tests
+
+lint-ci: ## Lint without modifying files (CI output)
+	uv run ruff check $(PKG) tests --output-format=github
+
+lint-fix: ## Lint and apply safe fixes
+	uv run ruff check $(PKG) tests --fix
+
+lint-loc: ## Enforce per-file line budget
+	uv run python scripts/check_file_size.py
+
+typecheck: ## Type check package
+	uv run mypy $(PKG)
+
+typecheck-fresh: ## Clear mypy cache and run typecheck
+	rm -rf .mypy_cache
+	uv run mypy $(PKG)
+
+test: ## Run unit tests quickly
+	uv run pytest tests/unit -q
+
+test-fast: ## Run unit tests in parallel
+	uv run pytest tests/unit -q -n auto
+
+test-unit: test-fast ## Alias for parallel unit tests
+
+test-integration: ## Run in-process integration tests
+	uv run pytest tests/integration -q
+
+test-cov: ## Run tests with coverage
+	uv run pytest tests/unit tests/integration --cov=$(PKG) --cov-report=term-missing --cov-report=html --cov-report=xml
+
+test-all: test-cov ## Alias for full test run with coverage
+
+check: format lint ## Format and lint
+
+ci-local: format-check lint-ci lint-loc typecheck test-fast test-integration ## Fast local CI-equivalent checks
+
+precommit: ci-local ## Run checks expected before commit
+
+clean: ## Remove local caches and generated reports
+	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage coverage.xml
+
+run: ## Run the router over Streamable HTTP locally
+	uv run genefoundry-router run --host 127.0.0.1 --port 8000
+
+validate: ## Validate servers.yaml + env
+	uv run genefoundry-router validate
+
+doctor: ## Ping each backend and report reachability
+	uv run genefoundry-router doctor
+
+list-tools: ## Enumerate federated tools
+	uv run genefoundry-router list-tools
+
+docker-build: ## Build Docker image
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml build
+
+docker-up: ## Start Docker dev stack
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml up -d
+
+docker-down: ## Stop Docker dev stack
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml down
+
+docker-logs: ## Follow Docker logs
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml logs -f
+
+docker-prod-config: ## Render production Compose configuration
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
+
+docker-npm-config: ## Render NPM Compose configuration
+	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
