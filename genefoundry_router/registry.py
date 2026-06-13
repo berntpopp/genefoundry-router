@@ -43,3 +43,26 @@ class BackendDef(BaseModel):
         if not NAMESPACE_RE.match(v):
             raise ValueError(f"namespace must match {NAMESPACE_RE.pattern!r}, got {v!r}")
         return v
+
+
+CLIENT_SAFE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
+
+
+def qualified_name(namespace: str, tool: str) -> str:
+    """Return the gateway-visible name for a tool under a namespace."""
+    return f"{namespace}_{tool}"
+
+
+def exceeds_name_limit(namespace: str, tool: str) -> bool:
+    """True when the namespaced tool name exceeds the MCP 64-char limit."""
+    return len(qualified_name(namespace, tool)) > MAX_QUALIFIED_NAME_LEN
+
+
+def is_client_safe_name(name: str) -> bool:
+    """True when a tool name is portable across MCP clients incl. Gemini.
+
+    snake_case, ``[A-Za-z0-9_]`` only (no dots/dashes), leading letter/underscore,
+    <=64 chars. (R1.10 — Gemini's FunctionDeclaration.name is stricter than MCP's
+    ``[A-Za-z0-9_-]`` and rewrites non-conforming names, which would desync routing.)
+    """
+    return bool(CLIENT_SAFE_NAME_RE.match(name))
