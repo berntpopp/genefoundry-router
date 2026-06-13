@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import sys
 
 import typer
@@ -18,6 +19,30 @@ app = typer.Typer(help="GeneFoundry Router — federate the -link MCP fleet.", n
 console = Console()
 
 DEFAULT_SERVERS = "servers.yaml"
+
+LEAF_NAME_RE = re.compile(r"^[a-z0-9_]{1,50}$")
+CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute"}
+# Documented v1.1 action-verb exceptions (spec §19 Q2 — left as exceptions for now).
+ACTION_VERB_EXCEPTIONS = {
+    "predict",
+    "analyze",
+    "annotate",
+    "submit",
+    "export",
+    "generate",
+    "download",
+}
+
+
+def check_leaf_name(leaf: str) -> list[str]:
+    """Return Tool-Naming Standard v1 violations for a single leaf tool name."""
+    issues: list[str] = []
+    if not LEAF_NAME_RE.match(leaf):
+        issues.append(f"charset/length: {leaf!r} must match ^[a-z0-9_]{{1,50}}$ (≤50)")
+    verb = leaf.split("_", 1)[0]
+    if verb not in CANONICAL_VERBS and verb not in ACTION_VERB_EXCEPTIONS:
+        issues.append(f"verb: {leaf!r} starts with non-canonical verb {verb!r}")
+    return issues
 
 
 @app.command()
@@ -47,7 +72,13 @@ async def _probe_backend(backend: BackendDef) -> dict[str, object]:
     try:
         async with Client(backend.url) as client:
             tools = await client.list_tools()
-        return {"name": backend.name, "reachable": True, "tools": len(tools), "error": None}
+        return {
+            "name": backend.name,
+            "reachable": True,
+            "tools": len(tools),
+            "leaf_names": [t.name for t in tools],  # backend's own (un-namespaced) leaves
+            "error": None,
+        }
     except Exception as exc:  # report any connection failure (broad by design)
         return {"name": backend.name, "reachable": False, "tools": 0, "error": str(exc)}
 
@@ -55,19 +86,36 @@ async def _probe_backend(backend: BackendDef) -> dict[str, object]:
 @app.command()
 def doctor(
     servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+    strict_naming: bool = typer.Option(
+        False,
+        "--strict-naming",
+        help="Audit each backend's leaf tool names against Tool-Naming Standard v1.",
+    ),
 ) -> None:
-    """Ping each enabled backend and report reachability + tool counts."""
+    """Ping each enabled backend and report reachability + tool counts.
+
+    With ``--strict-naming``, also audit each reachable backend's leaf tool names
+    against Tool-Naming Standard v1 (unprefixed verb_noun, ≤50 chars, canonical verb)
+    and exit non-zero on any violation (R1.9 — the router enforcing the fleet standard).
+    """
     registry = load_registry(servers_file, os.environ)
     enabled = [b for b in registry if b.enabled]
     results = asyncio.run(_gather_probes(enabled))
     unreachable = 0
+    violations_found = False
     for r in results:
         if r["reachable"]:
             console.print(f"[green]OK[/green]   {r['name']}: {r['tools']} tools")
+            leaf_names = r.get("leaf_names", [])
+            if strict_naming and isinstance(leaf_names, list):
+                for leaf in leaf_names:
+                    for issue in check_leaf_name(leaf):
+                        violations_found = True
+                        console.print(f"  [yellow]NAME[/yellow] {r['name']}/{leaf}: {issue}")
         else:
             unreachable += 1
             console.print(f"[red]FAIL[/red] {r['name']}: unreachable ({r['error']})")
-    if unreachable:
+    if unreachable or violations_found:
         raise typer.Exit(1)
 
 

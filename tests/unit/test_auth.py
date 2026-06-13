@@ -28,9 +28,9 @@ def test_oauth_without_jwt_verifier_is_rejected():
         _env_file=None,
         GF_AUTH_MODE="oauth",
         GF_OAUTH_CLIENT_ID="id",
-        GF_OAUTH_CLIENT_SECRET="secret",
+        GF_OAUTH_CLIENT_SECRET="secret",  # noqa: S106 - test fixture data, not a real secret
         GF_OAUTH_AUTHORIZE_URL="https://idp/authorize",
-        GF_OAUTH_TOKEN_URL="https://idp/token",
+        GF_OAUTH_TOKEN_URL="https://idp/token",  # noqa: S106 - test fixture data
         GF_PUBLIC_BASE_URL="https://genefoundry.example.org/mcp",
         # deliberately omit GF_JWT_JWKS_URL/ISSUER/AUDIENCE
     )
