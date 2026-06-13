@@ -10,4 +10,4 @@ def test_dockerfile_exists_and_runs_router():
     assert "EXPOSE 8000" in text
     # default command starts the router over http
     assert "genefoundry-router" in text
-    assert "run" in text and "--host" in text and "0.0.0.0" in text
+    assert "run" in text and "--host" in text and "0.0.0.0" in text  # noqa: S104 - asserting Dockerfile content

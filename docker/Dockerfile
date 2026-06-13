@@ -8,7 +8,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /build
 COPY pyproject.toml uv.lock README.md ./
 COPY genefoundry_router ./genefoundry_router
-RUN uv sync --frozen --no-dev
+# --no-editable: install the project INTO site-packages (not as an editable .pth that
+# would reference the builder path), so the copied .venv is self-contained in the
+# production stage. A plain editable install breaks across multi-stage COPY.
+RUN uv sync --frozen --no-dev --no-editable
 
 FROM python:3.12-slim AS production
 ENV PYTHONDONTWRITEBYTECODE=1 \
