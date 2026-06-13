@@ -1,0 +1,10 @@
+services:
+  genefoundry-router:
+    build:
+      target: builder
+    environment:
+      GF_LOG_LEVEL: DEBUG
+    volumes:
+      - ../genefoundry_router:/home/app/web/genefoundry_router:delegated
+      - ../servers.yaml:/home/app/web/servers.yaml:ro
+    command: ["genefoundry-router", "run", "--host", "0.0.0.0", "--port", "8000", "--log-level", "DEBUG"]

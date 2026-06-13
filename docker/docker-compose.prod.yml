@@ -1,0 +1,24 @@
+services:
+  genefoundry-router:
+    environment:
+      GF_LOG_LEVEL: INFO
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    init: true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+          pids: 256
+    restart: on-failure
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
