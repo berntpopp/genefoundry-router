@@ -3,13 +3,54 @@
 from __future__ import annotations
 
 import logging
+import time
 
 import structlog
 from fastapi import FastAPI
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
+from starlette.responses import Response
 
 from genefoundry_router.registry import BackendDef
 
 _LOG_CONFIGURED = False
+
+# --- Prometheus metrics (R1.7: counters are incremented by MetricsMiddleware below) ---
+METRICS_REGISTRY = CollectorRegistry()
+
+BACKEND_UP = Gauge(
+    "genefoundry_backend_up",
+    "Backend reachability (1=up, 0=down)",
+    ["backend"],
+    registry=METRICS_REGISTRY,
+)
+TOOL_CALLS = Counter(
+    "genefoundry_tool_calls_total",
+    "Federated tool-call count",
+    ["namespace"],
+    registry=METRICS_REGISTRY,
+)
+SEARCH_HITS = Counter(
+    "genefoundry_search_hits_total",
+    "search_tools invocations",
+    registry=METRICS_REGISTRY,
+)
+TOOL_LATENCY = Histogram(
+    "genefoundry_tool_latency_seconds",
+    "Federated tool-call latency",
+    ["namespace"],
+    registry=METRICS_REGISTRY,
+)
+
+# Cached reachability for /health (updated by startup probe + polling, Tasks 22/23).
+BACKEND_STATUS: dict[str, bool] = {}
 
 
 def configure_logging(level: str = "INFO") -> None:
@@ -31,6 +72,20 @@ def configure_logging(level: str = "INFO") -> None:
     _LOG_CONFIGURED = True
 
 
+def set_backend_up(backend: BackendDef, up: bool) -> None:
+    """Record a backend's reachability for /metrics (gauge) and /health (cached map)."""
+    BACKEND_UP.labels(backend=backend.name).set(1 if up else 0)
+    BACKEND_STATUS[backend.namespace] = up
+
+
+def register_metrics(app: FastAPI) -> None:
+    """Attach GET /metrics exposing the Prometheus text exposition format."""
+
+    @app.get("/metrics")
+    async def metrics() -> Response:
+        return Response(generate_latest(METRICS_REGISTRY), media_type=CONTENT_TYPE_LATEST)
+
+
 def register_health(app: FastAPI, backends: list[BackendDef]) -> None:
     """Attach GET /health returning liveness + a per-backend summary."""
     enabled = [b for b in backends if b.enabled]
@@ -44,5 +99,26 @@ def register_health(app: FastAPI, backends: list[BackendDef]) -> None:
                 "total": len(backends),
                 "enabled": len(enabled),
                 "namespaces": [b.namespace for b in enabled],
+                "reachable": {b.namespace: BACKEND_STATUS.get(b.namespace) for b in enabled},
             },
         }
+
+
+class MetricsMiddleware(Middleware):
+    """Increment tool-call/search counters + latency (R1.7 — counters were dead).
+
+    on_call_tool/on_list_tools hooks verified against fastmcp 3.4.2; ``context.message``
+    is a request-params dataclass whose ``name`` is the invoked tool.
+    """
+
+    async def on_call_tool(self, context: MiddlewareContext, call_next):  # type: ignore[no-untyped-def]
+        name = getattr(context.message, "name", "") or ""
+        namespace = name.split("_", 1)[0] if "_" in name else "_root"
+        if name in ("search_tools", "call_tool"):
+            SEARCH_HITS.inc()
+        start = time.perf_counter()
+        try:
+            return await call_next(context)
+        finally:
+            TOOL_CALLS.labels(namespace=namespace).inc()
+            TOOL_LATENCY.labels(namespace=namespace).observe(time.perf_counter() - start)

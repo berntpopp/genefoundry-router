@@ -11,7 +11,12 @@ from fastmcp import FastMCP
 
 from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
-from genefoundry_router.observability import configure_logging, register_health
+from genefoundry_router.observability import (
+    MetricsMiddleware,
+    configure_logging,
+    register_health,
+    register_metrics,
+)
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.security import add_origin_validation
 from genefoundry_router.tool_search import apply_tool_search
@@ -35,6 +40,7 @@ def build_server(
     """
     proxy_targets = proxy_targets or {}
     server: FastMCP = FastMCP("genefoundry")
+    server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
     for backend in registry:
         if not backend.enabled:
             log.info("backend_skipped", backend=backend.name, reason="disabled")
@@ -69,5 +75,6 @@ def build_app(
     app.add_middleware(CorrelationIdMiddleware)
     add_origin_validation(app, settings.GF_ALLOWED_ORIGINS)  # R1.4 — MCP Origin MUST
     register_health(app, registry)
+    register_metrics(app)  # R1.7 — /metrics
     app.mount(settings.GF_MCP_PATH, mcp_app)
     return app
