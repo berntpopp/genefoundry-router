@@ -1,0 +1,88 @@
+"""Pluggable auth assembly for the router (GF_AUTH_MODE = none|jwt|oauth).
+
+R1.6 invariant: the gateway authenticates the *caller* at this edge; it MUST NOT
+forward the caller's token to the 13 backends (confused-deputy). Backend proxies use
+the router's own connection (see composition.py). Never wire the incoming
+``Authorization`` header into ``ProxyClient``.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import structlog
+
+from genefoundry_router.config import RouterSettings
+from genefoundry_router.exceptions import ConfigurationError
+
+log = structlog.get_logger(__name__)
+
+
+def build_auth(settings: RouterSettings) -> Any | None:
+    """Return a FastMCP auth provider for the configured mode, or None for 'none'."""
+    mode = settings.GF_AUTH_MODE
+    if mode == "none":
+        log.info("auth_mode", mode="none")
+        return None
+    if mode == "jwt":
+        return _build_jwt(settings)
+    if mode == "oauth":
+        return _build_oauth(settings)
+    raise ConfigurationError(f"unknown GF_AUTH_MODE: {mode!r}")  # pragma: no cover
+
+
+def _build_jwt(settings: RouterSettings) -> Any:
+    # MCP auth (2025-11-25): audience binding is a MUST for a protected resource.
+    if not (settings.GF_JWT_ISSUER and settings.GF_JWT_JWKS_URL and settings.GF_JWT_AUDIENCE):
+        raise ConfigurationError(
+            "jwt mode requires GF_JWT_ISSUER, GF_JWT_JWKS_URL, and GF_JWT_AUDIENCE (audience MUST)"
+        )
+    from fastmcp.server.auth.providers.jwt import JWTVerifier
+
+    log.info("auth_mode", mode="jwt", issuer=settings.GF_JWT_ISSUER)
+    return JWTVerifier(
+        jwks_uri=settings.GF_JWT_JWKS_URL,
+        issuer=settings.GF_JWT_ISSUER,
+        audience=settings.GF_JWT_AUDIENCE,  # reject tokens not minted for this server
+        base_url=settings.GF_PUBLIC_BASE_URL,  # canonical public resource URI (PRM)
+    )
+
+
+def _build_oauth(settings: RouterSettings) -> Any:
+    # R1.5: OAuthProxy.token_verifier is REQUIRED — so the JWT verifier inputs are
+    # mandatory in oauth mode too (no None verifier). base_url MUST be the public URL.
+    required = {
+        "GF_OAUTH_CLIENT_ID": settings.GF_OAUTH_CLIENT_ID,
+        "GF_OAUTH_CLIENT_SECRET": settings.GF_OAUTH_CLIENT_SECRET,
+        "GF_OAUTH_AUTHORIZE_URL": settings.GF_OAUTH_AUTHORIZE_URL,
+        "GF_OAUTH_TOKEN_URL": settings.GF_OAUTH_TOKEN_URL,
+        "GF_PUBLIC_BASE_URL": settings.GF_PUBLIC_BASE_URL,
+        "GF_JWT_ISSUER": settings.GF_JWT_ISSUER,
+        "GF_JWT_JWKS_URL": settings.GF_JWT_JWKS_URL,
+        "GF_JWT_AUDIENCE": settings.GF_JWT_AUDIENCE,
+    }
+    missing = [k for k, v in required.items() if not v]
+    if missing:
+        raise ConfigurationError(f"oauth mode requires: {', '.join(missing)}")
+    from fastmcp.server.auth import MultiAuth, OAuthProxy
+
+    verifier = _build_jwt(settings)  # always a real TokenVerifier
+    # All four are guaranteed truthy by the missing-check above; assert narrows the
+    # str|None settings to str for the type-checker (OAuthProxy requires non-None).
+    authorize_url = settings.GF_OAUTH_AUTHORIZE_URL
+    token_url = settings.GF_OAUTH_TOKEN_URL
+    client_id = settings.GF_OAUTH_CLIENT_ID
+    public_base = settings.GF_PUBLIC_BASE_URL
+    assert authorize_url and token_url and client_id and public_base
+    oauth = OAuthProxy(
+        upstream_authorization_endpoint=authorize_url,
+        upstream_token_endpoint=token_url,
+        upstream_client_id=client_id,
+        upstream_client_secret=settings.GF_OAUTH_CLIENT_SECRET,
+        token_verifier=verifier,  # REQUIRED — never None
+        base_url=public_base,  # this server's public URL (redirects + PRM)
+        resource_base_url=public_base,  # canonical resource URI for audience
+    )
+    log.info("auth_mode", mode="oauth", provider=settings.GF_OAUTH_PROVIDER)
+    # MultiAuth lets M2M JWT + interactive OAuth coexist (spec §9).
+    return MultiAuth(server=oauth, verifiers=[verifier])
