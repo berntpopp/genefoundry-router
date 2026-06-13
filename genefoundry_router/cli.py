@@ -103,6 +103,26 @@ def list_tools(
     console.print(f"\n[bold]{len(names)} tools[/bold]")
 
 
+@app.command()
+def validate(
+    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+) -> None:
+    """Validate servers.yaml + env; report missing URLs and invalid namespaces."""
+    registry = load_registry(servers_file, os.environ)
+    problems: list[str] = []
+    for b in registry:
+        if b.enabled and b.url is None:
+            problems.append(f"{b.name}: missing URL (set {b.url_env})")
+    if problems:
+        for p in problems:
+            console.print(f"[red]FAIL[/red] {p}")
+        raise typer.Exit(1)
+    console.print(
+        f"[green]OK[/green] {len(registry)} backends valid "
+        f"({sum(b.enabled for b in registry)} enabled)"
+    )
+
+
 def main() -> None:
     """Console-script entry point."""
     app()
