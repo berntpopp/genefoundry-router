@@ -29,7 +29,7 @@ The router is a **client** to each backend and a **server** to hosts. It introdu
 
 ## 3. Context
 
-The fleet is 13 FastMCP `-link` servers (~189 tools total). They are **inconsistent**: some self-prefix tools (`pubtator_*`), some leak FastAPI routes (`from_fastapi`), verbs vary. Normalization is being fixed at the source (one tracking issue per repo, Standard v1). The router must work **today** (with overrides for non-compliant servers) and get simpler as the source fixes land.
+The fleet is 13 FastMCP `-link` servers (~189 tools total). They are **inconsistent**: some self-prefix tools (`pubtator_*`), some leak FastAPI routes (`from_fastapi`), verbs vary. Normalization is being fixed at the source (one tracking issue per repo, Standard v1; canonical text in [`docs/TOOL-NAMING-STANDARD-v1.md`](../TOOL-NAMING-STANDARD-v1.md)). The router must work **today** (with overrides for non-compliant servers) and get simpler as the source fixes land.
 
 > ⚠️ **Deployment caveat:** the live `hgnc-link` endpoint currently serves the `mgi-link` binary (deployment mismatch). Keep `hgnc` `enabled: false` in the registry until that deployment is corrected.
 
