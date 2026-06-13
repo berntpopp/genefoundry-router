@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 import structlog
+from pydantic import AnyHttpUrl
 
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.exceptions import ConfigurationError
@@ -31,20 +32,49 @@ def build_auth(settings: RouterSettings) -> Any | None:
     raise ConfigurationError(f"unknown GF_AUTH_MODE: {mode!r}")  # pragma: no cover
 
 
-def _build_jwt(settings: RouterSettings) -> Any:
-    # MCP auth (2025-11-25): audience binding is a MUST for a protected resource.
+def _build_jwt_verifier(settings: RouterSettings) -> Any:
+    """Build the raw audience-bound JWTVerifier (a TokenVerifier).
+
+    Used directly as ``OAuthProxy.token_verifier`` and wrapped by RemoteAuthProvider in
+    jwt mode. MCP auth (2025-11-25): audience binding is a MUST for a protected resource.
+    """
     if not (settings.GF_JWT_ISSUER and settings.GF_JWT_JWKS_URL and settings.GF_JWT_AUDIENCE):
         raise ConfigurationError(
             "jwt mode requires GF_JWT_ISSUER, GF_JWT_JWKS_URL, and GF_JWT_AUDIENCE (audience MUST)"
         )
     from fastmcp.server.auth.providers.jwt import JWTVerifier
 
-    log.info("auth_mode", mode="jwt", issuer=settings.GF_JWT_ISSUER)
     return JWTVerifier(
         jwks_uri=settings.GF_JWT_JWKS_URL,
         issuer=settings.GF_JWT_ISSUER,
         audience=settings.GF_JWT_AUDIENCE,  # reject tokens not minted for this server
         base_url=settings.GF_PUBLIC_BASE_URL,  # canonical public resource URI (PRM)
+    )
+
+
+def _build_jwt(settings: RouterSettings) -> Any:
+    """jwt mode: wrap the verifier in a RemoteAuthProvider so the router SERVES the MCP
+    Protected-Resource-Metadata document (RFC 9728) + 401/WWW-Authenticate.
+
+    Deviation from the plan, verified against fastmcp 3.4.2: a *bare* JWTVerifier
+    validates tokens and emits WWW-Authenticate (with a resource_metadata pointer) but
+    its ``get_well_known_routes()`` is empty — it does NOT serve a PRM document.
+    RemoteAuthProvider serves a real PRM listing the issuer as the authorization server.
+    """
+    verifier = _build_jwt_verifier(settings)
+    from fastmcp.server.auth import RemoteAuthProvider
+
+    issuer = settings.GF_JWT_ISSUER
+    # base_url = the resource's public URL; the audience IS the canonical resource URI
+    # and a safe fallback when GF_PUBLIC_BASE_URL is unset (both required non-None here).
+    base = settings.GF_PUBLIC_BASE_URL or settings.GF_JWT_AUDIENCE
+    assert issuer and base  # guaranteed by _build_jwt_verifier's validation above
+    log.info("auth_mode", mode="jwt", issuer=issuer)
+    return RemoteAuthProvider(
+        token_verifier=verifier,
+        authorization_servers=[AnyHttpUrl(issuer)],
+        base_url=base,
+        resource_base_url=settings.GF_PUBLIC_BASE_URL,
     )
 
 
@@ -66,7 +96,7 @@ def _build_oauth(settings: RouterSettings) -> Any:
         raise ConfigurationError(f"oauth mode requires: {', '.join(missing)}")
     from fastmcp.server.auth import MultiAuth, OAuthProxy
 
-    verifier = _build_jwt(settings)  # always a real TokenVerifier
+    verifier = _build_jwt_verifier(settings)  # raw TokenVerifier for OAuthProxy
     # All four are guaranteed truthy by the missing-check above; assert narrows the
     # str|None settings to str for the type-checker (OAuthProxy requires non-None).
     authorize_url = settings.GF_OAUTH_AUTHORIZE_URL

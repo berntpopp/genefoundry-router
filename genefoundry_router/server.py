@@ -102,5 +102,12 @@ def build_app(
     add_origin_validation(app, settings.GF_ALLOWED_ORIGINS)  # R1.4 — MCP Origin MUST
     register_health(app, registry)
     register_metrics(app)  # R1.7 — /metrics
+    # R1.5 — serve the auth provider's well-known routes (Protected-Resource-Metadata,
+    # RFC 9728) on the OUTER app at root, matching the resource_metadata URL advertised
+    # in WWW-Authenticate. The MCP app is sub-mounted at GF_MCP_PATH, so its own routes
+    # would otherwise land under that prefix and miss the root well-known path.
+    auth_provider = server.auth
+    if auth_provider is not None:
+        app.router.routes.extend(auth_provider.get_routes())
     app.mount(settings.GF_MCP_PATH, mcp_app)
     return app
