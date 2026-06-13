@@ -53,7 +53,7 @@ test-fast: ## Run unit tests in parallel
 test-unit: test-fast ## Alias for parallel unit tests
 
 test-integration: ## Run in-process integration tests
-	uv run pytest tests/integration -q
+	uv run pytest tests/integration -q || [ $$? -eq 5 ]  # exit 5 = no tests collected (non-fatal)
 
 test-cov: ## Run tests with coverage
 	uv run pytest tests/unit tests/integration --cov=$(PKG) --cov-report=term-missing --cov-report=html --cov-report=xml
