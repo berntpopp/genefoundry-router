@@ -121,13 +121,13 @@ Each phase ends in working, testable software. Run `make ci-local` (Task 3) at t
 - Create: `scripts/check_file_size.py`
 - Create: `LICENSE`
 
-- [ ] **Step 1: Create `.python-version`**
+- [x] **Step 1: Create `.python-version`**
 
 ```
 3.12
 ```
 
-- [ ] **Step 2: Create `pyproject.toml`** (mirrors gnomad-link tooling; router deps — no FastAPI-REST domain libs, adds `pyyaml`)
+- [x] **Step 2: Create `pyproject.toml`** (mirrors gnomad-link tooling; router deps — no FastAPI-REST domain libs, adds `pyyaml`)
 
 ```toml
 [build-system]
@@ -263,7 +263,7 @@ exclude_also = [
 directory = "htmlcov"
 ```
 
-- [ ] **Step 3: Create `Makefile`** (router targets; package dir is `genefoundry_router`, no root `server.py`/`mcp_server.py`)
+- [x] **Step 3: Create `Makefile`** (router targets; package dir is `genefoundry_router`, no root `server.py`/`mcp_server.py`)
 
 ```makefile
 .PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config
@@ -368,7 +368,7 @@ docker-npm-config: ## Render NPM Compose configuration
 	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
 ```
 
-- [ ] **Step 4: Create `scripts/check_file_size.py`** (600-LOC enforcer over the package)
+- [x] **Step 4: Create `scripts/check_file_size.py`** (600-LOC enforcer over the package)
 
 ```python
 #!/usr/bin/env python
@@ -435,14 +435,14 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Step 5: Create `.loc-allowlist`**
+- [x] **Step 5: Create `.loc-allowlist`**
 
 ```
 # path<TAB>ceiling for grandfathered oversized modules.
 # No production modules currently exceed the 600-LOC budget.
 ```
 
-- [ ] **Step 6: Create `.python-version`, `.gitattributes`, `.gitignore`, `.dockerignore`, `.pre-commit-config.yaml`, `LICENSE`**
+- [x] **Step 6: Create `.python-version`, `.gitattributes`, `.gitignore`, `.dockerignore`, `.pre-commit-config.yaml`, `LICENSE`**
 
 `.gitattributes`:
 ```
@@ -532,7 +532,7 @@ repos:
 
 `LICENSE` — MIT, copyright `2026 Bernt Popp` (copy the text of `../gnomad-link/LICENSE`, updating the year/holder if needed).
 
-- [ ] **Step 7: Create a minimal `README.md` stub** (R1.3 — required by `uv sync`, which builds the project via `pyproject.readme`, and by the Dockerfile `COPY`; expanded in Task 30)
+- [x] **Step 7: Create a minimal `README.md` stub** (R1.3 — required by `uv sync`, which builds the project via `pyproject.readme`, and by the Dockerfile `COPY`; expanded in Task 30)
 
 ```markdown
 # GeneFoundry Router
@@ -544,7 +544,7 @@ Status: under construction. See `docs/specs/2026-06-13-genefoundry-router-design
 and `docs/plans/2026-06-13-genefoundry-router-implementation.md`. Research use only.
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add pyproject.toml Makefile .python-version .gitignore .dockerignore .gitattributes .pre-commit-config.yaml .loc-allowlist scripts/check_file_size.py LICENSE README.md
@@ -562,12 +562,12 @@ git commit -m "chore: scaffold project tooling and metadata"
 - Create: `tests/unit/__init__.py`
 - Test: `tests/unit/test_package.py`
 
-- [ ] **Step 1: Install deps**
+- [x] **Step 1: Install deps**
 
 Run: `uv sync --group dev`
 Expected: resolves and installs; creates `uv.lock`.
 
-- [ ] **Step 2: Import smoke for FastMCP symbols** (de-risks post-cutoff API before writing logic)
+- [x] **Step 2: Import smoke for FastMCP symbols** (de-risks post-cutoff API before writing logic)
 
 Run:
 ```bash
@@ -575,7 +575,7 @@ uv run python -c "from fastmcp import FastMCP; from fastmcp.server import create
 ```
 Expected: `imports OK`. If any import fails, locate the moved symbol (`uv run python -c "import fastmcp; print(fastmcp.__version__)"` then grep the installed package) and update the **Convention notes §7** import table + affected tasks before proceeding.
 
-- [ ] **Step 3: Write the failing test**
+- [x] **Step 3: Write the failing test**
 
 `tests/unit/test_package.py`:
 ```python
@@ -589,12 +589,12 @@ def test_version_is_semver_string():
     assert all(p.isdigit() for p in parts)
 ```
 
-- [ ] **Step 4: Run test to verify it fails**
+- [x] **Step 4: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_package.py -v`
 Expected: FAIL — `ModuleNotFoundError: genefoundry_router`.
 
-- [ ] **Step 5: Create the package files**
+- [x] **Step 5: Create the package files**
 
 `genefoundry_router/__init__.py`:
 ```python
@@ -628,12 +628,12 @@ class StartupError(RouterError):
 
 `tests/__init__.py`, `tests/unit/__init__.py`: empty files.
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_package.py -v`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add genefoundry_router tests/__init__.py tests/unit/__init__.py tests/unit/test_package.py uv.lock
@@ -646,14 +646,14 @@ git commit -m "feat: package skeleton with version and exception hierarchy"
 
 **Files:** none new (validates tooling end-to-end).
 
-- [ ] **Step 1: Run the full local CI gate**
+- [x] **Step 1: Run the full local CI gate**
 
 Run: `make ci-local`
 Expected: format-check, lint, lint-loc, typecheck, unit + integration tests all pass. (Integration dir is empty — pytest reports "no tests ran" for that path, which is non-fatal; if it errors on a missing path, create `tests/integration/__init__.py` now.)
 
-- [ ] **Step 2: Create `tests/integration/__init__.py`** (empty) so the integration path resolves.
+- [x] **Step 2: Create `tests/integration/__init__.py`** (empty) so the integration path resolves.
 
-- [ ] **Step 3: Commit (if anything changed)**
+- [x] **Step 3: Commit (if anything changed)**
 
 ```bash
 git add -A
@@ -670,7 +670,7 @@ git commit -m "chore: green ci-local on skeleton"
 - Create: `genefoundry_router/registry.py`
 - Test: `tests/unit/test_registry_models.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_registry_models.py`:
 ```python
@@ -719,12 +719,12 @@ def test_non_http_transport_rejected():
         BackendDef(name="x", url_env="GF_X_URL", namespace="x", transport="sse")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_registry_models.py -v`
 Expected: FAIL — cannot import `genefoundry_router.registry`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `genefoundry_router/registry.py`:
 ```python
@@ -777,12 +777,12 @@ class BackendDef(BaseModel):
 
 > The `Literal["http"]` field both (a) absorbs `defaults.transport: http` from `servers.yaml` so `extra="forbid"` no longer rejects it, and (b) rejects `transport: sse` with a clear `ValidationError` (Streamable HTTP only, per spec §11).
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_registry_models.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/registry.py tests/unit/test_registry_models.py
@@ -797,7 +797,7 @@ git commit -m "feat: BackendDef and TransformConfig registry models"
 - Modify: `genefoundry_router/registry.py`
 - Test: `tests/unit/test_naming.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_naming.py`:
 ```python
@@ -839,12 +839,12 @@ def test_client_safe_name_rejects_dots_and_dashes():
     assert is_client_safe_name("x" * 65) is False               # too long
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_naming.py -v`
 Expected: FAIL — `ImportError: cannot import name 'qualified_name'`.
 
-- [ ] **Step 3: Add helpers to `registry.py`** (append below the models)
+- [x] **Step 3: Add helpers to `registry.py`** (append below the models)
 
 ```python
 CLIENT_SAFE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
@@ -870,12 +870,12 @@ def is_client_safe_name(name: str) -> bool:
     return bool(CLIENT_SAFE_NAME_RE.match(name))
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_naming.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/registry.py tests/unit/test_naming.py
@@ -890,7 +890,7 @@ git commit -m "feat: qualified-name and 64-char limit helpers"
 - Create: `genefoundry_router/config.py`
 - Test: `tests/unit/test_settings.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_settings.py`:
 ```python
@@ -937,12 +937,12 @@ def test_invalid_auth_mode_rejected(monkeypatch):
         RouterSettings(_env_file=None)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_settings.py -v`
 Expected: FAIL — cannot import `genefoundry_router.config`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `genefoundry_router/config.py`:
 ```python
@@ -1008,12 +1008,12 @@ class RouterSettings(BaseSettings):
         return v
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_settings.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/config.py tests/unit/test_settings.py
@@ -1029,7 +1029,7 @@ git commit -m "feat: RouterSettings env-driven configuration"
 - Test: `tests/unit/test_load_registry.py`
 - Test fixture: `tests/unit/fixtures/servers_min.yaml`
 
-- [ ] **Step 1: Write the fixture**
+- [x] **Step 1: Write the fixture**
 
 `tests/unit/fixtures/servers_min.yaml`:
 ```yaml
@@ -1044,7 +1044,7 @@ servers:
       transform: { strip_prefix: "pubtator_" } }
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 `tests/unit/test_load_registry.py`:
 ```python
@@ -1100,12 +1100,12 @@ def test_duplicate_namespace_raises(tmp_path):
         load_registry(p, {})
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_load_registry.py -v`
 Expected: FAIL — `ImportError: cannot import name 'load_registry'`.
 
-- [ ] **Step 4: Implement `load_registry()`** (append to `config.py`)
+- [x] **Step 4: Implement `load_registry()`** (append to `config.py`)
 
 ```python
 from collections.abc import Mapping
@@ -1159,12 +1159,12 @@ def load_registry(path: str | Path, environ: Mapping[str, str]) -> list[BackendD
     return backends
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_load_registry.py -v`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add genefoundry_router/config.py tests/unit/test_load_registry.py tests/unit/fixtures/servers_min.yaml
@@ -1181,7 +1181,7 @@ git commit -m "feat: load_registry with defaults merge and env URL resolution"
 - Create: `.env.docker.example`
 - Test: `tests/unit/test_servers_yaml.py`
 
-- [ ] **Step 1: Write the failing test** (the committed registry must parse and match spec §5 facts)
+- [x] **Step 1: Write the failing test** (the committed registry must parse and match spec §5 facts)
 
 `tests/unit/test_servers_yaml.py`:
 ```python
@@ -1207,12 +1207,12 @@ def test_real_servers_yaml_parses():
     assert len(namespaces) == len(set(namespaces))
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_servers_yaml.py -v`
 Expected: FAIL — registry file not found.
 
-- [ ] **Step 3: Create `servers.yaml`** (verbatim from spec §5)
+- [x] **Step 3: Create `servers.yaml`** (verbatim from spec §5)
 
 ```yaml
 # servers.yaml — committed backend registry (no secrets; URLs come from .env)
@@ -1238,7 +1238,7 @@ servers:
       transform: { strip_prefix: "pubtator_" } }   # remove once pubtator-link drops self-prefix
 ```
 
-- [ ] **Step 4: Create `.env.example`** (URL placeholders per spec §19 Q1 default pattern)
+- [x] **Step 4: Create `.env.example`** (URL placeholders per spec §19 Q1 default pattern)
 
 ```
 # --- Router runtime ---
@@ -1285,7 +1285,7 @@ GF_GENEREVIEWS_URL=https://genereviews-link.example.org/mcp
 GF_PUBTATOR_URL=https://pubtator-link.example.org/mcp
 ```
 
-- [ ] **Step 5: Create `.env.docker.example`** (adds host-port + NPM network knobs; binds to 0.0.0.0)
+- [x] **Step 5: Create `.env.docker.example`** (adds host-port + NPM network knobs; binds to 0.0.0.0)
 
 ```
 GF_HOST=0.0.0.0
@@ -1314,12 +1314,12 @@ GF_GENEREVIEWS_URL=https://genereviews-link.example.org/mcp
 GF_PUBTATOR_URL=https://pubtator-link.example.org/mcp
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_servers_yaml.py -v`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add servers.yaml .env.example .env.docker.example tests/unit/test_servers_yaml.py
@@ -1336,7 +1336,7 @@ git commit -m "feat: ship servers.yaml registry and env templates"
 - Create: `tests/integration/__init__.py` (exists from Task 3)
 - Create: `tests/integration/conftest.py`
 
-- [ ] **Step 1: Create the fake-backend factory**
+- [x] **Step 1: Create the fake-backend factory**
 
 `tests/integration/conftest.py`:
 ```python
@@ -1382,12 +1382,12 @@ def pubtator_fake() -> FastMCP:
     return make_fake_backend("pubtator-link", ["pubtator_search_literature", "pubtator_get_passages"])
 ```
 
-- [ ] **Step 2: Sanity-check the harness imports**
+- [x] **Step 2: Sanity-check the harness imports**
 
 Run: `uv run pytest tests/integration/conftest.py --collect-only -q`
 Expected: no collection errors (file has no tests; should report cleanly).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/integration/conftest.py
@@ -1402,7 +1402,7 @@ git commit -m "test: in-process fake FastMCP backend harness"
 - Create: `genefoundry_router/composition.py`
 - Test: `tests/integration/test_composition.py`
 
-- [ ] **Step 1: Write the failing test** (mount two fakes, assert namespacing + collision-freedom + round-trip)
+- [x] **Step 1: Write the failing test** (mount two fakes, assert namespacing + collision-freedom + round-trip)
 
 `tests/integration/test_composition.py`:
 ```python
@@ -1446,12 +1446,12 @@ async def test_proxied_call_round_trips(gateway, gnomad_fake):
 
 > Note: `register_backend` takes an optional `proxy_target` so tests can inject an in-process FastMCP instead of a live URL. In production the target is `backend.url`.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/integration/test_composition.py -v`
 Expected: FAIL — cannot import `genefoundry_router.composition`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `genefoundry_router/composition.py`:
 ```python
@@ -1504,12 +1504,12 @@ def register_backend(
     log.info("backend_mounted", backend=backend.name, namespace=backend.namespace)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/integration/test_composition.py -v`
 Expected: PASS. (If `result.data` shape differs in your fastmcp build, print `result` once and adjust the assertion to the returned structure — the round-trip itself is the contract.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/composition.py tests/integration/test_composition.py
@@ -1524,7 +1524,7 @@ git commit -m "feat: per-backend proxy creation and namespaced mounting"
 - Create: `genefoundry_router/observability.py`
 - Test: `tests/unit/test_observability.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_observability.py`:
 ```python
@@ -1557,12 +1557,12 @@ def test_health_reports_enabled_backends():
     assert "hgnc" not in body["backends"]["namespaces"]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_observability.py -v`
 Expected: FAIL — cannot import `genefoundry_router.observability`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `genefoundry_router/observability.py`:
 ```python
@@ -1616,12 +1616,12 @@ def register_health(app: FastAPI, backends: list[BackendDef]) -> None:
         }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_observability.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/observability.py tests/unit/test_observability.py
@@ -1638,7 +1638,7 @@ git commit -m "feat: structlog config and /health endpoint"
 - Test: `tests/unit/test_security.py`
 - Test: `tests/integration/test_server.py`
 
-- [ ] **Step 0: Write the Origin-middleware unit test** (R1.4 — MCP DNS-rebinding MUST)
+- [x] **Step 0: Write the Origin-middleware unit test** (R1.4 — MCP DNS-rebinding MUST)
 
 `tests/unit/test_security.py`:
 ```python
@@ -1674,7 +1674,7 @@ def test_present_disallowed_origin_403():
     assert client.get("/health", headers={"origin": "https://evil.example"}).status_code == 403
 ```
 
-- [ ] **Step 0b: Run it (fails), then implement `security.py`**
+- [x] **Step 0b: Run it (fails), then implement `security.py`**
 
 Run: `uv run pytest tests/unit/test_security.py -v` → FAIL (no module).
 
@@ -1718,7 +1718,7 @@ def add_origin_validation(app: FastAPI, allowed_origins: list[str]) -> None:
 
 Run again → PASS.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/integration/test_server.py`:
 ```python
@@ -1759,12 +1759,12 @@ def test_build_app_serves_health(gnomad_fake):
     assert client.get("/health").json()["status"] == "healthy"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/integration/test_server.py -v`
 Expected: FAIL — cannot import `genefoundry_router.server`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `genefoundry_router/server.py`:
 ```python
@@ -1834,12 +1834,12 @@ def build_app(
     return app
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/integration/test_server.py tests/unit/test_security.py -v`
 Expected: PASS. (The default `GF_ALLOWED_ORIGINS=[]` means health checks with no Origin header still pass — `TestClient` sends none.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/security.py genefoundry_router/server.py tests/unit/test_security.py tests/integration/test_server.py
@@ -1854,7 +1854,7 @@ git commit -m "feat: build_server/build_app assembly with Origin validation"
 - Create: `genefoundry_router/cli.py`
 - Test: `tests/unit/test_cli.py`
 
-- [ ] **Step 1: Write the failing test** (CLI wiring; uses typer's `CliRunner`, mocks the server run)
+- [x] **Step 1: Write the failing test** (CLI wiring; uses typer's `CliRunner`, mocks the server run)
 
 `tests/unit/test_cli.py`:
 ```python
@@ -1899,12 +1899,12 @@ def test_doctor_reports_unreachable(monkeypatch, tmp_path):
     assert "unreachable" in result.output.lower()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_cli.py -v`
 Expected: FAIL — cannot import `genefoundry_router.cli`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `genefoundry_router/cli.py`:
 ```python
@@ -1994,17 +1994,17 @@ if __name__ == "__main__":
     sys.exit(app())
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_cli.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Phase-2 gate — full CI**
+- [x] **Step 5: Phase-2 gate — full CI**
 
 Run: `make ci-local`
 Expected: all green. **v0.1 PoC milestone reached**: config + namespaced mount/proxy + Streamable HTTP + `/health` + `doctor`, auth `none`.
 
-- [ ] **Step 6: Manual smoke (optional, requires a reachable backend)**
+- [x] **Step 6: Manual smoke (optional, requires a reachable backend)**
 
 ```bash
 GF_GNOMAD_URL=https://<your-gnomad-link>/mcp uv run genefoundry-router run --port 8000 &
@@ -2012,7 +2012,7 @@ curl -s localhost:8000/health | python -m json.tool
 ```
 Expected: `"status": "healthy"`, gnomad in namespaces. Kill the server when done.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add genefoundry_router/cli.py tests/unit/test_cli.py
@@ -2031,7 +2031,7 @@ git commit -m "feat: typer CLI with run and doctor commands (v0.1 PoC)"
 
 > Rationale (Convention notes §2): `create_proxy` cannot take `cache_ttl`. When a backend's `cache_ttl` differs from the 300 s default, register it through `add_provider(ProxyProvider(client_factory, cache_ttl=…), namespace=…)` so the configured TTL is honored. Names still surface as `<namespace>_<tool>`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/integration/test_cache_ttl.py`:
 ```python
@@ -2051,7 +2051,7 @@ async def test_non_default_cache_ttl_still_namespaces(gnomad_fake):
     assert "gnomad_search_genes" in names
 ```
 
-- [ ] **Step 2: Run test to verify it fails (or passes trivially)**
+- [x] **Step 2: Run test to verify it fails (or passes trivially)**
 
 Run: `uv run pytest tests/integration/test_cache_ttl.py -v`
 Expected: with the Task-10 `register_backend` (always `mount(create_proxy())` at default TTL) this passes by namespacing but ignores `cache_ttl=600`. To make the TTL path real and asserted, extend the test to verify the provider path is used:
@@ -2076,7 +2076,7 @@ def test_register_uses_proxy_provider_for_non_default_ttl(monkeypatch, gnomad_fa
 ```
 Run again; expect FAIL (`_register_via_provider` does not exist yet).
 
-- [ ] **Step 3: Update `composition.py`** — branch on TTL
+- [x] **Step 3: Update `composition.py`** — branch on TTL
 
 Replace `register_backend` and add helpers:
 ```python
@@ -2117,12 +2117,12 @@ def register_backend(
 
 > If `add_provider`/`ProxyProvider` names differ in the installed build (run the Task-2 import smoke), fall back to `_register_via_mount` for all backends and record a follow-up: "per-backend cache_ttl not honored — verify ProxyProvider API." Namespacing (the locked requirement) is unaffected.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/integration/test_cache_ttl.py tests/integration/test_composition.py -v`
 Expected: PASS (both the 300 s mount path and the 600 s provider path).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/composition.py tests/integration/test_cache_ttl.py
@@ -2140,7 +2140,7 @@ git commit -m "feat: honor per-backend cache_ttl via ProxyProvider"
 
 > **R1.2/R1.8:** normalization is applied **after** all backends are mounted, in an **async** pass that enumerates tools via the public `await server.list_tools()` (there is **no** `server._tool_manager`). It (a) renames double-prefixed/non-compliant tools and (b) injects backend `tags` so `BM25SearchTransform` indexes them. `register_backend` stays mount-only; this pass runs from the lifespan (Task 23). If a backend is unreachable at startup, its transforms are skipped with a warning and re-applied on the next poll (Task 22).
 
-- [ ] **Step 1: Write the unit failing test** (pure builders)
+- [x] **Step 1: Write the unit failing test** (pure builders)
 
 `tests/unit/test_normalization.py`:
 ```python
@@ -2170,12 +2170,12 @@ def test_build_tool_transform_strips_prefix_for_namespaced_names():
     assert cfg.name == "pubtator_search_literature"
 ```
 
-- [ ] **Step 2: Run unit test to verify it fails**
+- [x] **Step 2: Run unit test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_normalization.py -v`
 Expected: FAIL — cannot import `genefoundry_router.normalization`.
 
-- [ ] **Step 3: Implement `normalization.py`**
+- [x] **Step 3: Implement `normalization.py`**
 
 ```python
 """Stopgap normalization transforms for non-compliant backends.
@@ -2234,12 +2234,12 @@ def build_tool_transform(
     return ToolTransform(transforms) if transforms else None
 ```
 
-- [ ] **Step 4: Run unit test to verify it passes**
+- [x] **Step 4: Run unit test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_normalization.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Write the integration failing test** (pubtator round-trip after strip + tag injection)
+- [x] **Step 5: Write the integration failing test** (pubtator round-trip after strip + tag injection)
 
 `tests/integration/test_strip_prefix.py`:
 ```python
@@ -2271,12 +2271,12 @@ async def test_pubtator_prefix_stripped_at_gateway(pubtator_fake):
     assert {"literature", "entity"} <= set(stripped.tags or [])
 ```
 
-- [ ] **Step 6: Run integration test — expect FAIL** (`apply_normalizations` not implemented yet)
+- [x] **Step 6: Run integration test — expect FAIL** (`apply_normalizations` not implemented yet)
 
 Run: `uv run pytest tests/integration/test_strip_prefix.py -v`
 Expected: FAIL — cannot import `apply_normalizations`.
 
-- [ ] **Step 7: Add `apply_normalizations` to `normalization.py`** (public async API — no `_tool_manager`)
+- [x] **Step 7: Add `apply_normalizations` to `normalization.py`** (public async API — no `_tool_manager`)
 
 ```python
 import structlog
@@ -2322,12 +2322,12 @@ async def apply_normalizations(server: FastMCP, registry: list[BackendDef]) -> N
 
 > The renames use a catalog-level `ToolTransform` via `server.add_transform(...)`; tags use per-tool `server.add_tool_transformation(name, ToolTransformConfig(tags=...))`. Both are **public** 3.4.2 APIs (verified). The integration test is the contract — if `add_tool_transformation` replaces rather than merges tags, the union above already supplies the full set. If `ToolTransformConfig` rejects `tags=set(...)`, pass a `list` instead.
 
-- [ ] **Step 8: Run integration test to verify it passes**
+- [x] **Step 8: Run integration test to verify it passes**
 
 Run: `uv run pytest tests/integration/test_strip_prefix.py -v`
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add genefoundry_router/normalization.py tests/unit/test_normalization.py tests/integration/test_strip_prefix.py
@@ -2345,7 +2345,7 @@ git commit -m "feat: async normalization (strip_prefix/rename/arg-remap) + tag i
 
 > Pinned essentials (spec §19 Q4 default): `resolve_variant_id`, `search_genes` (+ the search surface `search_tools`/`call_tool`). At the gateway these are namespaced, so pin the **namespaced** names that exist (`gnomad_resolve_variant_id`, `gnomad_search_genes`). The pinned set is configurable.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/integration/test_tool_search.py`:
 ```python
@@ -2384,12 +2384,12 @@ def test_default_always_visible_is_documented():
     assert DEFAULT_ALWAYS_VISIBLE  # non-empty default pinned set
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/integration/test_tool_search.py -v`
 Expected: FAIL — cannot import `genefoundry_router.tool_search`.
 
-- [ ] **Step 3: Implement `tool_search.py`**
+- [x] **Step 3: Implement `tool_search.py`**
 
 ```python
 """BM25 tool-search surface to control tool overload across the fleet."""
@@ -2427,7 +2427,7 @@ def apply_tool_search(
     log.info("tool_search_enabled", max_results=settings.GF_SEARCH_MAX_RESULTS, pinned=pinned)
 ```
 
-- [ ] **Step 4: Wire it into `build_server`** (apply after the mount loop)
+- [x] **Step 4: Wire it into `build_server`** (apply after the mount loop)
 
 In `server.py`, add an `enable_search: bool = True` parameter to `build_server` and call `apply_tool_search` at the end:
 ```python
@@ -2444,14 +2444,14 @@ Update the Task-12 `test_built_server_exposes_namespaced_tools` test to call `bu
 
 > **Transform ordering (important):** normalization (renames + tags, Task 15) must run **before** `BM25SearchTransform` so the index reflects the final names/tags. In the standalone `test_tool_search.py` (no normalization) applying search inside `build_server` is fine. But in the **app/production path**, `build_app` calls `build_server(..., enable_search=False)` and the **composed lifespan (Task 23)** applies `apply_normalizations` → `apply_tool_search` in that order. Change `build_app` (Task 12) to pass `enable_search=False`; Task 23 supplies the ordered lifespan. (BM25 also lazily re-indexes on tool-set hash change, but ordering avoids an unindexed first-list window.)
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `uv run pytest tests/integration/test_tool_search.py tests/integration/test_server.py -v`
 Expected: PASS.
 
 > If `always_visible` names that don't exist cause an error, filter `pinned` to names actually present before constructing the transform (enumerate via `await server.list_tools()`, the API confirmed in Task 15).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add genefoundry_router/tool_search.py genefoundry_router/server.py tests/integration/test_tool_search.py tests/integration/test_server.py
@@ -2470,7 +2470,7 @@ git commit -m "feat: BM25 tool-search surface with pinned essentials"
 
 > R1.7: counters were dead (defined, never incremented) and `/health` was shallow (no reachability). This task adds a FastMCP `MetricsMiddleware` (`on_call_tool`/`on_list_tools`) that actually increments tool-call/search/latency, and enriches `/health` with a cached per-backend reachability map.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_metrics.py`:
 ```python
@@ -2500,12 +2500,12 @@ def test_health_reports_cached_reachability():
     assert body["backends"]["reachable"]["gnomad"] is True
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_metrics.py -v`
 Expected: FAIL — cannot import `register_metrics` / `BACKEND_UP`.
 
-- [ ] **Step 3: Add metrics to `observability.py`**
+- [x] **Step 3: Add metrics to `observability.py`**
 
 ```python
 from prometheus_client import (
@@ -2563,7 +2563,7 @@ Update `register_health` to surface the cached reachability map:
         }
 ```
 
-- [ ] **Step 4: Add a FastMCP `MetricsMiddleware`** (the part that makes counters non-dead)
+- [x] **Step 4: Add a FastMCP `MetricsMiddleware`** (the part that makes counters non-dead)
 
 ```python
 import time
@@ -2589,7 +2589,7 @@ class MetricsMiddleware(Middleware):
 
 > `time.perf_counter()` is allowed (it is not `Date.now`/`random`). Confirm the `on_call_tool` signature against the installed `Middleware` base (Task 2 smoke listed the `on_*` hooks); if the message attribute differs, read `context.message` once and adjust the name extraction. The integration test is the contract.
 
-- [ ] **Step 5: Write the middleware integration test**
+- [x] **Step 5: Write the middleware integration test**
 
 `tests/integration/test_metrics_middleware.py`:
 ```python
@@ -2612,16 +2612,16 @@ async def test_tool_call_increments_counter(gnomad_fake):
     assert after == before + 1
 ```
 
-- [ ] **Step 6: Wire into `build_server` + `build_app`**
+- [x] **Step 6: Wire into `build_server` + `build_app`**
 
 In `build_server`, `server.add_middleware(MetricsMiddleware())` before applying transforms. In `build_app`, call `register_metrics(app)` after `register_health(app, registry)`.
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [x] **Step 7: Run tests to verify they pass**
 
 Run: `uv run pytest tests/unit/test_metrics.py tests/integration/test_metrics_middleware.py -v`
 Expected: PASS. (If `._value.get()` is unavailable in your prometheus-client build, assert via `generate_latest(METRICS_REGISTRY)` text containing the incremented sample instead.)
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add genefoundry_router/observability.py genefoundry_router/server.py tests/unit/test_metrics.py tests/integration/test_metrics_middleware.py
@@ -2636,7 +2636,7 @@ git commit -m "feat: metrics middleware, latency histogram, /health reachability
 - Modify: `genefoundry_router/cli.py`
 - Test: `tests/unit/test_cli_list_tools.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_cli_list_tools.py`:
 ```python
@@ -2666,12 +2666,12 @@ def test_list_tools_filters_namespace_and_flags_long(monkeypatch, tmp_path):
     assert "OVER 64" in result.output  # long name flagged
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_cli_list_tools.py -v`
 Expected: FAIL — no `list-tools` command.
 
-- [ ] **Step 3: Add `list_tools` to `cli.py`**
+- [x] **Step 3: Add `list_tools` to `cli.py`**
 
 ```python
 from genefoundry_router.registry import MAX_QUALIFIED_NAME_LEN
@@ -2705,17 +2705,17 @@ def list_tools(
     console.print(f"\n[bold]{len(names)} tools[/bold]")
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_cli_list_tools.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Phase-3 gate**
+- [x] **Step 5: Phase-3 gate**
 
 Run: `make ci-local`
 Expected: all green. **v0.2 components complete**: BM25 search, async normalization (pubtator strip_prefix) + tag injection, metrics middleware, structured logs, `list-tools`. (These are component-tested here; the running `genefoundry-router run` applies normalization + search end-to-end once the composed lifespan lands in **Task 23**.)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add genefoundry_router/cli.py tests/unit/test_cli_list_tools.py
@@ -2732,7 +2732,7 @@ git commit -m "feat: list-tools CLI command with 64-char flagging"
 - Create: `genefoundry_router/auth.py`
 - Test: `tests/unit/test_auth.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_auth.py`:
 ```python
@@ -2773,12 +2773,12 @@ def test_oauth_without_jwt_verifier_is_rejected():
         build_auth(s)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_auth.py -v`
 Expected: FAIL — cannot import `genefoundry_router.auth`.
 
-- [ ] **Step 3: Implement `auth.py`** (dispatch + validation; builders filled next task)
+- [x] **Step 3: Implement `auth.py`** (dispatch + validation; builders filled next task)
 
 ```python
 """Pluggable auth assembly for the router (GF_AUTH_MODE = none|jwt|oauth)."""
@@ -2860,12 +2860,12 @@ def _build_oauth(settings: RouterSettings) -> Any:
 
 > The router auto-serves Protected-Resource-Metadata + `WWW-Authenticate` on 401 once this provider is attached (`JWTVerifier.get_well_known_routes` / `RemoteAuthProvider` — verified) — asserted in **Task 25**. Behind nginx-proxy-manager, ensure forwarded headers (`X-Forwarded-Proto`/`-Host`) reach the app so generated absolute URLs use `GF_PUBLIC_BASE_URL`, not the bind socket.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_auth.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/auth.py tests/unit/test_auth.py
@@ -2880,7 +2880,7 @@ git commit -m "feat: pluggable auth assembly (none/jwt/oauth dispatch)"
 - Modify: `genefoundry_router/server.py`
 - Test: `tests/unit/test_auth_wiring.py`
 
-- [ ] **Step 1: Write the failing test** (jwt mode constructs a verifier; OAuthProxy/JWT need a fake JWKS so use monkeypatch)
+- [x] **Step 1: Write the failing test** (jwt mode constructs a verifier; OAuthProxy/JWT need a fake JWKS so use monkeypatch)
 
 `tests/unit/test_auth_wiring.py`:
 ```python
@@ -2911,12 +2911,12 @@ def test_server_built_with_jwt_auth(monkeypatch):
     assert server.auth is not None
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_auth_wiring.py -v`
 Expected: FAIL — `build_server` does not yet build/attach auth (and `server.auth` is None for jwt).
 
-- [ ] **Step 3: Attach auth in `build_server`**
+- [x] **Step 3: Attach auth in `build_server`**
 
 In `server.py`, import and use `build_auth`:
 ```python
@@ -2931,12 +2931,12 @@ def build_server(settings, registry, proxy_targets=None, enable_search=True):
 >
 > **R1.6 invariant (document in the module docstring):** the gateway authenticates the *caller* at this edge; it MUST NOT forward the caller's token to the 13 backends (confused-deputy). Backend proxies use the router's own connection (Task 10). Never wire the incoming `Authorization` header into `ProxyClient`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_auth_wiring.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/server.py tests/unit/test_auth_wiring.py
@@ -2951,7 +2951,7 @@ git commit -m "feat: attach configured auth provider to the gateway"
 - Modify: `genefoundry_router/cli.py`
 - Test: `tests/unit/test_cli_validate.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_cli_validate.py`:
 ```python
@@ -2985,12 +2985,12 @@ def test_validate_passes_when_all_enabled_have_urls(monkeypatch, tmp_path):
     assert "OK" in result.output
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_cli_validate.py -v`
 Expected: FAIL — no `validate` command.
 
-- [ ] **Step 3: Add `validate` to `cli.py`**
+- [x] **Step 3: Add `validate` to `cli.py`**
 
 ```python
 @app.command()
@@ -3013,12 +3013,12 @@ def validate(
 
 > `load_registry` already enforces namespace charset and duplicate-namespace rules (raising `RegistryError`); let that surface as a typer error for malformed files. Optionally wrap the `load_registry` call in try/except to print a friendly message and `raise typer.Exit(1)`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_cli_validate.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/cli.py tests/unit/test_cli_validate.py
@@ -3037,7 +3037,7 @@ git commit -m "feat: validate CLI command"
 
 > Per Convention notes §5, proxy freshness is TTL-based. The polling fallback periodically forces a re-list of the gateway's tools so the BM25 index reflects upstream changes within `GF_POLL_INTERVAL` even when `cache_ttl` is high. `GF_POLL_INTERVAL=0` disables it. This task builds the refresher; **Task 23 wires it into the app lifespan** (R1.7 — it was previously never started).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_discovery.py`:
 ```python
@@ -3072,12 +3072,12 @@ async def test_zero_interval_is_disabled():
     assert refresher.running is False
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_discovery.py -v`
 Expected: FAIL — cannot import `genefoundry_router.discovery`.
 
-- [ ] **Step 3: Implement `discovery.py`**
+- [x] **Step 3: Implement `discovery.py`**
 
 ```python
 """Polling re-list fallback for proxy freshness (TTL-based backends)."""
@@ -3134,12 +3134,12 @@ class PollingRefresher:
             self._task = None
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_discovery.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/discovery.py tests/unit/test_discovery.py
@@ -3156,7 +3156,7 @@ git commit -m "feat: polling re-list refresher for proxy freshness"
 
 > This is the integration point the review flagged: normalization (Task 15) and the polling refresher (Task 22) existed but nothing ran them. `build_app` now installs a **composed lifespan** that, on startup, enters the MCP app lifespan → runs `apply_normalizations` → applies tool-search (after normalization, per Task 16 ordering) → probes backends once (seeds `/health`) → starts the `PollingRefresher`; on shutdown it stops the refresher.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/integration/test_lifespan.py`:
 ```python
@@ -3179,11 +3179,11 @@ def test_lifespan_runs_normalization_then_search(pubtator_fake):
         assert "pubtator" in body["backends"]["namespaces"]
 ```
 
-- [ ] **Step 2: Run it (FAIL — composed lifespan not implemented)**
+- [x] **Step 2: Run it (FAIL — composed lifespan not implemented)**
 
 Run: `uv run pytest tests/integration/test_lifespan.py -v`
 
-- [ ] **Step 3: Replace `build_app`'s lifespan with a composed one**
+- [x] **Step 3: Replace `build_app`'s lifespan with a composed one**
 
 ```python
 from contextlib import asynccontextmanager
@@ -3228,12 +3228,12 @@ def build_app(settings, registry, proxy_targets=None):
 
 > The earlier `test_build_app_serves_health` (Task 12) still passes (health is independent of lifespan). The startup probe here is a cheap presence check; **Task 24/25** add real reachability and auth contract tests. If `mcp_app.lifespan` is not an async context manager in your build, wrap via `mcp_app.router.lifespan_context`.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/integration/test_lifespan.py tests/integration/test_server.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add genefoundry_router/server.py tests/integration/test_lifespan.py
@@ -3247,7 +3247,7 @@ git commit -m "feat: composed app lifespan (normalization + tool-search + pollin
 **Files:**
 - Test: `tests/integration/test_origin_app.py`
 
-- [ ] **Step 1: Write the test** (no new code — verifies the wired middleware end-to-end)
+- [x] **Step 1: Write the test** (no new code — verifies the wired middleware end-to-end)
 
 `tests/integration/test_origin_app.py`:
 ```python
@@ -3275,12 +3275,12 @@ def test_absent_origin_allowed(gnomad_fake):
     assert c.get("/health").status_code == 200  # health check sends no Origin
 ```
 
-- [ ] **Step 2: Run + confirm PASS**
+- [x] **Step 2: Run + confirm PASS**
 
 Run: `uv run pytest tests/integration/test_origin_app.py -v`
 Expected: PASS. (If `RouterSettings(GF_ALLOWED_ORIGINS=[...])` rejects a list literal because of the CSV `before` validator, pass a comma-joined string instead — the validator splits it.)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/integration/test_origin_app.py
@@ -3296,7 +3296,7 @@ git commit -m "test: end-to-end Origin validation on the mounted app"
 
 > Proves FastMCP auto-serves the MCP authorization discovery surface once a provider is attached. Uses `jwt` mode (no live IdP needed — a static JWKS URL is enough to construct the verifier; no token is presented, so the request is unauthorized).
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 `tests/integration/test_auth_contract.py`:
 ```python
@@ -3338,12 +3338,12 @@ def test_protected_resource_metadata_served(gnomad_fake):
     pytest.fail("no Protected Resource Metadata document served")
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/integration/test_auth_contract.py -v`
 Expected: PASS. **If FastMCP serves the PRM/401 on the MCP sub-app rather than the outer host**, request paths under `/mcp` (e.g. `/mcp/.well-known/...`) or assert against `server.http_app()` directly. Adjust the asserted paths to whatever the attached provider actually exposes — the **contract is: unauthenticated → 401 + `WWW-Authenticate`, and a PRM document with `authorization_servers` is discoverable.** If a 3.4.2 detail makes the exact wiring differ, record the observed behavior and keep the contract assertions.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/integration/test_auth_contract.py
@@ -3360,7 +3360,7 @@ git commit -m "test: MCP auth discovery (401 + WWW-Authenticate + protected-reso
 
 > The router sees every backend's **leaf** names, so it is the natural place to enforce Tool-Naming Standard v1 (unprefixed, `verb_noun`, ≤50 chars, canonical verb). `doctor --strict-naming` reports per-backend violations; exit non-zero if any.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_strict_naming.py`:
 ```python
@@ -3383,11 +3383,11 @@ def test_overlong_leaf_flagged():
     assert any("50" in i for i in issues)
 ```
 
-- [ ] **Step 2: Run it (FAIL — no `check_leaf_name`)**
+- [x] **Step 2: Run it (FAIL — no `check_leaf_name`)**
 
 Run: `uv run pytest tests/unit/test_strict_naming.py -v`
 
-- [ ] **Step 3: Add `check_leaf_name` + `--strict-naming` to `cli.py`**
+- [x] **Step 3: Add `check_leaf_name` + `--strict-naming` to `cli.py`**
 
 ```python
 import re
@@ -3411,17 +3411,17 @@ def check_leaf_name(leaf: str) -> list[str]:
 
 Extend `doctor` with a `--strict-naming` option that, for each reachable backend, lists its leaf tools (strip the namespace prefix) and reports `check_leaf_name` violations; `raise typer.Exit(1)` if any are found.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_strict_naming.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Phase-4.5 gate**
+- [x] **Step 5: Phase-4.5 gate**
 
 Run: `make ci-local`
 Expected: all green. **v0.3 (logic) complete**: auth (none/jwt/oauth, audience-bound), Origin validation, composed lifespan (normalization + tool-search + polling), metrics/health, `validate`, `list-tools`, `doctor --strict-naming`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add genefoundry_router/cli.py tests/unit/test_strict_naming.py
@@ -3438,7 +3438,7 @@ git commit -m "feat: doctor --strict-naming fleet compliance audit"
 - Create: `docker/Dockerfile`
 - Test: `tests/unit/docker/test_dockerfile.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/docker/test_dockerfile.py`:
 ```python
@@ -3459,12 +3459,12 @@ def test_dockerfile_exists_and_runs_router():
 
 Create `tests/unit/docker/__init__.py` (empty).
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/docker/test_dockerfile.py -v`
 Expected: FAIL — Dockerfile not found.
 
-- [ ] **Step 3: Create `docker/Dockerfile`** (multi-stage, mirrors gnomad-link; entrypoint = router `run`)
+- [x] **Step 3: Create `docker/Dockerfile`** (multi-stage, mirrors gnomad-link; entrypoint = router `run`)
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -3500,12 +3500,12 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=10s \
 CMD ["genefoundry-router", "run", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/docker/test_dockerfile.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docker/Dockerfile tests/unit/docker/__init__.py tests/unit/docker/test_dockerfile.py
@@ -3523,7 +3523,7 @@ git commit -m "feat: multi-stage Dockerfile for the router"
 - Create: `docker/docker-compose.npm.yml`
 - Test: `tests/unit/docker/test_compose.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/docker/test_compose.py`:
 ```python
@@ -3554,12 +3554,12 @@ def test_npm_overlay_joins_external_network():
     assert data["networks"]["npm-network"]["external"] is True
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/docker/test_compose.py -v`
 Expected: FAIL — compose files not found.
 
-- [ ] **Step 3: Create the four compose files**
+- [x] **Step 3: Create the four compose files**
 
 `docker/docker-compose.yml`:
 ```yaml
@@ -3649,17 +3649,17 @@ networks:
     name: ${NPM_NETWORK_NAME:-npm_network}
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/docker/test_compose.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Verify compose renders (requires docker)**
+- [x] **Step 5: Verify compose renders (requires docker)**
 
 Run: `make docker-prod-config` and `make docker-npm-config`
 Expected: both render without error. (Skip if docker is unavailable in this environment; note it as a manual deploy check.)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add docker/docker-compose.yml docker/docker-compose.prod.yml docker/docker-compose.dev.yml docker/docker-compose.npm.yml tests/unit/docker/test_compose.py
@@ -3672,17 +3672,17 @@ git commit -m "feat: docker-compose overlays (base/prod/dev/npm)"
 
 **Files:** none new.
 
-- [ ] **Step 1: Freeze the lock**
+- [x] **Step 1: Freeze the lock**
 
 Run: `uv lock`
 Expected: `uv.lock` up to date (already created in Task 2; confirm no drift).
 
-- [ ] **Step 2: Build the image (requires docker)**
+- [x] **Step 2: Build the image (requires docker)**
 
 Run: `make docker-build`
 Expected: image builds. If docker is unavailable, record this as a manual pre-deploy step in the README (Task 30).
 
-- [ ] **Step 3: Commit (if lock changed)**
+- [x] **Step 3: Commit (if lock changed)**
 
 ```bash
 git add uv.lock
@@ -3701,7 +3701,7 @@ git commit -m "chore: freeze uv.lock"
 - Create: `CLAUDE.md`
 - Test: `tests/unit/test_docs_presence.py`
 
-- [ ] **Step 1: Write the failing test** (keep docs honest about commands/structure)
+- [x] **Step 1: Write the failing test** (keep docs honest about commands/structure)
 
 `tests/unit/test_docs_presence.py`:
 ```python
@@ -3721,20 +3721,20 @@ def test_claude_md_references_agents_md():
     assert "@AGENTS.md" in (ROOT / "CLAUDE.md").read_text()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/unit/test_docs_presence.py -v`
 Expected: FAIL — the Task-1 stub lacks the required tokens.
 
-- [ ] **Step 3: Expand `README.md`** (mirror gnomad-link section structure)
+- [x] **Step 3: Expand `README.md`** (mirror gnomad-link section structure)
 
 Sections: `# GeneFoundry Router` → **Core Purpose** → **Key Features** → **Quick Start** (Install `uv sync --group dev`; configure `.env` from `.env.example`; `genefoundry-router run`; verify `curl localhost:8000/health`; add to Claude via the `/mcp` URL) → **Configuration** (env table incl. `GF_AUTH_MODE`, `GF_ALLOWED_ORIGINS`, `GF_PUBLIC_BASE_URL`, backend `GF_*_URL` vars; `servers.yaml` structure) → **CLI** (`run`/`validate`/`list-tools`/`doctor [--strict-naming]`) → **MCP Integration** (Streamable HTTP at `/mcp`) → **Tool discovery** (the router exposes synthetic `search_tools`/`call_tool` + pinned essentials — R1.10: this is the MCP-server-side equivalent of, and independent from, Anthropic's API-level tool-search; works with any MCP client) → **Client compatibility** (Claude connector + Gemini Remote MCP; Gemini requires snake_case ≤64-char names — the gateway already emits these) → **Architecture** (one-endpoint federation, namespacing, BM25 search) → **Security** (Origin validation, auth modes; `none` is local/PoC only; the gateway never forwards your token to backends) → **Deployment** (Docker overlays, nginx-proxy-manager; set `GF_PUBLIC_BASE_URL` + forwarded headers) → **Status caveats** (hgnc disabled until deployment fixed; pubtator strip_prefix until source lands) → **Research-use-only disclaimer**. Include the literal tokens the test checks for.
 
-- [ ] **Step 4: Write `AGENTS.md`** (adapt gnomad-link's; key differences below)
+- [x] **Step 4: Write `AGENTS.md`** (adapt gnomad-link's; key differences below)
 
 Cover: project = thin FastMCP router (not a data server); primary area `genefoundry_router/`; source-of-truth = `servers.yaml` + `.env`, `uv.lock`; required check `make ci-local`; the full `make` command list; coding standards (uv, modern typing, ruff, mypy py3.12); **600-LOC file discipline**; spec at `docs/specs/2026-06-13-genefoundry-router-design.md` and plan at `docs/plans/`; research-use-only boundary; "namespacing is the gateway's job — keep transforms minimal and delete them as source repos adopt Standard v1."
 
-- [ ] **Step 5: Write `CLAUDE.md`**
+- [x] **Step 5: Write `CLAUDE.md`**
 
 ```markdown
 # CLAUDE.md
@@ -3753,12 +3753,12 @@ Claude Code entrypoint only:
   `transform` block from `servers.yaml` rather than adding router-side workarounds.
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `uv run pytest tests/unit/test_docs_presence.py -v`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add README.md AGENTS.md CLAUDE.md tests/unit/test_docs_presence.py
@@ -3772,17 +3772,17 @@ git commit -m "docs: README, AGENTS.md, CLAUDE.md"
 **Files:**
 - Create: `docs/plans/V1.0-GATE.md`
 
-- [ ] **Step 1: Run the coverage gate**
+- [x] **Step 1: Run the coverage gate**
 
 Run: `make test-cov`
 Expected: coverage ≥ 70% (fleet floor). If below, add focused unit tests for any uncovered branch in `config.py`, `composition.py`, `normalization.py`, `auth.py`, `cli.py` until the floor is met.
 
-- [ ] **Step 2: Run the full local CI**
+- [x] **Step 2: Run the full local CI**
 
 Run: `make ci-local`
 Expected: all green.
 
-- [ ] **Step 3: Write `docs/plans/V1.0-GATE.md`** — items blocked on external state (not code):
+- [x] **Step 3: Write `docs/plans/V1.0-GATE.md`** — items blocked on external state (not code):
 
 ```markdown
 # v1.0 Gate — external blockers
@@ -3800,7 +3800,7 @@ Expected: all green.
 - [ ] Landing-page "Add to Claude" button wired to the deployed /mcp endpoint.
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/plans/V1.0-GATE.md
