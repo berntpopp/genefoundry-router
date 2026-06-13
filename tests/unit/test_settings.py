@@ -14,8 +14,8 @@ def test_defaults(monkeypatch):
     assert s.GF_SEARCH_MAX_RESULTS == 5
     assert s.GF_POLL_INTERVAL == 0
     assert s.GF_LOG_LEVEL == "INFO"
-    assert s.GF_ALLOWED_ORIGINS == []         # R1.4 — empty = reject any present Origin
-    assert s.GF_PUBLIC_BASE_URL is None       # R1.5 — public URL for OAuth metadata
+    assert s.GF_ALLOWED_ORIGINS == []  # R1.4 — empty = reject any present Origin
+    assert s.GF_PUBLIC_BASE_URL is None  # R1.5 — public URL for OAuth metadata
 
 
 def test_allowed_origins_parses_csv(monkeypatch):

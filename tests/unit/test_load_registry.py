@@ -9,8 +9,10 @@ FIX = Path(__file__).parent / "fixtures" / "servers_min.yaml"
 
 
 def test_load_merges_defaults_and_resolves_urls():
-    env = {"GF_GNOMAD_URL": "https://gnomad-link.example.org/mcp",
-           "GF_PUBTATOR_URL": "https://pubtator-link.example.org/mcp"}
+    env = {
+        "GF_GNOMAD_URL": "https://gnomad-link.example.org/mcp",
+        "GF_PUBTATOR_URL": "https://pubtator-link.example.org/mcp",
+    }
     backends = load_registry(FIX, env)
     by_name = {b.name: b for b in backends}
 

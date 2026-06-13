@@ -31,6 +31,6 @@ def test_client_safe_name_rejects_dots_and_dashes():
     # R1.10: Gemini wants snake_case, [a-zA-Z0-9_], <=64, leading letter/underscore.
     assert is_client_safe_name("gnomad_get_variant_details") is True
     assert is_client_safe_name("gnomad-get-variant") is False  # dashes
-    assert is_client_safe_name("gnomad.get") is False           # dots
-    assert is_client_safe_name("1bad") is False                 # leading digit
-    assert is_client_safe_name("x" * 65) is False               # too long
+    assert is_client_safe_name("gnomad.get") is False  # dots
+    assert is_client_safe_name("1bad") is False  # leading digit
+    assert is_client_safe_name("x" * 65) is False  # too long

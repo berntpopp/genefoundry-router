@@ -44,7 +44,9 @@ class RouterSettings(BaseSettings):
     # Transport security (R1.4 — MCP Origin/DNS-rebinding MUST)
     # NoDecode: suppress pydantic-settings' JSON pre-decode of complex env values so the
     # CSV string reaches the mode="before" validator below (pydantic-settings 2.14 behavior).
-    GF_ALLOWED_ORIGINS: Annotated[list[str], NoDecode] = []  # CSV in env; [] = reject any present Origin
+    GF_ALLOWED_ORIGINS: Annotated[
+        list[str], NoDecode
+    ] = []  # CSV in env; [] = reject any present Origin
     GF_PUBLIC_BASE_URL: str | None = None  # public URL behind the proxy (OAuth resource URI)
 
     # Auth
