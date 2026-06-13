@@ -9,6 +9,7 @@ from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastmcp import FastMCP
 
+from genefoundry_router.auth import build_auth
 from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.observability import (
@@ -39,7 +40,8 @@ def build_server(
     before search.
     """
     proxy_targets = proxy_targets or {}
-    server: FastMCP = FastMCP("genefoundry")
+    auth = build_auth(settings)  # caller auth at the edge; never forwarded upstream (R1.6)
+    server: FastMCP = FastMCP("genefoundry", auth=auth)
     server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
     for backend in registry:
         if not backend.enabled:
