@@ -123,8 +123,9 @@ make docker-up         # start the dev stack
 
 - **hgnc** is `enabled: false` until its live deployment is fixed (currently serves the
   `mgi-link` binary).
-- **pubtator** carries a `strip_prefix: "pubtator_"` transform until `pubtator-link` drops its
-  self-prefix at the source.
+- **pubtator** no longer needs a transform: `pubtator-link` adopted Tool-Naming Standard v1
+  ([pubtator-link#57](https://github.com/berntpopp/pubtator-link/pull/64)), dropping its
+  `pubtator_` self-prefix at the source, so the stopgap `strip_prefix` block was removed.
 
 See `docs/specs/2026-06-13-genefoundry-router-design.md` and
 `docs/plans/2026-06-13-genefoundry-router-implementation.md`.

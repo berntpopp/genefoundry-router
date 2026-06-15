@@ -40,3 +40,9 @@ def pubtator_fake() -> FastMCP:
     return make_fake_backend(
         "pubtator-link", ["pubtator_search_literature", "pubtator_get_passages"]
     )
+
+
+@pytest.fixture
+def pubtator_clean_fake() -> FastMCP:
+    # post Tool-Naming Standard v1 (pubtator-link#57): clean, unprefixed leaf names
+    return make_fake_backend("pubtator-link", ["search_literature", "get_passages"])

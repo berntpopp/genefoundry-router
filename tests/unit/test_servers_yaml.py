@@ -12,9 +12,9 @@ def test_real_servers_yaml_parses():
     assert len(backends) == 13
     # hgnc stays disabled until the live deployment is fixed (spec §3 caveat)
     assert by_name["hgnc"].enabled is False
-    # pubtator carries the stopgap strip_prefix transform (spec §5)
-    assert by_name["pubtator"].transform is not None
-    assert by_name["pubtator"].transform.strip_prefix == "pubtator_"
+    # pubtator adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64): it now
+    # emits clean leaf names, so the stopgap strip_prefix transform is gone.
+    assert by_name["pubtator"].transform is None
     # namespaces are unique and lowercase
     namespaces = [b.namespace for b in backends]
     assert len(namespaces) == len(set(namespaces))

@@ -17,5 +17,4 @@ servers:
   - { name: autopvs1,    repo: berntpopp/autopvs1-link,      url_env: GF_AUTOPVS1_URL,    namespace: autopvs1,    tags: [variant, acmg, pvs1] }
   - { name: spliceai,    repo: berntpopp/spliceailookup-link, url_env: GF_SPLICEAI_URL,   namespace: spliceai,    tags: [variant, splicing, prediction] }
   - { name: genereviews, repo: berntpopp/genereviews-link,   url_env: GF_GENEREVIEWS_URL, namespace: genereviews, tags: [literature, gene-disease] }
-  - { name: pubtator,    repo: berntpopp/pubtator-link,      url_env: GF_PUBTATOR_URL,    namespace: pubtator,    tags: [literature, entity],
-      transform: { strip_prefix: "pubtator_" } }   # remove once pubtator-link drops self-prefix
+  - { name: pubtator,    repo: berntpopp/pubtator-link,      url_env: GF_PUBTATOR_URL,    namespace: pubtator,    tags: [literature, entity] }  # adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64) — no transform needed
