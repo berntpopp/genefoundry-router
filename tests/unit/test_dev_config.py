@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from genefoundry_router.config import load_registry
-from genefoundry_router.devtools.fake_fleet import check_dev_config
+from genefoundry_router.devtools.fake_fleet import check_dev_config, dev_config_warnings
 from genefoundry_router.devtools.fakes import load_manifest
 
 
@@ -34,4 +34,16 @@ def test_check_dev_config_reports_mismatch():
     registry = load_registry("servers.dev.yaml", _dev_env())
     enabled = [b for b in registry if b.enabled and b.namespace in manifest.backends]
     problems = check_dev_config(enabled, manifest, "127.0.0.1", 9999)  # wrong port
+    assert problems  # at least one URL mismatch reported
+
+
+def test_dev_config_warnings_passes_for_matching_config():
+    manifest = load_manifest("tests/fixtures/fleet_manifest.json")
+    problems = dev_config_warnings(manifest, "127.0.0.1", 9100)
+    assert problems == []
+
+
+def test_dev_config_warnings_reports_mismatch_for_wrong_port():
+    manifest = load_manifest("tests/fixtures/fleet_manifest.json")
+    problems = dev_config_warnings(manifest, "127.0.0.1", 9999)
     assert problems  # at least one URL mismatch reported
