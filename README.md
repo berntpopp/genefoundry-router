@@ -119,6 +119,22 @@ make docker-build      # build the image
 make docker-up         # start the dev stack
 ```
 
+## Local testing (offline fake fleet)
+
+Run the real router against impersonated backends over real Streamable-HTTP — no Docker, no network:
+
+```bash
+make dev-fleet   # terminal 1: fakes on :9100 (driven by tests/fixtures/fleet_manifest.json)
+make run-dev     # terminal 2: router on :8000 against the fakes (exports .env.dev)
+make test-e2e    # one-shot: boot fleet in-process, assert federation, tear down
+```
+
+Refresh the manifest from the live fleet when tool surfaces change (online):
+
+```bash
+make snapshot-fleet
+```
+
 ## Status caveats
 
 - **hgnc** is `enabled: false` until its live deployment is fixed (currently serves the
