@@ -58,6 +58,7 @@ Structure lives in committed `servers.yaml`; secrets/URLs live in gitignored `.e
 | `GF_MCP_PATH` | `/mcp` | MCP mount path |
 | `GF_SERVERS_FILE` | `servers.yaml` | Backend registry |
 | `GF_SEARCH_MAX_RESULTS` | `5` | BM25 `search_tools` result cap |
+| `GF_REWRITE_HINTS` | `true` | Rewrite bare tool refs in responses to namespaced form |
 | `GF_POLL_INTERVAL` | `0` | Polling re-list interval (s); `0` disables |
 | `GF_AUTH_MODE` | `none` | `none` \| `jwt` \| `oauth` |
 | `GF_ALLOWED_ORIGINS` | _(empty)_ | CSV Origin allowlist (DNS-rebinding defense) |
@@ -82,6 +83,24 @@ The router speaks **Streamable HTTP** at `/mcp`. Instead of listing ~189 tools, 
 synthetic search surface: **`search_tools`** (relevance search over the federated catalog) and
 **`call_tool`** (invoke a discovered tool), plus a few pinned `always_visible` essentials.
 Originals remain callable but hidden from the default listing.
+
+**Compact discovery payloads.** `search_tools(query, detail="compact")` (the default) returns,
+per hit, the tool name, description, full **`inputSchema`** (the argument contract you need to
+construct a correct call), a one-line **`returns`** summary, and tags — but *not* the full
+nested `outputSchema` or the per-tool `_meta` block. That nested schema dump was the dominant
+token cost of using the fleet (discovery, not data). Pass `detail="full"` to get the complete
+output schema for a hit when you actually need it.
+
+**Pinned essentials.** The default listing keeps two gnomAD tools first-class —
+`gnomad_resolve_variant_id` and `gnomad_search_genes`. These are the fleet's **entry-point
+resolvers** (variant-ID normalization and symbol→gene lookup) that most workflows hit first;
+pinning them saves a `search_tools` round-trip on the common first step. Every other tool,
+gnomAD's included, is reached via `search_tools` → `call_tool`.
+
+**Self-healing hints work through the gateway.** Backends embed recovery hints in their
+responses (`fallback_tool`, `next_commands[].tool`). The router rewrites those references to
+the same namespaced form it gives the tools (`search_genes` → `clingen_search_genes`), so a
+hint you follow via `call_tool` resolves instead of failing. Toggle with `GF_REWRITE_HINTS`.
 
 > This server-side `search_tools`/`call_tool` surface is client-agnostic and independent from
 > Anthropic's API-level tool-search. The federated names are also valid for **Gemini** Remote
@@ -195,5 +214,26 @@ available in every project.
   ([pubtator-link#57](https://github.com/berntpopp/pubtator-link/pull/64)), dropping its
   `pubtator_` self-prefix at the source, so the stopgap `strip_prefix` block was removed.
 
-See `docs/specs/2026-06-13-genefoundry-router-design.md` and
+### Backend-conformance gaps (upstream, not router)
+
+The router is a **thin aggregator**: it namespaces and shapes the surface, but it must not
+fabricate provenance a backend never emitted or rewrite a backend's response envelope. These
+items are tracked in the source `-link` repos, not papered over here:
+
+- **`stringdb` envelope.** `stringdb-link` returns a bare `{partners, total_count}` — no
+  `success` flag, no `_meta`, no `recommended_citation`, no `unsafe_for_clinical_use` stamp.
+  Every other backend carries provenance + a research-use disclaimer. Fix is in
+  `stringdb-link` (adopt the fleet envelope); the router will **not** synthesize a citation,
+  since inventing provenance in a research-safety tool is worse than its absence.
+- **Envelope heterogeneity.** Four response shapes exist across the fleet (`success`+`_meta`;
+  `ok`/`data`/`error`/`meta`; result-wrapped; bare typed dicts). This is an inherent cost of
+  federation; the router does not normalize envelopes (lossy, and outside the thin-aggregator
+  boundary). A generic consumer should detect success across shapes; convergence is tracked via
+  the fleet response standard.
+- **`spliceai` latency.** `spliceai.predict_splicing` can take ~60 s even warm. The router
+  passes through the backend's own `cost_tier` / `expected_cold_latency_ms` / `taskSupport`
+  signals; agents should prefer background tasks for compute-tier tools rather than blocking.
+
+See `docs/specs/2026-06-13-genefoundry-router-design.md`,
+`docs/specs/2026-06-16-router-agentic-ergonomics-design.md`, and
 `docs/plans/2026-06-13-genefoundry-router-implementation.md`.

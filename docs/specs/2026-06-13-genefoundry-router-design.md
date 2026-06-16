@@ -181,7 +181,12 @@ Docker image + compose mirroring `gnomad-link/docker/` (base, `prod`, `dev`, `np
 1. Production URL pattern for backends (`https://<name>-link.<domain>/mcp`?) — fills `.env`.
 2. Standard **v1.1 verb canon** — extend with `predict`/`annotate`/`submit`/`export` (vs documented exceptions) for action/compute servers (spliceai, stringdb, pubtator).
 3. Default `GF_AUTH_MODE` for the first public deploy (`none` vs `jwt`).
-4. `always_visible` essentials set for `search_tools` (which 3–6 tools stay pinned).
+4. ~~`always_visible` essentials set for `search_tools` (which 3–6 tools stay pinned).~~
+   **Resolved (2026-06-16):** pin the fleet's entry-point resolvers
+   `gnomad_resolve_variant_id` + `gnomad_search_genes` (variant-ID normalization, symbol→gene)
+   — the most common first step, so pinning saves a `search_tools` round-trip. All other tools
+   route via `search_tools` → `call_tool`. See
+   [`2026-06-16-router-agentic-ergonomics-design.md`](2026-06-16-router-agentic-ergonomics-design.md) §5.
 
 ## 20. References
 
