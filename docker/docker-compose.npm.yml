@@ -1,6 +1,10 @@
 services:
   genefoundry-router:
-    ports: []
+    # !reset (not []) is required: Compose MERGES list fields across -f overlays, so a
+    # plain `ports: []` would NOT drop the base file's "${...:-8010}:8000" mapping — it
+    # would stay published on the host, exposing the auth=none gateway on the public IP.
+    # Behind NPM the router must be expose-only (reachable solely via the proxy network).
+    ports: !reset []
     expose:
       - "8000"
     networks:
@@ -9,4 +13,5 @@ services:
 networks:
   npm-network:
     external: true
-    name: ${NPM_NETWORK_NAME:-npm_network}
+    # The nginx-proxy-manager container is attached to npm_default on the VPS; default to it.
+    name: ${NPM_NETWORK_NAME:-npm_default}
