@@ -98,3 +98,23 @@ def load_manifest(path: str | Path) -> Manifest:
     """Load and validate the committed fleet manifest."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     return Manifest.model_validate(data)
+
+
+def make_fake_backend(name: str, tool_names: list[str]) -> FastMCP:
+    """Build a FastMCP server exposing trivial echo tools with the given names.
+
+    Back-compat builder for the in-process integration fixtures (no schemas/tags).
+    The richer, manifest-driven path is ``make_backend_from_spec``.
+    """
+    server = FastMCP(name)
+    for tool_name in tool_names:
+
+        def _make(tn: str):
+            async def _tool(value: str = "") -> dict[str, str]:
+                return {"tool": tn, "server": name, "value": value}
+
+            _tool.__name__ = tn
+            return _tool
+
+        server.tool(name=tool_name)(_make(tool_name))
+    return server
