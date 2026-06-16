@@ -10,8 +10,10 @@ def test_real_servers_yaml_parses():
     by_name = {b.name: b for b in backends}
     # 13 backends defined
     assert len(backends) == 13
-    # hgnc stays disabled until the live deployment is fixed (spec §3 caveat)
-    assert by_name["hgnc"].enabled is False
+    # hgnc deployed 2026-06-16 (hgnc-link.genefoundry.org); now enabled
+    assert by_name["hgnc"].enabled is True
+    # whole fleet is live: every backend enabled
+    assert all(b.enabled for b in backends)
     # pubtator adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64): it now
     # emits clean leaf names, so the stopgap strip_prefix transform is gone.
     assert by_name["pubtator"].transform is None

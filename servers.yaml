@@ -7,7 +7,7 @@ defaults:
 servers:
   - { name: gnomad,      repo: berntpopp/gnomad-link,        url_env: GF_GNOMAD_URL,      namespace: gnomad,      tags: [variant, gene, frequency, population] }
   - { name: gtex,        repo: berntpopp/gtex-link,          url_env: GF_GTEX_URL,        namespace: gtex,        tags: [expression, tissue] }
-  - { name: hgnc,        repo: berntpopp/hgnc-link,          url_env: GF_HGNC_URL,        namespace: hgnc,        tags: [gene, nomenclature], enabled: false }  # deployment blocker (serves mgi binary)
+  - { name: hgnc,        repo: berntpopp/hgnc-link,          url_env: GF_HGNC_URL,        namespace: hgnc,        tags: [gene, nomenclature] }  # deployed 2026-06-16 (hgnc-link.genefoundry.org)
   - { name: mgi,         repo: berntpopp/mgi-link,           url_env: GF_MGI_URL,         namespace: mgi,         tags: [mouse, phenotype, model] }
   - { name: uniprot,     repo: berntpopp/uniprot-link,       url_env: GF_UNIPROT_URL,     namespace: uniprot,     tags: [protein, function] }
   - { name: clingen,     repo: berntpopp/clingen-link,       url_env: GF_CLINGEN_URL,     namespace: clingen,     tags: [gene-disease, curation] }
