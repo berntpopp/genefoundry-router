@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
+from fastmcp import FastMCP
 from fastmcp.tools import Tool, ToolResult
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class _EchoTool(Tool):
@@ -44,3 +48,53 @@ def build_fake_tool(
         parameters=input_schema,
         tags=set(tags or []),
     )
+
+
+class ToolSpec(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: str
+    description: str = ""
+    inputSchema: dict[str, Any] = Field(  # noqa: N815
+        default_factory=lambda: {"type": "object", "properties": {}}
+    )
+    outputSchema: dict[str, Any] | None = None  # noqa: N815
+    annotations: dict[str, Any] | None = None
+    tags: list[str] = Field(default_factory=list)
+
+
+class BackendSpec(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    version: str | None = None
+    tools: list[ToolSpec] = Field(default_factory=list)
+
+
+class SnapshotMeta(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    captured_at: str
+    source: str
+    router_servers_file: str
+
+
+class Manifest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    snapshot_meta: SnapshotMeta
+    backends: dict[str, BackendSpec]
+
+
+def make_backend_from_spec(namespace: str, spec: BackendSpec) -> FastMCP:
+    """Build a FastMCP fake for one backend from its manifest spec.
+
+    ``outputSchema`` and ``annotations`` are captured in ``ToolSpec`` for snapshot
+    fidelity but are intentionally not forwarded to the fake (spec §6.1): they are
+    not BM25-searched (§3.1) and no test asserts on them.
+    """
+    server = FastMCP(namespace)
+    for tool in spec.tools:
+        server.add_tool(build_fake_tool(tool.name, tool.description, tool.inputSchema, tool.tags))
+    return server
+
+
+def load_manifest(path: str | Path) -> Manifest:
+    """Load and validate the committed fleet manifest."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    return Manifest.model_validate(data)
