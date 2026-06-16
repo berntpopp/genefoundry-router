@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import argparse
 from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Any
 
+import uvicorn
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from genefoundry_router.devtools.fakes import Manifest, make_backend_from_spec
+from genefoundry_router.devtools.fakes import Manifest, load_manifest, make_backend_from_spec
 from genefoundry_router.registry import BackendDef
 
 
@@ -56,3 +58,24 @@ def check_dev_config(
         elif backend.url != want:
             problems.append(f"{backend.namespace}: url {backend.url!r} != expected {want!r}")
     return problems
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Run the offline fake MCP fleet.")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=9100)
+    parser.add_argument("--manifest", default="tests/fixtures/fleet_manifest.json")
+    return parser
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    manifest = load_manifest(args.manifest)
+    for ns, url in url_map(manifest, args.host, args.port).items():
+        print(f"  {ns:<10} -> {url}")
+    app = build_fleet_app(manifest)
+    uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+
+
+if __name__ == "__main__":
+    main()

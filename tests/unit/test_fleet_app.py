@@ -1,6 +1,6 @@
 from starlette.routing import Mount
 
-from genefoundry_router.devtools.fake_fleet import build_fleet_app, url_map
+from genefoundry_router.devtools.fake_fleet import build_fleet_app, build_parser, url_map
 from genefoundry_router.devtools.fakes import load_manifest
 
 
@@ -23,3 +23,14 @@ def test_url_map_is_localhost_paths():
     manifest = load_manifest("tests/fixtures/fleet_manifest.json")
     urls = url_map(manifest, "127.0.0.1", 9100)
     assert urls["gnomad"] == "http://127.0.0.1:9100/gnomad/mcp"
+
+
+def test_cli_parser_defaults():
+    args = build_parser().parse_args([])
+    assert args.port == 9100
+    assert args.manifest == "tests/fixtures/fleet_manifest.json"
+
+
+def test_cli_parser_overrides():
+    args = build_parser().parse_args(["--port", "9200", "--manifest", "x.json"])
+    assert args.port == 9200 and args.manifest == "x.json"
