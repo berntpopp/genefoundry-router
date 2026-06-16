@@ -67,3 +67,19 @@ def test_compact_omits_returns_when_no_output_schema():
 def test_summarize_returns_handles_non_object_schema():
     assert summarize_returns({"type": "string"}) == "string"
     assert summarize_returns({"type": "array", "items": {"type": "string"}}) == "string[]"
+
+
+def test_summarize_returns_type_label_edge_cases():
+    # $ref and allOf collapse to object; nullable anyOf renders with a trailing '?'
+    assert summarize_returns({"$ref": "#/$defs/Record"}) == "object"
+    assert summarize_returns({"allOf": [{"type": "object"}]}) == "object"
+    assert summarize_returns(None) == "any"
+    nullable = {"properties": {"x": {"anyOf": [{"type": "string"}, {"type": "null"}]}}}
+    assert summarize_returns(nullable) == "{x: string?}"
+
+
+def test_summarize_returns_truncates_wide_objects():
+    props = {f"f{i}": {"type": "string"} for i in range(20)}
+    summary = summarize_returns({"type": "object", "properties": props})
+    assert summary.endswith(", …}")
+    assert summary.count(":") == 12  # only the first 12 fields are named

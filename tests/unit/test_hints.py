@@ -2,9 +2,29 @@
 
 from __future__ import annotations
 
-from genefoundry_router.hints import rewrite_tool_refs
+from mcp.types import TextContent
+
+from genefoundry_router.hints import _rewrite_block, rewrite_tool_refs
 
 _NS = {"clingen", "gnomad", "mgi"}
+
+
+def test_rewrite_block_leaves_non_json_prose_untouched():
+    # safety property: free-text content is never regex-rewritten
+    block = TextContent(type="text", text="No gene found. Try search_genes instead.")
+    assert _rewrite_block(block, "clingen", _NS) is block
+
+
+def test_rewrite_block_rewrites_json_text_in_place():
+    block = TextContent(type="text", text='{"fallback_tool": "search_genes"}')
+    out = _rewrite_block(block, "clingen", _NS)
+    assert out is not block  # a rewritten copy
+    assert '"clingen_search_genes"' in out.text
+
+
+def test_rewrite_block_unchanged_json_returns_same_block():
+    block = TextContent(type="text", text='{"result": 1}')
+    assert _rewrite_block(block, "clingen", _NS) is block
 
 
 def test_rewrites_fallback_tool_and_next_commands():
