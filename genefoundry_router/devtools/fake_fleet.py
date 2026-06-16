@@ -9,6 +9,7 @@ from starlette.applications import Starlette
 from starlette.routing import Mount
 
 from genefoundry_router.devtools.fakes import Manifest, make_backend_from_spec
+from genefoundry_router.registry import BackendDef
 
 
 def url_map(manifest: Manifest, host: str, port: int) -> dict[str, str]:
@@ -37,3 +38,21 @@ def build_fleet_app(manifest: Manifest) -> Starlette:
 
     routes = [Mount(f"/{ns}", app=child) for ns, child in children.items()]
     return Starlette(routes=routes, lifespan=lifespan)
+
+
+def check_dev_config(
+    registry: list[BackendDef],
+    manifest: Manifest,
+    host: str,
+    port: int,
+) -> list[str]:
+    """Return human-readable mismatches between the registry URLs and the fleet URLs."""
+    expected = url_map(manifest, host, port)
+    problems: list[str] = []
+    for backend in registry:
+        want = expected.get(backend.namespace)
+        if want is None:
+            problems.append(f"{backend.namespace}: not served by the fleet manifest")
+        elif backend.url != want:
+            problems.append(f"{backend.namespace}: url {backend.url!r} != expected {want!r}")
+    return problems

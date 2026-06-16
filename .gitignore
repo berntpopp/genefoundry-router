@@ -13,6 +13,7 @@ coverage.xml
 .env.*
 !.env.example
 !.env.docker.example
+!.env.dev
 .claude/
 .idea/
 .vscode/
