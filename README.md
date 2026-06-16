@@ -116,7 +116,11 @@ fleet. Runs behind nginx-proxy-manager; set `GF_PUBLIC_BASE_URL` and ensure forw
 
 ```bash
 make docker-build      # build the image
-make docker-up         # start the dev stack
+make docker-up         # start the stack (host port 8010 by default)
+make docker-rebuild    # rebuild image + (re)start; reads ../.env
+make docker-restart    # recreate the container to re-read ../.env (no rebuild)
+make docker-down       # stop the stack
+make docker-logs       # follow logs
 ```
 
 ## Local testing (offline fake fleet)
@@ -135,10 +139,58 @@ Refresh the manifest from the live fleet when tool surfaces change (online):
 make snapshot-fleet
 ```
 
+## Local testing against the live fleet
+
+Point the router at the deployed VPS backends (`https://<repo>.genefoundry.org/mcp`) with auth
+disabled, then register it with your MCP host.
+
+**1. Configure `.env`** (gitignored). Copy the template and set each `GF_*_URL` to its live
+domain; keep `GF_AUTH_MODE=none` for local testing. Note `GF_SPLICEAI_URL` uses the
+`spliceailookup-link` domain, not the `spliceai` namespace:
+
+```bash
+cp .env.example .env
+# GF_GNOMAD_URL=https://gnomad-link.genefoundry.org/mcp
+# ...
+# GF_SPLICEAI_URL=https://spliceailookup-link.genefoundry.org/mcp
+# GF_AUTH_MODE=none
+```
+
+**2. Run it** — pick one:
+
+```bash
+# A) Host process on :8000 — `make run` now exports .env automatically
+make run
+
+# B) Docker on :8010 — base compose reads ../.env; mirrors production
+make docker-rebuild    # build + (re)start
+make docker-restart    # recreate to re-read .env after editing it (no rebuild)
+make docker-down       # stop
+```
+
+**3. Verify** all 13 backends federate:
+
+```bash
+make doctor                                          # host path: "OK <ns>: N tools" x13
+curl -s localhost:8010/health | python -m json.tool  # docker path: 13 enabled, all reachable
+```
+
+**4. Add to Claude Code** (auth none → no headers needed). Use the port for the path you ran:
+
+```bash
+claude mcp add --transport http genefoundry http://127.0.0.1:8010/mcp   # docker (:8010)
+# or                              ...        http://127.0.0.1:8000/mcp   # host (:8000)
+```
+
+Then `claude mcp list` should show `genefoundry ✓ connected`, and `/mcp` lists it in-session.
+The catalog presents as `search_tools` + `call_tool` + the pinned essentials by design — the
+other ~180 tools are reached via `search_tools` then `call_tool`. Add `--scope user` to make it
+available in every project.
+
 ## Status caveats
 
-- **hgnc** is `enabled: false` until its live deployment is fixed (currently serves the
-  `mgi-link` binary).
+- **hgnc** is deployed (`hgnc-link.genefoundry.org`) and `enabled: true` as of 2026-06-16; all
+  13 backends are live. (The earlier "serves mgi-link binary" note was an obsolete deploy incident.)
 - **pubtator** no longer needs a transform: `pubtator-link` adopted Tool-Naming Standard v1
   ([pubtator-link#57](https://github.com/berntpopp/pubtator-link/pull/64)), dropping its
   `pubtator_` self-prefix at the source, so the stopgap `strip_prefix` block was removed.

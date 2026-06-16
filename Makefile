@@ -69,8 +69,8 @@ precommit: ci-local ## Run checks expected before commit
 clean: ## Remove local caches and generated reports
 	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage coverage.xml
 
-run: ## Run the router over Streamable HTTP locally
-	uv run genefoundry-router run --host 127.0.0.1 --port 8000
+run: ## Run the router over Streamable HTTP locally (exports .env)
+	set -a; [ -f .env ] && . ./.env; set +a; uv run genefoundry-router run --host 127.0.0.1 --port 8000
 
 validate: ## Validate servers.yaml + env
 	uv run genefoundry-router validate
@@ -92,6 +92,12 @@ docker-down: ## Stop Docker dev stack
 
 docker-logs: ## Follow Docker logs
 	$(DOCKER_COMPOSE) -f docker/docker-compose.yml logs -f
+
+docker-rebuild: ## Rebuild image and (re)start the local stack (reads ../.env)
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml up -d --build
+
+docker-restart: ## Recreate the container to re-read ../.env (no image rebuild)
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml up -d --force-recreate
 
 docker-prod-config: ## Render production Compose configuration
 	$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
