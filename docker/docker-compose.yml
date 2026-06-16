@@ -1,3 +1,11 @@
+# Explicit project name isolates this stack from other -link repos. Without it, Compose
+# defaults the project to the parent-dir basename ("docker"), which every repo that keeps
+# its compose at docker/docker-compose.yml shares — pooling unrelated containers/volumes
+# into one "docker" project and triggering spurious orphan-container warnings (and making
+# `--remove-orphans` from here capable of deleting a sibling stack). See Compose spec:
+# https://docs.docker.com/reference/compose-file/version-and-name/
+name: genefoundry-router
+
 services:
   genefoundry-router:
     build:

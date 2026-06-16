@@ -12,6 +12,13 @@ def test_base_compose_defines_service_and_healthcheck():
     assert "8000" in str(svc["ports"])
 
 
+def test_base_compose_sets_explicit_project_name():
+    # Isolates this stack from sibling -link repos that also root their compose at
+    # docker/, which otherwise all collapse into one default "docker" project.
+    data = yaml.safe_load((DOCKER / "docker-compose.yml").read_text())
+    assert data["name"] == "genefoundry-router"
+
+
 def test_prod_overlay_hardens():
     data = yaml.safe_load((DOCKER / "docker-compose.prod.yml").read_text())
     svc = data["services"]["genefoundry-router"]
