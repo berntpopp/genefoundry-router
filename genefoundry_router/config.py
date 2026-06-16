@@ -38,6 +38,9 @@ class RouterSettings(BaseSettings):
     # Tool search
     GF_SEARCH_MAX_RESULTS: int = 5
 
+    # Rewrite bare tool references in backend responses to namespaced form (Finding 1).
+    GF_REWRITE_HINTS: bool = True
+
     # Discovery
     GF_POLL_INTERVAL: int = 0  # seconds; 0 disables the polling re-list
 

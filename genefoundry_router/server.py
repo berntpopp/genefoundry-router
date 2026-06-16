@@ -14,6 +14,7 @@ from genefoundry_router.auth import build_auth
 from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
+from genefoundry_router.hints import NamespaceHintMiddleware
 from genefoundry_router.normalization import apply_normalizations
 from genefoundry_router.observability import (
     MetricsMiddleware,
@@ -47,6 +48,11 @@ def build_server(
     auth = build_auth(settings)  # caller auth at the edge; never forwarded upstream (R1.6)
     server: FastMCP = FastMCP("genefoundry", auth=auth)
     server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
+    if settings.GF_REWRITE_HINTS:
+        # Finding 1 — namespace bare tool references embedded in backend responses so the
+        # fleet's self-healing hints resolve through call_tool. Enabled backends only.
+        namespaces = {b.namespace for b in registry if b.enabled}
+        server.add_middleware(NamespaceHintMiddleware(namespaces))
     for backend in registry:
         if not backend.enabled:
             log.info("backend_skipped", backend=backend.name, reason="disabled")
