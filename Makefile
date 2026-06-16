@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config dev-fleet run-dev test-e2e snapshot-fleet ci-full
 
 .DEFAULT_GOAL := help
 
@@ -98,3 +98,17 @@ docker-prod-config: ## Render production Compose configuration
 
 docker-npm-config: ## Render NPM Compose configuration
 	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
+
+dev-fleet: ## Run the offline fake MCP fleet (port 9100)
+	uv run python -m genefoundry_router.devtools.fake_fleet
+
+run-dev: ## Run the router against the fake fleet (exports .env.dev)
+	set -a; . ./.env.dev; set +a; uv run genefoundry-router run --servers-file servers.dev.yaml
+
+test-e2e: ## Run the offline end-to-end fake-fleet tests
+	uv run pytest tests/e2e -q
+
+snapshot-fleet: ## Refresh the fleet manifest from live backends (online)
+	uv run python scripts/snapshot_fleet.py --captured-at $$(date -u +%FT%TZ)
+
+ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
