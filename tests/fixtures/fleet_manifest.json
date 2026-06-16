@@ -1,0 +1,59 @@
+{
+  "snapshot_meta": {
+    "captured_at": "2026-06-16T00:00:00Z",
+    "source": "local",
+    "router_servers_file": "servers.yaml"
+  },
+  "backends": {
+    "gnomad": {
+      "version": "5.0.0",
+      "tools": [
+        {"name": "resolve_variant_id", "description": "Resolve a variant to a canonical gnomAD id",
+         "tags": ["variant"],
+         "inputSchema": {"type": "object",
+           "properties": {"variant_id": {"type": "string", "description": "rsID or chr-pos-ref-alt"}},
+           "required": ["variant_id"]}},
+        {"name": "search_genes", "description": "Search genes by symbol",
+         "tags": ["gene"],
+         "inputSchema": {"type": "object",
+           "properties": {"gene_symbol": {"type": "string", "description": "HGNC gene symbol"}},
+           "required": ["gene_symbol"]}},
+        {"name": "get_variant_details", "description": "Variant frequencies across populations",
+         "tags": ["variant", "frequency"],
+         "inputSchema": {"type": "object",
+           "properties": {"variant_id": {"type": "string", "description": "canonical variant id"}},
+           "required": ["variant_id"]}}
+      ]
+    },
+    "gtex": {
+      "version": "1.0.0",
+      "tools": [
+        {"name": "get_gene_information", "description": "Gene metadata from GTEx",
+         "tags": ["expression"],
+         "inputSchema": {"type": "object",
+           "properties": {"gene_id": {"type": "string", "description": "symbol or GENCODE id"}},
+           "required": ["gene_id"]}},
+        {"name": "search_genes", "description": "Search GTEx genes",
+         "tags": ["gene"],
+         "inputSchema": {"type": "object",
+           "properties": {"query": {"type": "string", "description": "free-text gene query"}},
+           "required": ["query"]}}
+      ]
+    },
+    "pubtator": {
+      "version": "2.0.0",
+      "tools": [
+        {"name": "search_literature", "description": "Search biomedical literature",
+         "tags": ["literature"],
+         "inputSchema": {"type": "object",
+           "properties": {"query": {"type": "string", "description": "literature search query"}},
+           "required": ["query"]}},
+        {"name": "get_passages", "description": "Fetch passages for a PMID",
+         "tags": ["literature"],
+         "inputSchema": {"type": "object",
+           "properties": {"pmid": {"type": "string", "description": "PubMed id"}},
+           "required": ["pmid"]}}
+      ]
+    }
+  }
+}

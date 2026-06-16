@@ -1,6 +1,13 @@
+from pathlib import Path
+
 from fastmcp import Client, FastMCP
 
-from genefoundry_router.devtools.fakes import Manifest, build_fake_tool, make_backend_from_spec
+from genefoundry_router.devtools.fakes import (
+    Manifest,
+    build_fake_tool,
+    load_manifest,
+    make_backend_from_spec,
+)
 
 GENE_SCHEMA = {
     "type": "object",
@@ -79,3 +86,15 @@ async def test_make_backend_from_spec_exposes_tools():
     async with Client(make_backend_from_spec("gtex", spec)) as client:
         names = {t.name for t in await client.list_tools()}
     assert names == {"get_gene_information"}
+
+
+FIXTURE = Path("tests/fixtures/fleet_manifest.json")
+
+
+def test_committed_manifest_is_valid_and_has_pinned_essentials():
+    manifest = load_manifest(FIXTURE)
+    gnomad = manifest.backends["gnomad"]
+    leaves = {t.name for t in gnomad.tools}
+    assert {"resolve_variant_id", "search_genes"} <= leaves
+    gtex_leaves = {t.name for t in manifest.backends["gtex"].tools}
+    assert "search_genes" in gtex_leaves
