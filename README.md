@@ -17,6 +17,13 @@ backend's data.
 
 > ⚕️ **Research use only. Not clinical decision support.** Mirrors each backend's disclaimers.
 
+**Hosted endpoint:** the live router is served at **`https://genefoundry.org/mcp`** (health check at
+[`/health`](https://genefoundry.org/health)). Add it to any MCP host — no install required:
+
+```bash
+claude mcp add --transport http genefoundry https://genefoundry.org/mcp
+```
+
 ## MCP services
 
 Backends are declared in committed [`servers.yaml`](servers.yaml) (URLs in gitignored `.env`).
@@ -24,8 +31,8 @@ Backends are declared in committed [`servers.yaml`](servers.yaml) (URLs in gitig
 
 | Namespace | Domain | Data source | Tools | Repo |
 |-----------|--------|-------------|------:|------|
-| `gnomad` | Variant / gene / population frequency | [gnomAD](https://gnomad.broadinstitute.org/) | 22 | [gnomad-link](https://github.com/berntpopp/gnomad-link) |
 | `pubtator` | Literature & entity annotation | [PubTator3](https://www.ncbi.nlm.nih.gov/research/pubtator3/) | 43 | [pubtator-link](https://github.com/berntpopp/pubtator-link) |
+| `gnomad` | Variant / gene / population frequency | [gnomAD](https://gnomad.broadinstitute.org/) | 22 | [gnomad-link](https://github.com/berntpopp/gnomad-link) |
 | `clingen` | Gene–disease curation | [ClinGen](https://clinicalgenome.org/) | 17 | [clingen-link](https://github.com/berntpopp/clingen-link) |
 | `uniprot` | Protein function | [UniProt](https://www.uniprot.org/) | 15 | [uniprot-link](https://github.com/berntpopp/uniprot-link) |
 | `mgi` | Mouse phenotype & models | [MGI](https://www.informatics.jax.org/) | 13 | [mgi-link](https://github.com/berntpopp/mgi-link) |
@@ -58,7 +65,7 @@ uv run genefoundry-router run --host 127.0.0.1 --port 8000
 curl -s localhost:8000/health | python -m json.tool
 ```
 
-Add it to your MCP host with the `/mcp` URL:
+Then point your MCP host at the local instance:
 
 ```bash
 claude mcp add --transport http genefoundry http://127.0.0.1:8000/mcp
