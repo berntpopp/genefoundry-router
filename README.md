@@ -73,11 +73,32 @@ claude mcp add --transport http genefoundry http://127.0.0.1:8000/mcp
 
 ## How discovery works
 
-Listing ~200 tools to a model is unworkable, so the router exposes a **search surface** instead:
-**`search_tools`** (BM25 relevance search over the federated catalog) + **`call_tool`** (invoke a
-hit), plus two pinned gnomAD resolvers (`gnomad_resolve_variant_id`, `gnomad_search_genes`) for the
-common first step. Every other tool is reached via `search_tools` → `call_tool`. The federated
-names are also valid for Gemini Remote MCP (snake_case, `[a-z0-9_]`, ≤64 chars).
+`genefoundry` is a **meta-router**, not a flat tool server. Listing ~200 tools to a model is
+unworkable, so the router exposes a **search surface** instead of the full catalog:
+
+- **`search_tools`** — BM25 relevance search over the *entire* federated catalog.
+- **`call_tool`** — invoke a hit by its `<namespace>_<tool>` name.
+- two pinned gnomAD resolvers (`gnomad_resolve_variant_id`, `gnomad_search_genes`) for the
+  common first step.
+
+**Everything else is reached via `search_tools` → `call_tool`** (and is also directly callable by
+full name once known). A typical flow:
+
+```text
+search_tools(query="splicing prediction")        # → hit: name="spliceai_predict_splicing", inputSchema, returns
+call_tool(name="spliceai_predict_splicing", arguments={...})
+```
+
+The model is oriented on this two-layer model via the MCP **`instructions`** field (set on the
+server) plus the `search_tools`/`call_tool` descriptions. Federated names are also valid for Gemini
+Remote MCP (snake_case, `[a-z0-9_]`, ≤64 chars).
+
+> **Two traps to avoid** (see [#3](https://github.com/berntpopp/genefoundry-router/issues/3)).
+> A capability missing from your **host/client-side tool list is not missing** — the host only
+> sees the three entry points above; call `search_tools` before concluding a tool doesn't exist.
+> And `search_tools` returns *data*, so you **don't re-run a host tool search to invoke a hit** —
+> just call `call_tool`. An `Unknown tool: call_tool` means your client evicted it; re-run
+> `search_tools` to rediscover and continue (recoverable, not a router fault).
 
 ## Configuration
 

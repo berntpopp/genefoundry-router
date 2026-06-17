@@ -15,6 +15,7 @@ from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
 from genefoundry_router.hints import NamespaceHintMiddleware
+from genefoundry_router.instructions import build_instructions
 from genefoundry_router.normalization import apply_normalizations
 from genefoundry_router.observability import (
     MetricsMiddleware,
@@ -46,7 +47,9 @@ def build_server(
     """
     proxy_targets = proxy_targets or {}
     auth = build_auth(settings)  # caller auth at the edge; never forwarded upstream (R1.6)
-    server: FastMCP = FastMCP("genefoundry", auth=auth)
+    # instructions: orient the host's model on the two-layer search surface so a
+    # capability absent from the top-level listing isn't read as missing (issue #3).
+    server: FastMCP = FastMCP("genefoundry", auth=auth, instructions=build_instructions(registry))
     server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
     if settings.GF_REWRITE_HINTS:
         # Finding 1 — namespace bare tool references embedded in backend responses so the

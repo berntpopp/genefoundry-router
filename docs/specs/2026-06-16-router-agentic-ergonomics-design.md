@@ -128,3 +128,43 @@ question; this is the answer).
 
 Backend-repo changes (F3/F4/F5 implementations), auth, transport, deployment of the router
 itself. No new module exceeds the 600-LOC budget; `hints.py` is new and single-purpose.
+
+## 9. Addendum (2026-06-18) — F8 discoverability orientation (issue #3)
+
+**Finding (🟠 ergonomics).** A model driving the router twice misread its two-layer
+discovery model ([#3](https://github.com/berntpopp/genefoundry-router/issues/3)):
+
+- It searched its **host/client-side** tool list for "spliceai", saw only the router's
+  top-level entry points (`search_tools`, `call_tool`, two pinned gnomAD resolvers), and
+  concluded the capability did not exist — instead of querying the router's own
+  `search_tools`. The host cannot see behind the search surface; only `search_tools` can.
+- Separately, re-running a **host-side** tool search evicted the deferred `call_tool` from
+  the loaded set; the resulting `Unknown tool: call_tool` was read as router flakiness
+  rather than a recoverable client eviction.
+
+**Root cause.** The router shipped **no MCP `instructions`** — the spec-native channel a
+server uses to teach a host's model how to drive it — and FastMCP's default
+`search_tools`/`call_tool` descriptions do not convey the gateway model, the
+`<namespace>_<tool>` name format, or that an eviction is recoverable. Neither failure is a
+code defect; both are missing orientation. (Per the MCP spec, instruction injection into the
+system prompt is "up to the implementer" and best-effort, so the guidance is duplicated into
+the tool descriptions for defense in depth. The official Anthropic Tool Search Tool docs do
+not cover a host search layered over a server that itself exposes a search tool — this
+two-layer case is genuinely undocumented, so the router must self-document.)
+
+**Fix (router-side, this repo).**
+
+1. `instructions.py` — `build_instructions(registry)` produces the server `instructions`
+   string (set on `FastMCP("genefoundry", instructions=…)`): names the search→call
+   workflow, lists the **enabled** namespaces so breadth is visible without a round-trip,
+   states that absence from the top-level list ≠ missing, and frames `Unknown tool` as a
+   recoverable client eviction (re-run `search_tools`). Disabled backends are omitted.
+2. `tool_search.py` — `search_tools` description rewritten to frame it as the gateway and
+   seeded with backend keywords (so a host tool-search for "spliceai" surfaces the router
+   entry point); `call_tool` description overridden (reusing FastMCP's proxy) to document
+   the `<namespace>_<tool>` format and the self-healing recovery step.
+
+**Deliberately NOT changed.** The pinned set stays at the two §5 resolvers — expanding
+`always_visible` to dodge the search step trades away the token savings that are the whole
+point of the surface (design-spec §19 Q4). Host-side tool-search eviction is a host
+behavior the router cannot fix; it is documented, not worked around.

@@ -34,6 +34,20 @@ DEFAULT_ALWAYS_VISIBLE: list[str] = [
 
 _MAX_RETURN_FIELDS = 12
 
+# call_tool's default FastMCP description ("Call a tool by name…") doesn't convey the
+# namespaced name format or that a host's "Unknown tool" eviction is recoverable, so we
+# override it (issue #3). Kept here as a constant so the override stays a one-liner.
+_CALL_TOOL_DESCRIPTION = (
+    "Invoke any federated tool by its full `<namespace>_<tool>` name "
+    "(e.g. `spliceai_predict_splicing`), passing the tool's arguments as `arguments`. "
+    "Get the exact name and inputSchema from a `search_tools` hit first if you don't "
+    "already know them. You do NOT need to re-run any client/host-side tool search to "
+    "call here: `search_tools` only returns data, and `call_tool` is always available "
+    "on this server. If a call returns 'Unknown tool: <name>', your client dropped the "
+    "definition from its loaded set — re-run `search_tools` to rediscover it and call "
+    "again. That is recoverable, not a router failure."
+)
+
 
 def _type_label(schema: Any) -> str:
     """Terse one-token type label for a JSON-schema fragment (heuristic, for summaries)."""
@@ -105,10 +119,17 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             ] = "compact",
             ctx: Context = None,  # type: ignore[assignment]
         ) -> str | list[dict[str, Any]]:
-            """Search for tools using natural language.
+            """Search the FEDERATED tool catalog and return matching tool definitions.
 
-            Returns matching tool definitions ranked by relevance. Defaults to a
-            compact form (full inputSchema, one-line ``returns`` summary); pass
+            genefoundry is a meta-router: this is the GATEWAY to its ~200 tools across
+            the GeneFoundry fleet (genes, variants, diseases, phenotypes, expression,
+            protein interactions, splicing prediction (spliceai), VEP consequence,
+            ClinVar significance, literature, ontologies, …). Apart from ``call_tool``
+            and two pinned gnomAD resolvers, tools are not listed up front — so if a
+            capability is not in your client's tool list, search for it HERE before
+            concluding it is missing. Hits are ranked by BM25 relevance; each hit's
+            ``name`` is the ``<namespace>_<tool>`` you then pass to ``call_tool``.
+            Defaults to a compact form (full inputSchema + one-line ``returns``); pass
             ``detail="full"`` for the complete output schema.
             """
             hidden = await transform._get_visible_tools(ctx)
@@ -118,6 +139,12 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             return serialize_tools_compact(list(results))
 
         return Tool.from_function(fn=search_tools, name=self._search_tool_name)
+
+    def _make_call_tool(self) -> Tool:
+        """Reuse FastMCP's call_tool proxy but with a self-healing description."""
+        tool = super()._make_call_tool()
+        tool.description = _CALL_TOOL_DESCRIPTION
+        return tool
 
 
 def apply_tool_search(
