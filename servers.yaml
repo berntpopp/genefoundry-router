@@ -18,3 +18,9 @@ servers:
   - { name: spliceai,    repo: berntpopp/spliceailookup-link, url_env: GF_SPLICEAI_URL,   namespace: spliceai,    tags: [variant, splicing, prediction] }
   - { name: genereviews, repo: berntpopp/genereviews-link,   url_env: GF_GENEREVIEWS_URL, namespace: genereviews, tags: [literature, gene-disease] }
   - { name: pubtator,    repo: berntpopp/pubtator-link,      url_env: GF_PUBTATOR_URL,    namespace: pubtator,    tags: [literature, entity] }  # adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64) — no transform needed
+  # --- Staged 2026-06-17: reviewed, Tool-Naming v1 clean (no transform). enabled:false until
+  #     <name>-link.genefoundry.org is deployed; flip to true once DNS + container are live. ---
+  - { name: clinvar,     repo: berntpopp/clinvar-link,       url_env: GF_CLINVAR_URL,     namespace: clinvar,     tags: [variant, clinical-significance, classification], enabled: false }
+  - { name: vep,         repo: berntpopp/vep-link,           url_env: GF_VEP_URL,         namespace: vep,         tags: [variant, annotation, consequence], enabled: false }  # action server: annotate/recode/liftover verbs (Standard v1.1-pending), still unprefixed
+  - { name: panelapp,    repo: berntpopp/panelapp-link,      url_env: GF_PANELAPP_URL,    namespace: panelapp,    tags: [gene-panel, gene-disease, curation], enabled: false }
+  - { name: mondo,       repo: berntpopp/mondo-link,         url_env: GF_MONDO_URL,       namespace: mondo,       tags: [disease, ontology], enabled: false }
