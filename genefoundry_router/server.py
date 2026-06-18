@@ -26,7 +26,7 @@ from genefoundry_router.observability import (
 )
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.security import add_origin_validation
-from genefoundry_router.tool_search import apply_tool_search
+from genefoundry_router.tool_search import apply_tool_search, resolve_entrypoints
 
 log = structlog.get_logger(__name__)
 
@@ -66,7 +66,7 @@ def build_server(
             continue
         register_backend(server, backend, proxy_target=target)
     if enable_search:
-        apply_tool_search(server, settings)
+        apply_tool_search(server, settings, always_visible=resolve_entrypoints(registry))
     return server
 
 
@@ -94,7 +94,9 @@ def build_app(
     async def lifespan(_app: FastAPI) -> Any:
         async with mcp_app.lifespan(_app):
             await apply_normalizations(server, registry)  # R1.2 — async, after mount
-            apply_tool_search(server, settings)  # ordering: after normalization
+            apply_tool_search(  # ordering: after normalization
+                server, settings, always_visible=resolve_entrypoints(registry)
+            )
             targets = proxy_targets or {}
             for b in registry:  # seed /health reachability
                 if b.enabled:

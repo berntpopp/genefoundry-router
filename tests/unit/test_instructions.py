@@ -11,7 +11,12 @@ from genefoundry_router.registry import BackendDef
 
 def _registry() -> list[BackendDef]:
     return [
-        BackendDef(name="gnomad", url_env="X", namespace="gnomad"),
+        BackendDef(
+            name="gnomad",
+            url_env="X",
+            namespace="gnomad",
+            entrypoints=["resolve_variant_id", "search_genes"],
+        ),
         BackendDef(name="spliceai", url_env="Y", namespace="spliceai"),
         BackendDef(name="hgnc", url_env="Z", namespace="hgnc", enabled=False),
     ]
@@ -54,3 +59,32 @@ def test_mirrors_research_use_disclaimer() -> None:
 
 def test_handles_empty_registry() -> None:
     assert isinstance(build_instructions([]), str)
+
+
+def test_names_canonical_entrypoints_by_namespaced_name() -> None:
+    # The BM25-miss fix: canonical resolvers are named directly so the model can
+    # call them without relying on relevance-ranked search (deep-research finding).
+    text = build_instructions(_registry())
+    assert "gnomad_resolve_variant_id" in text
+    assert "gnomad_search_genes" in text
+
+
+def test_entrypoint_section_omits_disabled_backends() -> None:
+    reg = [
+        BackendDef(
+            name="mondo",
+            url_env="X",
+            namespace="mondo",
+            entrypoints=["resolve_disease"],
+        ),
+        BackendDef(
+            name="hgnc",
+            url_env="Y",
+            namespace="hgnc",
+            enabled=False,
+            entrypoints=["resolve_symbol"],
+        ),
+    ]
+    text = build_instructions(reg)
+    assert "mondo_resolve_disease" in text
+    assert "hgnc_resolve_symbol" not in text

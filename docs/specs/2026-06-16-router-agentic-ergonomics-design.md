@@ -164,7 +164,41 @@ two-layer case is genuinely undocumented, so the router must self-document.)
    entry point); `call_tool` description overridden (reusing FastMCP's proxy) to document
    the `<namespace>_<tool>` format and the self-healing recovery step.
 
-**Deliberately NOT changed.** The pinned set stays at the two §5 resolvers — expanding
-`always_visible` to dodge the search step trades away the token savings that are the whole
-point of the surface (design-spec §19 Q4). Host-side tool-search eviction is a host
-behavior the router cannot fix; it is documented, not worked around.
+**Deliberately NOT changed (initial fix).** The pinned set first stayed at the two §5
+resolvers — but see §10.
+
+## 10. Addendum (2026-06-18) — F9 canonical-resolver discoverability (config-driven entry points)
+
+**Finding (🟠 discoverability).** Reproduced live against the deployed router: BM25
+`search_tools` does **not** reliably surface a backend's canonical resolver. Searching the
+exact phrase *"MONDO disease ontology resolve label synonym to MONDO id"* returned clingen
+and gencc tools but **not** `mondo_resolve_disease` — the canonical disease resolver was
+invisible to its own obvious query.
+
+**Root cause (verified against installed FastMCP 3.4.2 source).** `BM25SearchTransform`
+flattens each tool's name + description + every parameter name/description into ONE
+bag-of-words document with **no field weighting (no BM25F) and no per-tool boost**, and the
+length-normalization term *penalizes* terse tools. So a verbose tool that repeats a keyword
+outranks a terse canonical resolver, and the constructor exposes no scoring hook.
+`always_visible` pinning is the only documented escape. (Confirmed by a deep, multi-source,
+adversarially-verified research pass; cross-checked against peer routers — fastmcp-gateway
+uses a deterministic two-tier *domain menu*, IBM ContextForge and MetaMCP avoid search
+entirely via curated allowlists/namespacing. MCP itself has no built-in tool search/filter —
+SEP-1300 was rejected — so any search surface is a router add-on.)
+
+**Fix (config-driven, this repo).** A per-backend `entrypoints:` list in `servers.yaml`
+names each backend's canonical resolver leaf tools. `tool_search.resolve_entrypoints` projects
+them to namespaced names that are (a) pinned via `always_visible` (deterministic BM25 bypass)
+and (b) named in the server `instructions` "COMMON ENTRY POINTS" block (the always-read
+complement, since host injection of `instructions` is not guaranteed). Both are *generated*
+from one config field, so curation is a `servers.yaml` edit, not a code change — consistent
+with "namespacing/curation is the gateway's job". Seeded with the cross-domain resolvers
+`gnomad_resolve_variant_id`, `gnomad_search_genes`, `gencc_resolve_identifier` (gene+disease),
+`mondo_resolve_disease`; backends add their own as they confirm canonical leaf names.
+
+**Why this over alternatives.** Pinning + instructions is the cheap, highest-leverage fix that
+*directly* defeats the BM25-miss. Heavier levers were deferred: a `list_domains`/facet
+meta-tool (deterministic but adds a synthetic tool + code) and hybrid semantic+keyword search
+(unproven — the semantic-retrieval evidence's headline numbers were refuted in verification).
+Discoverability is now measured by an offline benchmark (`scripts/`/`tests/`) rather than
+asserted — see the discoverability-benchmark work.

@@ -17,7 +17,27 @@ instructions focus on the cross-tool *workflow*, not on repeating per-tool docs.
 
 from __future__ import annotations
 
-from genefoundry_router.registry import BackendDef
+from genefoundry_router.registry import BackendDef, qualified_name
+
+
+def _entrypoints_block(registry: list[BackendDef]) -> str:
+    """One line per enabled backend that declares canonical resolvers, naming the
+    namespaced tools so the model can call them directly — the always-read complement
+    to pinning that survives even when a host drops the server instructions."""
+    lines = [
+        f"  - {b.namespace}: " + ", ".join(qualified_name(b.namespace, e) for e in b.entrypoints)
+        for b in registry
+        if b.enabled and b.entrypoints
+    ]
+    if not lines:
+        return ""
+    body = "\n".join(lines)
+    return (
+        "\n\nCOMMON ENTRY POINTS — canonical resolvers (free text -> stable ID). These "
+        "are pinned (always listed) AND callable directly without a search; start here "
+        "to turn a user's gene/variant/disease text into the IDs other tools need:\n"
+        f"{body}"
+    )
 
 
 def build_instructions(registry: list[BackendDef]) -> str:
@@ -39,15 +59,14 @@ genefoundry is a META-ROUTER (a gateway), not a data server. It federates the \
 GeneFoundry "-link" fleet — {breadth} — behind ONE MCP endpoint and exposes a \
 SEARCH SURFACE instead of listing its whole ~200-tool catalog at once.
 
-WHAT IS LISTED vs WHAT EXISTS. Only three things appear in the top-level tool list: \
-`search_tools`, `call_tool`, and two pinned gnomAD resolvers \
-(`gnomad_resolve_variant_id`, `gnomad_search_genes`). Every other capability — \
-across {catalog} — is present and callable, but it is reached THROUGH search, not \
-shown up front. If a capability (splicing prediction, VEP consequence, ClinVar \
-significance, disease ontology, gene-disease curation, expression, literature, …) \
-is absent from your client's tool list, that does NOT mean it is missing — it means \
-you have not searched yet. Call `search_tools` before concluding a tool does not \
-exist.
+WHAT IS LISTED vs WHAT EXISTS. Only `search_tools`, `call_tool`, and a few pinned \
+canonical resolvers (see COMMON ENTRY POINTS) appear in the top-level tool list. \
+Every other capability — across {catalog} — is present and callable, but it is \
+reached THROUGH search, not shown up front. If a capability (splicing prediction, \
+VEP consequence, ClinVar significance, disease ontology, gene-disease curation, \
+expression, literature, …) is absent from your client's tool list, that does NOT \
+mean it is missing — it means you have not searched yet. Call `search_tools` before \
+concluding a tool does not exist.{_entrypoints_block(registry)}
 
 WORKFLOW.
   1. `search_tools(query="<natural language>")` — BM25 search over the whole \

@@ -20,6 +20,11 @@ def test_real_servers_yaml_parses():
     assert all(b.enabled for b in backends)
     # the new backends are Tool-Naming Standard v1 clean — no router-side transforms.
     assert all(by_name[n].transform is None for n in newest)
+    # canonical resolvers are pinned + named in instructions via entrypoints (issue #3
+    # follow-up): cross-domain free-text->ID resolvers that BM25 can't reliably surface.
+    assert by_name["gnomad"].entrypoints == ["resolve_variant_id", "search_genes"]
+    assert by_name["mondo"].entrypoints == ["resolve_disease"]
+    assert by_name["gencc"].entrypoints == ["resolve_identifier"]
     # pubtator adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64): it now
     # emits clean leaf names, so the stopgap strip_prefix transform is gone.
     assert by_name["pubtator"].transform is None

@@ -78,8 +78,12 @@ unworkable, so the router exposes a **search surface** instead of the full catal
 
 - **`search_tools`** — BM25 relevance search over the *entire* federated catalog.
 - **`call_tool`** — invoke a hit by its `<namespace>_<tool>` name.
-- two pinned gnomAD resolvers (`gnomad_resolve_variant_id`, `gnomad_search_genes`) for the
-  common first step.
+- a few pinned **canonical resolvers** — each backend's free-text→ID entry points, declared
+  per-backend via `entrypoints:` in `servers.yaml` (e.g. `gnomad_resolve_variant_id`,
+  `gnomad_search_genes`, `gencc_resolve_identifier`, `mondo_resolve_disease`). These are pinned
+  *and* named in the server `instructions` because FastMCP's BM25 index has no field weighting,
+  so a terse resolver can lose to verbose tools that merely repeat a keyword — pinning makes the
+  canonical entry point discoverable deterministically rather than by relevance luck.
 
 **Everything else is reached via `search_tools` → `call_tool`** (and is also directly callable by
 full name once known). A typical flow:

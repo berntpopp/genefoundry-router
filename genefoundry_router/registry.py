@@ -31,6 +31,12 @@ class BackendDef(BaseModel):
     url_env: str
     repo: str | None = None
     tags: list[str] = Field(default_factory=list)
+    # Canonical resolver leaf tools (free-text -> stable ID) for this backend. They are
+    # pinned (always_visible) and named in the server instructions so they stay reliably
+    # discoverable despite BM25 ranking (FastMCP's index has no field-weighting, so a
+    # terse resolver loses to verbose tools that repeat the keyword). Leaf names; the
+    # router namespaces them to <namespace>_<leaf>.
+    entrypoints: list[str] = Field(default_factory=list)
     enabled: bool = True
     cache_ttl: int = 300
     transport: Literal["http"] = "http"  # R1.1: present in servers.yaml defaults; SSE not offered

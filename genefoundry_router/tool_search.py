@@ -20,6 +20,7 @@ from fastmcp.server.transforms.search.bm25 import BM25SearchTransform
 from fastmcp.tools.base import Tool
 
 from genefoundry_router.config import RouterSettings
+from genefoundry_router.registry import BackendDef, qualified_name
 
 log = structlog.get_logger(__name__)
 
@@ -125,8 +126,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             the GeneFoundry fleet (genes, variants, diseases, phenotypes, expression,
             protein interactions, splicing prediction (spliceai), VEP consequence,
             ClinVar significance, literature, ontologies, …). Apart from ``call_tool``
-            and two pinned gnomAD resolvers, tools are not listed up front — so if a
-            capability is not in your client's tool list, search for it HERE before
+            and a few pinned canonical resolvers, tools are not listed up front — so if
+            a capability is not in your client's tool list, search for it HERE before
             concluding it is missing. Hits are ranked by BM25 relevance; each hit's
             ``name`` is the ``<namespace>_<tool>`` you then pass to ``call_tool``.
             Defaults to a compact form (full inputSchema + one-line ``returns``); pass
@@ -145,6 +146,18 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         tool = super()._make_call_tool()
         tool.description = _CALL_TOOL_DESCRIPTION
         return tool
+
+
+def resolve_entrypoints(registry: list[BackendDef]) -> list[str]:
+    """Namespaced canonical-resolver tools to pin, from each enabled backend's
+    ``entrypoints``. Pinned tools bypass BM25 ranking entirely (FastMCP lists them
+    directly), so this is the deterministic fix for the resolver-invisible-to-search
+    failure. Falls back to ``DEFAULT_ALWAYS_VISIBLE`` when no backend declares any.
+    """
+    pins = [
+        qualified_name(b.namespace, leaf) for b in registry if b.enabled for leaf in b.entrypoints
+    ]
+    return pins or list(DEFAULT_ALWAYS_VISIBLE)
 
 
 def apply_tool_search(
