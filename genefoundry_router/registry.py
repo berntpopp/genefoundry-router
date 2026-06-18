@@ -31,11 +31,12 @@ class BackendDef(BaseModel):
     url_env: str
     repo: str | None = None
     tags: list[str] = Field(default_factory=list)
-    # Canonical resolver leaf tools (free-text -> stable ID) for this backend. They are
-    # pinned (always_visible) and named in the server instructions so they stay reliably
-    # discoverable despite BM25 ranking (FastMCP's index has no field-weighting, so a
-    # terse resolver loses to verbose tools that repeat the keyword). Leaf names; the
-    # router namespaces them to <namespace>_<leaf>.
+    # Canonical entry-point leaf tools for this backend — the first tool an agent reaches
+    # for in this domain (a free-text->ID resolver and/or the primary query). They are
+    # pinned (always_visible) AND named in the server instructions so they stay reliably
+    # discoverable regardless of BM25 ranking (FastMCP's flat index has no field-weighting
+    # or stemming, so a canonical tool can lose to verbose tools that repeat a keyword).
+    # Leaf names; the router namespaces them to <namespace>_<leaf>.
     entrypoints: list[str] = Field(default_factory=list)
     enabled: bool = True
     cache_ttl: int = 300

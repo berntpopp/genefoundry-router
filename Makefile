@@ -52,11 +52,11 @@ test-fast: ## Run unit tests in parallel
 
 test-unit: test-fast ## Alias for parallel unit tests
 
-test-integration: ## Run in-process integration tests
-	uv run pytest tests/integration -q || [ $$? -eq 5 ]  # exit 5 = no tests collected (non-fatal)
+test-integration: ## Run in-process integration + discoverability-benchmark tests
+	uv run pytest tests/integration tests/discoverability -q || [ $$? -eq 5 ]  # exit 5 = none collected
 
 test-cov: ## Run tests with coverage
-	uv run pytest tests/unit tests/integration --cov=$(PKG) --cov-report=term-missing --cov-report=html --cov-report=xml
+	uv run pytest tests/unit tests/integration tests/discoverability --cov=$(PKG) --cov-report=term-missing --cov-report=html --cov-report=xml
 
 test-all: test-cov ## Alias for full test run with coverage
 
@@ -80,6 +80,9 @@ doctor: ## Ping each backend and report reachability
 
 list-tools: ## Enumerate federated tools
 	uv run genefoundry-router list-tools
+
+bench-discoverability: ## Benchmark tool discoverability over the catalog snapshot (offline)
+	uv run python scripts/discoverability_report.py --min-score 9.0
 
 docker-build: ## Build Docker image
 	$(DOCKER_COMPOSE) -f docker/docker-compose.yml build

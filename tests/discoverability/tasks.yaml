@@ -1,0 +1,229 @@
+# Discoverability task set: realistic agent intents -> acceptable canonical tool(s).
+# Queries are phrased as an agent would derive a search from a user request — domain
+# language, NOT the tool name verbatim (that would be cheating the BM25 index).
+# `expected` lists the canonical tool(s); discovering ANY one counts. Verified against
+# the real 218-tool catalog snapshot (catalog.json).
+tasks:
+  # --- gnomAD: variant / gene / population frequency ---
+  - id: gnomad-allele-frequency
+    category: variant_frequency
+    query: population allele frequency of a variant in gnomAD
+    expected: [gnomad_get_variant_frequencies, gnomad_get_variant_details]
+  - id: gnomad-normalize-variant
+    category: variant_resolve
+    query: normalize an rsID or HGVS to a gnomAD variant identifier
+    expected: [gnomad_resolve_variant_id]
+  - id: gnomad-gene-variants
+    category: variant_frequency
+    query: list all variants found in a gene in gnomAD
+    expected: [gnomad_get_gene_variants]
+  - id: gnomad-carrier-frequency
+    category: variant_frequency
+    query: estimate carrier frequency for a recessive pathogenic variant
+    expected: [gnomad_compute_carrier_frequency, gnomad_compute_gene_carrier_frequency]
+  - id: gnomad-coverage
+    category: variant_frequency
+    query: sequencing read depth and coverage at a genomic position
+    expected: [gnomad_get_coverage]
+
+  # --- GTEx: tissue expression ---
+  - id: gtex-tissue-expression
+    category: expression
+    query: in which tissues is this gene expressed
+    expected: [gtex_get_median_expression_levels, gtex_get_gene_information]
+  - id: gtex-top-genes
+    category: expression
+    query: most highly expressed genes in a given tissue
+    expected: [gtex_get_top_expressed_genes_by_tissue]
+
+  # --- HGNC: gene nomenclature ---
+  - id: hgnc-resolve-symbol
+    category: nomenclature
+    query: official gene symbol for an alias or previous name
+    expected: [hgnc_resolve_symbol, hgnc_search_genes]
+  - id: hgnc-cross-references
+    category: nomenclature
+    query: map a gene to its Ensembl, NCBI and UniProt identifiers
+    expected: [hgnc_get_gene_cross_references]
+
+  # --- MGI: mouse phenotype / models ---
+  - id: mgi-knockout-phenotype
+    category: mouse
+    query: knockout mouse phenotype for a gene
+    expected: [mgi_get_marker_phenotypes, mgi_get_phenotype_overview]
+  - id: mgi-by-phenotype
+    category: mouse
+    query: find mouse genes associated with an abnormal phenotype
+    expected: [mgi_find_markers_by_phenotype]
+  - id: mgi-ortholog
+    category: mouse
+    query: mouse ortholog of a human gene
+    expected: [mgi_get_marker_ortholog]
+
+  # --- UniProt: protein function ---
+  - id: uniprot-find-protein
+    category: protein
+    query: protein function and entry for a gene
+    expected: [uniprot_find_proteins, uniprot_get_protein]
+  - id: uniprot-sequence
+    category: protein
+    query: amino acid sequence of a protein
+    expected: [uniprot_get_protein_sequence]
+  - id: uniprot-domains
+    category: protein
+    query: functional domains and features of a protein
+    expected: [uniprot_get_protein_features]
+  - id: uniprot-protein-disease
+    category: protein
+    query: diseases linked to a protein in UniProt
+    expected: [uniprot_get_protein_diseases]
+
+  # --- ClinGen: gene-disease curation ---
+  - id: clingen-validity
+    category: gene_disease
+    query: ClinGen gene disease validity classification and strength
+    expected: [clingen_get_gene_validity, clingen_search_validity]
+  - id: clingen-dosage
+    category: gene_disease
+    query: gene haploinsufficiency and dosage sensitivity score
+    expected: [clingen_get_gene_dosage]
+  - id: clingen-actionability
+    category: gene_disease
+    query: is a gene clinically actionable
+    expected: [clingen_get_gene_actionability]
+
+  # --- GenCC: gene-disease curation ---
+  - id: gencc-curations
+    category: gene_disease
+    query: gene disease validity assertions submitted to GenCC
+    expected: [gencc_get_gene_curations, gencc_find_curations]
+  - id: gencc-resolve
+    category: gene_disease
+    query: resolve a gene or disease name to a GenCC identifier
+    expected: [gencc_resolve_identifier]
+
+  # --- LitVar: variant literature ---
+  - id: litvar-variant-literature
+    category: variant_literature
+    query: publications mentioning a specific genetic variant
+    expected: [litvar_get_variant_literature, litvar_search_genetic_variants]
+  - id: litvar-resolve-rsid
+    category: variant_literature
+    query: resolve an rsID to a LitVar variant
+    expected: [litvar_resolve_rsid]
+
+  # --- STRING: protein-protein interactions ---
+  - id: string-partners
+    category: ppi
+    query: proteins that interact with a given protein
+    expected: [stringdb_get_interaction_partners, stringdb_search_protein_interactions]
+  - id: string-enrichment
+    category: ppi
+    query: functional enrichment for a set of genes
+    expected: [stringdb_compute_functional_enrichment, stringdb_compute_ppi_enrichment]
+
+  # --- AutoPVS1: ACMG PVS1 ---
+  - id: autopvs1-pvs1
+    category: acmg
+    query: ACMG PVS1 strength for a loss of function variant
+    expected: [autopvs1_get_variant_pvs1_data]
+
+  # --- SpliceAI: splicing prediction ---
+  - id: spliceai-predict
+    category: splicing
+    query: predict the splicing impact of a variant
+    expected: [spliceai_predict_splicing, spliceai_predict_spliceai]
+  - id: spliceai-pangolin
+    category: splicing
+    query: run Pangolin splice prediction for a variant
+    expected: [spliceai_predict_pangolin]
+
+  # --- GeneReviews: gene-disease literature ---
+  - id: genereviews-chapter
+    category: gene_review
+    query: GeneReviews chapter for a gene or condition
+    expected: [genereviews_search_genereviews]
+  - id: genereviews-management
+    category: gene_review
+    query: search GeneReviews text for clinical management recommendations
+    expected: [genereviews_search_passages]
+
+  # --- PubTator: literature & entity annotation ---
+  - id: pubtator-search
+    category: literature
+    query: search biomedical literature for a gene and a disease
+    expected: [pubtator_search_literature]
+  - id: pubtator-relations
+    category: literature
+    query: relationships between a gene and a chemical reported in the literature
+    expected: [pubtator_find_entity_relations]
+  - id: pubtator-ground
+    category: literature
+    query: answer a biomedical question grounded in cited PubMed evidence
+    expected: [pubtator_ground_question]
+  - id: pubtator-variant-evidence
+    category: literature
+    query: published evidence for a variant from the literature
+    expected: [pubtator_get_variant_evidence]
+
+  # --- ClinVar: variant clinical significance ---
+  - id: clinvar-significance
+    category: clinical_significance
+    query: ClinVar clinical significance and review status of a variant
+    expected: [clinvar_get_variant, clinvar_search_variants]
+  - id: clinvar-gene-variants
+    category: clinical_significance
+    query: pathogenic ClinVar variants reported in a gene
+    expected: [clinvar_get_variants_by_gene, clinvar_get_gene_clinvar_summary]
+
+  # --- VEP: variant annotation / consequence ---
+  - id: vep-annotate
+    category: annotation
+    query: annotate a variant and predict its molecular consequence
+    expected: [vep_annotate_variant]
+  - id: vep-liftover
+    category: annotation
+    query: lift a variant over from GRCh37 to GRCh38
+    expected: [vep_liftover_variant, gnomad_compute_variant_liftover]
+  - id: vep-recode
+    category: annotation
+    query: convert a variant between HGVS and VCF representations
+    expected: [vep_recode_variant]
+
+  # --- PanelApp: diagnostic gene panels ---
+  - id: panelapp-find-panel
+    category: gene_panel
+    query: diagnostic gene panel for a clinical condition
+    expected: [panelapp_search_panels]
+  - id: panelapp-gene-panels
+    category: gene_panel
+    query: which diagnostic panels include a given gene
+    expected: [panelapp_get_gene_panels]
+  - id: panelapp-panel-genes
+    category: gene_panel
+    query: green diagnostic-grade genes on a panel
+    expected: [panelapp_get_panel_genes]
+
+  # --- Mondo: disease ontology ---
+  - id: mondo-resolve-disease
+    category: disease_ontology
+    query: resolve a disease name or OMIM number to a Mondo ontology id
+    expected: [mondo_resolve_disease]
+  - id: mondo-ancestors
+    category: disease_ontology
+    query: parent disease categories of a Mondo term
+    expected: [mondo_get_disease_ancestors, mondo_get_disease_parents]
+  - id: mondo-cross-ontology
+    category: disease_ontology
+    query: map a disease to its OMIM and Orphanet equivalents
+    expected: [mondo_map_cross_ontology, mondo_resolve_xref]
+
+  # --- cross-cutting first-step resolvers ---
+  - id: resolve-gene-generic
+    category: nomenclature
+    query: I have a gene symbol and need its stable identifier
+    expected: [hgnc_resolve_symbol, gnomad_search_genes, gencc_resolve_identifier]
+  - id: resolve-disease-generic
+    category: disease_ontology
+    query: I have a disease name and need its ontology identifier
+    expected: [mondo_resolve_disease, gencc_resolve_identifier]

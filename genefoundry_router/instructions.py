@@ -33,9 +33,9 @@ def _entrypoints_block(registry: list[BackendDef]) -> str:
         return ""
     body = "\n".join(lines)
     return (
-        "\n\nCOMMON ENTRY POINTS — canonical resolvers (free text -> stable ID). These "
-        "are pinned (always listed) AND callable directly without a search; start here "
-        "to turn a user's gene/variant/disease text into the IDs other tools need:\n"
+        "\n\nCOMMON ENTRY POINTS — the front-door tool for each domain (a free-text->ID "
+        "resolver and/or the primary query). These are pinned (always listed) AND callable "
+        "directly without a search; start here, then `search_tools` for follow-on tools:\n"
         f"{body}"
     )
 

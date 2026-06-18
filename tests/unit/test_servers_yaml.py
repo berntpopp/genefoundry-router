@@ -20,9 +20,11 @@ def test_real_servers_yaml_parses():
     assert all(b.enabled for b in backends)
     # the new backends are Tool-Naming Standard v1 clean — no router-side transforms.
     assert all(by_name[n].transform is None for n in newest)
-    # canonical resolvers are pinned + named in instructions via entrypoints (issue #3
-    # follow-up): cross-domain free-text->ID resolvers that BM25 can't reliably surface.
-    assert by_name["gnomad"].entrypoints == ["resolve_variant_id", "search_genes"]
+    # every enabled backend declares >=1 canonical entry point — pinned + named in the
+    # server instructions so each domain's front-door tool is deterministically
+    # discoverable regardless of BM25 ranking (discoverability-benchmark follow-up to #3).
+    assert all(by_name[n].entrypoints for n in by_name), "each backend needs an entrypoint"
+    assert "resolve_variant_id" in by_name["gnomad"].entrypoints
     assert by_name["mondo"].entrypoints == ["resolve_disease"]
     assert by_name["gencc"].entrypoints == ["resolve_identifier"]
     # pubtator adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64): it now

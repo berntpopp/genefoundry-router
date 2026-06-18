@@ -68,6 +68,33 @@ def test_resolve_entrypoints_falls_back_to_default():
     assert resolve_entrypoints(registry) == list(DEFAULT_ALWAYS_VISIBLE)
 
 
+async def test_search_matches_word_forms_and_weights_name_and_tags():
+    # The router's field-weighted, stemmed index: a query in a different word form
+    # ("splice") still finds a tool whose text says "splicing", and the tool whose own
+    # name/tags carry the intent outranks verbose prose that merely repeats a keyword.
+    from fastmcp.tools.base import Tool
+
+    from genefoundry_router.tool_search import CompactBM25SearchTransform
+
+    tools = [
+        Tool(
+            name="x_predict_splicing",
+            description="Predict whether a variant alters a splice site.",
+            parameters={"type": "object", "properties": {}},
+            tags={"splicing", "prediction"},
+        ),
+        Tool(
+            name="x_get_capabilities",
+            description=("Server capabilities. Notes splicing, prediction, variants, and limits."),
+            parameters={"type": "object", "properties": {}},
+            tags=set(),
+        ),
+    ]
+    transform = CompactBM25SearchTransform(max_results=5)
+    ranked = [t.name for t in await transform._search(tools, "splice prediction")]
+    assert ranked[0] == "x_predict_splicing"
+
+
 async def test_entrypoint_pin_bypasses_search_ranking():
     # The deep-research fix: a canonical resolver pinned via entrypoints is listed
     # deterministically, so it never depends on BM25 ranking surfacing it.

@@ -5,7 +5,8 @@
 [![Packaged with uv](https://img.shields.io/badge/packaged%20with-uv-DE5FE9?logo=uv&logoColor=white)](https://github.com/astral-sh/uv)
 [![Lint: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Typed: mypy strict](https://img.shields.io/badge/typed-mypy%20strict-2A6DB2)](https://mypy-lang.org/)
-[![Tests: 106 passing](https://img.shields.io/badge/tests-106%20passing-brightgreen)](#develop--test)
+[![Tests: 126 passing](https://img.shields.io/badge/tests-126%20passing-brightgreen)](#develop--test)
+[![Discoverability: 9.8/10](https://img.shields.io/badge/discoverability-9.8%2F10-brightgreen)](#how-discovery-works)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 A thin **FastMCP 3.x aggregator** that federates the GeneFoundry `*-link` MCP fleet behind a
@@ -76,14 +77,14 @@ claude mcp add --transport http genefoundry http://127.0.0.1:8000/mcp
 `genefoundry` is a **meta-router**, not a flat tool server. Listing ~200 tools to a model is
 unworkable, so the router exposes a **search surface** instead of the full catalog:
 
-- **`search_tools`** — BM25 relevance search over the *entire* federated catalog.
+- **`search_tools`** — relevance search over the *entire* federated catalog.
 - **`call_tool`** — invoke a hit by its `<namespace>_<tool>` name.
-- a few pinned **canonical resolvers** — each backend's free-text→ID entry points, declared
-  per-backend via `entrypoints:` in `servers.yaml` (e.g. `gnomad_resolve_variant_id`,
-  `gnomad_search_genes`, `gencc_resolve_identifier`, `mondo_resolve_disease`). These are pinned
-  *and* named in the server `instructions` because FastMCP's BM25 index has no field weighting,
-  so a terse resolver can lose to verbose tools that merely repeat a keyword — pinning makes the
-  canonical entry point discoverable deterministically rather than by relevance luck.
+- a small set of pinned **canonical entry points** — each backend's front-door tool (a
+  free-text→ID resolver and/or the primary query), declared per-backend via `entrypoints:` in
+  `servers.yaml` and generated into both the pinned `always_visible` set *and* the server
+  `instructions` map. Pinning makes each domain's canonical tool discoverable **deterministically**
+  rather than by relevance luck — the fix for FastMCP's flat BM25 index (no field weighting, no
+  stemming), which let a terse canonical tool lose to verbose tools that merely repeat a keyword.
 
 **Everything else is reached via `search_tools` → `call_tool`** (and is also directly callable by
 full name once known). A typical flow:
@@ -94,12 +95,21 @@ call_tool(name="spliceai_predict_splicing", arguments={...})
 ```
 
 The model is oriented on this two-layer model via the MCP **`instructions`** field (set on the
-server) plus the `search_tools`/`call_tool` descriptions. Federated names are also valid for Gemini
+server) plus the `search_tools`/`call_tool` descriptions. The router also **improves the search
+itself**: its `CompactBM25SearchTransform` folds the tool name/leaf and tags into the index and
+stems both documents and queries, so word-form mismatches (`expressed`↔`expression`) and
+keyword-stuffed prose no longer hide the right tool. Federated names are also valid for Gemini
 Remote MCP (snake_case, `[a-z0-9_]`, ≤64 chars).
+
+Discoverability is **measured, not assumed**: `make bench-discoverability` scores how reliably ~50
+realistic intents reach their canonical tool through this exact surface over a snapshot of the real
+catalog (currently **9.79/10**, 100% reachable in the served top-5). The bar is enforced in CI
+(`tests/discoverability/`), so tuning pins, search, or descriptions stays evidence-driven.
 
 > **Two traps to avoid** (see [#3](https://github.com/berntpopp/genefoundry-router/issues/3)).
 > A capability missing from your **host/client-side tool list is not missing** — the host only
-> sees the three entry points above; call `search_tools` before concluding a tool doesn't exist.
+> sees `search_tools`, `call_tool`, and the pinned entry points; call `search_tools` before
+> concluding a tool doesn't exist.
 > And `search_tools` returns *data*, so you **don't re-run a host tool search to invoke a hit** —
 > just call `call_tool`. An `Unknown tool: call_tool` means your client evicted it; re-run
 > `search_tools` to rediscover and continue (recoverable, not a router fault).
@@ -134,9 +144,10 @@ genefoundry-router doctor     [--strict-naming]            # ping backends; audi
 ## Develop & test
 
 ```bash
-make ci-local   # format-check, lint, 600-LOC budget, mypy, unit + integration tests
-make test       # unit + integration only
-make run        # serve against the live fleet (exports .env)
+make ci-local              # format-check, lint, 600-LOC budget, mypy, unit + integration tests
+make test                  # unit + integration only
+make bench-discoverability # score tool discoverability over the catalog snapshot (offline)
+make run                   # serve against the live fleet (exports .env)
 ```
 
 An offline fake fleet (`make dev-fleet` + `make run-dev`, or one-shot `make test-e2e`) runs the real

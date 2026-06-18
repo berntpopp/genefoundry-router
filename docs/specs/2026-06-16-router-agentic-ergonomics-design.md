@@ -200,5 +200,37 @@ with "namespacing/curation is the gateway's job". Seeded with the cross-domain r
 *directly* defeats the BM25-miss. Heavier levers were deferred: a `list_domains`/facet
 meta-tool (deterministic but adds a synthetic tool + code) and hybrid semantic+keyword search
 (unproven — the semantic-retrieval evidence's headline numbers were refuted in verification).
-Discoverability is now measured by an offline benchmark (`scripts/`/`tests/`) rather than
-asserted — see the discoverability-benchmark work.
+
+## 11. Addendum (2026-06-18) — F10 discoverability benchmark & search-quality
+
+**Approach.** Rather than assert discoverability, it is now **measured** by an offline benchmark
+(`genefoundry_router/devtools/discoverability.py` + `tests/discoverability/`). A snapshot of the
+real 218-tool catalog (`catalog.json`, storing exactly what FastMCP's BM25 indexes) is scored
+against ~50 realistic intents (`tasks.yaml`, intent → canonical tool) through the EXACT served
+surface — pinned entry points + instructions map + the real `CompactBM25SearchTransform`. Output:
+a /10 graded score (pinned/rank-1 = 1.0, else reciprocal rank within the served top-K), plus
+reachable-rate, hit@k, MRR, and per-category breakdown. `make bench-discoverability` runs it; a
+CI gate (`test_discoverability_meets_bar`) fails below 9.0/10.
+
+**Two improvements, measured:**
+
+1. **Search quality (general, zero token cost, benefits all 218 tools).** The router owns
+   `_search`, so `CompactBM25SearchTransform` now (a) folds the tool name/leaf and **tags** into
+   the indexed document (FastMCP's flat index ignores tags and gives the name no weight), and
+   (b) **stems both the document and the query** with a small dependency-free stemmer — FastMCP's
+   tokenizer has no stemming, so `expressed`↔`expression`, `actionable`↔`actionability` silently
+   missed. Search-only score (no pins): **7.48 → 7.61/10**; combined with stemming the hit-rate and
+   MRR rose across nomenclature, mouse, gene-disease, ACMG.
+2. **Per-domain entry points (deterministic).** `entrypoints` generalized from "resolver" to each
+   backend's canonical front-door tool; every enabled backend now declares ≥1 (≈20 pins total).
+
+**Result.** Full surface **7.48 → 9.79/10**, reachable 89% → **100%** (every task's canonical tool
+in the served top-5 or pinned), hit@1 64% → 96%, MRR 0.76 → 0.98, 15/17 categories at 10/10. The
+two residual rank-#2 tasks are genuinely *secondary* tools whose domains already pin the front
+door — left un-pinned deliberately (pinning them would overfit the benchmark, not improve real
+discoverability).
+
+**Tradeoff & tuning.** ~20 pins is a larger `always_visible` surface than the original 2, but still
+a ~10× cut from 218 and within the ≤30–50-tool range where selection accuracy holds. It is fully
+config-driven: an operator wanting a leaner surface trims `entrypoints` and re-runs the benchmark
+to see the discoverability cost. Deferred still: `list_domains` facet meta-tool and hybrid search.

@@ -10,13 +10,22 @@ detail="full")`` restores the complete dump on demand.
 
 from __future__ import annotations
 
+import re
+from collections.abc import Sequence
 from typing import Annotated, Any, Literal
 
 import structlog
 from fastmcp import FastMCP
 from fastmcp.server.context import Context
-from fastmcp.server.transforms.search.base import serialize_tools_for_output_json
-from fastmcp.server.transforms.search.bm25 import BM25SearchTransform
+from fastmcp.server.transforms.search.base import (
+    _extract_searchable_text,
+    serialize_tools_for_output_json,
+)
+from fastmcp.server.transforms.search.bm25 import (
+    BM25SearchTransform,
+    _BM25Index,
+    _catalog_hash,
+)
 from fastmcp.tools.base import Tool
 
 from genefoundry_router.config import RouterSettings
@@ -35,6 +44,14 @@ DEFAULT_ALWAYS_VISIBLE: list[str] = [
 
 _MAX_RETURN_FIELDS = 12
 
+# How many extra copies of the high-signal "field" tokens (tool name, un-namespaced
+# leaf, and tags — which FastMCP's flat BM25 index ignores) to fold into the indexed
+# document. Repetition raises those tokens' term-frequency so a query that matches a
+# tool's OWN name/category ranks it above tools that merely mention the keyword in
+# prose — the flat-index miss diagnosed in issue #3. Tuned via the discoverability
+# benchmark (genefoundry_router/devtools/discoverability.py).
+_FIELD_BOOST = 4
+
 # call_tool's default FastMCP description ("Call a tool by name…") doesn't convey the
 # namespaced name format or that a host's "Unknown tool" eviction is recoverable, so we
 # override it (issue #3). Kept here as a constant so the override stays a one-liner.
@@ -48,6 +65,69 @@ _CALL_TOOL_DESCRIPTION = (
     "definition from its loaded set — re-run `search_tools` to rediscover it and call "
     "again. That is recoverable, not a router failure."
 )
+
+
+# FastMCP's BM25 tokenizer does not stem, so "actionable" never matches a tool whose
+# text says "actionability", "expressed" misses "expression", etc. Because the router
+# owns _search, it can stem BOTH the indexed document and the query the same way, closing
+# that gap for the whole catalog. Conservative, dependency-free suffix stripping (longest
+# suffix first, only when >=4 chars remain); over-stemming is caught by the benchmark.
+_STEM_SUFFIXES: tuple[str, ...] = (
+    "ization",
+    "isation",
+    "ational",
+    "ousness",
+    "iveness",
+    "fulness",
+    "ability",
+    "ibility",
+    "ation",
+    "ition",
+    "ement",
+    "ance",
+    "ence",
+    "able",
+    "ible",
+    "ical",
+    "ment",
+    "ness",
+    "tion",
+    "sion",
+    "ize",
+    "ise",
+    "ous",
+    "ive",
+    "ful",
+    "ant",
+    "ent",
+    "ity",
+    "ial",
+    "ing",
+    "ion",
+    "ed",
+    "es",
+    "ly",
+    "s",
+    "e",
+)
+_WORD_RE = re.compile(r"[a-z0-9]+")
+
+
+def _stem(token: str) -> str:
+    """Conservative suffix-stripping stem so search matches across word forms."""
+    if len(token) <= 4:
+        return token
+    if token.endswith("ies"):
+        return token[:-3] + "y"  # frequencies -> frequency, studies -> study
+    for suffix in _STEM_SUFFIXES:
+        if token.endswith(suffix) and len(token) - len(suffix) >= 4:
+            return token[: -len(suffix)]
+    return token
+
+
+def _stem_text(text: str) -> str:
+    """Stem every alphanumeric token in ``text`` (applied to docs AND the query)."""
+    return " ".join(_stem(tok) for tok in _WORD_RE.findall(text.lower()))
 
 
 def _type_label(schema: Any) -> str:
@@ -146,6 +226,27 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         tool = super()._make_call_tool()
         tool.description = _CALL_TOOL_DESCRIPTION
         return tool
+
+    def _searchable_text(self, tool: Tool) -> str:
+        """Field-weighted index document: FastMCP's flat text (name + description +
+        param names/descriptions) PLUS boosted copies of the tool's own name, its
+        un-namespaced leaf, and its tags (which FastMCP otherwise never indexes)."""
+        leaf = tool.name.split("_", 1)[-1] if "_" in tool.name else tool.name
+        fields = " ".join([tool.name, leaf, leaf.replace("_", " "), *sorted(tool.tags)])
+        return _stem_text(_extract_searchable_text(tool) + (f" {fields}" * _FIELD_BOOST))
+
+    async def _search(self, tools: Sequence[Tool], query: str) -> Sequence[Tool]:
+        """As ``BM25SearchTransform._search`` but index the field-weighted, stemmed
+        document and stem the query the same way, so a tool's own name/category outranks
+        prose that merely repeats the keyword and word-form mismatches stop hiding tools."""
+        current_hash = _catalog_hash(tools)
+        if current_hash != self._last_hash:
+            documents = [self._searchable_text(t) for t in tools]
+            new_index = _BM25Index(self._index.k1, self._index.b)
+            new_index.build(documents)
+            self._index, self._indexed_tools, self._last_hash = new_index, tools, current_hash
+        indices = self._index.query(_stem_text(query), self._max_results)
+        return [self._indexed_tools[i] for i in indices]
 
 
 def resolve_entrypoints(registry: list[BackendDef]) -> list[str]:
