@@ -1,10 +1,20 @@
 # GeneFoundry Response-Envelope Standard v1
 
-> Canonical reference for the GeneFoundry `-link` MCP fleet. Drafted 2026-06-16; revised
-> the same day after an external review against **MCP 2025-11-25** (stable) and verified
-> against the installed `mcp` + `fastmcp 3.4.2`. Sibling to `TOOL-NAMING-STANDARD-v1.md`
-> and the Logging & CLI Standard. A tracking issue "Adopt GeneFoundry Response-Envelope
-> Standard v1" should be filed per `-link` repo (only with explicit go-ahead — live APIs).
+> **Status as of 2026-06-20:** this document records the stricter envelope migration target
+> from the 2026-06-16 review. It is **not yet the enforced current fleet gate**. The current
+> router-compatible `*-link` contract, used by Mondo/HPO/Orphanet/MaveDB/MetaDome-style
+> servers, is: every tool returns a structured JSON object with `success`, a domain payload,
+> `_meta` carrying `tool`/`request_id`/tiered `next_commands`/`capabilities_version`, typed
+> flat execution errors (`error_code`, `message`, `retryable`, `recovery_action`), declared
+> `output_schema`, `READ_ONLY_OPEN_WORLD`, `response_mode` defaulting to `compact`, and
+> backend-owned provenance/disclaimers. The router remains a thin aggregator and must not
+> reshape backend results to this target frame. Treat the `result`/`results` + `meta` frame
+> below as a future fleet-wide breaking migration, not as an orphanet/HPO/Mondo-specific
+> compatibility defect.
+
+> Drafted 2026-06-16; revised the same day after an external review against
+> **MCP 2025-11-25** (stable) and verified against the installed `mcp` + `fastmcp 3.4.2`.
+> Sibling to `TOOL-NAMING-STANDARD-v1.md` and the Logging & CLI Standard.
 
 Part of the **GeneFoundry MCP router** initiative (`genefoundry-router`): all `*-link` MCP
 servers are federated behind one endpoint. The router is a **thin aggregator** — it

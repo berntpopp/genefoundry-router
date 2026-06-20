@@ -12,7 +12,7 @@ Part of the **GeneFoundry MCP router** initiative (`genefoundry-router`): all `*
 1. **Namespacing is the gateway's job — leaf tools stay UNPREFIXED.**
    Expose clean names (`get_variant_details`), not server-prefixed ones (`gnomad_get_variant_details`). The router applies the namespace at mount time (`mount(namespace="<TOKEN>")` → `<TOKEN>_get_variant_details` at the gateway). MCP clients already namespace standalone servers as `mcp__<server>__<tool>`, so a leaf-level prefix is redundant and causes **double-prefixing** at the gateway.
 
-2. **`verb_noun` snake_case, canonical verbs only:** `get`, `search`, `list`, `resolve`, `find`, `compare`, `compute`. No synonyms (`fetch`→`get`, `lookup`→`get`/`resolve`, `query`→`search`).
+2. **`verb_noun` snake_case, canonical verbs only:** `get`, `search`, `list`, `resolve`, `find`, `compare`, `compute`, `map`. Use `map` for cross-ontology or identifier-mapping tools that return relationships between namespaces (for example `map_cross_ontology`). No synonyms (`fetch`→`get`, `lookup`→`get`/`resolve`, `query`→`search`).
 
 3. **Length ≤ 50 chars.** Leaves headroom under the 64-char limit (MCP spec / SEP-986; most clients enforce `^[A-Za-z0-9_-]{1,64}$`) after the gateway prefix is added.
 

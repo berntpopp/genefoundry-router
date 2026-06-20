@@ -23,3 +23,8 @@ servers:
   - { name: vep,         repo: berntpopp/vep-link,           url_env: GF_VEP_URL,         namespace: vep,         tags: [variant, annotation, consequence], entrypoints: [annotate_variant] }  # action server: annotate/recode/liftover verbs (Standard v1.1-pending), still unprefixed
   - { name: panelapp,    repo: berntpopp/panelapp-link,      url_env: GF_PANELAPP_URL,    namespace: panelapp,    tags: [gene-panel, gene-disease, curation], entrypoints: [search_panels] }
   - { name: mondo,       repo: berntpopp/mondo-link,         url_env: GF_MONDO_URL,       namespace: mondo,       tags: [disease, ontology], entrypoints: [resolve_disease] }
+  # --- Staged/ready 2026-06-20 (new GeneFoundry fleet backends; URL vars below). ---
+  - { name: mavedb,      repo: berntpopp/mavedb-link,        url_env: GF_MAVEDB_URL,      namespace: mavedb,      tags: [variant, mave, functional-assay, variant-effect, score-set], entrypoints: [search_score_sets] }
+  - { name: hpo,         repo: berntpopp/hpo-link,           url_env: GF_HPO_URL,         namespace: hpo,         tags: [phenotype, ontology, gene, disease], entrypoints: [resolve_term, get_phenotypes_for_gene, get_genes_for_phenotype] }  # build complete + DB artifact published (db-v2026-06-06); enable once hpo-link.genefoundry.org is deployed
+  - { name: metadome,    repo: berntpopp/metadome-link,      url_env: GF_METADOME_URL,    namespace: metadome,    tags: [protein, tolerance, domain, variant], entrypoints: [resolve_transcript, get_tolerance_landscape] }
+  - { name: orphanet,    repo: berntpopp/orphanet-link,      url_env: GF_ORPHANET_URL,    namespace: orphanet,    tags: [disease, ontology, rare-disease, epidemiology, gene, phenotype], entrypoints: [resolve_disease] }

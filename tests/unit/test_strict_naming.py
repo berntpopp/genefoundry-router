@@ -1,10 +1,11 @@
 from genefoundry_router.cli import check_leaf_name
 
-CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute"}
+CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute", "map"}
 
 
 def test_compliant_leaf_passes():
     assert check_leaf_name("get_variant_details") == []
+    assert check_leaf_name("map_cross_ontology") == []
 
 
 def test_violations_detected():

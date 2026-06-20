@@ -21,7 +21,7 @@ console = Console()
 DEFAULT_SERVERS = "servers.yaml"
 
 LEAF_NAME_RE = re.compile(r"^[a-z0-9_]{1,50}$")
-CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute"}
+CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute", "map"}
 # Documented v1.1 action-verb exceptions (spec §19 Q2 — left as exceptions for now).
 ACTION_VERB_EXCEPTIONS = {
     "predict",
