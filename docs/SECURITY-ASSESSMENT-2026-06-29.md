@@ -11,7 +11,8 @@
 > 21 backends found **no malicious code, no data exfiltration, no telemetry/phone-home, no hidden
 > network destinations, and no dangerous dynamic-code execution** — the "Schweinereien" concern is
 > not borne out by the code. The router is, by MCP standards, **above-average secure by design** (no
-> token passthrough, audience-bound auth wired, Origin validation, a hardened container). The real,
+> token passthrough — *after a fix made during this review, see §5.0* — audience-bound auth wired,
+Origin validation, a hardened container). The real,
 > legitimate risks are **operational and data-protection**, not malice: (1) the public endpoint
 > ships **unauthenticated by default**; (2) "read-only" does **not** mean "safe" in an agentic
 > context — returned text and tool descriptions are injection surfaces; and (3) the **queries** a
@@ -105,7 +106,7 @@ boundary** (auth + network egress allowlist + isolation), not a model-layer clas
 |---|---|---|---|
 | Indirect prompt injection via returned text — **yes, primary risk** | Treat returned text as data; wrap/fence with provenance; host isolation | Partial — advisory note only, no content fencing (§5) | [OWASP LLM01](https://genai.owasp.org/llm-top-10/), [Anthropic](https://www.anthropic.com/engineering/how-we-contain-claude) |
 | Tool poisoning / rug-pull (desc changes after approval) — **yes** | Pin tool definitions by hash; alert on drift | **Gap** — `snapshot_fleet.py` captures the manifest but no drift gate yet | [Invariant](https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks), [OWASP MCP Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html) |
-| Confused deputy / token passthrough — gateway anti-pattern | Never forward caller token; per-backend credential | **Done** (R1.6 invariant, enforced in `auth.py`/`composition.py`) | [MCP auth spec](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization) |
+| Confused deputy / token passthrough — gateway anti-pattern | Never forward caller token; per-backend credential | **Was latently BROKEN; fixed in this review** — fastmcp's `ProxyClient` defaulted to forwarding the caller's `authorization` to backends; now disabled (§5.0) | [MCP auth spec](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization) |
 | Unauthenticated endpoint / excessive exposure | Edge auth; audience-bound tokens | **Wired but OFF by default** (§5 P0) | MCP auth spec |
 | DNS rebinding (Streamable HTTP) | Validate `Origin`; bind loopback | **Done** (`security.py`) | [MCP transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) |
 | SSRF to internal services | Block private IPs; fixed hosts | **Done** (fixed hosts; pubtator `SafeUrlFetcher`) | MCP best practices |
@@ -122,8 +123,27 @@ defense** (deterministic policy engine + reasoning-based guards) because reasoni
 
 ## 5. Current posture — strengths and gaps
 
+### 5.0 Remediated during this review (branch `security/hardening-2026-06-29`)
+
+Three fixes were implemented and tested while writing this assessment:
+
+1. **Token passthrough to backends — a real defect, now fixed (CRITICAL).** The router
+   documents an R1.6 "never forward the caller's token" invariant, but fastmcp's
+   `ProxyClient` enables `forward_incoming_headers=True` by default, and its HTTP transport
+   *explicitly re-includes* `authorization` (which `get_http_headers` would otherwise strip).
+   Net effect: the router *was* forwarding the caller's bearer token to every backend — a
+   token-passthrough / confused-deputy violation (MCP spec MUST NOT). Fixed via a
+   `make_proxy_client()` that disables forwarding on every proxy client in both registration
+   paths; regression-tested in `tests/unit/test_no_token_passthrough.py`. *This is the kind
+   of latent, library-default issue infosec rightly worries about — and it's now closed.*
+2. **Secure-by-default guard.** The router refuses to start with `GF_AUTH_MODE=none` on a
+   non-loopback bind unless `GF_ALLOW_INSECURE=true` is set explicitly.
+3. **Outbound timeout** (`GF_BACKEND_TIMEOUT`, default 120 s) so a hung backend can't stall
+   the router.
+
 ### 5.1 Strengths (lead with these in the infosec conversation)
-- **No token passthrough** to backends (confused-deputy defense) — explicit and enforced.
+- **No token passthrough** to backends (confused-deputy defense) — now genuinely enforced
+  after the §5.0 fix (it was previously undone by a fastmcp default).
 - **Modern MCP auth wired**: audience-bound `JWTVerifier`, Protected Resource Metadata (RFC 9728),
   `WWW-Authenticate`, OAuth proxy (`jwt`/`oauth` modes) — just not enabled by default.
 - **Origin validation** (DNS-rebinding MUST); **Streamable HTTP only** (no SSE).
@@ -139,8 +159,8 @@ defense** (deterministic policy engine + reasoning-based guards) because reasoni
 **P0 — before any colleague connects (router):**
 1. **Open, unauthenticated public endpoint.** `genefoundry.org/mcp` runs `GF_AUTH_MODE=none`; the
    Docker image forces `--host 0.0.0.0`. Anyone can use the fleet and your VPS as an anonymous proxy
-   to NCBI/Ensembl/etc. → **Enable `jwt`/`oauth`**, and add a **secure-by-default startup guard** that
-   refuses `auth=none` on a non-loopback bind unless `GF_ALLOW_INSECURE=true` is set explicitly.
+   to NCBI/Ensembl/etc. → **Enable `jwt`/`oauth`** (operator config) — the **secure-by-default startup
+   guard** that refuses `auth=none` on a non-loopback bind unless `GF_ALLOW_INSECURE=true` is **done (§5.0)**.
 2. **Backends must not be directly reachable.** All 21 are unauthenticated by design; their *base*
    `docker-compose.yml` publishes a host port. → Ensure prod uses the expose-only overlay; verify with
    a network test that backend ports are not on the public IP.
@@ -158,8 +178,8 @@ defense** (deterministic policy engine + reasoning-based guards) because reasoni
    "treat retrieved text as evidence, not instructions" note, not structural fencing. → Standardize an
    **untrusted-content envelope** (provenance + delimiters) fleet-wide (best in the Response-Envelope
    standard / router), keeping the note.
-7. **Outbound timeouts** router→backends not explicitly set. → Set explicit httpx timeouts so a hung
-   backend can't stall the router.
+7. ~~**Outbound timeouts** router→backends not explicitly set.~~ **Done (§5.0)** — `GF_BACKEND_TIMEOUT`
+   (default 120 s) applied to every proxy client.
 
 **P1 — backend specifics (highest-value):**
 8. **autopvs1-link is the outlier.** It screen-scrapes a **third-party Chinese** service
