@@ -20,7 +20,7 @@ Spec: `docs/specs/2026-06-29-drift-detection-ci-design.md`.
 
 ## File Structure
 
-- `genefoundry_router/cli.py` — MODIFY: `_snapshot_live` returns `(Manifest, set[str])`; `drift` command does reachable-only diffing + exit codes 0/1/2. (Already contains both; this refines them.)
+- `genefoundry_router/cli.py` — MODIFY: add a `TYPE_CHECKING` import of `Manifest`; `_snapshot_live` returns `(Manifest, set[str])` with bounded per-backend timeouts + a no-URL→unreachable guard; `drift` does reachable-only diffing + exit codes 0/1/2 (no `type: ignore`). (Already contains both; this refines them.)
 - `tests/unit/test_cli_drift.py` — MODIFY: update fakes to the new tuple return; add unreachable + changed-tool cases.
 - `ci/fleet-urls.env` — CREATE: committed, non-secret `GF_*_URL` lines for every enabled backend.
 - `tests/unit/test_ci_fleet_urls.py` — CREATE: asserts the env file covers exactly the enabled backends' `url_env`s.
@@ -120,18 +120,29 @@ def test_drift_takes_precedence_over_unreachable(monkeypatch):
 Run: `uv run pytest tests/unit/test_cli_drift.py -q`
 Expected: FAIL — `_snapshot_live` returns a `Manifest`, not a tuple (current `drift` does `report = diff_manifests(pinned, live)` with `live` a coroutine-result Manifest), so unpacking/exit codes don't match (exit 2 path doesn't exist yet).
 
-- [ ] **Step 3: Update `_snapshot_live` to return `(Manifest, set[str])` with a light retry**
+- [ ] **Step 3: Update `_snapshot_live` — typed tuple, no-URL guard, bounded timeouts, retry**
 
-In `genefoundry_router/cli.py`, replace the body of `_snapshot_live` with:
+First, add a `TYPE_CHECKING` import near the top of `genefoundry_router/cli.py` (e.g. just below `import sys`) so the new return annotation resolves under mypy without importing fastmcp at module load:
+
+```python
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from genefoundry_router.devtools.fakes import Manifest
+```
+
+Then replace the body of `_snapshot_live` with:
 
 ```python
 async def _snapshot_live(
     registry: list[BackendDef], attempts: int = 2
-) -> tuple[object, set[str]]:
+) -> tuple[Manifest, set[str]]:
     """Snapshot reachable backends' tools; return (live_manifest, unreachable_namespaces).
 
-    Unreachable backends are retried up to ``attempts`` times, then excluded from the
-    manifest and reported separately — so an outage is never mistaken for a removed tool.
+    A backend is *unreachable* if it is enabled but has no URL, or if listing its tools
+    fails after ``attempts`` tries. Unreachable backends are excluded from the manifest and
+    reported separately, so an outage (or a missing ``GF_*_URL``) is never mistaken for a
+    removed tool. Per-backend timeouts keep one hung backend from stalling the whole run.
     """
     from fastmcp import Client
 
@@ -142,16 +153,21 @@ async def _snapshot_live(
         ToolSpec,
     )
 
-    backends: dict[str, object] = {}
+    backends: dict[str, BackendSpec] = {}
     unreachable: set[str] = set()
     for b in registry:
-        if not (b.enabled and b.url):
+        if not b.enabled:
+            continue
+        if not b.url:  # enabled but unconfigured: unreachable, NOT a removed tool
+            unreachable.add(b.namespace)
+            console.print(f"[yellow]WARN[/yellow] {b.name}: no URL configured ({b.url_env})")
             continue
         tools = None
         last_exc: Exception | None = None
         for _ in range(attempts):
             try:
-                async with Client(b.url) as client:
+                # Bounded so one hung backend can't exceed the CI job timeout.
+                async with Client(b.url, timeout=30, init_timeout=10) as client:
                     tools = await client.list_tools()
                 break
             except Exception as exc:  # transient: retry, then mark unreachable
@@ -174,7 +190,7 @@ async def _snapshot_live(
         )
     manifest = Manifest(
         snapshot_meta=SnapshotMeta(captured_at="live", source="live", router_servers_file=""),
-        backends=backends,  # type: ignore[arg-type]
+        backends=backends,
     )
     return manifest, unreachable
 ```
@@ -195,7 +211,7 @@ In `genefoundry_router/cli.py`, replace the body of the `drift` command (from `p
     pinned_reachable = pinned.model_copy(
         update={"backends": {ns: s for ns, s in pinned.backends.items() if ns not in unreachable}}
     )
-    report = diff_manifests(pinned_reachable, live)  # type: ignore[arg-type]
+    report = diff_manifests(pinned_reachable, live)
     for k in report.changed:
         console.print(f"[red]CHANGED[/red] {k}")
     for k in report.added:
@@ -240,7 +256,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: `genefoundry_router.config.load_registry`.
-- Produces: a committed env file defining `GF_<NAME>_URL` for every enabled backend; loaded by the workflow via `cat ci/fleet-urls.env >> "$GITHUB_ENV"`.
+- Produces: a committed env file defining `GF_<NAME>_URL` for every enabled backend; loaded by the workflow via `grep -E '^GF_[A-Z0-9_]+=' ci/fleet-urls.env >> "$GITHUB_ENV"` (comment lines filtered out).
 
 - [ ] **Step 1: Write the coverage test (failing)**
 
@@ -259,15 +275,17 @@ from genefoundry_router.config import load_registry
 def test_ci_fleet_urls_covers_enabled_backends():
     registry = load_registry("servers.yaml", os.environ)
     enabled = {b.url_env for b in registry if b.enabled}
-    all_envs = {b.url_env for b in registry}
 
     text = Path("ci/fleet-urls.env").read_text(encoding="utf-8")
+    # Comment lines (``# ...``) are ignored by this regex, so they're free to keep.
     defined = set(re.findall(r"^(GF_[A-Z0-9_]+)=\S+", text, re.MULTILINE))
 
+    # Contract: define a URL for EXACTLY the enabled backends — no more, no less. A URL
+    # for a disabled (or unknown) backend is dead weight the probe never reads, so flag it.
     missing = enabled - defined
-    stale = defined - all_envs
+    extra = defined - enabled
     assert not missing, f"ci/fleet-urls.env missing: {sorted(missing)}"
-    assert not stale, f"ci/fleet-urls.env has unknown vars: {sorted(stale)}"
+    assert not extra, f"ci/fleet-urls.env has vars not for enabled backends: {sorted(extra)}"
 ```
 
 - [ ] **Step 2: Run it; verify it fails**
@@ -286,7 +304,8 @@ uv run python - <<'PY' > ci/fleet-urls.env
 import os
 from genefoundry_router.config import load_registry
 print("# Public production /mcp URLs for the drift CI (NON-SECRET).")
-print("# Loaded by .github/workflows/drift.yml via: cat ci/fleet-urls.env >> $GITHUB_ENV")
+print("# Loaded by .github/workflows/drift.yml via a grep filter into $GITHUB_ENV")
+print("# (comment lines like this one are filtered out, so they're safe to keep).")
 print("# Keep in lockstep with servers.yaml (enforced by tests/unit/test_ci_fleet_urls.py).")
 for b in load_registry("servers.yaml", os.environ):
     if b.enabled:
@@ -327,19 +346,49 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 Create `tests/unit/test_drift_workflow_present.py`:
 
 ```python
-"""The drift workflow exists, is opt-in gated, and least-privilege."""
+"""The drift workflow exists, is opt-in, least-privilege, SHA-pinned, fail-safe."""
 
+import re
 from pathlib import Path
+
+WF = Path(".github/workflows/drift.yml")
 
 
 def test_drift_workflow_present_and_gated():
-    text = Path(".github/workflows/drift.yml").read_text(encoding="utf-8")
+    text = WF.read_text(encoding="utf-8")
     assert "schedule:" in text
     assert "workflow_dispatch:" in text
-    assert "issues: write" in text
     assert "DRIFT_ENABLED" in text  # opt-in gate
     assert "DRIFT_HEARTBEAT_URL" in text  # heartbeat
     assert "tool-drift" in text  # dedup label
+
+
+def test_permissions_are_least_privilege():
+    text = WF.read_text(encoding="utf-8")
+    assert "contents: read" in text
+    assert "issues: write" in text
+    # No broad grants.
+    assert "write-all" not in text
+    assert "contents: write" not in text
+
+
+def test_all_external_actions_are_sha_pinned():
+    refs = re.findall(r"uses:\s*(\S+)", WF.read_text(encoding="utf-8"))
+    assert refs, "expected at least one external action"
+    for ref in refs:
+        assert re.search(r"@[0-9a-f]{40}$", ref), f"action not SHA-pinned: {ref}"
+
+
+def test_heartbeat_is_fail_safe():
+    # The dead-man's-switch must fire even when the drift step fails.
+    assert re.search(r"always\(\)\s*&&\s*env\.DRIFT_HEARTBEAT_URL", WF.read_text(encoding="utf-8"))
+
+
+def test_fleet_urls_loaded_via_filter_not_raw_cat():
+    text = WF.read_text(encoding="utf-8")
+    # Comments in ci/fleet-urls.env must not reach $GITHUB_ENV — load via a grep filter.
+    assert "grep -E" in text and "ci/fleet-urls.env" in text
+    assert "cat ci/fleet-urls.env" not in text
 ```
 
 - [ ] **Step 2: Run it; verify it fails**
@@ -392,7 +441,9 @@ jobs:
       - name: Install
         run: uv sync --frozen --no-dev
       - name: Load fleet URLs
-        run: cat ci/fleet-urls.env >> "$GITHUB_ENV"
+        # Filter to GF_*=... assignments only; comment lines must not reach $GITHUB_ENV
+        # (GitHub treats the env file as KEY=value pairs, not a dotenv with comments).
+        run: grep -E '^GF_[A-Z0-9_]+=' ci/fleet-urls.env >> "$GITHUB_ENV"
       - name: Run drift check
         id: drift
         run: |
@@ -412,7 +463,7 @@ jobs:
             gh issue comment "$existing" -F drift_output.txt
           else
             gh issue create --label tool-drift \
-              --title "🚨 Tool-definition drift detected" -F drift_output.txt
+              --title "Tool-definition drift detected" -F drift_output.txt
           fi
       - name: Close resolved drift issue
         if: ${{ steps.drift.outputs.exit_code == '0' && vars.DRIFT_OPEN_ISSUE != 'false' }}
@@ -484,4 +535,15 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **Placeholder scan:** none — every code/YAML/test block is concrete.
 
-**Type consistency:** `_snapshot_live -> tuple[Manifest, set[str]]` is unpacked as `live, unreachable` in `drift`; `diff_manifests(pinned_reachable, live)` matches `drift.py`'s signature; `report.{changed,added,removed,has_drift}` match `DriftReport`. Test fakes return the `(Manifest, set)` tuple to match. ✓
+**Type consistency:** `_snapshot_live -> tuple[Manifest, set[str]]` (resolved via the `TYPE_CHECKING` import) is unpacked as `live, unreachable` in `drift`; `backends: dict[str, BackendSpec]` matches `Manifest.backends`, so no `type: ignore` is needed on the `Manifest(...)` construction or the `diff_manifests(pinned_reachable, live)` call; `report.{changed,added,removed,has_drift}` match `DriftReport`. Test fakes return the `(Manifest, set)` tuple to match. ✓
+
+## Review incorporated (codex pass, 2026-06-30)
+
+A pre-implementation review surfaced six issues; five are folded into the tasks above, the sixth is intentionally not applied:
+
+1. **`$GITHUB_ENV` would choke on comment lines (High)** → Task 3 loads `ci/fleet-urls.env` with `grep -E '^GF_[A-Z0-9_]+=' … >> "$GITHUB_ENV"` instead of a raw `cat`; `test_fleet_urls_loaded_via_filter_not_raw_cat` guards it.
+2. **A missing `GF_*_URL` would read as false drift (High)** → Task 1 `_snapshot_live` now treats *enabled-but-no-URL* as unreachable (added to the `unreachable` set), so that namespace is excluded from both sides of the diff rather than reported REMOVED.
+3. **Hung backend could blow the job timeout / miss the heartbeat (Medium)** → bounded `Client(b.url, timeout=30, init_timeout=10)` (both params verified present in the installed FastMCP `Client`).
+4. **Typing weaker than the repo's mypy gate (Medium)** → `tuple[Manifest, set[str]]` + `dict[str, BackendSpec]` with a `TYPE_CHECKING` import; both `type: ignore[arg-type]` comments removed.
+5. **Workflow tests too shallow (Medium)** → Task 3 now asserts SHA-pinned `uses:`, exactly `contents: read` + `issues: write`, a fail-safe `always()` heartbeat, and the grep loader; the env-sync test uses `defined - enabled` (also flags URLs left behind for disabled backends).
+6. **Emoji + co-author cleanup (Low)** → emoji dropped from the issue title (ASCII default). **Co-author trailer kept**: every merged commit in this repo carries `Co-Authored-By: Claude Opus 4.8 (1M context)` — it is the established convention here, so removing it would be the inconsistency.

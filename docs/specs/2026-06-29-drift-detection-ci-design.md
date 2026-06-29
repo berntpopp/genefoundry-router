@@ -96,7 +96,11 @@ curl $DRIFT_HEARTBEAT_URL   ── missing ping ⇒ healthchecks.io alerts (watc
 ### 6.1 `drift` CLI refinement — reachable vs unreachable (the one code change)
 `_snapshot_live` currently skips unreachable backends silently, so an outage makes their tools look
 **removed** → a false rug-pull alert. Refine it to return `(live_manifest, unreachable: set[str])`,
-with a light per-backend retry (e.g. 2 attempts) before declaring a backend unreachable. The `drift`
+with a light per-backend retry (e.g. 2 attempts) and a bounded per-backend timeout (so one hung
+backend can't exhaust the job's wall-clock or miss the heartbeat) before declaring a backend
+unreachable. *Unreachable* also covers an **enabled-but-unconfigured** backend (no `GF_*_URL` in the
+environment): it joins the `unreachable` set rather than vanishing from the live manifest, so a
+missing URL surfaces as an availability warning, never as a false `removed`. The `drift`
 command then:
 - diffs only the **reachable** namespaces (filter the baseline to the reachable set so unreachable
   backends are excluded from *both* sides, never reported as `removed`);
@@ -198,11 +202,13 @@ Because the baseline is the shared `tests/fixtures/fleet_manifest.json`:
 - **Unit (`drift`/CLI):** reachable-only diffing; unreachable backend is reported separately and
   does **not** appear as `removed`; exit codes 0/1/2 incl. the drift-and-unreachable precedence
   (→ 1). Monkeypatch `_snapshot_live` to return crafted `(manifest, unreachable)` pairs.
-- **Unit (config sync):** `ci/fleet-urls.env` defines a `GF_*_URL` for every enabled backend in
-  `servers.yaml` (and no stale extras).
-- **Presence/lint:** a test asserts `.github/workflows/drift.yml` exists with the expected trigger,
-  `issues: write` permission, and the `DRIFT_ENABLED` opt-in gate (mirrors the repo's existing
-  presence tests).
+- **Unit (config sync):** `ci/fleet-urls.env` defines a `GF_*_URL` for **exactly** the enabled
+  backends in `servers.yaml` — none missing, and none left behind for a disabled/unknown backend.
+- **Presence/lint:** tests assert `.github/workflows/drift.yml` exists with the expected triggers,
+  the `DRIFT_ENABLED` opt-in gate and heartbeat secret; **least-privilege** permissions (exactly
+  `contents: read` + `issues: write`, no broad grants); **every external `uses:` SHA-pinned**; a
+  **fail-safe `always()` heartbeat**; and that the fleet URLs load through a `grep` filter (not a raw
+  `cat`) so comment lines never reach `$GITHUB_ENV`.
 - **Manual:** first `workflow_dispatch` run validates the YAML, URL loading, issue path (force a
   synthetic drift by temporarily editing the baseline in a scratch run), and the heartbeat ping.
 - Whole change must pass `make ci-local`.
