@@ -1,0 +1,39 @@
+name: mcp-conformance
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+permissions:
+  contents: read
+concurrency:
+  group: conformance-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CONFORMANCE_NAME: REPLACE-ME-link   # serverInfo.name
+      CONFORMANCE_TIER: stateless
+      MCP_PORT: "8000"                    # docker-compose host port
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v8
+      - run: uv sync --group dev
+      - name: Build & start server
+        run: make docker-build && make docker-up
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS "http://127.0.0.1:${MCP_PORT}/health" && break || sleep 2
+          done
+      - name: Run conformance probe
+        env:
+          CONFORMANCE_MCP_URL: http://127.0.0.1:${{ env.MCP_PORT }}
+        run: uv run pytest tests/conformance/test_transport_v1.py -v
+      - name: Logs on failure
+        if: failure()
+        run: make docker-logs || docker compose -f docker/docker-compose.yml logs
+      - name: Teardown
+        if: always()
+        run: make docker-down || true

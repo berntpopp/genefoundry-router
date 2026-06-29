@@ -121,3 +121,7 @@ snapshot-fleet: ## Refresh the fleet manifest from live backends (online)
 	uv run python scripts/snapshot_fleet.py --captured-at $$(date -u +%FT%TZ)
 
 ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
+
+.PHONY: conformance
+conformance:  ## Probe a live MCP server: make conformance MCP_URL=... NAME=... TIER=stateless
+	uv run python -m genefoundry_router.conformance $(MCP_URL) --name $(NAME) --tier $(or $(TIER),stateless)
