@@ -96,7 +96,7 @@ This is the only serialization point. It produces the contract every other task 
 ```bash
 cd /home/bernt-popp/development/genefoundry-router
 git fetch -q origin
-git switch -c feat/mcp-transport-conformance origin/master
+git switch -c feat/mcp-transport-conformance origin/main
 ```
 
 - [ ] **Step 2: Write the probe**
@@ -701,7 +701,7 @@ The router (`genefoundry`) builds `http_app(path="/")` and mounts at `GF_MCP_PAT
 
 ```bash
 cd /home/bernt-popp/development/genefoundry-router
-git fetch -q origin && git switch -c feat/router-transport-stateless origin/master
+git fetch -q origin && git switch -c feat/router-transport-stateless origin/main
 ```
 
 - [ ] **Step 2: RED — in-process router conformance test**
