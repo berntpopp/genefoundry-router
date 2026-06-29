@@ -3,8 +3,8 @@
 - **Date:** 2026-06-29
 - **Status:** Draft for review
 - **Owner:** Bernt Popp
-- **Scope:** A scheduled GitHub Actions tripwire that runs `genefoundry-router drift` against the
-  live fleet every 6 hours, alerts on drift via a deduplicated GitHub issue, and uses a
+- **Scope:** An **opt-in** scheduled GitHub Actions tripwire that runs `genefoundry-router drift`
+  against the live fleet every 6 hours, alerts on drift via a deduplicated GitHub issue, and uses a
   dead-man's-switch heartbeat so a dropped/disabled run self-alerts.
 - **Boundary:** Research use only; not clinical decision support.
 
@@ -17,7 +17,8 @@ it, so it protects nothing. This spec wires it into a **scheduled CI tripwire**:
 GitHub Actions workflow snapshots the live fleet, compares it to the pinned baseline, and — on any
 added/removed/changed tool — opens or updates a GitHub issue. Every run pings a healthchecks.io
 dead-man's-switch so that a *missing* run (GitHub silently drops cron runs under load and disables
-schedules after 60 days of inactivity) is itself detected.
+schedules after 60 days of inactivity) is itself detected. The whole feature is **opt-in and
+configurable** — it must not impose itself on forks/other operators.
 
 ## 2. Background & threat
 
@@ -42,6 +43,10 @@ fingerprinting half already exists in `drift.py`.
 - Detect the tripwire's *own* silent failure (dropped/disabled run) via a dead-man's-switch.
 - Distinguish a **tampered** backend (security) from an **unreachable** backend (availability) so
   outages do not produce false rug-pull alerts (alert fatigue is what kills tripwires).
+- **Opt-in & configurable.** Shipping the capability must not force it on forks/other operators.
+  Whether the scheduled check runs, the alert channels (issue, heartbeat), the cadence, the fleet
+  URLs, and the baseline path are all configuration — and the `drift` CLI stays usable standalone
+  (anyone can wire it into their own cron/CI independently of the provided workflow).
 
 **Non-goals (this spec)**
 - The in-router, per-relist / per-execution drift check (the "continuous" leg). Tracked as future
@@ -56,7 +61,7 @@ fingerprinting half already exists in `drift.py`.
 | Decision | Choice | Why |
 |---|---|---|
 | Where it runs / how it alerts | **GitHub Actions cron → auto GitHub issue** | Zero infra, lives with the code, the backends are public and reachable from GH runners; a red scheduled run also emails the workflow owner. |
-| Watcher-died detection | **Dead-man's-switch, self-hosted (Uptime Kuma on the VPS)** | A scheduled check can stop silently (GH drops runs under load; disables after 60 days). A heartbeat the monitor *expects* turns "didn't run" into an alert. Self-hosted via `strato_v6_docker_npm` → no third-party dependency, fits the on-prem/data-residency story, reuses the existing NPM + Telegram alerting. Independence caveat in §6.5/§11. |
+| Watcher-died detection | **Dead-man's-switch (healthchecks.io, hosted free)** | A scheduled check can stop silently (GH drops runs under load; disables after 60 days). A heartbeat the monitor *expects* turns "didn't run" into an alert. Hosted because a watchman should be **independent of what it watches**: external is independent of both GitHub and the VPS, needs zero maintenance (no "watch the watchman" recursion), and the ping is non-sensitive. Open-source → self-hostable later if ever required. |
 | Trusted baseline | **Reuse `tests/fixtures/fleet_manifest.json`** | No new artifact. ⚠️ It is also the discoverability snapshot — see §9 for the coupling discipline. |
 | Frequency | **Every 6 hours, off-peak (`17 */6 * * *`)** | Drift-detection norm is "daily at minimum"; 6h gives a tighter window at trivial cost. `:17` avoids GH's `:00` cron congestion. |
 
@@ -69,7 +74,8 @@ Sources: [OWASP MCP Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/
 ## 5. Architecture & data flow
 
 ```
-GitHub Actions (schedule: 17 */6 * * *, + workflow_dispatch)   ── runs on master only
+GitHub Actions (schedule: 17 */6 * * *, + workflow_dispatch)   ── runs on the default branch only
+   │  gate: vars.DRIFT_ENABLED == 'true' (or manual dispatch) else no-op
    │  load ci/fleet-urls.env  → GF_*_URL (public, non-secret)
    ▼
 genefoundry-router drift --manifest tests/fixtures/fleet_manifest.json
@@ -82,7 +88,7 @@ genefoundry-router drift --manifest tests/fixtures/fleet_manifest.json
  1 drift among reachable ────► open/append `tool-drift` issue ; job RED ; heartbeat ping
    │
    ▼ (always, if: always())
-curl $HEALTHCHECKS_PING_URL   ── missing ping ⇒ healthchecks.io alerts (watcher died)
+curl $DRIFT_HEARTBEAT_URL   ── missing ping ⇒ healthchecks.io alerts (watcher died)
 ```
 
 ## 6. Components
@@ -109,6 +115,9 @@ unit test asserts the file covers every enabled backend's `url_env` (keeps the t
 
 ### 6.3 `.github/workflows/drift.yml` (new)
 - `on: { schedule: [{cron: "17 */6 * * *"}], workflow_dispatch: {} }`.
+- **Opt-in gate:** the job runs only when the repo variable `vars.DRIFT_ENABLED == 'true'`, or the
+  run was triggered manually (`workflow_dispatch`). Unset → scheduled runs are a no-op, so forks and
+  clones neither open issues nor ping the canonical fleet. The canonical repo sets `DRIFT_ENABLED=true`.
 - `permissions: { contents: read, issues: write }`; `concurrency` group to prevent overlap.
 - SHA-pinned `actions/checkout`, `actions/setup-python` (3.12), `astral-sh/setup-uv` — versions
   matched to `ci.yml`. `uv sync --frozen --no-dev` (runtime deps suffice for the CLI).
@@ -125,38 +134,41 @@ Using `gh` + the built-in `GITHUB_TOKEN`:
 - **exit 2:** emit a `::warning::` annotation listing the unreachable backends; job stays green; do
   **not** touch the drift issue.
 One issue at a time — no per-run spam; red runs continue until the baseline is re-pinned (§9).
+**Optional:** gated on `vars.DRIFT_OPEN_ISSUE != 'false'` (default on); set it `false` to rely only on
+the red scheduled-run + owner email.
 
-### 6.5 Dead-man's-switch heartbeat (self-hosted)
+### 6.5 Dead-man's-switch heartbeat
 Final step, `if: always()`: `curl -fsS -m 10 --retry 3 -o /dev/null "$DRIFT_HEARTBEAT_URL"`. The ping
 means "the job ran," independent of the drift result (drift is signalled by the issue). The target is
-a **self-hosted monitor** deployed on the VPS via `strato_v6_docker_npm` — recommended:
-**Uptime Kuma** (single container; its "Push" monitor *is* a dead-man's-switch — it expects a push
-every period and marks the monitor DOWN + notifies, e.g. via Telegram, when one is missed; it can
-*also* actively poll the fleet `/health` endpoints, so one tool covers both drift-heartbeat and fleet
-uptime). Configure the push monitor for a 6h period + ~45 min grace (covers GH cron delay ≤30 min +
-run time). `DRIFT_HEARTBEAT_URL` is a repo secret holding the monitor's push URL; the step is skipped
-gracefully if unset (so forks/PRs without the secret don't error). The CI side is **tool-agnostic** —
-it only curls a URL — so the monitor can be swapped (self-hosted healthchecks.io, etc.) without
-touching the workflow.
+a **healthchecks.io** check (hosted free tier): it expects a ping each scheduled period and, if one
+fails to arrive, notifies you. Configure it for a 6h period + ~45 min grace (covers GH cron delay
+≤30 min + run time). `DRIFT_HEARTBEAT_URL` is a repo secret holding the check's ping URL; the step is
+skipped gracefully if unset — the heartbeat is therefore fully optional. The CI side is
+**tool-agnostic** (it only curls a URL), so the monitor can be swapped (e.g. a self-hosted
+healthchecks.io instance) without touching the workflow.
 
-**Independence caveat (important).** A monitor cannot detect the death of its own host. Running the
-monitor on the same VPS as the fleet means it is independent of GitHub (so it *does* catch a
-dropped/disabled GH run, GH outages, etc.) but shares a failure domain with the fleet: if the **VPS
-itself** is down, the monitor is down too and cannot alert. That compound case is acceptable for this
-tripwire's purpose — a rug pull is moot when the fleet is offline — and a VPS outage is a louder,
-separately-monitored event. To close even that gap, add one **minimal external watcher** whose only
-job is "is the VPS/monitor alive" (e.g. a free UptimeRobot check hitting the monitor's status page,
-or the monitor pushing its own heartbeat to a free hosted healthchecks check). This is the one
-irreducible external dependency; see §14 open question 2.
+**Why external, not on-VPS:** a watchman should be independent of what it watches. A hosted check is
+independent of *both* GitHub and the VPS, so it keeps alerting even in compound failures, needs zero
+maintenance (no "who watches the watchman" recursion to solve), and the ping carries no sensitive
+data ("a run happened"). healthchecks.io is open-source, so it can be self-hosted later if a
+third-party heartbeat ever becomes undesirable.
 
-## 7. Configuration & secrets
+## 7. Configuration surface (opt-in; no code edits to enable/disable/re-target)
 
-| Item | Kind | Notes |
-|---|---|---|
-| `ci/fleet-urls.env` | committed, non-secret | public `GF_*_URL` values; covered by a sync test |
-| `DRIFT_HEARTBEAT_URL` | repo secret | self-hosted monitor push URL (Uptime Kuma on the VPS); step no-ops if unset |
-| `GITHUB_TOKEN` | built-in | needs `issues: write` for §6.4 |
-| backend auth | none today | if the fleet later requires auth, add a CI token secret + send it; **not** the caller's token (no passthrough) |
+| Knob | Kind | Required? | Default | Effect |
+|---|---|---|---|---|
+| `DRIFT_ENABLED` | repo variable | to enable scheduled runs | unset (off) | gates the scheduled job; `workflow_dispatch` runs regardless. Forks stay off. |
+| `ci/fleet-urls.env` | committed file | to run the check | the genefoundry fleet's public `GF_*_URL`s | the backends drift queries; operators edit for their own fleet. Covered by a sync test. |
+| baseline manifest | `--manifest` flag in the workflow | no | `tests/fixtures/fleet_manifest.json` | the pinned known-good snapshot |
+| servers file | `--servers-file` flag | no | `servers.yaml` | which backends are in scope |
+| schedule / cadence | `cron:` in the workflow | no | `17 */6 * * *` (6h) | edit to change frequency |
+| `DRIFT_OPEN_ISSUE` | repo variable | no | `true` | open/update the `tool-drift` issue, vs rely on the red run/email only |
+| `DRIFT_HEARTBEAT_URL` | repo secret | no | unset → heartbeat skipped | dead-man's-switch ping URL (healthchecks.io) |
+| `GITHUB_TOKEN` | built-in | when issues on | `issues: write` | issue automation |
+| backend auth | — | none today | — | if the fleet later needs auth, add a CI token secret; **never** the caller's token (no passthrough) |
+
+The `drift` CLI is independently runnable (`genefoundry-router drift --servers-file … --manifest …`)
+for operators who prefer their own cron/CI over the bundled workflow.
 
 ## 8. Failure modes & handling
 
@@ -164,15 +176,14 @@ irreducible external dependency; see §14 open question 2.
 |---|---|---|
 | Tool definition changed/added/removed (reachable) | `drift` exit 1 | `tool-drift` issue + red run + email |
 | Backend unreachable (outage) | `drift` exit 2 | `::warning::`, green run — **not** a drift alert |
-| Scheduled run dropped by GH / workflow disabled (60-day) | missing heartbeat | self-hosted monitor (Uptime Kuma) alerts (e.g. Telegram) |
-| GH-wide Actions outage | missing heartbeat | self-hosted monitor alerts |
-| VPS (and thus the monitor) down | optional external watcher / fleet uptime monitoring | out of scope for this heartbeat — see §6.5 independence caveat |
+| Scheduled run dropped by GH / workflow disabled (60-day) | missing heartbeat | healthchecks.io alerts |
+| GH-wide Actions outage | missing heartbeat | healthchecks.io alerts |
 | Baseline legitimately stale after an approved backend change | drift exit 1 (expected) | review, then re-pin via PR (§9) |
 
 ## 9. Baseline lifecycle (re-pin discipline)
 
 Because the baseline is the shared `tests/fixtures/fleet_manifest.json`:
-- The CI compares live vs the committed manifest on `master`.
+- The CI compares live vs the committed manifest on the default branch.
 - When drift fires for a **legitimate** backend change, refresh the baseline with
   `make snapshot-fleet` and merge it via a **reviewed PR**; the reviewer treats the tool-def diff as
   security-relevant. This re-pins the tripwire.
@@ -189,8 +200,9 @@ Because the baseline is the shared `tests/fixtures/fleet_manifest.json`:
   (→ 1). Monkeypatch `_snapshot_live` to return crafted `(manifest, unreachable)` pairs.
 - **Unit (config sync):** `ci/fleet-urls.env` defines a `GF_*_URL` for every enabled backend in
   `servers.yaml` (and no stale extras).
-- **Presence/lint:** a test asserts `.github/workflows/drift.yml` exists with the expected trigger +
-  `issues: write` permission (mirrors the repo's existing presence tests).
+- **Presence/lint:** a test asserts `.github/workflows/drift.yml` exists with the expected trigger,
+  `issues: write` permission, and the `DRIFT_ENABLED` opt-in gate (mirrors the repo's existing
+  presence tests).
 - **Manual:** first `workflow_dispatch` run validates the YAML, URL loading, issue path (force a
   synthetic drift by temporarily editing the baseline in a scratch run), and the heartbeat ping.
 - Whole change must pass `make ci-local`.
@@ -200,20 +212,17 @@ Because the baseline is the shared `tests/fixtures/fleet_manifest.json`:
 - The workflow only **reads** backend tool lists; no caller token is involved and none is forwarded
   (consistent with the router's no-passthrough invariant).
 - `permissions:` is least-privilege (`contents: read`, `issues: write`).
-- The heartbeat ping carries no sensitive data ("a run happened"). The monitor is **self-hosted** on
-  the VPS (`strato_v6_docker_npm`) → no third-party dependency, supporting the on-prem/data-residency
-  posture. The one residual external touchpoint is the optional VPS host-watcher (§6.5).
+- The heartbeat ping carries no sensitive data ("a run happened"). The monitor is external
+  (healthchecks.io); it can be self-hosted later if a third-party heartbeat is undesirable. The ping
+  URL is a secret only to prevent spoofed pings.
 - The drift issue body contains tool names/old-vs-new fingerprints and changed field summaries —
   reference metadata, no patient data.
 
 ## 12. Operational runbook
 
-1. **Setup (one-time):** deploy Uptime Kuma on the VPS via `strato_v6_docker_npm` (add a
-   `uptime_kuma` entry to `config/projects.yaml` + an NPM proxy host via
-   `scripts/setup_npm_hosts.py`, e.g. `status.genefoundry.org`); create a **Push** monitor
-   (period 6h, grace ~45 min) with a Telegram notification; copy its push URL into the
-   `DRIFT_HEARTBEAT_URL` repo secret; create the `tool-drift` GitHub label. Optionally add a minimal
-   external watcher for the VPS host itself (§6.5).
+1. **Setup (one-time):** create a healthchecks.io check (period 6h, grace ~45 min) and copy its ping
+   URL into the `DRIFT_HEARTBEAT_URL` repo secret; create the `tool-drift` GitHub label; set the
+   `DRIFT_ENABLED=true` repo variable to turn on scheduled runs.
 2. **On a `tool-drift` issue:** inspect the diff. Legit upstream change → re-pin (§9). Unexpected →
    treat as a possible rug pull: disable/roll back the backend, investigate, then re-pin.
 3. **On a healthchecks.io alert:** the tripwire stopped running — check Actions (disabled? GH
@@ -226,10 +235,8 @@ Because the baseline is the shared `tests/fixtures/fleet_manifest.json`:
   `.github/workflows/ci.yml` (conventions to mirror).
 - Sources: OWASP MCP Security Cheat Sheet; Google SAIF; healthchecks.io docs; GitHub `schedule`
   event docs; Spacelift drift-detection guide (all linked in §4).
-- **Cross-repo:** the workflow + CLI changes live in `genefoundry-router`; the self-hosted monitor
-  is deployed in `strato_v6_docker_npm` (new `uptime_kuma` project entry in `config/projects.yaml` +
-  an NPM proxy host). The implementation plan spans both repos but the genefoundry-router side is
-  self-contained (it only needs the `DRIFT_HEARTBEAT_URL` secret).
+- This is a **single-repo** change (workflow + CLI refinement + `ci/fleet-urls.env`); the heartbeat
+  monitor is an external healthchecks.io check referenced only by the `DRIFT_HEARTBEAT_URL` secret.
 - **Future (option 2):** wire drift into the router's startup + `PollingRefresher` relist for
   real-time, per-change detection (the "continuous" leg of the hybrid; OWASP's "re-hash before each
   execution"). This CI tripwire is the "scheduled scan" leg.
@@ -238,7 +245,6 @@ Because the baseline is the shared `tests/fixtures/fleet_manifest.json`:
 
 1. Should *persistent* unreachability (exit 2 for N consecutive runs) escalate to its own
    availability issue, or stay log-only? **Default: log-only** (availability is out of scope here).
-2. ~~Self-host vs hosted~~ **Resolved: self-host — Uptime Kuma on the VPS via `strato_v6_docker_npm`.**
-   Residual sub-decision: add a minimal external watcher for the VPS host itself (closes the §6.5
-   independence gap) vs accept it (rug-pull detection is moot when the fleet is down). **Default:
-   accept for v1; add the external watcher if/when host-down self-alerting is required.**
+2. ~~Self-host vs hosted~~ **Resolved: hosted healthchecks.io free tier** (independent watchman, zero
+   maintenance, non-sensitive ping); open-source, so self-hostable later if a third-party heartbeat
+   ever becomes undesirable.
