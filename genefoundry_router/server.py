@@ -88,7 +88,11 @@ def build_app(
     # enable_search=False: the composed lifespan applies tool-search AFTER normalization
     # so the BM25 index reflects final names/tags.
     server = build_server(settings, registry, proxy_targets=proxy_targets, enable_search=False)
-    mcp_app = server.http_app(path="/")  # ASGI sub-app; its lifespan must be entered
+    mcp_app = server.http_app(  # ASGI sub-app; its lifespan must be entered
+        path=settings.GF_MCP_PATH,
+        stateless_http=True,
+        json_response=True,
+    )
 
     async def _relist() -> None:
         await apply_normalizations(server, registry)
@@ -124,5 +128,6 @@ def build_app(
     auth_provider = server.auth
     if auth_provider is not None:
         app.router.routes.extend(auth_provider.get_routes())
-    app.mount(settings.GF_MCP_PATH, mcp_app)
+    # Root mount: baked GF_MCP_PATH owns /mcp; /health and /metrics registered first.
+    app.mount("/", mcp_app)
     return app
