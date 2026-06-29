@@ -16,12 +16,21 @@ def _jwt_app(gnomad_fake):
         GF_PUBLIC_BASE_URL="https://genefoundry.example.org/mcp",
     )
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
-    return TestClient(build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake}))
+    # follow_redirects=False: we must see auth decisions at the canonical path without
+    # Starlette's redirect_slashes silently eating a 307 → obscuring the real status.
+    return TestClient(
+        build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake}),
+        follow_redirects=False,
+    )
 
 
 def test_unauthenticated_mcp_returns_401_with_www_authenticate(gnomad_fake):
+    # Canonical path is /mcp (no trailing slash).
+    # POST /mcp/ emits a 307 → /mcp via Starlette redirect_slashes (intentional; see
+    # test_router_transport_v1.py T5). The auth contract must be asserted on /mcp directly
+    # so that 401 + WWW-Authenticate is not masked by a redirect the client absorbs silently.
     with _jwt_app(gnomad_fake) as c:
-        r = c.post("/mcp/", json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+        r = c.post("/mcp", json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
     assert r.status_code == 401
     assert "www-authenticate" in {k.lower() for k in r.headers}
 

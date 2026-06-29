@@ -52,11 +52,11 @@ test-fast: ## Run unit tests in parallel
 
 test-unit: test-fast ## Alias for parallel unit tests
 
-test-integration: ## Run in-process integration + discoverability-benchmark tests
-	uv run pytest tests/integration tests/discoverability -q || [ $$? -eq 5 ]  # exit 5 = none collected
+test-integration: ## Run in-process integration, conformance, and discoverability-benchmark tests
+	uv run pytest tests/integration tests/conformance tests/discoverability -q || [ $$? -eq 5 ]  # exit 5 = none collected
 
 test-cov: ## Run tests with coverage
-	uv run pytest tests/unit tests/integration tests/discoverability --cov=$(PKG) --cov-report=term-missing --cov-report=html --cov-report=xml
+	uv run pytest tests/unit tests/integration tests/conformance tests/discoverability --cov=$(PKG) --cov-report=term-missing --cov-report=html --cov-report=xml
 
 test-all: test-cov ## Alias for full test run with coverage
 
