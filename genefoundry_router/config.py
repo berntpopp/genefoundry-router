@@ -38,6 +38,10 @@ class RouterSettings(BaseSettings):
     # Tool search
     GF_SEARCH_MAX_RESULTS: int = 5
 
+    # Outbound timeout (seconds) for calls to backends. Generous so slow backends
+    # (e.g. spliceai cold ~60s) aren't cut off, while still bounding a hung backend.
+    GF_BACKEND_TIMEOUT: float = 120.0
+
     # Rewrite bare tool references in backend responses to namespaced form (Finding 1).
     GF_REWRITE_HINTS: bool = True
 

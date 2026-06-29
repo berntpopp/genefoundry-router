@@ -64,7 +64,7 @@ def build_server(
         if target is None and backend.url is None:
             log.warning("backend_skipped", backend=backend.name, reason="missing_url")
             continue
-        register_backend(server, backend, proxy_target=target)
+        register_backend(server, backend, proxy_target=target, timeout=settings.GF_BACKEND_TIMEOUT)
     if enable_search:
         apply_tool_search(server, settings, always_visible=resolve_entrypoints(registry))
     return server

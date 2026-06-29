@@ -20,9 +20,9 @@ def test_register_uses_proxy_provider_for_non_default_ttl(monkeypatch, gnomad_fa
     captured = {}
     orig = composition._register_via_provider
 
-    def spy(server, backend, target):
+    def spy(server, backend, target, timeout=None):
         captured["ttl"] = backend.cache_ttl
-        return orig(server, backend, target)
+        return orig(server, backend, target, timeout)
 
     monkeypatch.setattr(composition, "_register_via_provider", spy)
     gateway = FastMCP("genefoundry")
