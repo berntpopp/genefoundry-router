@@ -42,6 +42,10 @@ class RouterSettings(BaseSettings):
     # (e.g. spliceai cold ~60s) aren't cut off, while still bounding a hung backend.
     GF_BACKEND_TIMEOUT: float = 120.0
 
+    # Inbound request limits (DoS/abuse guard). <=0 disables that limit.
+    GF_MAX_BODY_BYTES: int = 4_000_000  # 4 MB cap on request bodies (413 over)
+    GF_RATE_LIMIT_RPM: int = 0  # per-client requests/min (429 over); 0 = off, enable in prod
+
     # Rewrite bare tool references in backend responses to namespaced form (Finding 1).
     GF_REWRITE_HINTS: bool = True
 

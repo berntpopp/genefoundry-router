@@ -22,6 +22,10 @@ from genefoundry_router.registry import BackendDef
 
 _LOG_CONFIGURED = False
 
+# Dedicated audit logger. request_id is merged automatically from contextvars
+# (configure_logging adds merge_contextvars; asgi-correlation-id binds it per request).
+audit_log = structlog.get_logger("genefoundry.audit")
+
 # --- Prometheus metrics (R1.7: counters are incremented by MetricsMiddleware below) ---
 METRICS_REGISTRY = CollectorRegistry()
 
@@ -102,6 +106,41 @@ def register_health(app: FastAPI, backends: list[BackendDef]) -> None:
                 "reachable": {b.namespace: BACKEND_STATUS.get(b.namespace) for b in enabled},
             },
         }
+
+
+class AuditLogMiddleware(Middleware):
+    """Emit a PII-safe audit record per tool call (GDPR Art. 30/32 accountability).
+
+    Logs the tool, namespace, outcome, and elapsed time — plus the request/correlation
+    id (merged from contextvars) and, when authenticated, the caller. It deliberately
+    NEVER logs tool arguments, results, or exception messages, which can carry
+    patient-derived data (variant coordinates, phenotype text). Data minimisation by design.
+    """
+
+    async def on_call_tool(self, context: MiddlewareContext, call_next):  # type: ignore[no-untyped-def]
+        name = getattr(context.message, "name", "") or ""
+        namespace = name.split("_", 1)[0] if "_" in name else "_root"
+        start = time.perf_counter()
+        try:
+            result = await call_next(context)
+        except Exception as exc:
+            audit_log.info(
+                "tool_call",
+                tool=name,
+                namespace=namespace,
+                outcome="error",
+                error_type=type(exc).__name__,  # class only — never the message (may hold PII)
+                elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
+            )
+            raise
+        audit_log.info(
+            "tool_call",
+            tool=name,
+            namespace=namespace,
+            outcome="ok",
+            elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
+        )
+        return result
 
 
 class MetricsMiddleware(Middleware):
