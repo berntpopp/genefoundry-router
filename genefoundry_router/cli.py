@@ -6,10 +6,14 @@ import asyncio
 import os
 import re
 import sys
+from typing import TYPE_CHECKING
 
 import typer
 import uvicorn
 from rich.console import Console
+
+if TYPE_CHECKING:
+    from genefoundry_router.devtools.fakes import Manifest
 
 from genefoundry_router.config import RouterSettings, load_registry
 from genefoundry_router.registry import MAX_QUALIFIED_NAME_LEN, BackendDef
@@ -199,8 +203,16 @@ def validate(
     )
 
 
-async def _snapshot_live(registry: list[BackendDef]) -> object:
-    """Build a live fleet Manifest by listing each enabled, reachable backend's tools."""
+async def _snapshot_live(
+    registry: list[BackendDef], attempts: int = 2
+) -> tuple[Manifest, set[str]]:
+    """Snapshot reachable backends' tools; return (live_manifest, unreachable_namespaces).
+
+    A backend is *unreachable* if it is enabled but has no URL, or if listing its tools
+    fails after ``attempts`` tries. Unreachable backends are excluded from the manifest and
+    reported separately, so an outage (or a missing ``GF_*_URL``) is never mistaken for a
+    removed tool. Per-backend timeouts keep one hung backend from stalling the whole run.
+    """
     from fastmcp import Client
 
     from genefoundry_router.devtools.fakes import (
@@ -210,15 +222,28 @@ async def _snapshot_live(registry: list[BackendDef]) -> object:
         ToolSpec,
     )
 
-    backends: dict[str, object] = {}
+    backends: dict[str, BackendSpec] = {}
+    unreachable: set[str] = set()
     for b in registry:
-        if not (b.enabled and b.url):
+        if not b.enabled:
             continue
-        try:
-            async with Client(b.url) as client:
-                tools = await client.list_tools()
-        except Exception as exc:  # unreachable backend: report, keep going
-            console.print(f"[yellow]WARN[/yellow] {b.name} unreachable: {exc}")
+        if not b.url:  # enabled but unconfigured: unreachable, NOT a removed tool
+            unreachable.add(b.namespace)
+            console.print(f"[yellow]WARN[/yellow] {b.name}: no URL configured ({b.url_env})")
+            continue
+        tools = None
+        last_exc: Exception | None = None
+        for _ in range(attempts):
+            try:
+                # Bounded so one hung backend can't exceed the CI job timeout.
+                async with Client(b.url, timeout=30, init_timeout=10) as client:
+                    tools = await client.list_tools()
+                break
+            except Exception as exc:  # transient: retry, then mark unreachable
+                last_exc = exc
+        if tools is None:
+            unreachable.add(b.namespace)
+            console.print(f"[yellow]WARN[/yellow] {b.name} unreachable: {last_exc}")
             continue
         backends[b.namespace] = BackendSpec(
             version=None,
@@ -232,10 +257,11 @@ async def _snapshot_live(registry: list[BackendDef]) -> object:
                 for t in tools
             ],
         )
-    return Manifest(
+    manifest = Manifest(
         snapshot_meta=SnapshotMeta(captured_at="live", source="live", router_servers_file=""),
-        backends=backends,  # type: ignore[arg-type]
+        backends=backends,
     )
+    return manifest, unreachable
 
 
 @app.command()
@@ -256,17 +282,26 @@ def drift(
     from genefoundry_router.drift import diff_manifests
 
     pinned = load_manifest(Path(manifest))
-    live = asyncio.run(_snapshot_live(load_registry(servers_file, os.environ)))
-    report = diff_manifests(pinned, live)  # type: ignore[arg-type]
+    live, unreachable = asyncio.run(_snapshot_live(load_registry(servers_file, os.environ)))
+    # Exclude unreachable backends from BOTH sides so an outage isn't read as "removed".
+    pinned_reachable = pinned.model_copy(
+        update={"backends": {ns: s for ns, s in pinned.backends.items() if ns not in unreachable}}
+    )
+    report = diff_manifests(pinned_reachable, live)
     for k in report.changed:
         console.print(f"[red]CHANGED[/red] {k}")
     for k in report.added:
         console.print(f"[yellow]ADDED[/yellow] {k}")
     for k in report.removed:
         console.print(f"[yellow]REMOVED[/yellow] {k}")
+    if unreachable:
+        console.print(f"[yellow]UNREACHABLE[/yellow]: {', '.join(sorted(unreachable))}")
     if report.has_drift:
         console.print("[red]tool-definition drift detected[/red] — review before refreshing pin")
         raise typer.Exit(1)
+    if unreachable:
+        console.print("[yellow]no drift, but some backends were unreachable[/yellow]")
+        raise typer.Exit(2)
     console.print("[green]OK[/green] no tool-definition drift")
 
 
