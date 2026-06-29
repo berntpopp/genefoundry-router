@@ -38,6 +38,14 @@ class RouterSettings(BaseSettings):
     # Tool search
     GF_SEARCH_MAX_RESULTS: int = 5
 
+    # Outbound timeout (seconds) for calls to backends. Generous so slow backends
+    # (e.g. spliceai cold ~60s) aren't cut off, while still bounding a hung backend.
+    GF_BACKEND_TIMEOUT: float = 120.0
+
+    # Inbound request limits (DoS/abuse guard). <=0 disables that limit.
+    GF_MAX_BODY_BYTES: int = 4_000_000  # 4 MB cap on request bodies (413 over)
+    GF_RATE_LIMIT_RPM: int = 0  # per-client requests/min (429 over); 0 = off, enable in prod
+
     # Rewrite bare tool references in backend responses to namespaced form (Finding 1).
     GF_REWRITE_HINTS: bool = True
 
@@ -54,6 +62,9 @@ class RouterSettings(BaseSettings):
 
     # Auth
     GF_AUTH_MODE: AuthMode = "none"
+    # Explicit escape hatch: allow serving with GF_AUTH_MODE=none on a non-loopback bind.
+    # Default False so an open, unauthenticated endpoint is never started by accident (R-sec.1).
+    GF_ALLOW_INSECURE: bool = False
     GF_JWT_ISSUER: str | None = None
     GF_JWT_JWKS_URL: str | None = None
     GF_JWT_AUDIENCE: str | None = None

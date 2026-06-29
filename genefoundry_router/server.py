@@ -16,8 +16,10 @@ from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
 from genefoundry_router.hints import NamespaceHintMiddleware
 from genefoundry_router.instructions import build_instructions
+from genefoundry_router.limits import add_request_limits
 from genefoundry_router.normalization import apply_normalizations
 from genefoundry_router.observability import (
+    AuditLogMiddleware,
     MetricsMiddleware,
     configure_logging,
     register_health,
@@ -51,6 +53,7 @@ def build_server(
     # capability absent from the top-level listing isn't read as missing (issue #3).
     server: FastMCP = FastMCP("genefoundry", auth=auth, instructions=build_instructions(registry))
     server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
+    server.add_middleware(AuditLogMiddleware())  # PII-safe per-call audit (GDPR Art. 30/32)
     if settings.GF_REWRITE_HINTS:
         # Finding 1 — namespace bare tool references embedded in backend responses so the
         # fleet's self-healing hints resolve through call_tool. Enabled backends only.
@@ -64,7 +67,7 @@ def build_server(
         if target is None and backend.url is None:
             log.warning("backend_skipped", backend=backend.name, reason="missing_url")
             continue
-        register_backend(server, backend, proxy_target=target)
+        register_backend(server, backend, proxy_target=target, timeout=settings.GF_BACKEND_TIMEOUT)
     if enable_search:
         apply_tool_search(server, settings, always_visible=resolve_entrypoints(registry))
     return server
@@ -111,6 +114,7 @@ def build_app(
     app = FastAPI(title="GeneFoundry Router", lifespan=lifespan)
     app.add_middleware(CorrelationIdMiddleware)
     add_origin_validation(app, settings.GF_ALLOWED_ORIGINS)  # R1.4 — MCP Origin MUST
+    add_request_limits(app, settings.GF_MAX_BODY_BYTES, settings.GF_RATE_LIMIT_RPM)  # DoS guard
     register_health(app, registry)
     register_metrics(app)  # R1.7 — /metrics
     # R1.5 — serve the auth provider's well-known routes (Protected-Resource-Metadata,

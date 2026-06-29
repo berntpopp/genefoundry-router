@@ -20,6 +20,22 @@ console = Console()
 
 DEFAULT_SERVERS = "servers.yaml"
 
+# Hosts only the local machine can reach; auth=none is acceptable on these.
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+def is_insecure_public_bind(auth_mode: str, host: str, allow_insecure: bool) -> bool:
+    """True when serving with NO caller auth on a non-loopback bind (R-sec.1).
+
+    An ``auth=none`` endpoint on ``0.0.0.0`` (or any routable host) is an open,
+    unauthenticated MCP server. We refuse this by default; ``GF_ALLOW_INSECURE=true``
+    is the explicit, logged escape hatch for local PoC use.
+    """
+    if allow_insecure or auth_mode != "none":
+        return False
+    return host not in LOOPBACK_HOSTS
+
+
 LEAF_NAME_RE = re.compile(r"^[a-z0-9_]{1,50}$")
 CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute", "map"}
 # Documented v1.1 action-verb exceptions (spec §19 Q2 — left as exceptions for now).
@@ -58,6 +74,18 @@ def run(
         console.print(f"[red]Unsupported transport {transport!r}; only 'http' is offered.[/red]")
         raise typer.Exit(2)
     settings = RouterSettings(GF_LOG_LEVEL=log_level, GF_SERVERS_FILE=servers_file)
+    if is_insecure_public_bind(settings.GF_AUTH_MODE, host, settings.GF_ALLOW_INSECURE):
+        console.print(
+            f"[red]Refusing to start: GF_AUTH_MODE=none on a non-loopback bind ({host}) "
+            "exposes an UNAUTHENTICATED MCP endpoint. Set GF_AUTH_MODE=jwt|oauth, bind "
+            "127.0.0.1, or set GF_ALLOW_INSECURE=true to override (local/PoC only).[/red]"
+        )
+        raise typer.Exit(2)
+    if settings.GF_AUTH_MODE == "none" and host not in LOOPBACK_HOSTS:
+        console.print(
+            f"[yellow]WARNING: serving with GF_AUTH_MODE=none on {host} (GF_ALLOW_INSECURE "
+            "set). Do not use for production or any patient-derived data.[/yellow]"
+        )
     registry = load_registry(servers_file, os.environ)
     application = build_app(settings, registry)
     uvicorn.run(application, host=host, port=port, log_level=log_level.lower())
@@ -169,6 +197,77 @@ def validate(
         f"[green]OK[/green] {len(registry)} backends valid "
         f"({sum(b.enabled for b in registry)} enabled)"
     )
+
+
+async def _snapshot_live(registry: list[BackendDef]) -> object:
+    """Build a live fleet Manifest by listing each enabled, reachable backend's tools."""
+    from fastmcp import Client
+
+    from genefoundry_router.devtools.fakes import (
+        BackendSpec,
+        Manifest,
+        SnapshotMeta,
+        ToolSpec,
+    )
+
+    backends: dict[str, object] = {}
+    for b in registry:
+        if not (b.enabled and b.url):
+            continue
+        try:
+            async with Client(b.url) as client:
+                tools = await client.list_tools()
+        except Exception as exc:  # unreachable backend: report, keep going
+            console.print(f"[yellow]WARN[/yellow] {b.name} unreachable: {exc}")
+            continue
+        backends[b.namespace] = BackendSpec(
+            version=None,
+            tools=[
+                ToolSpec(
+                    name=t.name,
+                    description=t.description or "",
+                    inputSchema=t.inputSchema or {"type": "object", "properties": {}},
+                    tags=list((t.meta or {}).get("fastmcp", {}).get("tags", [])),
+                )
+                for t in tools
+            ],
+        )
+    return Manifest(
+        snapshot_meta=SnapshotMeta(captured_at="live", source="live", router_servers_file=""),
+        backends=backends,  # type: ignore[arg-type]
+    )
+
+
+@app.command()
+def drift(
+    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+    manifest: str = typer.Option(
+        "tests/fixtures/fleet_manifest.json", help="Reviewed, pinned fleet manifest."
+    ),
+) -> None:
+    """Detect tool-definition drift vs the pinned manifest (rug-pull / tool-poisoning tripwire).
+
+    Exits non-zero on any added/removed/changed tool so it can run in CI/cron. Refresh the
+    pinned manifest with ``make snapshot-fleet`` only after reviewing the change.
+    """
+    from pathlib import Path
+
+    from genefoundry_router.devtools.fakes import load_manifest
+    from genefoundry_router.drift import diff_manifests
+
+    pinned = load_manifest(Path(manifest))
+    live = asyncio.run(_snapshot_live(load_registry(servers_file, os.environ)))
+    report = diff_manifests(pinned, live)  # type: ignore[arg-type]
+    for k in report.changed:
+        console.print(f"[red]CHANGED[/red] {k}")
+    for k in report.added:
+        console.print(f"[yellow]ADDED[/yellow] {k}")
+    for k in report.removed:
+        console.print(f"[yellow]REMOVED[/yellow] {k}")
+    if report.has_drift:
+        console.print("[red]tool-definition drift detected[/red] — review before refreshing pin")
+        raise typer.Exit(1)
+    console.print("[green]OK[/green] no tool-definition drift")
 
 
 def main() -> None:
