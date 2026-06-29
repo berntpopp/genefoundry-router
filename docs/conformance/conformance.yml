@@ -13,27 +13,35 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      CONFORMANCE_NAME: REPLACE-ME-link   # serverInfo.name
+      CONFORMANCE_NAME: REPLACE-ME-link   # serverInfo.name (MUST be "<ns>-link")
       CONFORMANCE_TIER: stateless
       MCP_PORT: "8000"                    # docker-compose host port
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v8
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
       - run: uv sync --group dev
       - name: Build & start server
         run: make docker-build && make docker-up
-      - name: Wait for health
+      - name: Wait for health + MCP readiness
         run: |
+          for i in $(seq 1 30); do curl -fsS "http://127.0.0.1:${MCP_PORT}/health" >/dev/null 2>&1 && break || sleep 2; done
+          # /health (REST app) comes up before the MCP sub-app finishes binding; wait for /mcp too
+          # so the probe's first POST does not race a not-yet-ready /mcp endpoint.
           for i in $(seq 1 30); do
-            curl -fsS "http://127.0.0.1:${MCP_PORT}/health" && break || sleep 2
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:${MCP_PORT}/mcp" \
+              -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+              -d '{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"wait","version":"0"}}}')
+            [ "$code" = "200" ] && break || sleep 2
           done
       - name: Run conformance probe
         env:
           CONFORMANCE_MCP_URL: http://127.0.0.1:${{ env.MCP_PORT }}
         run: uv run pytest tests/conformance/test_transport_v1.py -v
       - name: Logs on failure
+        # NB: NON-following logs. `make docker-logs` typically follows (docker compose logs -f)
+        # and would hang this step until the job timeout on a real failure.
         if: failure()
-        run: make docker-logs || docker compose -f docker/docker-compose.yml logs
+        run: docker compose -f docker/docker-compose.yml logs --no-color --tail=200 || true
       - name: Teardown
         if: always()
         run: make docker-down || true

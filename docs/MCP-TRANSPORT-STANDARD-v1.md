@@ -223,32 +223,37 @@ Exit codes: `0` = conformant, `1` = non-conformant, `2` = transport error.
 
 ## 8. Adoption table — §9
 
+**Status: ADOPTED fleet-wide (2026-06-29).** All 21 `-link` backends and the `genefoundry`
+router merged the migration; each backend's merged `main` passed the live conformance probe in
+CI (the `conformance.yml` gate builds + runs the container and probes it), and the router passed
+its in-process router-profile probe. The probe now gates every future PR against regressions.
+
 Migration buckets (verified against live `main`, 2026-06-29):
 
 | Repo | Migration | Status |
 |------|-----------|--------|
-| autopvs1-link | Probe only (already stateless+JSON) | pending |
-| clingen-link | Probe only (already stateless+JSON) | pending |
-| clinvar-link | Probe only (already stateless+JSON) | pending |
-| gnomad-link | Probe only (already stateless+JSON) | pending |
-| litvar-link | Probe only (already stateless+JSON) | pending |
-| pubtator-link | Probe only (already stateless+JSON) | pending |
-| spliceailookup-link | Probe only (already stateless+JSON) | pending |
-| vep-link | Probe only (already stateless+JSON) | pending |
-| gencc-link | Transport mode only (`stateless_http=True, json_response=True`) | pending |
-| gtex-link | Transport mode only | pending |
-| hgnc-link | Transport mode only | pending |
-| hpo-link | Transport mode only | pending |
-| mavedb-link | Transport mode only | pending |
-| metadome-link | Transport mode only | pending |
-| mgi-link | Transport mode only | pending |
-| mondo-link | Transport mode only | pending |
-| orphanet-link | Transport mode only | pending |
-| panelapp-link | Transport mode only | pending |
-| uniprot-link | Transport mode only | pending |
-| genereviews-link | Path + mode (full gtex-pattern fix) | pending |
-| stringdb-link | Path + mode (full gtex-pattern fix) | pending |
-| genefoundry (router) | Path + mode + router profile | pending |
+| autopvs1-link | Probe only (already stateless+JSON) | adopted (2026-06-29) |
+| clingen-link | Probe only (already stateless+JSON) | adopted (2026-06-29) |
+| clinvar-link | Probe only (already stateless+JSON) | adopted (2026-06-29) |
+| gnomad-link | Probe only (already stateless+JSON) | adopted (2026-06-29) |
+| litvar-link | Probe only (already stateless+JSON) | adopted (2026-06-29) |
+| pubtator-link | Probe only (already stateless+JSON) | adopted (2026-06-29) |
+| spliceailookup-link | Probe only (already stateless+JSON) | adopted (2026-06-29) |
+| vep-link | Probe only (already stateless+JSON) | adopted (2026-06-29) |
+| gencc-link | Transport mode only (`stateless_http=True, json_response=True`) | adopted (2026-06-29) |
+| gtex-link | Transport mode only | adopted (2026-06-29) |
+| hgnc-link | Transport mode only | adopted (2026-06-29) |
+| hpo-link | Transport mode only | adopted (2026-06-29) |
+| mavedb-link | Transport mode only | adopted (2026-06-29) |
+| metadome-link | Transport mode only | adopted (2026-06-29) |
+| mgi-link | Transport mode only | adopted (2026-06-29) |
+| mondo-link | Transport mode only | adopted (2026-06-29) |
+| orphanet-link | Transport mode only | adopted (2026-06-29) |
+| panelapp-link | Transport mode only | adopted (2026-06-29) |
+| uniprot-link | Transport mode only | adopted (2026-06-29) |
+| genereviews-link | Path + mode (full gtex-pattern fix) | adopted (2026-06-29) |
+| stringdb-link | Path + mode (full gtex-pattern fix) | adopted (2026-06-29) |
+| genefoundry (router) | Path + mode + router profile | adopted (2026-06-29) |
 
 **Sequencing:** publish this doc + probe → migrate transport-mode-only batch (lowest risk) →
 migrate path+mode repos (genereviews, stringdb) → migrate router → fleet-wide probe sweep.
