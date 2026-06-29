@@ -41,6 +41,19 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
   them from `servers.yaml` as source repos adopt Tool-Naming Standard v1.
 - **No token passthrough**: never forward the caller's `Authorization` header to backends.
 - Streamable HTTP only (`transport="http"`); SSE is not offered.
+- **Container & deployment hardening is a fleet standard.** The router and every `-link` server
+  follow `docs/CONTAINER-HARDENING-STANDARD-v1.md` (non-root, read-only rootfs, `cap_drop: ALL`,
+  `no-new-privileges`, resource limits, expose-only behind the proxy, digest-pinned base, CI image
+  scan + SBOM). The router's `docker/` is the reference implementation; copy it, don't reinvent.
+- **Backends are unauthenticated by design** (the router owns edge auth at the trust boundary) —
+  they MUST be reachable only through the router/reverse proxy, never published directly.
+
+## Fleet standards (apply repo-wide; each `-link` repo has a tracking issue)
+
+- Tool-Naming & Normalization — `docs/TOOL-NAMING-STANDARD-v1.md`
+- Response-Envelope — `docs/RESPONSE-ENVELOPE-STANDARD-v1.md`
+- Container & Deployment Hardening — `docs/CONTAINER-HARDENING-STANDARD-v1.md`
+- Logging & CLI Standard v1 (sibling; canonical text tracked per-repo)
 
 ## Boundary
 

@@ -129,6 +129,7 @@ Structure lives in committed `servers.yaml`; URLs/secrets in gitignored `.env` (
 | `GF_MCP_PATH` | `/mcp` | MCP mount path |
 | `GF_SERVERS_FILE` | `servers.yaml` | Backend registry |
 | `GF_AUTH_MODE` | `none` | `none` \| `jwt` \| `oauth` (use jwt/oauth in production) |
+| `GF_ALLOW_INSECURE` | `false` | Opt-in to serve `auth=none` on a non-loopback bind (PoC only; the router refuses otherwise) |
 | `GF_ALLOWED_ORIGINS` | _(empty)_ | CSV `Origin` allowlist (DNS-rebinding defense) |
 | `GF_<NAME>_URL` | _(unset)_ | Per-backend `/mcp` URL (e.g. `GF_GNOMAD_URL`) |
 
@@ -162,6 +163,8 @@ router against impersonated backends over real Streamable-HTTP — no Docker, no
 - Design spec — [`docs/specs/2026-06-13-genefoundry-router-design.md`](docs/specs/2026-06-13-genefoundry-router-design.md)
 - Agentic-ergonomics spec — [`docs/specs/2026-06-16-router-agentic-ergonomics-design.md`](docs/specs/2026-06-16-router-agentic-ergonomics-design.md)
 - Tool-Naming Standard v1 — [`docs/TOOL-NAMING-STANDARD-v1.md`](docs/TOOL-NAMING-STANDARD-v1.md)
+- Response-Envelope Standard v1 — [`docs/RESPONSE-ENVELOPE-STANDARD-v1.md`](docs/RESPONSE-ENVELOPE-STANDARD-v1.md)
+- Container & Deployment Hardening Standard v1 — [`docs/CONTAINER-HARDENING-STANDARD-v1.md`](docs/CONTAINER-HARDENING-STANDARD-v1.md)
 - Contributor guide — [`AGENTS.md`](AGENTS.md)
 
 ## License
