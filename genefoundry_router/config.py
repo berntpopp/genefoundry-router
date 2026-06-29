@@ -54,6 +54,9 @@ class RouterSettings(BaseSettings):
 
     # Auth
     GF_AUTH_MODE: AuthMode = "none"
+    # Explicit escape hatch: allow serving with GF_AUTH_MODE=none on a non-loopback bind.
+    # Default False so an open, unauthenticated endpoint is never started by accident (R-sec.1).
+    GF_ALLOW_INSECURE: bool = False
     GF_JWT_ISSUER: str | None = None
     GF_JWT_JWKS_URL: str | None = None
     GF_JWT_AUDIENCE: str | None = None

@@ -20,6 +20,22 @@ console = Console()
 
 DEFAULT_SERVERS = "servers.yaml"
 
+# Hosts only the local machine can reach; auth=none is acceptable on these.
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+def is_insecure_public_bind(auth_mode: str, host: str, allow_insecure: bool) -> bool:
+    """True when serving with NO caller auth on a non-loopback bind (R-sec.1).
+
+    An ``auth=none`` endpoint on ``0.0.0.0`` (or any routable host) is an open,
+    unauthenticated MCP server. We refuse this by default; ``GF_ALLOW_INSECURE=true``
+    is the explicit, logged escape hatch for local PoC use.
+    """
+    if allow_insecure or auth_mode != "none":
+        return False
+    return host not in LOOPBACK_HOSTS
+
+
 LEAF_NAME_RE = re.compile(r"^[a-z0-9_]{1,50}$")
 CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute", "map"}
 # Documented v1.1 action-verb exceptions (spec §19 Q2 — left as exceptions for now).
@@ -58,6 +74,18 @@ def run(
         console.print(f"[red]Unsupported transport {transport!r}; only 'http' is offered.[/red]")
         raise typer.Exit(2)
     settings = RouterSettings(GF_LOG_LEVEL=log_level, GF_SERVERS_FILE=servers_file)
+    if is_insecure_public_bind(settings.GF_AUTH_MODE, host, settings.GF_ALLOW_INSECURE):
+        console.print(
+            f"[red]Refusing to start: GF_AUTH_MODE=none on a non-loopback bind ({host}) "
+            "exposes an UNAUTHENTICATED MCP endpoint. Set GF_AUTH_MODE=jwt|oauth, bind "
+            "127.0.0.1, or set GF_ALLOW_INSECURE=true to override (local/PoC only).[/red]"
+        )
+        raise typer.Exit(2)
+    if settings.GF_AUTH_MODE == "none" and host not in LOOPBACK_HOSTS:
+        console.print(
+            f"[yellow]WARNING: serving with GF_AUTH_MODE=none on {host} (GF_ALLOW_INSECURE "
+            "set). Do not use for production or any patient-derived data.[/yellow]"
+        )
     registry = load_registry(servers_file, os.environ)
     application = build_app(settings, registry)
     uvicorn.run(application, host=host, port=port, log_level=log_level.lower())
