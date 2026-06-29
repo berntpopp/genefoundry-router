@@ -1,0 +1,81 @@
+name: Drift detection
+
+on:
+  schedule:
+    - cron: "17 */6 * * *" # every 6h at :17 (off-peak; GH drops :00 runs under load)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: drift-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    # Opt-in: scheduled runs only when DRIFT_ENABLED=true; manual dispatch always allowed.
+    if: ${{ vars.DRIFT_ENABLED == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DRIFT_HEARTBEAT_URL: ${{ secrets.DRIFT_HEARTBEAT_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          version: "0.8.7"
+      - name: Install
+        run: uv sync --frozen --no-dev
+      - name: Load fleet URLs
+        # Filter to GF_*=... assignments only; comment lines must not reach $GITHUB_ENV
+        # (GitHub treats the env file as KEY=value pairs, not a dotenv with comments).
+        run: grep -E '^GF_[A-Z0-9_]+=' ci/fleet-urls.env >> "$GITHUB_ENV"
+      - name: Run drift check
+        id: drift
+        run: |
+          set +e
+          uv run genefoundry-router drift --manifest tests/fixtures/fleet_manifest.json \
+            > drift_output.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat drift_output.txt
+      - name: Open / update drift issue
+        if: ${{ steps.drift.outputs.exit_code == '1' && vars.DRIFT_OPEN_ISSUE != 'false' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create tool-drift -c FF0000 -d "Tool-definition drift" --force || true
+          existing=$(gh issue list --label tool-drift --state open --json number -q '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" -F drift_output.txt
+          else
+            gh issue create --label tool-drift \
+              --title "Tool-definition drift detected" -F drift_output.txt
+          fi
+      - name: Close resolved drift issue
+        if: ${{ steps.drift.outputs.exit_code == '0' && vars.DRIFT_OPEN_ISSUE != 'false' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for n in $(gh issue list --label tool-drift --state open --json number -q '.[].number'); do
+            gh issue comment "$n" --body "Drift resolved / baseline re-pinned. Closing."
+            gh issue close "$n"
+          done
+      - name: Unreachable backends (availability, not drift)
+        if: ${{ steps.drift.outputs.exit_code == '2' }}
+        run: |
+          echo "::warning::drift check: some backends were unreachable (availability, not a rug pull)"
+      - name: Heartbeat (dead-man's-switch)
+        if: ${{ always() && env.DRIFT_HEARTBEAT_URL != '' }}
+        run: curl -fsS -m 10 --retry 3 -o /dev/null "$DRIFT_HEARTBEAT_URL" || true
+      - name: Fail the run on drift
+        if: ${{ steps.drift.outputs.exit_code == '1' }}
+        run: exit 1
