@@ -30,15 +30,6 @@ jobs:
       - name: Build production image
         run: docker build -f docker/Dockerfile --target production -t "$IMAGE" .
 
-      - name: Generate SBOM (Syft)
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
-        with:
-          image: ${{ env.IMAGE }}
-          format: spdx-json
-          output-file: ./sbom.spdx.json
-          artifact-name: router-image-sbom
-          upload-artifact: true
-
       - name: Scan image (Trivy) — fail on fixable HIGH/CRITICAL
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -55,3 +46,13 @@ jobs:
         uses: github/codeql-action/upload-sarif@ed410739ba306e4ebe5e123421a6bd694e494a2b # v4
         with:
           sarif_file: trivy-results.sarif
+
+      - name: Generate SBOM (Syft)
+        if: ${{ always() }}
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ env.IMAGE }}
+          format: spdx-json
+          output-file: ./sbom.spdx.json
+          artifact-name: router-image-sbom
+          upload-artifact: true
