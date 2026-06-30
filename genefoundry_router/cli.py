@@ -127,7 +127,15 @@ async def _probe_backend(backend: BackendDef) -> dict[str, object]:
             "name": backend.name,
             "reachable": True,
             "tools": len(tools),
-            "leaf_names": [t.name for t in tools],  # backend's own (un-namespaced) leaves
+            # Mirror _snapshot_live: capture per-tool tags so the doctor --strict-naming
+            # loop can pass them to check_leaf_name (ops/meta carve-out).
+            "leaf_tools": [
+                {
+                    "name": t.name,
+                    "tags": list((t.meta or {}).get("fastmcp", {}).get("tags", [])),
+                }
+                for t in tools
+            ],
             "error": None,
         }
     except Exception as exc:  # report any connection failure (broad by design)
@@ -157,10 +165,12 @@ def doctor(
     for r in results:
         if r["reachable"]:
             console.print(f"[green]OK[/green]   {r['name']}: {r['tools']} tools")
-            leaf_names = r.get("leaf_names", [])
-            if strict_naming and isinstance(leaf_names, list):
-                for leaf in leaf_names:
-                    for issue in check_leaf_name(leaf):
+            leaf_tools = r.get("leaf_tools", [])
+            if strict_naming and isinstance(leaf_tools, list):
+                for leaf_tool in leaf_tools:
+                    leaf = leaf_tool["name"]
+                    tags: list[str] = leaf_tool.get("tags") or []
+                    for issue in check_leaf_name(leaf, tags=tags):
                         violations_found = True
                         console.print(f"  [yellow]NAME[/yellow] {r['name']}/{leaf}: {issue}")
         else:

@@ -77,3 +77,43 @@ def test_doctor_reports_unreachable(monkeypatch, tmp_path):
     assert result.exit_code == 1  # at least one backend unreachable -> non-zero
     assert "gnomad" in result.output
     assert "unreachable" in result.output.lower()
+
+
+def test_doctor_strict_naming_ops_tagged_not_flagged(monkeypatch, tmp_path):
+    """doctor --strict-naming must not flag ops/meta-tagged tools as naming violations.
+
+    Regression test for the _probe_backend tag-drop bug: before the fix, _probe_backend
+    captured only leaf names (dropping tag metadata), so the doctor loop always called
+    check_leaf_name without tags — ops-tagged tools like check_upstream_health were
+    incorrectly flagged as verb violations despite the carve-out.
+
+    After the fix, _probe_backend also captures per-tool tags (mirroring _snapshot_live),
+    and the doctor loop passes them to check_leaf_name:
+      - frobnicate_thing (untagged, non-canonical verb) IS flagged
+      - check_upstream_health (ops-tagged) is NOT flagged
+    """
+    yaml = _write_registry(tmp_path)
+
+    async def fake_probe(backend):
+        return {
+            "name": backend.name,
+            "reachable": True,
+            "tools": 2,
+            # New format: leaf_tools carries per-tool name + tags (mirrors _snapshot_live).
+            "leaf_tools": [
+                {"name": "check_upstream_health", "tags": ["ops"]},
+                {"name": "frobnicate_thing", "tags": []},
+            ],
+        }
+
+    monkeypatch.setattr("genefoundry_router.cli._probe_backend", fake_probe)
+    result = runner.invoke(app, ["doctor", "--strict-naming", "--servers-file", str(yaml)])
+    # frobnicate_thing (untagged, non-canonical verb) MUST be reported as a NAME violation
+    assert "frobnicate_thing" in result.output, (
+        f"Expected frobnicate_thing violation in output;\ngot:\n{result.output}"
+    )
+    # check_upstream_health (ops-tagged) MUST NOT be reported as a NAME violation
+    assert "check_upstream_health" not in result.output, (
+        f"check_upstream_health (ops tag) must not be flagged;\ngot:\n{result.output}"
+    )
+    assert result.exit_code == 1  # frobnicate_thing violation -> non-zero
