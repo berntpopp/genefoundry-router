@@ -144,7 +144,52 @@ genefoundry-router run        --host 0.0.0.0 --port 8000   # serve over Streamab
 genefoundry-router validate                                # check servers.yaml + env, report missing URLs
 genefoundry-router list-tools [--namespace gnomad]         # enumerate federated tools, flag >64-char names
 genefoundry-router doctor     [--strict-naming]            # ping backends; audit leaf names vs Tool-Naming v1
+genefoundry-router drift      [--manifest ci/fleet-baseline.json]  # tool-def rug-pull tripwire; exit 0/1/2
 ```
+
+## Drift detection (scheduled CI)
+
+A backend can serve a clean tool at review time and later change its **description or input
+schema** — the channel for a *rug pull* / *tool poisoning*, since a tool description is
+instructions the model reads. `genefoundry-router drift` fingerprints every backend tool's
+`{name, description, inputSchema}` (SHA-256) and diffs the **live** fleet against a pinned
+baseline. `.github/workflows/drift.yml` runs it every 6 h (opt-in) and alerts via a
+deduplicated `tool-drift` GitHub issue + a healthchecks.io dead-man's-switch.
+
+**Exit codes:** `0` no drift, all reachable · `1` drift among reachable backends (alert) ·
+`2` no drift but ≥1 backend unreachable (availability warning, **not** an alert). Security
+beats availability: drift + an outage still exits `1`.
+
+**Two committed (non-secret) files:**
+
+| File | What | Keep in sync |
+|------|------|--------------|
+| `ci/fleet-urls.env` | Public `GF_*_URL=https://<name>-link.genefoundry.org/mcp` for every enabled backend — the URLs CI probes | `make` test `test_ci_fleet_urls.py` asserts it matches `servers.yaml` exactly |
+| `ci/fleet-baseline.json` | The pinned **live** tool-def baseline (`source:"live"`, all enabled backends) | `make snapshot-baseline` to re-pin; `test_ci_fleet_baseline.py` asserts live + full coverage |
+
+**Re-pin discipline:** when drift fires for a *legitimate* upstream change, refresh the baseline
+with `make snapshot-baseline` and merge it via a **reviewed PR** (treat the tool-def diff as
+security-relevant). Never auto-refresh in CI — that would silently bless a rug pull.
+
+**Enabling it (one-time, on the default branch).** All three settings are configured in
+GitHub → *Settings → Secrets and variables → Actions*:
+
+| Setting | Kind | Required? | Value / where to get it |
+|---------|------|-----------|-------------------------|
+| `DRIFT_ENABLED` | repo **variable** | to enable scheduled runs | `true`. Unset/`false` ⇒ scheduled runs are a no-op (forks stay off); `workflow_dispatch` always runs |
+| `DRIFT_HEARTBEAT_URL` | repo **secret** | optional (heartbeat) | The ping URL of a [healthchecks.io](https://healthchecks.io) check (create one: period **6 h**, grace **~45 min**). Unset ⇒ heartbeat step skipped |
+| `DRIFT_OPEN_ISSUE` | repo **variable** | optional | `false` to rely only on the red run + owner email instead of the auto-issue (default on) |
+
+```bash
+gh variable set DRIFT_ENABLED --body true
+gh secret   set DRIFT_HEARTBEAT_URL --body 'https://hc-ping.com/<your-uuid>'
+gh workflow run drift.yml        # smoke-test; expect exit 0 and the healthchecks.io check green
+```
+
+The `drift` CLI is independently runnable for your own cron/CI:
+`genefoundry-router drift --servers-file servers.yaml --manifest ci/fleet-baseline.json`
+(reads `GF_*_URL` from the environment — `set -a; . ./.env; set +a` locally, or load
+`ci/fleet-urls.env`).
 
 ## Develop & test
 

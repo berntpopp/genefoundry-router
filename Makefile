@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config dev-fleet run-dev test-e2e snapshot-fleet ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline ci-full
 
 .DEFAULT_GOAL := help
 
@@ -119,6 +119,10 @@ test-e2e: ## Run the offline end-to-end fake-fleet tests
 
 snapshot-fleet: ## Refresh the fleet manifest from live backends (online)
 	uv run python scripts/snapshot_fleet.py --captured-at $$(date -u +%FT%TZ)
+
+snapshot-baseline: ## Re-pin the drift baseline (ci/fleet-baseline.json) from the live fleet (online)
+	uv run --env-file ci/fleet-urls.env python scripts/snapshot_fleet.py \
+		--out ci/fleet-baseline.json --captured-at $$(date -u +%FT%TZ)
 
 ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
 
