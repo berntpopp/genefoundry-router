@@ -171,6 +171,62 @@ posture. Tiers below are the adoption baseline; each repo's tracking issue close
 > reference) but, like the fleet, still owes the three universal items — digest pinning, image
 > scanning, and SBOM. Fixing them on the router first sets the pattern the fleet copies.
 
+### Canonical Trivy gate block (ratified 2026-06-30, copy-paste fleet reference)
+
+Every repo's `.github/workflows/container-security.yml` MUST use the **2-step "scan-is-the-gate"
+form** below (Category B). Rationale: `severity: CRITICAL,HIGH` + `ignore-unfixed: true` limits
+the gate to *actionable* CVEs only (no unfixable base-image noise); `exit-code: "1"` enforces the
+policy from L129/L168/L208; `if: always()` on SBOM + upload ensures evidence is retained even when
+the gate fires; one image scan per run (no redundant report step).
+
+```yaml
+      - name: Trivy scan (fail on fixable CRITICAL/HIGH)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: <repo>:scan          # e.g. gnomad-link:scan
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Generate SBOM (CycloneDX)
+        if: always()                       # SBOM is non-gating; produce it even when the scan fails
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: <repo>:scan
+          format: cyclonedx
+          output: <repo>-sbom.cdx.json
+          exit-code: "0"
+
+      - name: Upload scan artifacts
+        if: always()                       # keep evidence on a failing gate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: container-security-artifacts
+          path: <repo>-sbom.cdx.json
+```
+
+**Key implementation notes:**
+
+- **`exit-code` default is `0`.** The `trivy-action` does **not** fail by default —
+  omitting `exit-code: "1"` makes the step always green, which is the root cause of 12
+  Category A repos not gating despite having a scan step.
+- **`ignore-unfixed: true` is load-bearing.** Without it, flipping `exit-code` to `"1"` on a
+  Category A scan (no `severity` / `ignore-unfixed`) gates on *all* severities including
+  unfixable base-image CVEs (`libc`/`zlib` with no upstream fix), sending every backend
+  red on CVEs nobody can action — a self-inflicted outage. Always pair the three fields
+  (`severity: CRITICAL,HIGH`, `ignore-unfixed: true`, `exit-code: "1"`) as a unit.
+- **SARIF + `exit-code` gotcha:** `trivy-action` issue #309 documents that `exit-code` does
+  not respect `severity` when `format: sarif` is used — the step always exits `0` regardless.
+  If a SARIF upload to GitHub code-scanning is desired (e.g. `genereviews-link`), keep it as
+  a *separate non-gating step* and use a plain `format: table` step for the actual gate.
+- **Schedule:** the workflow runs on a weekly schedule too. A fresh Trivy DB can turn a
+  previously-green `main` red when a new fixable CVE is disclosed; that is the intended
+  forcing function (L129: "re-scan on a schedule"). Runbook for a red scheduled run: bump the
+  base image digest and/or lockfile, then re-run. If scheduled red runs become noisy, mirror
+  the router's `drift.yml` heartbeat pattern (open/refresh a tracking issue instead of only a
+  red ✗) — not required for initial conformance.
+
 ## References
 
 - **CIS Docker Benchmark** — Docker host & daemon/container hardening (user namespaces, caps,
