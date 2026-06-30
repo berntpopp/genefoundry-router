@@ -14,12 +14,16 @@ def test_workflow_is_valid_yaml_with_a_job() -> None:
 
 def test_triggers_on_pull_request_and_push() -> None:
     text = WF.read_text(encoding="utf-8")
-    assert "pull_request" in text and "push" in text, "scan on PR and push (Container-Hardening v1 §8.27)"
+    assert "pull_request" in text and "push" in text, (
+        "scan on PR and push (Container-Hardening v1 §8.27)"
+    )
 
 
 def test_builds_image_and_runs_trivy_and_syft() -> None:
     text = WF.read_text(encoding="utf-8")
-    assert "docker build" in text and "docker/Dockerfile" in text, "must build the production image in CI"
+    assert "docker build" in text and "docker/Dockerfile" in text, (
+        "must build the production image in CI"
+    )
     assert "aquasecurity/trivy-action@" in text, "Trivy image scan required"
     assert 'exit-code: "1"' in text, "Trivy must fail the build on findings"
     assert "CRITICAL,HIGH" in text, "gate on HIGH/CRITICAL"
