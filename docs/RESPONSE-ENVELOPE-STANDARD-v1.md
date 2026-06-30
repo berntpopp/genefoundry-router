@@ -1,20 +1,19 @@
 # GeneFoundry Response-Envelope Standard v1
 
-> **Status as of 2026-06-20:** this document records the stricter envelope migration target
-> from the 2026-06-16 review. It is **not yet the enforced current fleet gate**. The current
-> router-compatible `*-link` contract, used by Mondo/HPO/Orphanet/MaveDB/MetaDome-style
-> servers, is: every tool returns a structured JSON object with `success`, a domain payload,
-> `_meta` carrying `tool`/`request_id`/tiered `next_commands`/`capabilities_version`, typed
-> flat execution errors (`error_code`, `message`, `retryable`, `recovery_action`), declared
-> `output_schema`, `READ_ONLY_OPEN_WORLD`, `response_mode` defaulting to `compact`, and
-> backend-owned provenance/disclaimers. The router remains a thin aggregator and must not
-> reshape backend results to this target frame. Treat the `result`/`results` + `meta` frame
-> below as a future fleet-wide breaking migration, not as an orphanet/HPO/Mondo-specific
-> compatibility defect.
+> **Status: ADOPTED v1, ratified 2026-06-30.** This is the normative, enforced contract
+> for the GeneFoundry `*-link` fleet. The contract is the **flat envelope** the entire
+> fleet already ships: every tool returns a structured JSON object with `success`, a domain
+> payload, `_meta` carrying `tool`/`request_id`/tiered `next_commands`/`capabilities_version`,
+> typed flat execution errors (`error_code`, `message`, `retryable`, `recovery_action`),
+> declared `output_schema`, `READ_ONLY_OPEN_WORLD`, `response_mode` defaulting to `compact`,
+> and backend-owned provenance/disclaimers. The router remains a thin aggregator and must not
+> reshape backend results. Open questions OQ1–OQ4 are resolved; see the Open Questions section.
+> A stricter nested-error/`_meta`→`meta` migration target is recorded in the non-normative
+> v2 appendix.
 
 > Drafted 2026-06-16; revised the same day after an external review against
 > **MCP 2025-11-25** (stable) and verified against the installed `mcp` + `fastmcp 3.4.2`.
-> Sibling to `TOOL-NAMING-STANDARD-v1.md` and the Logging & CLI Standard.
+> v1 ratified 2026-06-30. Sibling to `TOOL-NAMING-STANDARD-v1.md` and the Logging & CLI Standard.
 
 Part of the **GeneFoundry MCP router** initiative (`genefoundry-router`): all `*-link` MCP
 servers are federated behind one endpoint. The router is a **thin aggregator** — it
@@ -38,11 +37,11 @@ caching/correlation, but it is **not guaranteed to be rendered to the model**. S
 
 - **MCP result `_meta`** (`ToolResult.meta`): protocol/gateway/transport metadata — correlation
   echo, cache hints, and (optionally) a router-stamped `gateway` block. Infra reads it.
-- **The envelope `meta` block** (a key **inside** `structuredContent`, §4): everything the
+- **The envelope `_meta` block** (a key **inside** `structuredContent`, §4): everything the
   **model** must reason about — provenance, versions, staleness, typed limitations,
   pagination. The model reads it (via `structuredContent` + the mirrored text).
 
-Observability fields the model needs live in the envelope `meta`, **not** only in MCP `_meta`.
+Observability fields the model needs live in the envelope `_meta`, **not** only in MCP `_meta`.
 
 ## Rules
 
@@ -51,7 +50,7 @@ Observability fields the model needs live in the envelope `meta`, **not** only i
 Every tool result returns an MCP **`structuredContent` object** in this exact frame, and —
 per the MCP backwards-compat SHOULD — **also** serializes it into a mirrored `content[]`
 TextContent block. `structuredContent` is authoritative; `content[]` mirrors it. The frame
-is always a JSON object (never a bare array/scalar) so it has room for `meta`/citation/error.
+is always a JSON object (never a bare array/scalar) so it has room for `_meta`/citation/error.
 
 **Success (collection-returning tool):**
 ```json
@@ -61,7 +60,7 @@ is always a JSON object (never a bare array/scalar) so it has room for `meta`/ci
     { "id": "NBK1227:0024", "title": "…",
       "recommended_citation": "Adam MP, et al. GeneReviews®. NBK1227. …" }
   ],
-  "meta": { "request_id": "…", "elapsed_ms": 27, "source": "genereviews", "data_version": "2026-05" },
+  "_meta": { "request_id": "…", "elapsed_ms": 27, "source": "genereviews", "data_version": "2026-05" },
   "recommended_citation": null,
   "unsafe_for_clinical_use": true
 }
@@ -87,30 +86,33 @@ not `results` (array), and `recommended_citation` may sit at the top level.
   method-not-found (`-32601`), and server faults (`-32000..-32099`) use their own codes. Not
   this envelope's concern.
 - **Execution errors** (bad input, not found, ambiguous, upstream down) → a normal result
-  with MCP **`isError: true`** AND this in-band frame:
+  with MCP **`isError: true`** AND this in-band **flat** error frame:
 
 ```json
 {
   "success": false,
-  "error": {
-    "code": "invalid_input",
-    "message": "hgnc_id must look like 'HGNC:1100'; got '1100'. Prefix with 'HGNC:'.",
-    "retriable": false,
-    "details": { "field": "hgnc_id" }
-  },
-  "meta": { "request_id": "…", "elapsed_ms": 3, "source": "hgnc" }
+  "error_code": "invalid_input",
+  "message": "hgnc_id must look like 'HGNC:1100'; got '1100'. Prefix with 'HGNC:'.",
+  "retryable": false,
+  "recovery_action": "prefix the value with 'HGNC:'",
+  "_meta": { "request_id": "…", "elapsed_ms": 3, "source": "hgnc" }
 }
 ```
 
-- `error.code` is a closed enum, harmonized with codes already used in the fleet:
+- `error_code` is a closed enum, harmonized with codes already used in the fleet:
   **`invalid_input` · `not_found` · `ambiguous_query` · `upstream_unavailable` ·
   `rate_limited` · `internal`**.
-- `error.message` MUST be **specific and actionable** — tell the model how to fix the call
+- `message` MUST be **specific and actionable** — tell the model how to fix the call
   (Anthropic: "communicate specific and actionable improvements, rather than opaque error
   codes or tracebacks"). No bare codes, no tracebacks.
-- `error.retriable` (bool) lets a client branch on backoff vs. reformulate.
+- `retryable` (bool) lets a client branch on backoff vs. reformulate. (Note: use
+  `retryable`, not `retriable` — the fleet ships `retryable` fleet-wide.)
+- `recovery_action` (string, optional) — a short imperative hint for self-correction.
 - `isError: true` is REQUIRED so clients surface the error to the model for self-correction
   (MCP: clients SHOULD pass execution errors to the LLM).
+
+> The nested `error: {code, message, retriable, details}` shape from the pre-ratification
+> draft is **not** the v1 contract. It is recorded in the non-normative v2 appendix.
 
 ### 3. Lean by default — token economy is a contract, not a lever
 
@@ -118,7 +120,7 @@ The reports' core token finding was *"the levers exist; the defaults don't respe
 v1 makes the lean path the default:
 
 - **`response_mode` default is `compact`**, never `standard`/`full`. Enum (fleet canon):
-  `minimal` (mandatory envelope — `success`, `meta`, `recommended_citation`,
+  `minimal` (mandatory envelope — `success`, `_meta`, `recommended_citation`,
   `unsafe_for_clinical_use` — plus stable identifiers, omitting all optional record detail) ·
   `compact` (the triage-useful record subset) · `standard` · `full` (everything, including
   structured sub-objects).
@@ -132,11 +134,11 @@ v1 makes the lean path the default:
   any UUID or accession (Anthropic: semantic fields "directly inform agents' downstream
   actions" and cut hallucination).
 - **Soft cap a single result at ~25,000 tokens** (Claude Code's default tool-response
-  ceiling); beyond that, paginate (§5) or truncate with an explicit `meta.truncated: true`.
+  ceiling); beyond that, paginate (§5) or truncate with an explicit `_meta.truncated: true`.
 
-### 4. The envelope `meta` block — the observability contract (formalize the 9/10)
+### 4. The envelope `_meta` block — the observability contract (formalize the 9/10)
 
-A `meta` object inside `structuredContent` is REQUIRED on every result (success and error).
+A `_meta` object inside `structuredContent` is REQUIRED on every result (success and error).
 Field canon:
 
 | Field | Req. | Notes |
@@ -153,16 +155,21 @@ Field canon:
 | `source_versions` | optional | Map of upstream component → version. |
 | `diagnostics` | opt-in | `{ rerank_used, candidate_counts, … }` — only when the caller asks. |
 
-**Limitations MUST be typed** (booleans/enums under `meta`), never prose-only — so a consumer
+**Limitations MUST be typed** (booleans/enums under `_meta`), never prose-only — so a consumer
 can branch programmatically (report Top-3 fix #3). Protocol/gateway metadata (cache hints, a
-router `gateway` block) belongs in **MCP result `_meta`**, not here.
+router `gateway` block) belongs in **MCP result `_meta`** (wire-level sibling of
+`structuredContent`), not inside the envelope `_meta`.
+
+> The rename of the envelope block from `_meta` to `meta` (dropping the leading underscore)
+> is **not** part of the v1 contract. It is recorded in the non-normative v2 appendix.
+> All v1 backends use `_meta` inside `structuredContent`.
 
 ### 5. Pagination — opaque cursors, distinct from MCP list pagination
 
 > **Scope:** MCP's *native* pagination (top-level `nextCursor`) applies to **list**
 > operations — `tools/list`, `resources/list`, `prompts/list`. This rule covers **tool
 > result-payload** pagination, which is a GeneFoundry fleet convention carried in the
-> envelope `meta`, not an MCP-native field.
+> envelope `_meta`, not an MCP-native field.
 
 For any tool that can exceed a page:
 
@@ -170,11 +177,11 @@ For any tool that can exceed a page:
   or mutating result sets (offset can skip/duplicate when rows change).
 - The cursor is an **opaque** string — clients MUST NOT parse it; prefer **stateless** cursors
   encoded in the token over server-stored cursor IDs (MCP sessions are short-lived).
-- Always populate `meta.pagination`: **`total_count`** (or estimate), **`has_more`**,
+- Always populate `_meta.pagination`: **`total_count`** (or estimate), **`has_more`**,
   **`next_cursor`** (`null` on the last page) — the model needs these to decide whether to
   keep paging.
 - An invalid/expired **tool-payload** cursor is an **execution error** (`isError: true`,
-  `error.code: "invalid_input"`, `retriable: false`), never a silent first page. (Reserve
+  `error_code: "invalid_input"`, `retryable: false`), never a silent first page. (Reserve
   JSON-RPC `-32602` for invalid cursors on MCP *list* operations.)
 
 ### 6. Provenance & safety — keep, and make universal
@@ -199,7 +206,7 @@ For tools with material cold latency (e.g. `spliceailookup-link`'s ~60s `predict
   (`"optional"` or `"required"`; verified present in `mcp`/`fastmcp 3.4.2` as
   `Tool.execution.taskSupport ∈ {forbidden, optional, required}`) so clients can run the call
   as an MCP **task** instead of blocking a turn.
-- ALSO type the latency in the envelope `meta` (`cost_tier`, `expected_cold_latency_ms`, §4) so
+- ALSO type the latency in the envelope `_meta` (`cost_tier`, `expected_cold_latency_ms`, §4) so
   an agent can plan before calling. (Verify FastMCP's task surface against the installed
   package before relying on it — per CLAUDE.md, FastMCP 3.x symbols are post-cutoff.)
 
@@ -208,11 +215,11 @@ For tools with material cold latency (e.g. `spliceailookup-link`'s ~60s `predict
 | Backend | Today | v1 change |
 |---|---|---|
 | `genereviews-link` | `{"result": {"results": […]}}` | Unwrap to top-level `results` + frame |
-| `stringdb-link` | bare `{partners, total_count}` | Adopt full frame (`success`/`meta`/citation/safety); rename `partners`→`results` |
-| `autopvs1-link` | `{ok, data, error, meta}` | Map to `{success, result(s), meta, error}` |
-| `spliceailookup-link` | bare typed dict; ~60s call | Adopt frame; `execution.taskSupport` + typed `meta` latency (§7) |
-| `pubtator-link` | verbose authors, null `coverage_hint`, prose `year_range_local` | §3 defaults + §4 `meta.filtering.exhaustive` |
-| the other 9 (`_meta`+payload) | already close | Rename payload `_meta`→`meta`; confirm key is `results`/`result`; align `error`; default `compact` |
+| `stringdb-link` | bare `{partners, total_count}` | Adopt full frame (`success`/`_meta`/citation/safety); rename `partners`→`results` |
+| `autopvs1-link` | `{ok, data, error, meta}` | Map to `{success, result(s), _meta, error_code/retryable}` |
+| `spliceailookup-link` | bare typed dict; ~60s call | Adopt frame; `execution.taskSupport` + typed `_meta` latency (§7) |
+| `pubtator-link` | verbose authors, null `coverage_hint`, prose `year_range_local` | §3 defaults + §4 `_meta.filtering.exhaustive` |
+| the other 9 (`_meta`+payload) | already close | Confirm key is `results`/`result`; align `error_code`/`retryable`; default `compact` |
 
 ## References
 
@@ -232,34 +239,92 @@ For tools with material cold latency (e.g. `spliceailookup-link`'s ~60s `predict
 
 - [ ] Every tool result is the §1 frame (object) in `structuredContent` (primary key
       `results`/`result`), mirrored into a `content[]` text block; `outputSchema` declared.
-- [ ] Execution errors use `isError: true` + the §2 error frame with the enum code and an
+- [ ] Execution errors use `isError: true` + the §2 flat error frame (`error_code`,
+      `message`, `retryable`, `recovery_action`) with the closed enum code and an
       actionable message; protocol errors use standard JSON-RPC codes.
 - [ ] `response_mode` defaults to `compact`; null/empty blocks omitted; nested objects collapse
       to strings except at `full`.
-- [ ] Envelope `meta` carries `request_id` + `elapsed_ms` (min), plus the applicable provenance,
-      `pagination`, `staleness`, and typed `filtering` fields; payload `_meta` renamed to `meta`;
-      protocol/gateway metadata kept in MCP result `_meta`.
-- [ ] Pagination uses opaque cursors with `meta.pagination.{total_count,has_more,next_cursor}`.
+- [ ] Envelope `_meta` carries `request_id` + `elapsed_ms` (min), plus the applicable provenance,
+      `pagination`, `staleness`, and typed `filtering` fields; protocol/gateway metadata kept
+      in MCP result `_meta` (wire-level sibling of `structuredContent`).
+- [ ] Pagination uses opaque stateless cursors with `_meta.pagination.{total_count,has_more,next_cursor}`.
 - [ ] `recommended_citation` (record-level for heterogeneous sets) + `unsafe_for_clinical_use`
       on every research-data result.
-- [ ] Long-running tools declare `execution.taskSupport` + typed `meta` latency hints.
+- [ ] Long-running tools declare `execution.taskSupport` + typed `_meta` latency hints.
 - [ ] CI contract test: assert the frame keys, the error shape, and `compact`-default token
       economy on representative tools.
 - [ ] MAJOR version bump + one-line `CHANGELOG` note (pre-alpha: no shims, no deprecation).
 - [ ] Once compliant, delete any router-side `transform` stopgap for this backend in
       `servers.yaml`.
 
-## Open questions
+## Open questions — resolved 2026-06-30
 
-1. **`results`/`result` vs a generic `data`.** v1 picks `results`/`result` (reads better for a
-   research fleet; `data` is contentless). *(Default: `results`/`result`.)*
-2. **Cursor encoding.** Stateless signed/opaque token vs. server-stored ID — pick one
-   fleet-wide so the router can document it once. *(Default: stateless opaque.)*
-3. **Should the router stamp MCP result `_meta.gateway`** (round-trip `elapsed_ms`, namespace)?
-   This is additive protocol metadata about the gateway itself — inside the thin-aggregator
-   boundary, and the correct home for it (not the envelope `meta`). Addresses the Speed-8
-   "can't measure through the wrapper" nit. *(Default: defer; revisit if needed.)*
+All four open questions are resolved as part of v1 ratification.
 
-*Resolved in revision:* `structuredContent` is a framed **object**, not a bare array (MCP
-stable defines structured content as an object for our purposes, and the frame needs room for
-`meta`/citation/`success`) — this is now mandatory, not open.
+- **OQ1 — Primary payload key: `results`/`result` vs generic `data`.**
+  **Resolved → `results`/`result`.** Reads naturally for a research fleet; semantic over
+  generic per Anthropic's tool-authoring guidance; near-zero migration cost since conformant
+  backends already use this.
+
+- **OQ2 — Cursor encoding: stateless opaque token vs server-stored cursor ID.**
+  **Resolved → stateless opaque token.** Mandated by the fleet's Streamable-HTTP-only,
+  stateless posture (MCP sessions are short-lived; server-stored IDs force sticky state the
+  architecture forbids). `limit`/`offset` is the simple path; opaque `cursor` required only
+  for large/mutating sets.
+
+- **OQ3 — Should the router stamp MCP result `_meta.gateway`?**
+  **Resolved → defer.** It is additive and legitimate (router-owned, wire-level `_meta`),
+  but it is a router enhancement that touches the response hot path for a "nice to measure"
+  gain and is not an envelope-standard blocker. Track as a separate router ticket; verify the
+  FastMCP 3.4.2 `ToolResult.meta` write surface against the installed package before
+  implementing (per CLAUDE.md post-cutoff rule).
+
+- **OQ4 — Error + meta shape: flat banner contract vs strict nested Rules §2/§4 migration.**
+  **Resolved → flat banner contract as v1 (Option A).** The entire live fleet implements
+  the flat shape (`clingen_link/mcp/errors.py:322-337`; `error_code`+`retryable` fleet-wide;
+  zero backends use nested `error:{…}`). MCP does **not** mandate an in-band error shape —
+  only `isError: true` is required. The flat contract is fully spec-compliant; the nested
+  rewrite buys nothing the model can observe and costs a fleet-wide breaking change. The
+  nested-error and `_meta`→`meta` rename targets are recorded in the v2 appendix below.
+
+*Resolved earlier (not re-litigated):* `structuredContent` is a framed **object**, not a
+bare array (MCP stable defines structured content as an object; the frame needs room for
+`_meta`/citation/`success`).
+
+---
+
+## Appendix: Non-normative v2 / future targets
+
+The following were proposed in the pre-ratification draft but are **not part of the v1
+contract**. They are recorded here so the work is not lost and can be revisited as a
+coordinated v2 migration when justified.
+
+### v2-A: Nested execution-error frame (§2 strict draft)
+
+The pre-ratification draft proposed a nested `error` object:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "invalid_input",
+    "message": "hgnc_id must look like 'HGNC:1100'; got '1100'. Prefix with 'HGNC:'.",
+    "retriable": false,
+    "details": { "field": "hgnc_id" }
+  },
+  "_meta": { "request_id": "…", "elapsed_ms": 3, "source": "hgnc" }
+}
+```
+
+**Why deferred:** zero backends implement this shape; migrating would be a coordinated
+breaking change across ~20 repos for an agent-ergonomics delta the live usage reports did not
+flag. Note also the one-letter trap: the draft used `retriable` but the fleet ships
+`retryable`; any future v2 adoption MUST use `retryable` (already the fleet spelling).
+
+### v2-B: Envelope block rename `_meta` → `meta`
+
+The pre-ratification §4 proposed renaming the envelope block from `_meta` to `meta` (dropping
+the leading underscore) to disambiguate from MCP's wire-level `_meta` sibling. **Why
+deferred:** all conformant backends use `_meta` today; the rename costs a coordinated
+fleet-wide change for a cosmetic readability gain. If picked up in v2, it must be a MAJOR
+bump with a migration note in every backend's CHANGELOG.
