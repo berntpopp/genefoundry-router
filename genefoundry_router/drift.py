@@ -4,9 +4,11 @@ The MCP spec covers auth/transport but does NOT mandate tool-definition integrit
 gateway must do it: a backend that changes a tool's description or schema *after* it was
 reviewed is the canonical "rug pull" (and the channel for tool-poisoning instructions).
 This module fingerprints each tool's security-relevant definition (name + description +
-inputSchema) and diffs a live snapshot against a reviewed, pinned manifest
-(``scripts/snapshot_fleet.py`` → ``tests/fixtures/fleet_manifest.json``). Surface any
-drift loudly; treat ``changed`` as the highest-signal event.
+inputSchema) and diffs a live snapshot against a reviewed, pinned baseline. The scheduled
+drift workflow (``.github/workflows/drift.yml``) pins ``ci/fleet-baseline.json`` — the live,
+full-fleet baseline produced by ``make snapshot-baseline``; ``tests/fixtures/fleet_manifest.json``
+is the offline fake-fleet fixture the unit/e2e tests pin against. Surface any drift loudly;
+treat ``changed`` as the highest-signal event.
 """
 
 from __future__ import annotations

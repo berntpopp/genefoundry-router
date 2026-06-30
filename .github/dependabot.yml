@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Keep the digest-pinned base images in docker/Dockerfile current (Container-Hardening v1 §8.28).
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+
+  # Keep SHA-pinned GitHub Actions current (security.yml / ci.yml / drift.yml / container-security.yml).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+
+  # Keep Python deps (pyproject.toml + uv.lock) patched; GA since 2025-03-13.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
