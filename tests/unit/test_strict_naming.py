@@ -1,3 +1,5 @@
+import pytest
+
 from genefoundry_router.cli import check_leaf_name
 
 CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute", "map"}
@@ -42,3 +44,28 @@ def test_ops_meta_tag_carve_out():
     assert any("charset" in i or "50" in i for i in issues)
     # without a tag, a non-canonical verb is still rejected
     assert check_leaf_name("check_upstream_health") != []
+
+
+# --- Negative guards: verbs that must NEVER silently enter the canon ---
+
+
+@pytest.mark.parametrize(
+    "leaf",
+    [
+        "build_topic_map",
+        "index_review_evidence",
+        "stage_research_session",
+    ],
+)
+def test_pubtator_orchestration_verbs_rejected_untagged(leaf: str) -> None:
+    """build_*/index_*/stage_* are pubtator orchestration verbs outside Tier-1 and Tier-2 canon.
+
+    They must be REJECTED by check_leaf_name when untagged — a future PR must not silently
+    fold them into the canon verb set. An ops/meta tag would grant the carve-out legitimately,
+    but without a tag these verbs are naming violations and must remain so.
+    """
+    issues = check_leaf_name(leaf)
+    assert any("verb" in i for i in issues), (
+        f"{leaf!r} must be rejected as a naming violation (untagged pubtator orchestration verb),"
+        f" but check_leaf_name returned no issues"
+    )

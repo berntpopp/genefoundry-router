@@ -309,7 +309,7 @@ The pre-ratification draft proposed a nested `error` object:
   "error": {
     "code": "invalid_input",
     "message": "hgnc_id must look like 'HGNC:1100'; got '1100'. Prefix with 'HGNC:'.",
-    "retriable": false,
+    "retryable": false,
     "details": { "field": "hgnc_id" }
   },
   "_meta": { "request_id": "…", "elapsed_ms": 3, "source": "hgnc" }
@@ -318,8 +318,10 @@ The pre-ratification draft proposed a nested `error` object:
 
 **Why deferred:** zero backends implement this shape; migrating would be a coordinated
 breaking change across ~20 repos for an agent-ergonomics delta the live usage reports did not
-flag. Note also the one-letter trap: the draft used `retriable` but the fleet ships
-`retryable`; any future v2 adoption MUST use `retryable` (already the fleet spelling).
+flag. Note also the one-letter spelling trap: the pre-ratification draft mistakenly used
+`retriable` (a one-letter trap — easy to misread as correct); any future v2 MUST use
+`retryable` (the fleet-wide spelling, already canonical in v1). The code example above has
+been corrected to `retryable` so it is safe to copy-paste.
 
 ### v2-B: Envelope block rename `_meta` → `meta`
 
