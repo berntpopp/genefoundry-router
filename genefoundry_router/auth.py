@@ -8,7 +8,7 @@ the router's own connection (see composition.py). Never wire the incoming
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 import structlog
 from pydantic import AnyHttpUrl
@@ -17,6 +17,15 @@ from genefoundry_router.config import RouterSettings
 from genefoundry_router.exceptions import ConfigurationError
 
 log = structlog.get_logger(__name__)
+
+# GF_OAUTH_REQUIRE_CONSENT (string env) → OAuthProxy.require_authorization_consent
+# (bool | Literal["remember", "external"]). "external" skips the built-in consent page.
+_CONSENT_ARG: dict[str, bool | Literal["remember", "external"]] = {
+    "external": "external",
+    "remember": "remember",
+    "true": True,
+    "false": False,
+}
 
 
 def build_auth(settings: RouterSettings) -> Any | None:
@@ -130,13 +139,7 @@ def _build_oauth(settings: RouterSettings) -> Any:
     client_id = settings.GF_OAUTH_CLIENT_ID
     public_base = settings.GF_PUBLIC_BASE_URL
     assert authorize_url and token_url and client_id and public_base
-    # Map the string env setting onto OAuthProxy's bool|Literal consent argument.
-    require_consent = {
-        "external": "external",
-        "remember": "remember",
-        "true": True,
-        "false": False,
-    }[settings.GF_OAUTH_REQUIRE_CONSENT]
+    require_consent = _CONSENT_ARG[settings.GF_OAUTH_REQUIRE_CONSENT]
     oauth = OAuthProxy(
         upstream_authorization_endpoint=authorize_url,
         upstream_token_endpoint=token_url,
