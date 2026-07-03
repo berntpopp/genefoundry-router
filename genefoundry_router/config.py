@@ -74,6 +74,20 @@ class RouterSettings(BaseSettings):
     GF_OAUTH_BASE_URL: str | None = None
     GF_OAUTH_AUTHORIZE_URL: str | None = None
     GF_OAUTH_TOKEN_URL: str | None = None
+    # Fixed secret for signing the router's OWN FastMCP JWT tokens (the OAuthProxy-minted
+    # access/refresh tokens and the on-disk client store's encryption key). When unset,
+    # fastmcp derives a (deterministic) key from GF_OAUTH_CLIENT_SECRET — stable, but it
+    # couples token validity and the persisted client store to that secret's rotation.
+    # Set an explicit value to decouple them: issued tokens + registered DCR clients then
+    # survive a Keycloak client-secret rotation. MUST stay constant once set (rotating it
+    # invalidates all live sessions and orphans the persisted client store).
+    GF_OAUTH_JWT_SIGNING_KEY: str | None = None
+    # OAuthProxy built-in consent ("Allow Access") screen. Keycloak is the real
+    # authorization gate + branded login UI, so the proxy's own consent page is redundant
+    # and unstyled; default "external" skips it for a unified single-page login.
+    #   external → skip entirely (consent handled upstream)   true  → always show
+    #   remember → show once per client, then silent          false → skip (dev-only warning)
+    GF_OAUTH_REQUIRE_CONSENT: Literal["external", "remember", "true", "false"] = "external"
 
     @field_validator("GF_ALLOWED_ORIGINS", mode="before")
     @classmethod

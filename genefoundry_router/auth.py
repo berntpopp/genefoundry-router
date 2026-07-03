@@ -130,6 +130,13 @@ def _build_oauth(settings: RouterSettings) -> Any:
     client_id = settings.GF_OAUTH_CLIENT_ID
     public_base = settings.GF_PUBLIC_BASE_URL
     assert authorize_url and token_url and client_id and public_base
+    # Map the string env setting onto OAuthProxy's bool|Literal consent argument.
+    require_consent = {
+        "external": "external",
+        "remember": "remember",
+        "true": True,
+        "false": False,
+    }[settings.GF_OAUTH_REQUIRE_CONSENT]
     oauth = OAuthProxy(
         upstream_authorization_endpoint=authorize_url,
         upstream_token_endpoint=token_url,
@@ -144,6 +151,15 @@ def _build_oauth(settings: RouterSettings) -> Any:
         # it here, so deriving it from base_url would reject every client with
         # invalid_target. See GF_PUBLIC_BASE_URL vs GF_JWT_AUDIENCE in .env.docker.example.
         resource_base_url=settings.GF_JWT_AUDIENCE,
+        # Fixed signing key → the OAuthProxy-minted tokens AND the encrypted on-disk client
+        # store (whose dir + Fernet key derive from this) stay valid across restarts and
+        # Keycloak client-secret rotation. None falls back to fastmcp's deterministic
+        # derive-from-client-secret. Pairs with the persistent FASTMCP_HOME volume (prod
+        # compose): without durable storage a stable key alone still loses DCR clients.
+        jwt_signing_key=settings.GF_OAUTH_JWT_SIGNING_KEY,
+        # Skip fastmcp's own "Allow Access" consent page — Keycloak is the auth + login
+        # gate; the proxy's redundant, unstyled interstitial breaks the branded flow.
+        require_authorization_consent=require_consent,
     )
     log.info("auth_mode", mode="oauth", provider=settings.GF_OAUTH_PROVIDER)
     # MultiAuth lets M2M JWT + interactive OAuth coexist (spec §9).
