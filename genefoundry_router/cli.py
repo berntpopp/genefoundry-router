@@ -13,10 +13,11 @@ import uvicorn
 from rich.console import Console
 
 if TYPE_CHECKING:
+    from genefoundry_router.conformance import Report
     from genefoundry_router.devtools.fakes import Manifest
 
 from genefoundry_router.config import RouterSettings, load_registry
-from genefoundry_router.registry import MAX_QUALIFIED_NAME_LEN, BackendDef
+from genefoundry_router.registry import MAX_QUALIFIED_NAME_LEN, BackendDef, expected_server_name
 from genefoundry_router.server import build_app
 
 app = typer.Typer(help="GeneFoundry Router — federate the -link MCP fleet.", no_args_is_help=True)
@@ -182,6 +183,80 @@ def doctor(
 
 async def _gather_probes(backends: list[BackendDef]) -> list[dict[str, object]]:
     return [await _probe_backend(b) for b in backends]
+
+
+def _classify_fleet(
+    results: list[tuple[str, Report | None, str | None]],
+) -> tuple[int, list[str]]:
+    """Reduce per-backend ``(name, report, transport_error)`` to ``(exit_code, lines)``.
+
+    Exit 1 if any backend is reachable but non-conformant (e.g. a 307-redirecting ``/mcp``)
+    — an actionable transport-contract violation; exit 2 if the only problems were transport
+    errors (unreachable / timeout); exit 0 if every enabled backend passed. Non-conformance
+    outranks a transport error so a real regression is never masked by a transient outage.
+    """
+    lines: list[str] = []
+    any_fail = False
+    any_error = False
+    for name, rep, err in results:
+        if rep is not None and rep.conformant:
+            lines.append(f"PASS  {name} ({len(rep.passed)} checks)")
+        elif rep is not None:
+            any_fail = True
+            lines.append(f"FAIL  {name}")
+            lines.extend(f"        - {detail}" for detail in rep.failed)
+        else:
+            any_error = True
+            lines.append(f"ERROR {name}: {err or 'no report'}")
+    code = 1 if any_fail else (2 if any_error else 0)
+    return code, lines
+
+
+@app.command("fleet-probe")
+def fleet_probe(
+    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+    tier: str = typer.Option("stateless", help="Transport tier to assert (stateless|stateful)."),
+) -> None:
+    """Run the MCP Transport Standard v1 conformance probe against every enabled backend's
+    LIVE ``/mcp`` (URLs from the environment).
+
+    This is the router's prod-liveness gate: it catches the exact class of failure the
+    router otherwise hides — a backend that is registered and health-200 yet 307-redirects
+    (or otherwise fails the transport contract) and so harvests zero tools. CI conformance
+    proves the *code* conformant; this proves the *deployed fleet* conformant. Exit 1 on any
+    contract violation, 2 on transport errors only, 0 if all pass.
+    """
+    import httpx
+
+    from genefoundry_router.conformance import run_probe
+
+    registry = load_registry(servers_file, os.environ)
+    results: list[tuple[str, Report | None, str | None]] = []
+    for b in registry:
+        if not b.enabled:
+            continue
+        if not b.url:
+            results.append((b.name, None, f"no URL configured ({b.url_env})"))
+            continue
+        base = b.url[: -len("/mcp")] if b.url.endswith("/mcp") else b.url
+        try:
+            results.append(
+                (b.name, run_probe(base, expected_name=expected_server_name(b), tier=tier), None)
+            )
+        except httpx.HTTPError as exc:  # DNS/TLS/connect/timeout — a transport error, not a verdict
+            results.append((b.name, None, str(exc)))
+    code, lines = _classify_fleet(results)
+    for line in lines:
+        style = (
+            "green" if line.startswith("PASS") else "red" if line[:5] in ("FAIL ", "ERROR") else ""
+        )
+        console.print(f"[{style}]{line}[/{style}]" if style else line)
+    passed = sum(1 for line in lines if line.startswith("PASS"))
+    console.print(
+        f"\n[bold]fleet-probe:[/bold] {passed}/{len(results)} enabled backends conformant"
+    )
+    if code:
+        raise typer.Exit(code)
 
 
 async def _list_federated_tools(settings: RouterSettings, registry: list[BackendDef]) -> list[str]:

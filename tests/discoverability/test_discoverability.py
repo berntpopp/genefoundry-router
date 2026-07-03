@@ -45,6 +45,17 @@ def test_tasks_target_tools_that_exist() -> None:
     assert len(namespaces) >= 15
 
 
+def test_every_enabled_backend_has_a_discoverability_task() -> None:
+    """Guard against the silent gap that let hpo/mavedb/metadome/orphanet sit unmonitored:
+    every enabled backend MUST be exercised by >=1 golden task, so a newly-federated backend
+    can't be added without also being measured for findability."""
+    registry = load_registry(ROOT / "servers.yaml", {})
+    enabled = {b.namespace for b in registry if b.enabled}
+    covered = {tool.split("_", 1)[0] for task in load_tasks() for tool in task.expected}
+    missing = sorted(enabled - covered)
+    assert not missing, f"enabled backends with no discoverability task: {missing}"
+
+
 async def test_discoverability_meets_bar() -> None:
     registry = load_registry(ROOT / "servers.yaml", {})
     surfaced = resolve_entrypoints(registry)

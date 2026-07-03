@@ -15,8 +15,8 @@ servers:
   - { name: litvar,      repo: berntpopp/litvar-link,        url_env: GF_LITVAR_URL,      namespace: litvar,      tags: [variant, literature], entrypoints: [get_variant_literature] }
   - { name: stringdb,    repo: berntpopp/stringdb-link,      url_env: GF_STRINGDB_URL,    namespace: stringdb,    tags: [ppi, network], entrypoints: [get_interaction_partners] }
   - { name: autopvs1,    repo: berntpopp/autopvs1-link,      url_env: GF_AUTOPVS1_URL,    namespace: autopvs1,    tags: [variant, acmg, pvs1], entrypoints: [get_variant_pvs1_data] }
-  - { name: spliceai,    repo: berntpopp/spliceailookup-link, url_env: GF_SPLICEAI_URL,   namespace: spliceai,    tags: [variant, splicing, prediction], entrypoints: [predict_splicing] }
-  - { name: genereviews, repo: berntpopp/genereviews-link,   url_env: GF_GENEREVIEWS_URL, namespace: genereviews, tags: [literature, gene-disease], entrypoints: [search_genereviews] }
+  - { name: spliceai,    repo: berntpopp/spliceailookup-link, url_env: GF_SPLICEAI_URL,   namespace: spliceai,    tags: [variant, splicing, prediction], entrypoints: [predict_splicing], server_name: spliceailookup-link }  # namespace aliased to 'spliceai'; backend's ratified serverInfo.name is 'spliceailookup-link' (its own conformance CI: CONFORMANCE_NAME)
+  - { name: genereviews, repo: berntpopp/genereviews-link,   url_env: GF_GENEREVIEWS_URL, namespace: genereviews, tags: [literature, gene-disease], entrypoints: [search_genereviews, search_passages] }  # two front doors: gene->chapter resolver + ranked passage/text search
   - { name: pubtator,    repo: berntpopp/pubtator-link,      url_env: GF_PUBTATOR_URL,    namespace: pubtator,    tags: [literature, entity], entrypoints: [search_literature] }  # adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64) — no transform needed
   # --- Deployed 2026-06-17 at <name>-link.genefoundry.org (DNS + container + NPM live). ---
   - { name: clinvar,     repo: berntpopp/clinvar-link,       url_env: GF_CLINVAR_URL,     namespace: clinvar,     tags: [variant, clinical-significance, classification], entrypoints: [get_variant] }

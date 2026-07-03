@@ -218,6 +218,34 @@ tasks:
     query: map a disease to its OMIM and Orphanet equivalents
     expected: [mondo_map_cross_ontology, mondo_resolve_xref]
 
+  # --- HPO: phenotype ontology (queries use domain language from tool descriptions) ---
+  - id: hpo-resolve-term
+    category: phenotype
+    query: canonical HPO term for a phenotype label or synonym
+    expected: [hpo_resolve_term]
+  - id: hpo-genes-for-phenotype
+    category: phenotype
+    query: genes annotated to an HPO phenotype term
+    expected: [hpo_get_genes_for_phenotype]
+
+  # --- MaveDB: multiplexed functional-assay variant effects (PS3/BS3) ---
+  - id: mavedb-score-set
+    category: functional_assay
+    query: MaveDB score sets of functional variant-effect scores for a gene
+    expected: [mavedb_search_score_sets, mavedb_get_gene_score_sets]
+
+  # --- MetaDome: regional missense tolerance ---
+  - id: metadome-tolerance
+    category: tolerance
+    query: MetaDome per-residue missense tolerance landscape for a transcript
+    expected: [metadome_get_tolerance_landscape]
+
+  # --- Orphanet: rare-disease ontology ---
+  - id: orphanet-resolve-disease
+    category: rare_disease
+    query: canonical Orphanet term for a rare disease label or ORPHAcode
+    expected: [orphanet_resolve_disease]
+
   # --- cross-cutting first-step resolvers ---
   - id: resolve-gene-generic
     category: nomenclature
