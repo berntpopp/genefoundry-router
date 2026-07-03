@@ -42,23 +42,42 @@ def is_insecure_public_bind(auth_mode: str, host: str, allow_insecure: bool) -> 
 
 LEAF_NAME_RE = re.compile(r"^[a-z0-9_]{1,50}$")
 CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute", "map"}
-# Documented v1.1 action-verb exceptions (spec §19 Q2 — left as exceptions for now).
+# Ratified Tier-2 sanctioned domain action/compute verbs (Tool-Naming Standard v1.1).
+# These are admitted fleet-wide; used only where a backend actually registers such a tool.
+# Source: docs/TOOL-NAMING-STANDARD-v1.md §Tier-2, ratified 2026-06-30.
 ACTION_VERB_EXCEPTIONS = {
     "predict",
-    "analyze",
     "annotate",
+    "recode",  # vep-link: domain-legitimate (Ensembl Variant Recoder)
+    "liftover",  # vep-link: domain-legitimate (coordinate liftover)
+    "analyze",
+    "score",  # reserved for compute/scoring backends
     "submit",
     "export",
     "generate",
     "download",
 }
+# Tags that grant an ops/meta carve-out: tools tagged ops or meta skip the verb rule
+# (they still must pass charset/length/no-self-prefix). Covers check_*/health/warmup/
+# diagnostics/*_help/*_quickstart and the gtex deep-research fetch/search pair.
+_OPS_META_TAGS = frozenset({"ops", "meta"})
 
 
-def check_leaf_name(leaf: str) -> list[str]:
-    """Return Tool-Naming Standard v1 violations for a single leaf tool name."""
+def check_leaf_name(leaf: str, tags: list[str] | None = None) -> list[str]:
+    """Return Tool-Naming Standard v1.1 violations for a single leaf tool name.
+
+    Args:
+        leaf: The unprefixed tool name to validate.
+        tags: Optional list of tool tags. Tools tagged ``ops`` or ``meta`` are
+            exempt from the verb rule (tag carve-out) but still subject to the
+            charset/length constraint.
+    """
     issues: list[str] = []
     if not LEAF_NAME_RE.match(leaf):
         issues.append(f"charset/length: {leaf!r} must match ^[a-z0-9_]{{1,50}}$ (≤50)")
+    # ops/meta-tagged tools skip the verb rule (v1.1 tag carve-out).
+    if tags and _OPS_META_TAGS.intersection(tags):
+        return issues
     verb = leaf.split("_", 1)[0]
     if verb not in CANONICAL_VERBS and verb not in ACTION_VERB_EXCEPTIONS:
         issues.append(f"verb: {leaf!r} starts with non-canonical verb {verb!r}")
@@ -108,7 +127,15 @@ async def _probe_backend(backend: BackendDef) -> dict[str, object]:
             "name": backend.name,
             "reachable": True,
             "tools": len(tools),
-            "leaf_names": [t.name for t in tools],  # backend's own (un-namespaced) leaves
+            # Mirror _snapshot_live: capture per-tool tags so the doctor --strict-naming
+            # loop can pass them to check_leaf_name (ops/meta carve-out).
+            "leaf_tools": [
+                {
+                    "name": t.name,
+                    "tags": list((t.meta or {}).get("fastmcp", {}).get("tags", [])),
+                }
+                for t in tools
+            ],
             "error": None,
         }
     except Exception as exc:  # report any connection failure (broad by design)
@@ -138,10 +165,12 @@ def doctor(
     for r in results:
         if r["reachable"]:
             console.print(f"[green]OK[/green]   {r['name']}: {r['tools']} tools")
-            leaf_names = r.get("leaf_names", [])
-            if strict_naming and isinstance(leaf_names, list):
-                for leaf in leaf_names:
-                    for issue in check_leaf_name(leaf):
+            leaf_tools = r.get("leaf_tools", [])
+            if strict_naming and isinstance(leaf_tools, list):
+                for leaf_tool in leaf_tools:
+                    leaf = leaf_tool["name"]
+                    tags: list[str] = leaf_tool.get("tags") or []
+                    for issue in check_leaf_name(leaf, tags=tags):
                         violations_found = True
                         console.print(f"  [yellow]NAME[/yellow] {r['name']}/{leaf}: {issue}")
         else:
