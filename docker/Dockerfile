@@ -22,7 +22,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     GF_MCP_PATH=/mcp
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --uid 10001 app
+    && useradd --create-home --uid 10001 app \
+    # Strip the base image's system pip: the app runs entirely from the copied
+    # /build/.venv (which contains no pip), so the interpreter-level pip is pure
+    # attack surface. Removing it drops pip-only CVEs (e.g. CVE-2026-6357) that
+    # the container-scan gate flags on a package the runtime never uses.
+    && rm -rf /usr/local/lib/python3.12/site-packages/pip \
+              /usr/local/lib/python3.12/site-packages/pip-*.dist-info \
+              /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.12
 WORKDIR /home/app/web
 COPY --from=builder /build/.venv /build/.venv
 COPY genefoundry_router ./genefoundry_router
