@@ -8,7 +8,7 @@ the router's own connection (see composition.py). Never wire the incoming
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 import structlog
 from pydantic import AnyHttpUrl
@@ -17,6 +17,15 @@ from genefoundry_router.config import RouterSettings
 from genefoundry_router.exceptions import ConfigurationError
 
 log = structlog.get_logger(__name__)
+
+# GF_OAUTH_REQUIRE_CONSENT (string env) → OAuthProxy.require_authorization_consent
+# (bool | Literal["remember", "external"]). "external" skips the built-in consent page.
+_CONSENT_ARG: dict[str, bool | Literal["remember", "external"]] = {
+    "external": "external",
+    "remember": "remember",
+    "true": True,
+    "false": False,
+}
 
 
 def build_auth(settings: RouterSettings) -> Any | None:
@@ -78,8 +87,6 @@ def _build_jwt(settings: RouterSettings) -> Any:
     )
 
 
-
-
 def _install_resource_tolerance() -> None:
     """Tolerate a duplicated trailing path segment in the RFC 8707 ``resource``.
 
@@ -101,7 +108,9 @@ def _install_resource_tolerance() -> None:
         return re.sub(r"(/[^/]+)\1(?=$|/)", r"\1", _orig(url))
 
     _p._normalize_resource_url = _norm
-    _p._gf_resource_tolerant = True
+    # Marker attribute for idempotency; dynamic, so it isn't in fastmcp's stubs.
+    _p._gf_resource_tolerant = True  # type: ignore[attr-defined]
+
 
 def _build_oauth(settings: RouterSettings) -> Any:
     # R1.5: OAuthProxy.token_verifier is REQUIRED — so the JWT verifier inputs are
@@ -130,6 +139,7 @@ def _build_oauth(settings: RouterSettings) -> Any:
     client_id = settings.GF_OAUTH_CLIENT_ID
     public_base = settings.GF_PUBLIC_BASE_URL
     assert authorize_url and token_url and client_id and public_base
+    require_consent = _CONSENT_ARG[settings.GF_OAUTH_REQUIRE_CONSENT]
     oauth = OAuthProxy(
         upstream_authorization_endpoint=authorize_url,
         upstream_token_endpoint=token_url,
@@ -144,6 +154,15 @@ def _build_oauth(settings: RouterSettings) -> Any:
         # it here, so deriving it from base_url would reject every client with
         # invalid_target. See GF_PUBLIC_BASE_URL vs GF_JWT_AUDIENCE in .env.docker.example.
         resource_base_url=settings.GF_JWT_AUDIENCE,
+        # Fixed signing key → the OAuthProxy-minted tokens AND the encrypted on-disk client
+        # store (whose dir + Fernet key derive from this) stay valid across restarts and
+        # Keycloak client-secret rotation. None falls back to fastmcp's deterministic
+        # derive-from-client-secret. Pairs with the persistent FASTMCP_HOME volume (prod
+        # compose): without durable storage a stable key alone still loses DCR clients.
+        jwt_signing_key=settings.GF_OAUTH_JWT_SIGNING_KEY,
+        # Skip fastmcp's own "Allow Access" consent page — Keycloak is the auth + login
+        # gate; the proxy's redundant, unstyled interstitial breaks the branded flow.
+        require_authorization_consent=require_consent,
     )
     log.info("auth_mode", mode="oauth", provider=settings.GF_OAUTH_PROVIDER)
     # MultiAuth lets M2M JWT + interactive OAuth coexist (spec §9).

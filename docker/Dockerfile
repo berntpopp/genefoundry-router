@@ -29,7 +29,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
     # the container-scan gate flags on a package the runtime never uses.
     && rm -rf /usr/local/lib/python3.14/site-packages/pip \
               /usr/local/lib/python3.14/site-packages/pip-*.dist-info \
-              /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.14
+              /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.14 \
+    # Persistent-store mount point for FASTMCP_HOME (OAuthProxy client/token store).
+    # Owned by the app uid so a fresh named volume mounted here initializes writable
+    # (Docker seeds an empty volume with the image dir's ownership). See prod compose.
+    && mkdir -p /data && chown app:app /data
 WORKDIR /home/app/web
 COPY --from=builder /build/.venv /build/.venv
 COPY genefoundry_router ./genefoundry_router

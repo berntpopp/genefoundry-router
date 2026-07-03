@@ -2,9 +2,18 @@ services:
   genefoundry-router:
     environment:
       GF_LOG_LEVEL: INFO
+      # OAuthProxy persists its DCR client registrations, auth codes, and refresh
+      # tokens as an encrypted FileTreeStore under $FASTMCP_HOME. Point it at the
+      # durable fastmcp_data volume (below) — NOT /tmp (tmpfs, wiped every restart,
+      # which caused "Client Not Registered" and forced clients to reconnect).
+      FASTMCP_HOME: /data/fastmcp
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    volumes:
+      # read_only rootfs still allows writes to explicit volume mounts. app (uid 10001)
+      # owns /data via the Dockerfile so the fresh named volume initializes writable.
+      - fastmcp_data:/data
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -22,3 +31,8 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+
+volumes:
+  # Durable OAuthProxy client/token store. Survives router restarts + redeploys so
+  # registered MCP clients stay registered (no more "Client Not Registered").
+  fastmcp_data:
