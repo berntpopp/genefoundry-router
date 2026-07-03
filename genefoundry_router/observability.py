@@ -53,8 +53,28 @@ TOOL_LATENCY = Histogram(
     registry=METRICS_REGISTRY,
 )
 
-# Cached reachability for /health (updated by startup probe + polling, Tasks 22/23).
+# Cached reachability for /health, keyed by namespace. Seeded from the live tool
+# harvest at startup and refreshed by the polling relist (see server._seed_reachability):
+# a backend is "up" iff it contributed >=1 tool to the federated surface. NOT a mere
+# config echo — a registered-but-unreachable backend (down, 307-redirecting, TLS-broken)
+# harvests 0 tools and MUST read as down here so /health can never be falsely green.
 BACKEND_STATUS: dict[str, bool] = {}
+# Per-namespace count of tools actually harvested from each backend (0 == unreachable).
+BACKEND_TOOL_COUNT: dict[str, int] = {}
+
+
+def namespace_tool_counts(tool_names: list[str]) -> dict[str, int]:
+    """Count harvested tools per backend namespace (the ``<namespace>_<leaf>`` prefix).
+
+    Root tools (``search_tools``/``call_tool``) split to non-namespace keys that no
+    backend claims, so they are harmless — callers look up counts by known namespace.
+    """
+    counts: dict[str, int] = {}
+    for name in tool_names:
+        if "_" in name:
+            ns = name.split("_", 1)[0]
+            counts[ns] = counts.get(ns, 0) + 1
+    return counts
 
 
 def configure_logging(level: str = "INFO") -> None:
@@ -76,10 +96,16 @@ def configure_logging(level: str = "INFO") -> None:
     _LOG_CONFIGURED = True
 
 
-def set_backend_up(backend: BackendDef, up: bool) -> None:
-    """Record a backend's reachability for /metrics (gauge) and /health (cached map)."""
+def set_backend_up(backend: BackendDef, up: bool, tools: int | None = None) -> None:
+    """Record a backend's reachability for /metrics (gauge) and /health (cached map).
+
+    ``tools`` is the number of tools harvested from the backend; when provided it is
+    cached for the /health per-namespace tool-count summary.
+    """
     BACKEND_UP.labels(backend=backend.name).set(1 if up else 0)
     BACKEND_STATUS[backend.namespace] = up
+    if tools is not None:
+        BACKEND_TOOL_COUNT[backend.namespace] = tools
 
 
 def register_metrics(app: FastAPI) -> None:
@@ -96,14 +122,19 @@ def register_health(app: FastAPI, backends: list[BackendDef]) -> None:
 
     @app.get("/health")
     async def health() -> dict[str, object]:
+        # Degraded = an enabled backend the router probed and found down (reachable is
+        # explicitly False). Unknown (None, not yet probed) is not counted as degraded.
+        degraded = sorted(b.namespace for b in enabled if BACKEND_STATUS.get(b.namespace) is False)
         return {
-            "status": "healthy",
+            "status": "degraded" if degraded else "healthy",
             "service": "genefoundry",
             "backends": {
                 "total": len(backends),
                 "enabled": len(enabled),
                 "namespaces": [b.namespace for b in enabled],
                 "reachable": {b.namespace: BACKEND_STATUS.get(b.namespace) for b in enabled},
+                "tools": {b.namespace: BACKEND_TOOL_COUNT.get(b.namespace, 0) for b in enabled},
+                "degraded": degraded,
             },
         }
 

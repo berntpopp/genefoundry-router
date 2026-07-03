@@ -38,6 +38,13 @@ class BackendDef(BaseModel):
     # or stemming, so a canonical tool can lose to verbose tools that repeat a keyword).
     # Leaf names; the router namespaces them to <namespace>_<leaf>.
     entrypoints: list[str] = Field(default_factory=list)
+    # Override for the backend's ratified ``serverInfo.name`` when it legitimately differs
+    # from ``<namespace>-link``. The router aliases a few backends to a shorter namespace
+    # than their published identity (e.g. the ``spliceailookup-link`` backend is namespaced
+    # ``spliceai`` for terse tool prefixes); fleet-probe MUST assert the name the backend
+    # actually emits — which its OWN conformance CI ratifies — not the alias. Defaults to
+    # ``<namespace>-link`` for the overwhelming common case.
+    server_name: str | None = None
     enabled: bool = True
     cache_ttl: int = 300
     transport: Literal["http"] = "http"  # R1.1: present in servers.yaml defaults; SSE not offered
@@ -58,6 +65,15 @@ CLIENT_SAFE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 def qualified_name(namespace: str, tool: str) -> str:
     """Return the gateway-visible name for a tool under a namespace."""
     return f"{namespace}_{tool}"
+
+
+def expected_server_name(backend: BackendDef) -> str:
+    """The ``serverInfo.name`` fleet-probe should assert for a backend.
+
+    Defaults to ``<namespace>-link`` (the Transport Standard v1 §3 rule); a backend whose
+    ratified name differs from the router's namespace alias declares it via ``server_name``.
+    """
+    return backend.server_name or f"{backend.namespace}-link"
 
 
 def exceeds_name_limit(namespace: str, tool: str) -> bool:

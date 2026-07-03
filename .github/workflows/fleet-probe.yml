@@ -1,0 +1,63 @@
+name: Fleet probe (prod conformance)
+
+# CI conformance proves the CODE conformant (each repo builds a container and probes it).
+# This proves the DEPLOYED fleet conformant on a schedule — the gap that let genereviews-link
+# 307-redirect in production while every offline check stayed green. Runs the same MCP
+# Transport Standard v1 probe against every enabled backend's live /mcp.
+
+on:
+  schedule:
+    - cron: "37 */6 * * *" # every 6h at :37 (off-peak; offset from drift's :17)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fleet-probe-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fleet-probe:
+    # Opt-in: scheduled runs only when FLEET_PROBE_ENABLED=true; manual dispatch always allowed.
+    if: ${{ vars.FLEET_PROBE_ENABLED == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FLEET_PROBE_HEARTBEAT_URL: ${{ secrets.FLEET_PROBE_HEARTBEAT_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          version: "0.8.7"
+      - name: Install
+        run: uv sync --frozen --no-dev
+      - name: Load fleet URLs
+        # Filter to GF_*=... assignments only; comment lines must not reach $GITHUB_ENV
+        # (GitHub treats the env file as KEY=value pairs, not a dotenv with comments).
+        run: grep -E '^GF_[A-Z0-9_]+=' ci/fleet-urls.env >> "$GITHUB_ENV"
+      - name: Fleet conformance probe
+        id: probe
+        run: |
+          set +e
+          uv run genefoundry-router fleet-probe > fleet_probe_output.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat fleet_probe_output.txt
+      - name: Heartbeat (dead-man's-switch)
+        if: ${{ always() && env.FLEET_PROBE_HEARTBEAT_URL != '' }}
+        run: curl -fsS -m 10 --retry 3 -o /dev/null "$FLEET_PROBE_HEARTBEAT_URL" || true
+      - name: Warn on unreachable backends (availability, not a contract violation)
+        if: ${{ steps.probe.outputs.exit_code == '2' }}
+        run: echo "::warning::fleet-probe: some backends were unreachable (availability, not a transport-contract violation)"
+      - name: Fail on non-conformance
+        if: ${{ steps.probe.outputs.exit_code == '1' }}
+        run: |
+          echo "::error::fleet-probe: a deployed backend violates MCP Transport Standard v1 (see log)"
+          exit 1

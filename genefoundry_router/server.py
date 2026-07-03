@@ -23,6 +23,7 @@ from genefoundry_router.observability import (
     AuditLogMiddleware,
     MetricsMiddleware,
     configure_logging,
+    namespace_tool_counts,
     register_health,
     register_metrics,
     set_backend_up,
@@ -99,6 +100,7 @@ def build_app(
 
     async def _relist() -> None:
         await apply_normalizations(server, registry)
+        await _seed_reachability(server, registry)  # refresh /health from the fresh harvest
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> Any:
@@ -107,10 +109,7 @@ def build_app(
             apply_tool_search(  # ordering: after normalization
                 server, settings, always_visible=resolve_entrypoints(registry)
             )
-            targets = proxy_targets or {}
-            for b in registry:  # seed /health reachability
-                if b.enabled:
-                    set_backend_up(b, up=targets.get(b.name) is not None or b.url is not None)
+            await _seed_reachability(server, registry)  # /health from live harvest, not config
             refresher = PollingRefresher(settings.GF_POLL_INTERVAL, _relist)
             await refresher.start()
             try:
@@ -134,3 +133,43 @@ def build_app(
     # Root mount: baked GF_MCP_PATH owns /mcp; /health and /metrics registered first.
     app.mount("/", mcp_app)
     return app
+
+
+async def _seed_reachability(server: FastMCP, registry: list[BackendDef]) -> None:
+    """Seed /health reachability from the LIVE tool harvest — not from config.
+
+    A backend that contributed >=1 namespaced tool is up; one that harvested 0 tools
+    (down, 307-redirecting `/mcp`, TLS-broken, or otherwise transport-non-conformant) is
+    marked down and logged at ERROR. This is the fix for the class of failure where a
+    registered backend is advertised in the instructions/pins yet serves nothing: the
+    reachability signal now matches the surface the model can actually reach. A total
+    enumeration failure leaves prior state untouched rather than false-alarming all
+    backends. Called at startup and on every polling relist.
+    """
+    # NOTE: the public `server.list_tools()` is filtered down to the pins + search_tools/
+    # call_tool once the BM25 search transform is applied, so it cannot see per-backend
+    # tools. `server._list_tools()` returns the full, unfiltered federated catalog both
+    # before and after the transform — the same set the search index is built over — which
+    # is what reachability must be measured against. Guarded by a test so a FastMCP API
+    # change surfaces loudly rather than silently zeroing every backend.
+    try:
+        present = [t.name for t in await server._list_tools()]  # type: ignore[attr-defined]
+    except Exception as exc:  # pragma: no cover - defensive; a mounted proxy normally degrades solo
+        log.warning("reachability_probe_failed", error=str(exc))
+        return
+    counts = namespace_tool_counts(present)
+    for backend in registry:
+        if not backend.enabled:
+            continue
+        n = counts.get(backend.namespace, 0)
+        set_backend_up(backend, up=n > 0, tools=n)
+        if n == 0:
+            log.error(
+                "backend_unreachable",
+                backend=backend.name,
+                namespace=backend.namespace,
+                detail=(
+                    "0 tools harvested — backend down or transport non-conformant "
+                    "(e.g. 307-redirecting /mcp); advertised but unusable. Run `make fleet-probe`."
+                ),
+            )
