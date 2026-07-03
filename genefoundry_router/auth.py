@@ -78,9 +78,35 @@ def _build_jwt(settings: RouterSettings) -> Any:
     )
 
 
+
+
+def _install_resource_tolerance() -> None:
+    """Tolerate a duplicated trailing path segment in the RFC 8707 ``resource``.
+
+    Some MCP clients (e.g. ChatGPT) send ``resource=https://host/mcp/mcp``. The
+    strict OAuthProxy check would raise ``AuthorizeError(error="invalid_target")``,
+    which the MCP SDK's error enum rejects -> pydantic ValidationError -> the
+    authorize handler crashes into a 500. Collapse ``/mcp/mcp`` -> ``/mcp`` in the
+    normalizer so client and server resource URLs compare equal. Idempotent.
+    """
+    import re
+
+    from fastmcp.server.auth.oauth_proxy import proxy as _p
+
+    if getattr(_p, "_gf_resource_tolerant", False):
+        return
+    _orig = _p._normalize_resource_url
+
+    def _norm(url: str) -> str:
+        return re.sub(r"(/[^/]+)\1(?=$|/)", r"\1", _orig(url))
+
+    _p._normalize_resource_url = _norm
+    _p._gf_resource_tolerant = True
+
 def _build_oauth(settings: RouterSettings) -> Any:
     # R1.5: OAuthProxy.token_verifier is REQUIRED — so the JWT verifier inputs are
     # mandatory in oauth mode too (no None verifier). base_url MUST be the public URL.
+    _install_resource_tolerance()
     required = {
         "GF_OAUTH_CLIENT_ID": settings.GF_OAUTH_CLIENT_ID,
         "GF_OAUTH_CLIENT_SECRET": settings.GF_OAUTH_CLIENT_SECRET,
