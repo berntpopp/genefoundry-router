@@ -87,8 +87,6 @@ def _build_jwt(settings: RouterSettings) -> Any:
     )
 
 
-
-
 def _install_resource_tolerance() -> None:
     """Tolerate a duplicated trailing path segment in the RFC 8707 ``resource``.
 
@@ -110,7 +108,9 @@ def _install_resource_tolerance() -> None:
         return re.sub(r"(/[^/]+)\1(?=$|/)", r"\1", _orig(url))
 
     _p._normalize_resource_url = _norm
-    _p._gf_resource_tolerant = True
+    # Marker attribute for idempotency; dynamic, so it isn't in fastmcp's stubs.
+    _p._gf_resource_tolerant = True  # type: ignore[attr-defined]
+
 
 def _build_oauth(settings: RouterSettings) -> Any:
     # R1.5: OAuthProxy.token_verifier is REQUIRED — so the JWT verifier inputs are
