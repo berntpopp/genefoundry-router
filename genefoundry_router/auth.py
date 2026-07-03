@@ -110,8 +110,14 @@ def _build_oauth(settings: RouterSettings) -> Any:
         upstream_client_id=client_id,
         upstream_client_secret=settings.GF_OAUTH_CLIENT_SECRET,
         token_verifier=verifier,  # REQUIRED — never None
-        base_url=public_base,  # this server's public URL (redirects + PRM)
-        resource_base_url=public_base,  # canonical resource URI for audience
+        base_url=public_base,  # ROOT origin — OAuth endpoints (/authorize, /token) live here
+        # resource_base_url = the protected-resource URI (the MCP endpoint), which is
+        # ALSO the RFC 8707 `resource` clients send + the minted-token audience. It must
+        # equal GF_JWT_AUDIENCE (…/mcp), NOT base_url (root): OAuthProxy validates the
+        # client's `resource` param against this, and the MCP path is not threaded into
+        # it here, so deriving it from base_url would reject every client with
+        # invalid_target. See GF_PUBLIC_BASE_URL vs GF_JWT_AUDIENCE in .env.docker.example.
+        resource_base_url=settings.GF_JWT_AUDIENCE,
     )
     log.info("auth_mode", mode="oauth", provider=settings.GF_OAUTH_PROVIDER)
     # MultiAuth lets M2M JWT + interactive OAuth coexist (spec §9).
