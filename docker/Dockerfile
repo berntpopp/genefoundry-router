@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.12-slim@sha256:423ed6ab25b1921a477529254bfeeabf5855151dc2c3141699a1bfc852199fbf AS builder
+FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1 AS builder
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -13,7 +13,7 @@ COPY genefoundry_router ./genefoundry_router
 # production stage. A plain editable install breaks across multi-stage COPY.
 RUN uv sync --frozen --no-dev --no-editable
 
-FROM python:3.12-slim@sha256:423ed6ab25b1921a477529254bfeeabf5855151dc2c3141699a1bfc852199fbf AS production
+FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1 AS production
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/build/.venv/bin:$PATH" \
@@ -27,9 +27,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
     # /build/.venv (which contains no pip), so the interpreter-level pip is pure
     # attack surface. Removing it drops pip-only CVEs (e.g. CVE-2026-6357) that
     # the container-scan gate flags on a package the runtime never uses.
-    && rm -rf /usr/local/lib/python3.12/site-packages/pip \
-              /usr/local/lib/python3.12/site-packages/pip-*.dist-info \
-              /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.12
+    && rm -rf /usr/local/lib/python3.14/site-packages/pip \
+              /usr/local/lib/python3.14/site-packages/pip-*.dist-info \
+              /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.14
 WORKDIR /home/app/web
 COPY --from=builder /build/.venv /build/.venv
 COPY genefoundry_router ./genefoundry_router
