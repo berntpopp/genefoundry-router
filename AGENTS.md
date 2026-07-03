@@ -53,6 +53,7 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
 - Tool-Naming & Normalization — `docs/TOOL-NAMING-STANDARD-v1.md`
 - Response-Envelope — `docs/RESPONSE-ENVELOPE-STANDARD-v1.md`
 - Container & Deployment Hardening — `docs/CONTAINER-HARDENING-STANDARD-v1.md`
+- Versioning (single-source) — `docs/VERSIONING-STANDARD-v1.md`
 - Logging & CLI Standard v1 (sibling; canonical text tracked per-repo)
 
 ## Boundary
