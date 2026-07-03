@@ -10,6 +10,7 @@ from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastmcp import FastMCP
 
+from genefoundry_router import __version__
 from genefoundry_router.auth import build_auth
 from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
@@ -51,7 +52,9 @@ def build_server(
     auth = build_auth(settings)  # caller auth at the edge; never forwarded upstream (R1.6)
     # instructions: orient the host's model on the two-layer search surface so a
     # capability absent from the top-level listing isn't read as missing (issue #3).
-    server: FastMCP = FastMCP("genefoundry", auth=auth, instructions=build_instructions(registry))
+    server: FastMCP = FastMCP(
+        "genefoundry", version=__version__, auth=auth, instructions=build_instructions(registry)
+    )
     server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
     server.add_middleware(AuditLogMiddleware())  # PII-safe per-call audit (GDPR Art. 30/32)
     if settings.GF_REWRITE_HINTS:
