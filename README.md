@@ -130,12 +130,57 @@ Structure lives in committed `servers.yaml`; URLs/secrets in gitignored `.env` (
 | `GF_SERVERS_FILE` | `servers.yaml` | Backend registry |
 | `GF_AUTH_MODE` | `none` | `none` \| `jwt` \| `oauth` (use jwt/oauth in production) |
 | `GF_ALLOW_INSECURE` | `false` | Opt-in to serve `auth=none` on a non-loopback bind (PoC only; the router refuses otherwise) |
+| `GF_PUBLIC_BASE_URL` | _(unset)_ | Router's canonical public URL — OAuth resource URI + Protected-Resource-Metadata |
+| `GF_JWT_ISSUER` | _(unset)_ | jwt/oauth: token issuer URL (e.g. `https://auth.example.org/realms/genefoundry`) |
+| `GF_JWT_JWKS_URL` | _(unset)_ | jwt/oauth: issuer JWKS endpoint (signature verification keys) |
+| `GF_JWT_AUDIENCE` | _(unset)_ | jwt/oauth: required token `aud` (MUST match; audience binding) |
+| `GF_OAUTH_CLIENT_ID` / `GF_OAUTH_CLIENT_SECRET` | _(unset)_ | oauth: upstream provider client credentials |
+| `GF_OAUTH_AUTHORIZE_URL` / `GF_OAUTH_TOKEN_URL` | _(unset)_ | oauth: upstream provider authorize/token endpoints |
 | `GF_ALLOWED_ORIGINS` | _(empty)_ | CSV `Origin` allowlist (DNS-rebinding defense) |
 | `GF_<NAME>_URL` | _(unset)_ | Per-backend `/mcp` URL (e.g. `GF_GNOMAD_URL`) |
 
 A backend with an unset URL or `enabled: false` is skipped with a warning; the router still starts.
 **No token passthrough:** the caller is authenticated at the edge and their token is never
 forwarded to a backend (confused-deputy defense).
+
+### Authentication
+
+The router refuses to start `auth=none` on a non-loopback bind unless `GF_ALLOW_INSECURE=true`
+(the explicit, logged escape hatch for a deliberately-public PoC). For production, enable one of
+two **resource-server** modes — the router *validates* tokens against an identity provider, it does
+not mint them, so an IdP (e.g. self-hosted Keycloak) is required:
+
+- **`oauth`** — OAuth 2.1 for interactive/browser MCP clients (claude.ai, Cursor). The router serves
+  Protected-Resource-Metadata (RFC 9728) + `WWW-Authenticate`, and proxies an upstream provider so
+  clients can complete the login flow; access tokens are verified against `GF_JWT_JWKS_URL` with
+  audience binding (`GF_JWT_AUDIENCE`). The router's OAuthProxy **is** the Dynamic-Client-Registration
+  facade — it serves `/register` itself, so Keycloak's DCR stays closed; on the Keycloak client,
+  whitelist the router's callback `https://genefoundry.org/auth/callback` as a Valid Redirect URI.
+- **`jwt`** — machine-to-machine: verify bearer JWTs from `GF_JWT_ISSUER` (JWKS + audience), no
+  interactive-login facade.
+
+Example (self-hosted Keycloak at `auth.example.org`, realm `genefoundry`):
+
+```bash
+GF_AUTH_MODE=oauth
+GF_OAUTH_CLIENT_ID=genefoundry-router
+GF_OAUTH_CLIENT_SECRET=…                 # secret; set in the server env, never commit
+GF_OAUTH_AUTHORIZE_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/auth
+GF_OAUTH_TOKEN_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/token
+GF_JWT_ISSUER=https://auth.example.org/realms/genefoundry
+GF_JWT_JWKS_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/certs
+GF_JWT_AUDIENCE=https://genefoundry.org/mcp   # Keycloak must stamp this into the token `aud`
+GF_PUBLIC_BASE_URL=https://genefoundry.org     # ROOT origin, NO path — OAuth routes live at root
+```
+
+`GF_PUBLIC_BASE_URL` is the bare public origin: the OAuth endpoints (`/authorize`, `/token`,
+`/register`, `/.well-known/*`) are served at the root, and the MCP endpoint is
+`GF_PUBLIC_BASE_URL` + `GF_MCP_PATH` (→ `https://genefoundry.org/mcp`), which is also the OAuth
+resource / token audience. Putting a path here (`…/mcp`) mis-advertises OAuth endpoints as
+`…/mcp/authorize` and doubles the protected-resource-metadata URL.
+
+Verify: an unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`; a request bearing a valid
+issuer-signed, correctly-audienced token returns `200`. See `.env.docker.example` for all three modes.
 
 ## CLI
 
