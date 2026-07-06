@@ -120,7 +120,12 @@ def build_app(
     app = FastAPI(title="GeneFoundry Router", lifespan=lifespan)
     app.add_middleware(CorrelationIdMiddleware)
     add_origin_validation(app, settings.GF_ALLOWED_ORIGINS)  # R1.4 — MCP Origin MUST
-    add_request_limits(app, settings.GF_MAX_BODY_BYTES, settings.GF_RATE_LIMIT_RPM)  # DoS guard
+    add_request_limits(
+        app,
+        settings.GF_MAX_BODY_BYTES,
+        settings.GF_RATE_LIMIT_RPM,
+        trusted_proxy_hops=settings.GF_TRUSTED_PROXY_HOPS,
+    )  # DoS guard
     register_health(app, registry)
     register_metrics(app)  # R1.7 — /metrics
     # R1.5 — serve the auth provider's well-known routes (Protected-Resource-Metadata,

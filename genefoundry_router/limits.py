@@ -1,7 +1,7 @@
 """Inbound request limits: body-size cap + per-client rate limit (DoS / abuse guard).
 
 A read-only reference gateway still needs back-pressure: without it, an open or buggy
-client can exhaust the router or use it to hammer upstream APIs (OWASP LLM10 — unbounded
+client can exhaust the router or use it to hammer upstream APIs (OWASP LLM10 - unbounded
 consumption). Both limits are opt-in via settings; ``<= 0`` disables that limit.
 """
 
@@ -11,23 +11,35 @@ import time
 
 import structlog
 from fastapi import FastAPI
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
-from starlette.types import ASGIApp
+from starlette.datastructures import Headers
+from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 log = structlog.get_logger(__name__)
 
-
-def _client_key(request: Request) -> str:
-    """Identify the caller, honoring the first X-Forwarded-For hop (router runs behind a proxy)."""
-    xff = request.headers.get("x-forwarded-for")
-    if xff:
-        return xff.split(",", 1)[0].strip()
-    return request.client.host if request.client else "unknown"
+_MAX_TRACKED = 100_000
 
 
-class RequestLimitMiddleware(BaseHTTPMiddleware):
+def _scope_client_host(scope: Scope) -> str:
+    client = scope.get("client")
+    if isinstance(client, tuple) and client:
+        host = client[0]
+        if isinstance(host, str) and host:
+            return host
+    return "unknown"
+
+
+def _client_key(scope: Scope, trusted_proxy_hops: int) -> str:
+    """Identify the caller from trusted X-Forwarded-For tail hops, else ASGI client."""
+    client_host = _scope_client_host(scope)
+    xff = Headers(scope=scope).get("x-forwarded-for")
+    parts = [part.strip() for part in (xff or "").split(",") if part.strip()]
+    if trusted_proxy_hops > 0 and len(parts) >= trusted_proxy_hops:
+        return parts[-trusted_proxy_hops]
+    return client_host
+
+
+class RequestLimitMiddleware:
     """Reject oversized bodies (413) and rate-limit per client (429, fixed window)."""
 
     def __init__(
@@ -35,43 +47,86 @@ class RequestLimitMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         max_body_bytes: int = 0,
         rate_limit_rpm: int = 0,
+        trusted_proxy_hops: int = 1,
         window_seconds: int = 60,
     ) -> None:
-        super().__init__(app)
+        self.app = app
         self._max_body = max_body_bytes
         self._rpm = rate_limit_rpm
+        self._trusted_proxy_hops = trusted_proxy_hops
         self._window = window_seconds
-        # client -> (window_index, count); single entry per client keeps this bounded.
-        self._hits: dict[str, tuple[int, int]] = {}
+        self._hits: dict[str, int] = {}
+        self._window_index: int | None = None
+        self._ceiling_warned = False
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        if self._max_body > 0:
-            cl = request.headers.get("content-length")
-            if cl is not None and cl.isdigit() and int(cl) > self._max_body:
-                log.warning("request_too_large", content_length=int(cl), limit=self._max_body)
-                return JSONResponse({"error": "request entity too large"}, status_code=413)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        if self._rpm > 0:
-            key = _client_key(request)
-            window = int(time.monotonic() // self._window)
-            prev_window, count = self._hits.get(key, (window, 0))
-            count = count + 1 if prev_window == window else 1
-            self._hits[key] = (window, count)
-            if count > self._rpm:
-                log.warning("rate_limited", client=key, limit=self._rpm)
-                return JSONResponse(
-                    {"error": "rate limit exceeded"},
-                    status_code=429,
-                    headers={"Retry-After": str(self._window)},
-                )
+        if self._content_length_exceeds(scope):
+            await JSONResponse({"error": "request entity too large"}, status_code=413)(
+                scope, receive, send
+            )
+            return
 
-        return await call_next(request)
+        if self._rpm > 0 and not self._rate_allowed(scope):
+            await JSONResponse(
+                {"error": "rate limit exceeded"},
+                status_code=429,
+                headers={"Retry-After": str(self._window)},
+            )(scope, receive, send)
+            return
+
+        await self.app(scope, receive, send)
+
+    def _content_length_exceeds(self, scope: Scope) -> bool:
+        if self._max_body <= 0:
+            return False
+        content_length = Headers(scope=scope).get("content-length")
+        if content_length is None or not content_length.isdigit():
+            return False
+        length = int(content_length)
+        if length <= self._max_body:
+            return False
+        log.warning("request_too_large", content_length=length, limit=self._max_body)
+        return True
+
+    def _rate_allowed(self, scope: Scope) -> bool:
+        key = _client_key(scope, self._trusted_proxy_hops)
+        allowed = self._increment(key, time.monotonic())
+        if not allowed:
+            log.warning("rate_limited", limit=self._rpm)
+        return allowed
+
+    def _increment(self, key: str, now: float) -> bool:
+        window = int(now // self._window)
+        if self._window_index != window:
+            self._hits.clear()
+            self._window_index = window
+            self._ceiling_warned = False
+
+        if key not in self._hits and len(self._hits) >= _MAX_TRACKED:
+            if not self._ceiling_warned:
+                log.warning("rate_limit_tracking_ceiling", max_tracked=_MAX_TRACKED)
+                self._ceiling_warned = True
+            return True
+
+        count = self._hits.get(key, 0) + 1
+        self._hits[key] = count
+        return count <= self._rpm
 
 
-def add_request_limits(app: FastAPI, max_body_bytes: int, rate_limit_rpm: int) -> None:
+def add_request_limits(
+    app: FastAPI,
+    max_body_bytes: int,
+    rate_limit_rpm: int,
+    trusted_proxy_hops: int = 1,
+) -> None:
     """Attach the request-limit middleware (no-op for whichever limit is <= 0)."""
     app.add_middleware(
         RequestLimitMiddleware,
         max_body_bytes=max_body_bytes,
         rate_limit_rpm=rate_limit_rpm,
+        trusted_proxy_hops=trusted_proxy_hops,
     )
