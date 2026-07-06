@@ -65,3 +65,41 @@ def test_build_app_metrics_token_from_settings(gnomad_fake):
     assert resp.status_code == 200
     assert "genefoundry_backend_up" in resp.text
     assert client.get("/health").status_code == 200
+
+
+def test_request_id_present_on_origin_rejection(gnomad_fake):
+    settings = RouterSettings(
+        _env_file=None,
+        GF_ALLOWED_ORIGINS=["https://allowed.example"],
+    )
+    registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
+    app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+
+    resp = TestClient(app).get("/health", headers={"Origin": "https://bad.example"})
+
+    assert resp.status_code == 403
+    assert resp.headers.get("X-Request-ID")
+
+
+def test_request_id_present_on_body_cap_rejection(gnomad_fake):
+    settings = RouterSettings(_env_file=None, GF_MAX_BODY_BYTES=2)
+    registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
+    app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+
+    resp = TestClient(app).post("/health", content=b"abcd")
+
+    assert resp.status_code == 413
+    assert resp.headers.get("X-Request-ID")
+
+
+def test_request_id_present_on_rate_limit_rejection(gnomad_fake):
+    settings = RouterSettings(_env_file=None, GF_RATE_LIMIT_RPM=1)
+    registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
+    app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+    client = TestClient(app)
+
+    assert client.get("/health").status_code == 200
+    resp = client.get("/health")
+
+    assert resp.status_code == 429
+    assert resp.headers.get("X-Request-ID")
