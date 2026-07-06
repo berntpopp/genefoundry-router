@@ -52,3 +52,16 @@ def test_build_app_serves_health(gnomad_fake):
     app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
     client = TestClient(app)
     assert client.get("/health").json()["status"] == "healthy"
+
+
+def test_build_app_metrics_token_from_settings(gnomad_fake):
+    settings = RouterSettings(_env_file=None, GF_METRICS_TOKEN="scrape-secret")
+    registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
+    app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+    client = TestClient(app)
+
+    assert client.get("/metrics").status_code == 401
+    resp = client.get("/metrics", headers={"Authorization": "Bearer scrape-secret"})
+    assert resp.status_code == 200
+    assert "genefoundry_backend_up" in resp.text
+    assert client.get("/health").status_code == 200

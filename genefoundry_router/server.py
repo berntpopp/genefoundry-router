@@ -127,7 +127,7 @@ def build_app(
         trusted_proxy_hops=settings.GF_TRUSTED_PROXY_HOPS,
     )  # DoS guard
     register_health(app, registry)
-    register_metrics(app)  # R1.7 — /metrics
+    register_metrics(app, token=settings.GF_METRICS_TOKEN)  # R1.7 — /metrics
     # R1.5 — serve the auth provider's well-known routes (Protected-Resource-Metadata,
     # RFC 9728) on the OUTER app at root, matching the resource_metadata URL advertised
     # in WWW-Authenticate. The MCP app is sub-mounted at GF_MCP_PATH, so its own routes
