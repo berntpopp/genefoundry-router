@@ -45,6 +45,8 @@ class RouterSettings(BaseSettings):
     # Inbound request limits (DoS/abuse guard). <=0 disables that limit.
     GF_MAX_BODY_BYTES: int = 4_000_000  # 4 MB cap on request bodies (413 over)
     GF_RATE_LIMIT_RPM: int = 0  # per-client requests/min (429 over); 0 = off, enable in prod
+    GF_TRUSTED_PROXY_HOPS: int = 1  # trusted hops at the tail of X-Forwarded-For
+    GF_METRICS_TOKEN: str | None = None  # optional bearer token for GET /metrics
 
     # Rewrite bare tool references in backend responses to namespaced form (Finding 1).
     GF_REWRITE_HINTS: bool = True
@@ -95,6 +97,14 @@ class RouterSettings(BaseSettings):
         """Accept a comma-separated string from env and split into a list."""
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]
+        return v
+
+    @field_validator("GF_METRICS_TOKEN", mode="before")
+    @classmethod
+    def _blank_metrics_token(cls, v: object) -> object:
+        """Treat blank scrape-token env values as unset."""
+        if isinstance(v, str) and not v.strip():
+            return None
         return v
 
 
