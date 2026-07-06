@@ -39,7 +39,7 @@ def _client_key(scope: Scope, trusted_proxy_hops: int) -> str:
     return client_host
 
 
-class _ClientDisconnected(Exception):
+class _ClientDisconnectedError(Exception):
     """Raised when the client disconnects before the request body completes."""
 
 
@@ -49,7 +49,7 @@ async def _read_body_until_limit(receive: Receive, limit: int) -> bytes | None:
     while True:
         message = await receive()
         if message["type"] == "http.disconnect":
-            raise _ClientDisconnected
+            raise _ClientDisconnectedError
         if message["type"] != "http.request":
             continue
         body = message.get("body", b"")
@@ -120,7 +120,7 @@ class RequestLimitMiddleware:
 
         try:
             buffered = await _read_body_until_limit(receive, self._max_body)
-        except _ClientDisconnected:
+        except _ClientDisconnectedError:
             return
 
         if buffered is None:

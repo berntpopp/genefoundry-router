@@ -35,7 +35,7 @@ def test_env_override(monkeypatch):
     assert s.GF_AUTH_MODE == "jwt"
     assert s.GF_PORT == 9001
     assert s.GF_TRUSTED_PROXY_HOPS == 2
-    assert s.GF_METRICS_TOKEN == "scrape-secret"
+    assert s.GF_METRICS_TOKEN == "scrape-secret"  # noqa: S105 - test fixture data
 
 
 def test_metrics_token_blank_normalizes_to_none(monkeypatch):

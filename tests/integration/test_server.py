@@ -55,7 +55,7 @@ def test_build_app_serves_health(gnomad_fake):
 
 
 def test_build_app_metrics_token_from_settings(gnomad_fake):
-    settings = RouterSettings(_env_file=None, GF_METRICS_TOKEN="scrape-secret")
+    settings = RouterSettings(_env_file=None, GF_METRICS_TOKEN="scrape-secret")  # noqa: S106 - test fixture data
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
     app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
     client = TestClient(app)
