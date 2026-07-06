@@ -51,3 +51,12 @@ def test_invalid_auth_mode_rejected(monkeypatch):
 
     with pytest.raises(ValidationError):
         RouterSettings(_env_file=None)
+
+
+def test_negative_trusted_proxy_hops_rejected(monkeypatch):
+    monkeypatch.setenv("GF_TRUSTED_PROXY_HOPS", "-1")
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        RouterSettings(_env_file=None)

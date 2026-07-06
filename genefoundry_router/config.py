@@ -107,6 +107,14 @@ class RouterSettings(BaseSettings):
             return None
         return v
 
+    @field_validator("GF_TRUSTED_PROXY_HOPS")
+    @classmethod
+    def _non_negative_hops(cls, v: int) -> int:
+        """A negative hop count is invalid — it would silently disable XFF attribution."""
+        if v < 0:
+            raise ValueError("GF_TRUSTED_PROXY_HOPS must be >= 0")
+        return v
+
 
 def load_registry(path: str | Path, environ: Mapping[str, str]) -> list[BackendDef]:
     """Parse servers.yaml, merge ``defaults`` into each server, and resolve URLs.

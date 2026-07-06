@@ -52,6 +52,14 @@ def test_metrics_public_when_token_is_none():
     assert "genefoundry_backend_up" in resp.text
 
 
+def test_metrics_tolerates_extra_whitespace_in_authorization():
+    app = FastAPI()
+    register_metrics(app, token="scrape-secret")  # noqa: S106 - test fixture data
+    resp = TestClient(app).get("/metrics", headers={"Authorization": "Bearer  scrape-secret"})
+    assert resp.status_code == 200
+    assert "genefoundry_backend_up" in resp.text
+
+
 def test_health_reports_cached_reachability():
     app = FastAPI()
     backends = [BackendDef(name="gnomad", url_env="X", namespace="gnomad", url="https://x/mcp")]

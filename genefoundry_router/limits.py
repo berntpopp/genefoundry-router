@@ -32,8 +32,11 @@ def _scope_client_host(scope: Scope) -> str:
 def _client_key(scope: Scope, trusted_proxy_hops: int) -> str:
     """Identify the caller from trusted X-Forwarded-For tail hops, else ASGI client."""
     client_host = _scope_client_host(scope)
-    xff = Headers(scope=scope).get("x-forwarded-for")
-    parts = [part.strip() for part in (xff or "").split(",") if part.strip()]
+    # Flatten ALL X-Forwarded-For values in order (duplicate header lines AND comma-joined
+    # values): Headers.get returns only the FIRST line, so a caller could otherwise split a
+    # spoofed hop into a second header and land it at the trusted tail. getlist folds them.
+    values = Headers(scope=scope).getlist("x-forwarded-for")
+    parts = [part.strip() for value in values for part in value.split(",") if part.strip()]
     if trusted_proxy_hops > 0 and len(parts) >= trusted_proxy_hops:
         return parts[-trusted_proxy_hops]
     return client_host

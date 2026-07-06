@@ -110,8 +110,12 @@ def set_backend_up(backend: BackendDef, up: bool, tools: int | None = None) -> N
 
 
 def _metrics_authorized(authorization: str | None, token: str) -> bool:
-    scheme, _, supplied = (authorization or "").partition(" ")
-    return scheme.lower() == "bearer" and hmac.compare_digest(supplied, token)
+    # split(None, 1) tolerates extra whitespace; encode both sides so a non-ASCII token or
+    # supplied value compares as bytes (str hmac.compare_digest raises TypeError on non-ASCII).
+    parts = (authorization or "").strip().split(None, 1)
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return False
+    return hmac.compare_digest(parts[1].encode("utf-8"), token.encode("utf-8"))
 
 
 def register_metrics(app: FastAPI, token: str | None = None) -> None:

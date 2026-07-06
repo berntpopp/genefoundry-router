@@ -103,6 +103,20 @@ def test_insufficient_hop_depth_and_zero_hops_fall_back_to_scope_client() -> Non
     assert _client_key(scope, trusted_proxy_hops=0) == "10.0.0.42"
 
 
+def test_duplicate_xff_header_lines_use_trusted_tail() -> None:
+    # A caller cannot bypass the trusted tail by splitting a spoofed hop into a second
+    # X-Forwarded-For header line: getlist folds all lines in order, so parts[-1] stays
+    # the peer the trusted proxy appended.
+    scope = _scope(
+        headers=[
+            (b"x-forwarded-for", b"spoof-a"),
+            (b"x-forwarded-for", b"198.51.100.10"),
+        ],
+        client_host="10.0.0.5",
+    )
+    assert _client_key(scope, trusted_proxy_hops=1) == "198.51.100.10"
+
+
 def test_hits_clear_across_windows(monkeypatch) -> None:
     middleware = RequestLimitMiddleware(_noop_app, max_body_bytes=0, rate_limit_rpm=10)
 
