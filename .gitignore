@@ -14,7 +14,8 @@ coverage.xml
 !.env.example
 !.env.docker.example
 !.env.dev
-.claude/
+.claude/*
+!.claude/skills/
 .idea/
 .vscode/
 uv.lock.bak
