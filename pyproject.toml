@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genefoundry-router"
-version = "0.2.1"
+version = "0.2.2"
 description = "A thin FastMCP 3.x aggregator federating the GeneFoundry -link MCP fleet behind one endpoint."
 readme = "README.md"
 authors = [{ name = "Bernt Popp" }]
@@ -24,9 +24,9 @@ classifiers = [
 ]
 dependencies = [
     "fastmcp>=3.2.0,<4.0.0",
-    "mcp[cli]>=1.27.0,<2.0.0",
+    "mcp[cli]>=1.28.1,<2.0.0",
     "fastapi>=0.139.0,<1.0.0",
-    "uvicorn[standard]>=0.46.0,<1.0.0",
+    "uvicorn[standard]>=0.50.0,<1.0.0",
     "gunicorn>=25.3.0,<27.0.0",
     "pydantic>=2.11.0,<3.0.0",
     "pydantic-settings>=2.14.2,<3.0.0",
@@ -36,7 +36,7 @@ dependencies = [
     "rich>=15.0.0,<16.0.0",
     "structlog>=26.1.0,<27.0.0",
     "orjson>=3.10.0,<4.0.0",
-    "asgi-correlation-id>=4.3.0,<5.0.0",
+    "asgi-correlation-id>=5.0.1,<6.0.0",
     "prometheus-client>=0.21.0,<1.0.0",
 ]
 
