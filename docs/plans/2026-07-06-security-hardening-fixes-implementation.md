@@ -415,8 +415,8 @@ def _scope_client_host(scope: Scope) -> str:
 def _client_key(scope: Scope, trusted_proxy_hops: int) -> str:
     """Identify the caller from trusted X-Forwarded-For tail hops, else ASGI client."""
     client_host = _scope_client_host(scope)
-    xff = Headers(scope=scope).get("x-forwarded-for")
-    parts = [part.strip() for part in (xff or "").split(",") if part.strip()]
+    values = Headers(scope=scope).getlist("x-forwarded-for")
+    parts = [part.strip() for value in values for part in value.split(",") if part.strip()]
     if trusted_proxy_hops > 0 and len(parts) >= trusted_proxy_hops:
         return parts[-trusted_proxy_hops]
     return client_host
@@ -714,8 +714,8 @@ def _scope_client_host(scope: Scope) -> str:
 def _client_key(scope: Scope, trusted_proxy_hops: int) -> str:
     """Identify the caller from trusted X-Forwarded-For tail hops, else ASGI client."""
     client_host = _scope_client_host(scope)
-    xff = Headers(scope=scope).get("x-forwarded-for")
-    parts = [part.strip() for part in (xff or "").split(",") if part.strip()]
+    values = Headers(scope=scope).getlist("x-forwarded-for")
+    parts = [part.strip() for value in values for part in value.split(",") if part.strip()]
     if trusted_proxy_hops > 0 and len(parts) >= trusted_proxy_hops:
         return parts[-trusted_proxy_hops]
     return client_host
@@ -1015,8 +1015,10 @@ from starlette.responses import JSONResponse, Response
 
 ```python
 def _metrics_authorized(authorization: str | None, token: str) -> bool:
-    scheme, _, supplied = (authorization or "").partition(" ")
-    return scheme.lower() == "bearer" and hmac.compare_digest(supplied, token)
+    parts = (authorization or "").strip().split(None, 1)
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return False
+    return hmac.compare_digest(parts[1].encode("utf-8"), token.encode("utf-8"))
 
 
 def register_metrics(app: FastAPI, token: str | None = None) -> None:
