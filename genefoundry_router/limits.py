@@ -13,7 +13,7 @@ import structlog
 from fastapi import FastAPI
 from starlette.datastructures import Headers
 from starlette.responses import JSONResponse
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 log = structlog.get_logger(__name__)
 
@@ -37,6 +37,42 @@ def _client_key(scope: Scope, trusted_proxy_hops: int) -> str:
     if trusted_proxy_hops > 0 and len(parts) >= trusted_proxy_hops:
         return parts[-trusted_proxy_hops]
     return client_host
+
+
+class _ClientDisconnected(Exception):
+    """Raised when the client disconnects before the request body completes."""
+
+
+async def _read_body_until_limit(receive: Receive, limit: int) -> bytes | None:
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        message = await receive()
+        if message["type"] == "http.disconnect":
+            raise _ClientDisconnected
+        if message["type"] != "http.request":
+            continue
+        body = message.get("body", b"")
+        if body:
+            total += len(body)
+            if total > limit:
+                return None
+            chunks.append(body)
+        if not message.get("more_body", False):
+            return b"".join(chunks)
+
+
+def _replay_receive(body: bytes, receive: Receive) -> Receive:
+    sent = False
+
+    async def replay() -> Message:
+        nonlocal sent
+        if not sent:
+            sent = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return await receive()
+
+    return replay
 
 
 class RequestLimitMiddleware:
@@ -78,7 +114,23 @@ class RequestLimitMiddleware:
             )(scope, receive, send)
             return
 
-        await self.app(scope, receive, send)
+        if self._max_body <= 0:
+            await self.app(scope, receive, send)
+            return
+
+        try:
+            buffered = await _read_body_until_limit(receive, self._max_body)
+        except _ClientDisconnected:
+            return
+
+        if buffered is None:
+            log.warning("request_too_large", limit=self._max_body)
+            await JSONResponse({"error": "request entity too large"}, status_code=413)(
+                scope, receive, send
+            )
+            return
+
+        await self.app(scope, _replay_receive(buffered, receive), send)
 
     def _content_length_exceeds(self, scope: Scope) -> bool:
         if self._max_body <= 0:

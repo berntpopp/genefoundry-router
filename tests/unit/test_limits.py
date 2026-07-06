@@ -2,10 +2,10 @@
 
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import PlainTextResponse
+from starlette.responses import PlainTextResponse, Response
 from starlette.routing import Route
 from starlette.testclient import TestClient
-from starlette.types import Scope
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 import genefoundry_router.limits as limits_mod
 from genefoundry_router.limits import RequestLimitMiddleware, _client_key
@@ -142,3 +142,114 @@ def test_limits_disabled_by_zero() -> None:
     c = _client(max_body_bytes=0, rate_limit_rpm=0)
     for _ in range(6):
         assert c.get("/x").status_code == 200
+
+
+async def _echo_body_app(scope: Scope, receive: Receive, send: Send) -> None:
+    chunks: list[bytes] = []
+    while True:
+        message = await receive()
+        if message["type"] == "http.request":
+            chunks.append(message.get("body", b""))
+            if not message.get("more_body", False):
+                break
+        elif message["type"] == "http.disconnect":
+            break
+    await Response(b"".join(chunks), media_type="application/octet-stream")(scope, receive, send)
+
+
+async def _run_asgi(
+    app: ASGIApp,
+    messages: list[Message],
+    headers: list[tuple[bytes, bytes]] | None = None,
+) -> list[Message]:
+    sent: list[Message] = []
+    pending = list(messages)
+
+    async def receive() -> Message:
+        if pending:
+            return pending.pop(0)
+        return {"type": "http.disconnect"}
+
+    async def send(message: Message) -> None:
+        sent.append(message)
+
+    await app(_scope(headers=headers, method="POST"), receive, send)
+    return sent
+
+
+def _status(sent: list[Message]) -> int:
+    for message in sent:
+        if message["type"] == "http.response.start":
+            return int(message["status"])
+    raise AssertionError("http.response.start was not emitted")
+
+
+def _body(sent: list[Message]) -> bytes:
+    return b"".join(
+        message.get("body", b"") for message in sent if message["type"] == "http.response.body"
+    )
+
+
+async def test_chunked_body_without_content_length_over_cap_returns_413() -> None:
+    middleware = RequestLimitMiddleware(_echo_body_app, max_body_bytes=5, rate_limit_rpm=0)
+
+    sent = await _run_asgi(
+        middleware,
+        [
+            {"type": "http.request", "body": b"abc", "more_body": True},
+            {"type": "http.request", "body": b"def", "more_body": False},
+        ],
+    )
+
+    assert _status(sent) == 413
+    assert b"request entity too large" in _body(sent)
+
+
+async def test_legal_streaming_body_replays_byte_for_byte() -> None:
+    middleware = RequestLimitMiddleware(_echo_body_app, max_body_bytes=10, rate_limit_rpm=0)
+
+    sent = await _run_asgi(
+        middleware,
+        [
+            {"type": "http.request", "body": b"abc", "more_body": True},
+            {"type": "http.request", "body": b"def", "more_body": False},
+        ],
+    )
+
+    assert _status(sent) == 200
+    assert _body(sent) == b"abcdef"
+
+
+async def test_disconnect_before_complete_body_aborts_without_downstream_call() -> None:
+    called = False
+
+    async def downstream(scope: Scope, receive: Receive, send: Send) -> None:
+        nonlocal called
+        called = True
+        await _echo_body_app(scope, receive, send)
+
+    middleware = RequestLimitMiddleware(downstream, max_body_bytes=10, rate_limit_rpm=0)
+
+    sent = await _run_asgi(
+        middleware,
+        [
+            {"type": "http.request", "body": b"abc", "more_body": True},
+            {"type": "http.request", "body": b"def", "more_body": True},
+            {"type": "http.disconnect"},
+        ],
+    )
+
+    assert called is False
+    assert sent == []
+
+
+async def test_empty_streaming_body_passes() -> None:
+    middleware = RequestLimitMiddleware(_echo_body_app, max_body_bytes=10, rate_limit_rpm=0)
+
+    sent = await _run_asgi(
+        middleware,
+        [{"type": "http.request", "body": b"", "more_body": False}],
+    )
+
+    assert _status(sent) == 200
+    assert _body(sent) == b""
