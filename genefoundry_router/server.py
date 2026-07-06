@@ -118,11 +118,19 @@ def build_app(
                 await refresher.stop()
 
     app = FastAPI(title="GeneFoundry Router", lifespan=lifespan)
-    app.add_middleware(CorrelationIdMiddleware)
+    # Correlation-id added LAST so it is the OUTERMOST middleware (Starlette wraps the
+    # last-added first): every short-circuit rejection below (403 origin / 413 body /
+    # 429 rate) is then produced inside the correlation context and carries X-Request-ID.
+    add_request_limits(
+        app,
+        settings.GF_MAX_BODY_BYTES,
+        settings.GF_RATE_LIMIT_RPM,
+        trusted_proxy_hops=settings.GF_TRUSTED_PROXY_HOPS,
+    )  # DoS guard
     add_origin_validation(app, settings.GF_ALLOWED_ORIGINS)  # R1.4 — MCP Origin MUST
-    add_request_limits(app, settings.GF_MAX_BODY_BYTES, settings.GF_RATE_LIMIT_RPM)  # DoS guard
+    app.add_middleware(CorrelationIdMiddleware)
     register_health(app, registry)
-    register_metrics(app)  # R1.7 — /metrics
+    register_metrics(app, token=settings.GF_METRICS_TOKEN)  # R1.7 — /metrics
     # R1.5 — serve the auth provider's well-known routes (Protected-Resource-Metadata,
     # RFC 9728) on the OUTER app at root, matching the resource_metadata URL advertised
     # in WWW-Authenticate. The MCP app is sub-mounted at GF_MCP_PATH, so its own routes

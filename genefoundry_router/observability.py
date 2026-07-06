@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import hmac
 import logging
 import time
 
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
@@ -16,7 +17,7 @@ from prometheus_client import (
     Histogram,
     generate_latest,
 )
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from genefoundry_router.registry import BackendDef
 
@@ -108,11 +109,33 @@ def set_backend_up(backend: BackendDef, up: bool, tools: int | None = None) -> N
         BACKEND_TOOL_COUNT[backend.namespace] = tools
 
 
-def register_metrics(app: FastAPI) -> None:
-    """Attach GET /metrics exposing the Prometheus text exposition format."""
+def _metrics_authorized(authorization: str | None, token: str) -> bool:
+    # split(None, 1) tolerates extra whitespace; encode both sides so a non-ASCII token or
+    # supplied value compares as bytes (str hmac.compare_digest raises TypeError on non-ASCII).
+    parts = (authorization or "").strip().split(None, 1)
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return False
+    return hmac.compare_digest(parts[1].encode("utf-8"), token.encode("utf-8"))
+
+
+def register_metrics(app: FastAPI, token: str | None = None) -> None:
+    """Attach GET /metrics exposing the Prometheus text exposition format.
+
+    When ``token`` is set, require ``Authorization: Bearer <token>`` (constant-time
+    compare) — the scrape endpoint otherwise leaks per-namespace call counts, latencies,
+    and backend up/down. ``None`` keeps /metrics public (unchanged default).
+    """
 
     @app.get("/metrics")
-    async def metrics() -> Response:
+    async def metrics(request: Request) -> Response:
+        if token is not None and not _metrics_authorized(
+            request.headers.get("authorization"), token
+        ):
+            return JSONResponse(
+                {"error": "unauthorized"},
+                status_code=401,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         return Response(generate_latest(METRICS_REGISTRY), media_type=CONTENT_TYPE_LATEST)
 
 
