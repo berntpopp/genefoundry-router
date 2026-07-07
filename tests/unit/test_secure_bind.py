@@ -2,7 +2,7 @@
 
 import pytest
 
-from genefoundry_router.cli import is_insecure_public_bind
+from genefoundry_router.cli import is_insecure_public_bind, should_warn_no_rate_limit
 
 
 @pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1"])
@@ -23,3 +23,26 @@ def test_public_bind_with_auth_is_secure(mode: str) -> None:
 def test_public_bind_without_auth_allowed_when_overridden() -> None:
     # GF_ALLOW_INSECURE=true is the explicit, logged escape hatch (PoC only).
     assert is_insecure_public_bind("none", "0.0.0.0", allow_insecure=True) is False  # noqa: S104
+
+
+# D10 / M7: warn (non-breaking) when an authenticated, publicly-reachable deployment
+# runs with no per-client rate limit (GF_RATE_LIMIT_RPM=0) — fleet egress-IP abuse risk.
+@pytest.mark.parametrize("mode", ["jwt", "oauth"])
+def test_warn_when_public_auth_deployment_has_no_rate_limit(mode: str) -> None:
+    assert should_warn_no_rate_limit(mode, "0.0.0.0", rate_limit_rpm=0) is True  # noqa: S104
+
+
+@pytest.mark.parametrize("mode", ["jwt", "oauth"])
+def test_no_warn_when_public_auth_deployment_rate_limited(mode: str) -> None:
+    assert should_warn_no_rate_limit(mode, "0.0.0.0", rate_limit_rpm=120) is False  # noqa: S104
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1"])
+def test_no_warn_on_loopback_even_without_rate_limit(host: str) -> None:
+    # Loopback is not publicly reachable, so the missing rate limit is not a fleet risk.
+    assert should_warn_no_rate_limit("jwt", host, rate_limit_rpm=0) is False
+
+
+def test_no_rate_limit_warning_when_auth_none() -> None:
+    # auth=none is already handled by the insecure-bind guard/warning; don't double-warn.
+    assert should_warn_no_rate_limit("none", "0.0.0.0", rate_limit_rpm=0) is False  # noqa: S104

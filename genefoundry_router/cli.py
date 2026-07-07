@@ -41,6 +41,24 @@ def is_insecure_public_bind(auth_mode: str, host: str, allow_insecure: bool) -> 
     return host not in LOOPBACK_HOSTS
 
 
+def should_warn_no_rate_limit(auth_mode: str, host: str, rate_limit_rpm: int) -> bool:
+    """True for an authenticated, publicly-reachable deployment with no rate limit (D10/M7).
+
+    ``GF_RATE_LIMIT_RPM`` defaults to ``0`` (off) as a deliberate operational no-op so
+    existing deployments are never throttled by an upgrade. But an authenticated, public
+    deployment with no per-client limit lets one caller drive the fleet's egress IPs into
+    upstream (gnomAD/NCBI/Ensembl) throttling/bans (OWASP LLM10 — unbounded consumption).
+    We surface this as a non-breaking startup warning; we do NOT flip the default. The
+    ``auth=none`` public case is already handled by the insecure-bind guard, so it is
+    excluded here to avoid a redundant second warning.
+    """
+    if auth_mode == "none":
+        return False
+    if host in LOOPBACK_HOSTS:
+        return False
+    return rate_limit_rpm <= 0
+
+
 LEAF_NAME_RE = re.compile(r"^[a-z0-9_]{1,50}$")
 CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute", "map"}
 # Ratified Tier-2 sanctioned domain action/compute verbs (Tool-Naming Standard v1.1).
@@ -109,6 +127,12 @@ def run(
         console.print(
             f"[yellow]WARNING: serving with GF_AUTH_MODE=none on {host} (GF_ALLOW_INSECURE "
             "set). Do not use for production or any patient-derived data.[/yellow]"
+        )
+    if should_warn_no_rate_limit(settings.GF_AUTH_MODE, host, settings.GF_RATE_LIMIT_RPM):
+        console.print(
+            f"[yellow]WARNING: authenticated public bind ({host}) with GF_RATE_LIMIT_RPM=0 "
+            "(no per-client rate limit). One caller can drive the fleet's egress IPs into "
+            "upstream throttling/bans. Set GF_RATE_LIMIT_RPM (e.g. 120) in production.[/yellow]"
         )
     registry = load_registry(servers_file, os.environ)
     application = build_app(settings, registry)
