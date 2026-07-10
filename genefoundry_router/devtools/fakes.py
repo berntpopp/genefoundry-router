@@ -59,6 +59,7 @@ class ToolSpec(BaseModel):
     )
     outputSchema: dict[str, Any] | None = None  # noqa: N815
     annotations: dict[str, Any] | None = None
+    execution: dict[str, Any] | None = None
     tags: list[str] = Field(default_factory=list)
 
 

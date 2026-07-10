@@ -3,11 +3,8 @@
 The MCP spec covers auth/transport but does NOT mandate tool-definition integrity, so a
 gateway must do it: a backend that changes a tool's description or schema *after* it was
 reviewed is the canonical "rug pull" (and the channel for tool-poisoning instructions).
-This module fingerprints each tool's security-relevant definition (name + description +
-inputSchema) and diffs a live snapshot against a reviewed, pinned baseline. The scheduled
-drift workflow (``.github/workflows/drift.yml``) pins ``ci/fleet-baseline.json`` — the live,
-full-fleet baseline produced by ``make snapshot-baseline``; ``tests/fixtures/fleet_manifest.json``
-is the offline fake-fleet fixture the unit/e2e tests pin against. Surface any drift loudly;
+This module fingerprints each complete security-relevant tool definition and diffs a live
+snapshot against the reviewed baseline packaged with the router. Surface any drift loudly;
 treat ``changed`` as the highest-signal event.
 """
 
@@ -18,19 +15,27 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from pydantic import BaseModel, Field
+
 from genefoundry_router.devtools.fakes import Manifest
 
 
-def tool_fingerprint(
-    name: str, description: str | None, input_schema: dict[str, Any] | None
-) -> str:
-    """Stable SHA-256 over the security-relevant parts of a tool definition."""
-    payload = json.dumps(
-        {"name": name, "description": description or "", "inputSchema": input_schema or {}},
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+class ToolDefinition(BaseModel):
+    """Complete MCP definition whose mutation can alter model or execution behavior."""
+
+    name: str
+    description: str = ""
+    inputSchema: dict[str, Any] = Field(default_factory=dict)  # noqa: N815
+    outputSchema: dict[str, Any] | None = None  # noqa: N815
+    annotations: dict[str, Any] | None = None
+    execution: dict[str, Any] | None = None
+
+
+def tool_fingerprint(tool: ToolDefinition) -> str:
+    """Stable SHA-256 over a complete security-relevant tool definition."""
+    payload = tool.model_dump(mode="json", by_alias=True, exclude_none=False)
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -56,14 +61,21 @@ def detect_drift(current: dict[str, str], pinned: dict[str, str]) -> DriftReport
 
 
 def manifest_fingerprints(manifest: Manifest) -> dict[str, str]:
-    """Map ``"<namespace>/<leaf>" -> fingerprint`` for every tool in a fleet manifest."""
-    out: dict[str, str] = {}
-    for namespace, backend in manifest.backends.items():
-        for tool in backend.tools:
-            out[f"{namespace}/{tool.name}"] = tool_fingerprint(
-                tool.name, tool.description, tool.inputSchema
+    """Map qualified normalized names to reviewed definition fingerprints."""
+    return {
+        f"{namespace}_{tool.name}": tool_fingerprint(
+            ToolDefinition(
+                name=f"{namespace}_{tool.name}",
+                description=tool.description,
+                inputSchema=tool.inputSchema,
+                outputSchema=tool.outputSchema,
+                annotations=tool.annotations,
+                execution=tool.execution,
             )
-    return out
+        )
+        for namespace, backend in manifest.backends.items()
+        for tool in backend.tools
+    }
 
 
 def diff_manifests(pinned: Manifest, live: Manifest) -> DriftReport:

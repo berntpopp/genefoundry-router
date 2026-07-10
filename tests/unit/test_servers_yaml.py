@@ -20,6 +20,9 @@ def test_real_servers_yaml_parses():
     assert all(by_name[n].enabled is True for n in latest)
     # every backend is live and enabled
     assert all(b.enabled for b in backends)
+    assert all(b.transform is None for b in backends), (
+        "baseline qualification assumes source-standard names; add explicit normalization support"
+    )
     # the new backends are Tool-Naming Standard v1 clean — no router-side transforms.
     assert all(by_name[n].transform is None for n in newest)
     assert all(by_name[n].transform is None for n in latest)

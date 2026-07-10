@@ -42,6 +42,17 @@ async def _snapshot_backend(url: str) -> BackendSpec | None:
                 name=t.name,
                 description=t.description or "",
                 inputSchema=t.inputSchema or {"type": "object", "properties": {}},
+                outputSchema=t.outputSchema,
+                annotations=(
+                    t.annotations.model_dump(mode="json", exclude_none=False)
+                    if t.annotations is not None
+                    else None
+                ),
+                execution=(
+                    t.execution.model_dump(mode="json", exclude_none=False)
+                    if t.execution is not None
+                    else None
+                ),
                 tags=list((t.meta or {}).get("fastmcp", {}).get("tags", [])),
             )
             for t in tools
