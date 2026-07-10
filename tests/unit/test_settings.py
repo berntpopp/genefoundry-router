@@ -61,6 +61,11 @@ def test_metrics_token_blank_normalizes_to_none(monkeypatch):
     assert s.GF_METRICS_TOKEN is None
 
 
+def test_blank_drift_baseline_uses_packaged_default(monkeypatch) -> None:
+    monkeypatch.setenv("GF_DRIFT_BASELINE", "   ")
+    assert RouterSettings(_env_file=None).GF_DRIFT_BASELINE is None
+
+
 def test_invalid_auth_mode_rejected(monkeypatch):
     monkeypatch.setenv("GF_AUTH_MODE", "bogus")
     with pytest.raises(ValidationError):

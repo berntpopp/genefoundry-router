@@ -103,7 +103,9 @@ docker-restart: ## Recreate the container to re-read ../.env (no image rebuild)
 	$(DOCKER_COMPOSE) -f docker/docker-compose.yml up -d --force-recreate
 
 docker-prod-config: ## Render production Compose configuration
-	$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
+	GF_ALLOWED_HOSTS=$${GF_ALLOWED_HOSTS:-genefoundry.org} \
+		GF_HEALTHCHECK_HOST=$${GF_HEALTHCHECK_HOST:-genefoundry.org} \
+		$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
 
 docker-npm-config: ## Render NPM Compose configuration
 	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config

@@ -23,10 +23,14 @@ services:
       GF_PORT: 8000
       GF_MCP_PATH: /mcp
       GF_LOG_LEVEL: INFO
+      GF_ALLOWED_HOSTS: "${GF_ALLOWED_HOSTS:-localhost,127.0.0.1,::1}"
+      GF_HEALTHCHECK_HOST: "${GF_HEALTHCHECK_HOST:-localhost}"
+      GF_DRIFT_MODE: "${GF_DRIFT_MODE:-warn}"
+      GF_DRIFT_BASELINE: "${GF_DRIFT_BASELINE:-}"
     ports:
       - "${GENEFOUNDRY_ROUTER_HOST_PORT:-8010}:8000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "sh", "-c", "curl -f -H \"Host: $${GF_HEALTHCHECK_HOST}\" http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

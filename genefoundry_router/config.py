@@ -117,6 +117,14 @@ class RouterSettings(BaseSettings):
             return None
         return v
 
+    @field_validator("GF_DRIFT_BASELINE", mode="before")
+    @classmethod
+    def _blank_drift_baseline(cls, v: object) -> object:
+        """Treat blank overrides as a request to use the packaged reviewed baseline."""
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
     @field_validator("GF_TRUSTED_PROXY_HOPS")
     @classmethod
     def _non_negative_hops(cls, v: int) -> int:
