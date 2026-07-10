@@ -1,6 +1,6 @@
 from typer.testing import CliRunner
 
-from genefoundry_router.cli import app
+from genefoundry_router.cli import app, is_missing_public_host_allowlist
 
 runner = CliRunner()
 
@@ -17,6 +17,7 @@ def test_run_invokes_uvicorn(monkeypatch, tmp_path):
     # passthrough, so it opts into the explicit escape hatch.
     monkeypatch.setenv("GF_AUTH_MODE", "none")
     monkeypatch.setenv("GF_ALLOW_INSECURE", "true")
+    monkeypatch.setenv("GF_ALLOWED_HOSTS", "router.test")
     called = {}
 
     def fake_run(app_obj, host, port, **kw):
@@ -62,6 +63,38 @@ def test_run_serves_loopback_without_auth(monkeypatch, tmp_path):
     result = runner.invoke(app, ["run", "--servers-file", str(yaml), "--host", "127.0.0.1"])
     assert result.exit_code == 0, result.output  # loopback is safe without auth
     assert called == {"ran": True}
+
+
+def test_public_bind_requires_nonempty_allowed_hosts() -> None:
+    assert is_missing_public_host_allowlist("0.0.0.0", [])  # noqa: S104
+
+
+def test_loopback_bind_allows_empty_allowed_hosts() -> None:
+    assert not is_missing_public_host_allowlist("127.0.0.1", [])
+
+
+def test_run_refuses_public_bind_without_host_allowlist(monkeypatch, tmp_path) -> None:
+    yaml = _write_registry(tmp_path)
+    monkeypatch.setenv("GF_AUTH_MODE", "jwt")
+    monkeypatch.delenv("GF_ALLOWED_HOSTS", raising=False)
+    called: dict[str, bool] = {}
+    monkeypatch.setattr(
+        "genefoundry_router.cli.build_app",
+        lambda *_args, **_kwargs: called.setdefault("built", True),
+    )
+    monkeypatch.setattr(
+        "genefoundry_router.cli.uvicorn.run",
+        lambda *_args, **_kwargs: called.setdefault("ran", True),
+    )
+
+    result = runner.invoke(
+        app,
+        ["run", "--servers-file", str(yaml), "--host", "0.0.0.0"],  # noqa: S104
+    )
+
+    assert result.exit_code == 1
+    assert "GF_ALLOWED_HOSTS" in result.output
+    assert called == {}
 
 
 def test_doctor_reports_unreachable(monkeypatch, tmp_path):

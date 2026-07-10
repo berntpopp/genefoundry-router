@@ -41,6 +41,11 @@ def is_insecure_public_bind(auth_mode: str, host: str, allow_insecure: bool) -> 
     return host not in LOOPBACK_HOSTS
 
 
+def is_missing_public_host_allowlist(host: str, allowed_hosts: list[str]) -> bool:
+    """True when a public bind has no explicit DNS-rebinding allowlist."""
+    return host not in LOOPBACK_HOSTS and not allowed_hosts
+
+
 def should_warn_no_rate_limit(auth_mode: str, host: str, rate_limit_rpm: int) -> bool:
     """True for an authenticated, publicly-reachable deployment with no rate limit (D10/M7).
 
@@ -123,6 +128,12 @@ def run(
             "127.0.0.1, or set GF_ALLOW_INSECURE=true to override (local/PoC only).[/red]"
         )
         raise typer.Exit(2)
+    if is_missing_public_host_allowlist(host, settings.GF_ALLOWED_HOSTS):
+        console.print(
+            "[red]Refusing to start: a non-loopback bind requires a nonempty "
+            "GF_ALLOWED_HOSTS allowlist.[/red]"
+        )
+        raise typer.Exit(1)
     if settings.GF_AUTH_MODE == "none" and host not in LOOPBACK_HOSTS:
         console.print(
             f"[yellow]WARNING: serving with GF_AUTH_MODE=none on {host} (GF_ALLOW_INSECURE "
@@ -380,6 +391,17 @@ async def _snapshot_live(
                     name=t.name,
                     description=t.description or "",
                     inputSchema=t.inputSchema or {"type": "object", "properties": {}},
+                    outputSchema=t.outputSchema,
+                    annotations=(
+                        t.annotations.model_dump(mode="json", exclude_none=False)
+                        if t.annotations is not None
+                        else None
+                    ),
+                    execution=(
+                        t.execution.model_dump(mode="json", exclude_none=False)
+                        if t.execution is not None
+                        else None
+                    ),
                     tags=list((t.meta or {}).get("fastmcp", {}).get("tags", [])),
                 )
                 for t in tools
@@ -395,21 +417,26 @@ async def _snapshot_live(
 @app.command()
 def drift(
     servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
-    manifest: str = typer.Option(
-        "tests/fixtures/fleet_manifest.json", help="Reviewed, pinned fleet manifest."
-    ),
+    manifest: str | None = typer.Option(None, help="Reviewed, pinned fleet manifest."),
 ) -> None:
     """Detect tool-definition drift vs the pinned manifest (rug-pull / tool-poisoning tripwire).
 
     Exits non-zero on any added/removed/changed tool so it can run in CI/cron. Refresh the
     pinned manifest with ``make snapshot-fleet`` only after reviewing the change.
     """
+    from importlib.resources import as_file, files
     from pathlib import Path
 
     from genefoundry_router.devtools.fakes import load_manifest
     from genefoundry_router.drift import diff_manifests
 
-    pinned = load_manifest(Path(manifest))
+    configured = manifest or RouterSettings().GF_DRIFT_BASELINE
+    if configured is not None:
+        pinned = load_manifest(Path(configured))
+    else:
+        resource = files("genefoundry_router.data").joinpath("fleet-baseline.json")
+        with as_file(resource) as path:
+            pinned = load_manifest(path)
     live, unreachable = asyncio.run(_snapshot_live(load_registry(servers_file, os.environ)))
     # Exclude unreachable backends from BOTH sides so an outage isn't read as "removed".
     pinned_reachable = pinned.model_copy(

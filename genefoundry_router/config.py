@@ -52,11 +52,14 @@ class RouterSettings(BaseSettings):
     GF_REWRITE_HINTS: bool = True
 
     # Discovery
-    GF_POLL_INTERVAL: int = 0  # seconds; 0 disables the polling re-list
+    GF_POLL_INTERVAL: float = 0  # seconds; 0 disables the polling re-list
+    GF_DRIFT_MODE: Literal["off", "warn", "enforce"] = "warn"
+    GF_DRIFT_BASELINE: str | None = None
 
     # Transport security (R1.4 — MCP Origin/DNS-rebinding MUST)
     # NoDecode: suppress pydantic-settings' JSON pre-decode of complex env values so the
     # CSV string reaches the mode="before" validator below (pydantic-settings 2.14 behavior).
+    GF_ALLOWED_HOSTS: Annotated[list[str], NoDecode] = []
     GF_ALLOWED_ORIGINS: Annotated[
         list[str], NoDecode
     ] = []  # CSV in env; [] = reject any present Origin
@@ -91,18 +94,33 @@ class RouterSettings(BaseSettings):
     #   remember → show once per client, then silent          false → skip (dev-only warning)
     GF_OAUTH_REQUIRE_CONSENT: Literal["external", "remember", "true", "false"] = "external"
 
-    @field_validator("GF_ALLOWED_ORIGINS", mode="before")
+    @field_validator("GF_ALLOWED_HOSTS", "GF_ALLOWED_ORIGINS", mode="before")
     @classmethod
-    def _split_origins(cls, v: object) -> object:
-        """Accept a comma-separated string from env and split into a list."""
+    def _split_csv_allowlist(cls, v: object) -> object:
+        """Accept comma-separated allowlists from environment variables."""
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]
         return v
+
+    @field_validator("GF_ALLOWED_HOSTS")
+    @classmethod
+    def _reject_host_wildcards(cls, value: list[str]) -> list[str]:
+        if any("*" in item for item in value):
+            raise ValueError("GF_ALLOWED_HOSTS must not contain wildcard entries")
+        return value
 
     @field_validator("GF_METRICS_TOKEN", mode="before")
     @classmethod
     def _blank_metrics_token(cls, v: object) -> object:
         """Treat blank scrape-token env values as unset."""
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
+    @field_validator("GF_DRIFT_BASELINE", mode="before")
+    @classmethod
+    def _blank_drift_baseline(cls, v: object) -> object:
+        """Treat blank overrides as a request to use the packaged reviewed baseline."""
         if isinstance(v, str) and not v.strip():
             return None
         return v

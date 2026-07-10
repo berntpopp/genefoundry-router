@@ -1,4 +1,4 @@
-"""ci/fleet-baseline.json is the live, full-fleet drift baseline the workflow pins against.
+"""The packaged fleet baseline is the live manifest runtime and CI pin against.
 
 Kept in lockstep with servers.yaml: it must be a *live* snapshot (not the local test stub),
 cover exactly the enabled backends, and carry tools for each — so a partial or stale baseline
@@ -11,7 +11,7 @@ from pathlib import Path
 from genefoundry_router.config import load_registry
 from genefoundry_router.devtools.fakes import load_manifest
 
-BASELINE = Path("ci/fleet-baseline.json")
+BASELINE = Path("genefoundry_router/data/fleet-baseline.json")
 
 
 def test_baseline_is_a_live_snapshot():

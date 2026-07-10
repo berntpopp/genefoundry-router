@@ -19,7 +19,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/build/.venv/bin:$PATH" \
     GF_HOST=0.0.0.0 \
     GF_PORT=8000 \
-    GF_MCP_PATH=/mcp
+    GF_MCP_PATH=/mcp \
+    GF_HEALTHCHECK_HOST=localhost
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --uid 10001 app \
@@ -38,8 +39,9 @@ WORKDIR /home/app/web
 COPY --from=builder /build/.venv /build/.venv
 COPY genefoundry_router ./genefoundry_router
 COPY servers.yaml pyproject.toml README.md ./
+RUN test -f genefoundry_router/data/fleet-baseline.json
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=10s \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f -H "Host: ${GF_HEALTHCHECK_HOST}" http://localhost:8000/health || exit 1
 CMD ["genefoundry-router", "run", "--host", "0.0.0.0", "--port", "8000"]

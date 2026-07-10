@@ -29,3 +29,14 @@ def test_every_external_image_is_digest_pinned() -> None:
     assert refs, "expected at least one FROM / COPY --from image ref"
     unpinned = [r for r in refs if "@sha256:" not in r]
     assert not unpinned, f"digest-pin these (Container-Hardening v1 §1.2): {unpinned}"
+
+
+def test_production_image_contains_packaged_fleet_baseline() -> None:
+    text = DOCKERFILE.read_text(encoding="utf-8")
+    assert "genefoundry_router/data/fleet-baseline.json" in text
+
+
+def test_dockerfile_healthcheck_uses_valid_cmd_shell_form() -> None:
+    text = DOCKERFILE.read_text(encoding="utf-8")
+    assert "CMD-SHELL" not in text
+    assert 'CMD curl -f -H "Host: ${GF_HEALTHCHECK_HOST}"' in text

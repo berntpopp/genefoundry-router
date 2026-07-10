@@ -5,6 +5,7 @@ from __future__ import annotations
 import hmac
 import logging
 import time
+from typing import Any, Protocol
 
 import structlog
 from fastapi import FastAPI, Request
@@ -20,6 +21,12 @@ from prometheus_client import (
 from starlette.responses import JSONResponse, Response
 
 from genefoundry_router.registry import BackendDef
+
+
+class DriftState(Protocol):
+    degraded: bool
+    last_report: Any
+
 
 _LOG_CONFIGURED = False
 
@@ -51,6 +58,26 @@ TOOL_LATENCY = Histogram(
     "genefoundry_tool_latency_seconds",
     "Federated tool-call latency",
     ["namespace"],
+    registry=METRICS_REGISTRY,
+)
+DRIFT_CHANGED = Gauge(
+    "genefoundry_drift_changed",
+    "Changed normalized tool definitions in the last runtime check",
+    registry=METRICS_REGISTRY,
+)
+DRIFT_ADDED = Gauge(
+    "genefoundry_drift_added",
+    "Added normalized tool definitions in the last runtime check",
+    registry=METRICS_REGISTRY,
+)
+DRIFT_REMOVED = Gauge(
+    "genefoundry_drift_removed",
+    "Removed normalized tool definitions in the last runtime check",
+    registry=METRICS_REGISTRY,
+)
+DRIFT_LAST_CHECK = Gauge(
+    "genefoundry_drift_last_check_timestamp_seconds",
+    "Unix timestamp of the last runtime drift evaluation",
     registry=METRICS_REGISTRY,
 )
 
@@ -109,6 +136,14 @@ def set_backend_up(backend: BackendDef, up: bool, tools: int | None = None) -> N
         BACKEND_TOOL_COUNT[backend.namespace] = tools
 
 
+def set_drift_metrics(*, changed: int, added: int, removed: int, timestamp: float) -> None:
+    """Publish aggregate drift counts without exposing tool definitions."""
+    DRIFT_CHANGED.set(changed)
+    DRIFT_ADDED.set(added)
+    DRIFT_REMOVED.set(removed)
+    DRIFT_LAST_CHECK.set(timestamp)
+
+
 def _metrics_authorized(authorization: str | None, token: str) -> bool:
     # split(None, 1) tolerates extra whitespace; encode both sides so a non-ASCII token or
     # supplied value compares as bytes (str hmac.compare_digest raises TypeError on non-ASCII).
@@ -139,7 +174,11 @@ def register_metrics(app: FastAPI, token: str | None = None) -> None:
         return Response(generate_latest(METRICS_REGISTRY), media_type=CONTENT_TYPE_LATEST)
 
 
-def register_health(app: FastAPI, backends: list[BackendDef]) -> None:
+def register_health(
+    app: FastAPI,
+    backends: list[BackendDef],
+    drift_guard: DriftState | None = None,
+) -> None:
     """Attach GET /health returning liveness + a per-backend summary."""
     enabled = [b for b in backends if b.enabled]
 
@@ -148,9 +187,20 @@ def register_health(app: FastAPI, backends: list[BackendDef]) -> None:
         # Degraded = an enabled backend the router probed and found down (reachable is
         # explicitly False). Unknown (None, not yet probed) is not counted as degraded.
         degraded = sorted(b.namespace for b in enabled if BACKEND_STATUS.get(b.namespace) is False)
+        drift_report = getattr(drift_guard, "last_report", None)
+        changed = list(getattr(drift_report, "changed", []))
+        added = list(getattr(drift_report, "added", []))
+        removed = list(getattr(drift_report, "removed", []))
+        drift_degraded = bool(getattr(drift_guard, "degraded", False))
         return {
-            "status": "degraded" if degraded else "healthy",
+            "status": "degraded" if degraded or drift_degraded else "healthy",
             "service": "genefoundry",
+            "drift": {
+                "status": "degraded" if drift_degraded else "ok",
+                "changed": changed,
+                "added": added,
+                "removed": removed,
+            },
             "backends": {
                 "total": len(backends),
                 "enabled": len(enabled),

@@ -103,7 +103,9 @@ docker-restart: ## Recreate the container to re-read ../.env (no image rebuild)
 	$(DOCKER_COMPOSE) -f docker/docker-compose.yml up -d --force-recreate
 
 docker-prod-config: ## Render production Compose configuration
-	$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
+	GF_ALLOWED_HOSTS=$${GF_ALLOWED_HOSTS:-genefoundry.org} \
+		GF_HEALTHCHECK_HOST=$${GF_HEALTHCHECK_HOST:-genefoundry.org} \
+		$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
 
 docker-npm-config: ## Render NPM Compose configuration
 	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
@@ -118,14 +120,15 @@ test-e2e: ## Run the offline end-to-end fake-fleet tests
 	uv run pytest tests/e2e -q
 
 snapshot-fleet: ## Refresh the fleet manifest from live backends (online)
-	uv run python scripts/snapshot_fleet.py --captured-at $$(date -u +%FT%TZ)
+	uv run python scripts/snapshot_fleet.py --out tests/fixtures/fleet_manifest.json \
+		--captured-at $$(date -u +%FT%TZ)
 
 snapshot-catalog: ## Regenerate the discoverability benchmark catalog from the live fleet (online)
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_catalog.py
 
-snapshot-baseline: ## Re-pin the drift baseline (ci/fleet-baseline.json) from the live fleet (online)
+snapshot-baseline: ## Re-pin the packaged drift baseline from the live fleet (online)
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_fleet.py \
-		--out ci/fleet-baseline.json --captured-at $$(date -u +%FT%TZ)
+		--out genefoundry_router/data/fleet-baseline.json --captured-at $$(date -u +%FT%TZ)
 
 ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
 

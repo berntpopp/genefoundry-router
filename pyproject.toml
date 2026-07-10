@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "fastmcp>=3.2.0,<4.0.0",
+    "fastmcp>=3.4.4,<4.0.0",
     "mcp[cli]>=1.28.1,<2.0.0",
     "fastapi>=0.139.0,<1.0.0",
     "uvicorn[standard]>=0.50.0,<1.0.0",
@@ -64,6 +64,9 @@ Issues = "https://github.com/berntpopp/genefoundry-router/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["genefoundry_router"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"genefoundry_router/data/fleet-baseline.json" = "genefoundry_router/data/fleet-baseline.json"
 
 [tool.ruff]
 line-length = 100

@@ -41,6 +41,16 @@ def test_base_compose_defines_service_and_healthcheck():
     assert "8000" in str(svc["ports"])
 
 
+def test_base_compose_passes_local_runtime_security_settings() -> None:
+    svc = _load("docker-compose.yml")["services"]["genefoundry-router"]
+    environment = svc["environment"]
+    assert "localhost,127.0.0.1,::1" in environment["GF_ALLOWED_HOSTS"]
+    assert environment["GF_DRIFT_MODE"] == "${GF_DRIFT_MODE:-warn}"
+    assert "GF_DRIFT_BASELINE" in environment
+    healthcheck = " ".join(svc["healthcheck"]["test"])
+    assert "Host: $${GF_HEALTHCHECK_HOST}" in healthcheck
+
+
 def test_base_compose_sets_explicit_project_name():
     # Isolates this stack from sibling -link repos that also root their compose at
     # docker/, which otherwise all collapse into one default "docker" project.
@@ -54,6 +64,13 @@ def test_prod_overlay_hardens():
     assert svc["read_only"] is True
     assert svc["security_opt"] == ["no-new-privileges:true"]
     assert svc["cap_drop"] == ["ALL"]
+    assert svc["environment"]["GF_ALLOWED_HOSTS"] == (
+        "${GF_ALLOWED_HOSTS:?set the public router hostname}"
+    )
+    assert svc["environment"]["GF_DRIFT_MODE"] == "enforce"
+    assert svc["environment"]["GF_HEALTHCHECK_HOST"] == (
+        "${GF_HEALTHCHECK_HOST:?set the public health-check Host}"
+    )
 
 
 def test_npm_overlay_joins_external_network():

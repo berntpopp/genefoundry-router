@@ -131,12 +131,15 @@ Structure lives in committed `servers.yaml`; URLs/secrets in gitignored `.env` (
 | `GF_AUTH_MODE` | `none` | `none` \| `jwt` \| `oauth` (use jwt/oauth in production) |
 | `GF_ALLOW_INSECURE` | `false` | Opt-in to serve `auth=none` on a non-loopback bind (PoC only; the router refuses otherwise) |
 | `GF_PUBLIC_BASE_URL` | _(unset)_ | Router's canonical public URL — OAuth resource URI + Protected-Resource-Metadata |
+| `GF_ALLOWED_HOSTS` | _(empty)_ | CSV Host allowlist; required for every non-loopback bind |
 | `GF_JWT_ISSUER` | _(unset)_ | jwt/oauth: token issuer URL (e.g. `https://auth.example.org/realms/genefoundry`) |
 | `GF_JWT_JWKS_URL` | _(unset)_ | jwt/oauth: issuer JWKS endpoint (signature verification keys) |
 | `GF_JWT_AUDIENCE` | _(unset)_ | jwt/oauth: required token `aud` (MUST match; audience binding) |
 | `GF_OAUTH_CLIENT_ID` / `GF_OAUTH_CLIENT_SECRET` | _(unset)_ | oauth: upstream provider client credentials |
 | `GF_OAUTH_AUTHORIZE_URL` / `GF_OAUTH_TOKEN_URL` | _(unset)_ | oauth: upstream provider authorize/token endpoints |
 | `GF_ALLOWED_ORIGINS` | _(empty)_ | CSV `Origin` allowlist (DNS-rebinding defense) |
+| `GF_DRIFT_MODE` | `warn` | Runtime catalog policy: `off` \| `warn` \| `enforce` |
+| `GF_DRIFT_BASELINE` | _(packaged)_ | Optional path override for the reviewed packaged baseline |
 | `GF_<NAME>_URL` | _(unset)_ | Per-backend `/mcp` URL (e.g. `GF_GNOMAD_URL`) |
 
 A backend with an unset URL or `enabled: false` is skipped with a warning; the router still starts.
@@ -189,16 +192,16 @@ genefoundry-router run        --host 0.0.0.0 --port 8000   # serve over Streamab
 genefoundry-router validate                                # check servers.yaml + env, report missing URLs
 genefoundry-router list-tools [--namespace gnomad]         # enumerate federated tools, flag >64-char names
 genefoundry-router doctor     [--strict-naming]            # ping backends; audit leaf names vs Tool-Naming v1
-genefoundry-router drift      [--manifest ci/fleet-baseline.json]  # tool-def rug-pull tripwire; exit 0/1/2
+genefoundry-router drift      [--manifest PATH]  # defaults to packaged pin; exit 0/1/2
 ```
 
 ## Drift detection (scheduled CI)
 
-A backend can serve a clean tool at review time and later change its **description or input
-schema** — the channel for a *rug pull* / *tool poisoning*, since a tool description is
-instructions the model reads. `genefoundry-router drift` fingerprints every backend tool's
-`{name, description, inputSchema}` (SHA-256) and diffs the **live** fleet against a pinned
-baseline. `.github/workflows/drift.yml` runs it every 6 h (opt-in) and alerts via a
+A backend can serve a clean tool at review time and later change its definition — the channel
+for a *rug pull* / *tool poisoning*. `genefoundry-router drift` fingerprints each normalized
+tool's name, description, input/output schemas, annotations, and execution metadata (SHA-256),
+then diffs the **live** fleet against a pinned baseline. `.github/workflows/drift.yml` runs it
+every 6 h (opt-in) and alerts via a
 deduplicated `tool-drift` GitHub issue + a healthchecks.io dead-man's-switch.
 
 **Exit codes:** `0` no drift, all reachable · `1` drift among reachable backends (alert) ·
@@ -210,11 +213,15 @@ beats availability: drift + an outage still exits `1`.
 | File | What | Keep in sync |
 |------|------|--------------|
 | `ci/fleet-urls.env` | Public `GF_*_URL=https://<name>-link.genefoundry.org/mcp` for every enabled backend — the URLs CI probes | `make` test `test_ci_fleet_urls.py` asserts it matches `servers.yaml` exactly |
-| `ci/fleet-baseline.json` | The pinned **live** tool-def baseline (`source:"live"`, all enabled backends) | `make snapshot-baseline` to re-pin; `test_ci_fleet_baseline.py` asserts live + full coverage |
+| `genefoundry_router/data/fleet-baseline.json` | The packaged **live** runtime/CI tool-definition pin | `make snapshot-baseline` only after reviewing live definitions |
 
-**Re-pin discipline:** when drift fires for a *legitimate* upstream change, refresh the baseline
-with `make snapshot-baseline` and merge it via a **reviewed PR** (treat the tool-def diff as
-security-relevant). Never auto-refresh in CI — that would silently bless a rug pull.
+**Runtime response:** in `enforce` mode, a changed startup failure means operators must review the
+live definition before the router accepts traffic. Poll-time changes and additions are
+quarantined; additions/removals mark health degraded without killing unaffected tools.
+
+**Re-pin discipline:** `make snapshot-baseline` is allowed only after code review of the complete
+definition diff. Treat it as security-relevant and never re-pin merely to restore green status.
+Never auto-refresh in CI; that would silently bless a rug pull.
 
 **Enabling it (one-time, on the default branch).** All three settings are configured in
 GitHub → *Settings → Secrets and variables → Actions*:
@@ -232,7 +239,7 @@ gh workflow run drift.yml        # smoke-test; expect exit 0 and the healthcheck
 ```
 
 The `drift` CLI is independently runnable for your own cron/CI:
-`genefoundry-router drift --servers-file servers.yaml --manifest ci/fleet-baseline.json`
+`genefoundry-router drift --servers-file servers.yaml`
 (reads `GF_*_URL` from the environment — `set -a; . ./.env; set +a` locally, or load
 `ci/fleet-urls.env`).
 
