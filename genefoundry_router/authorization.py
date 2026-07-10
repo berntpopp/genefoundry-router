@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
+import structlog
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_access_token
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
+
+log = structlog.get_logger(__name__)
 
 PUBTATOR_WRITE_TOOLS = frozenset(
     {
@@ -35,5 +38,10 @@ class WriteAuthorizationMiddleware(Middleware):
             token = get_access_token()
             scopes = set(token.scopes) if token is not None else set()
             if "pubtator:write" not in scopes:
+                log.warning(
+                    "write_authorization_denied",
+                    tool=name,
+                    required_scope="pubtator:write",
+                )
                 raise ToolError("This tool requires the pubtator:write scope")
         return await call_next(context)

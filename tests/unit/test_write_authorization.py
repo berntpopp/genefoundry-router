@@ -55,3 +55,11 @@ async def test_readonly_pubtator_call_needs_no_write_scope(
     context = _Context(SimpleNamespace(name="pubtator_search_literature"))
     monkeypatch.setattr(authorization, "get_access_token", lambda: None)
     assert await middleware.on_call_tool(context, _ok) == "ok"  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_real_no_auth_dependency_denies_write_cleanly() -> None:
+    middleware = WriteAuthorizationMiddleware()
+    context = _Context(SimpleNamespace(name="pubtator_submit_text_annotation"))
+    with pytest.raises(ToolError, match="pubtator:write"):
+        await middleware.on_call_tool(context, _ok)  # type: ignore[arg-type]
