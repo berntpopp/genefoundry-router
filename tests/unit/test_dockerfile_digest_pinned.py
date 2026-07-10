@@ -34,3 +34,9 @@ def test_every_external_image_is_digest_pinned() -> None:
 def test_production_image_contains_packaged_fleet_baseline() -> None:
     text = DOCKERFILE.read_text(encoding="utf-8")
     assert "genefoundry_router/data/fleet-baseline.json" in text
+
+
+def test_dockerfile_healthcheck_uses_valid_cmd_shell_form() -> None:
+    text = DOCKERFILE.read_text(encoding="utf-8")
+    assert "CMD-SHELL" not in text
+    assert 'CMD curl -f -H "Host: ${GF_HEALTHCHECK_HOST}"' in text
