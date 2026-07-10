@@ -14,6 +14,7 @@ coverage.xml
 !.env.example
 !.env.docker.example
 !.env.dev
+!docker/.env.patient-data.example
 .claude/*
 !.claude/skills/
 .idea/
