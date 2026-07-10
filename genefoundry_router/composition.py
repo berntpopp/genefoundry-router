@@ -38,7 +38,7 @@ def make_proxy_client(
     Safe for in-process targets too: non-HTTP transports lack the flag and are left as-is.
     """
     transport_target = target
-    if isinstance(target, str) and service_token is not None:
+    if isinstance(target, str) and service_token:
         transport_target = StreamableHttpTransport(
             target,
             headers={"Authorization": f"Bearer {service_token}"},
