@@ -12,6 +12,7 @@ from fastmcp import FastMCP
 
 from genefoundry_router import __version__
 from genefoundry_router.auth import build_auth
+from genefoundry_router.authorization import WriteAuthorizationMiddleware
 from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
@@ -56,6 +57,7 @@ def build_server(
     server: FastMCP = FastMCP(
         "genefoundry", version=__version__, auth=auth, instructions=build_instructions(registry)
     )
+    server.add_middleware(WriteAuthorizationMiddleware())
     server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
     server.add_middleware(AuditLogMiddleware())  # PII-safe per-call audit (GDPR Art. 30/32)
     if settings.GF_REWRITE_HINTS:
