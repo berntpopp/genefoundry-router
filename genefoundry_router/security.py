@@ -1,35 +1,101 @@
-"""Transport security: Origin-header validation (MCP DNS-rebinding defense).
-
-Per the MCP Streamable-HTTP transport spec (2025-11-25): servers MUST validate the
-``Origin`` header and respond 403 when it is present and not allow-listed. Requests
-with NO ``Origin`` header (non-browser MCP clients, curl health checks) pass through.
-"""
+"""Outer Host and Origin validation for every router HTTP route."""
 
 from __future__ import annotations
 
+import ipaddress
+
 import structlog
 from fastapi import FastAPI
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
-from starlette.types import ASGIApp
+from starlette.datastructures import Headers
+from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 log = structlog.get_logger(__name__)
 
 
-class OriginValidationMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: ASGIApp, allowed_origins: list[str]) -> None:
-        super().__init__(app)
-        self._allowed = set(allowed_origins)
+def _normalize_host(value: str) -> str:
+    raw = value.strip()
+    if not raw:
+        raise ValueError("host must not be empty")
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        origin = request.headers.get("origin")
-        if origin is not None and origin not in self._allowed:
-            log.warning("origin_rejected", origin=origin)
-            return JSONResponse({"error": "forbidden origin"}, status_code=403)
-        return await call_next(request)
+    try:
+        return ipaddress.ip_address(raw).compressed.lower()
+    except ValueError:
+        pass
+
+    if raw.startswith("["):
+        close = raw.find("]")
+        if close < 0:
+            raise ValueError("invalid bracketed IPv6 host")
+        host = raw[1:close]
+        suffix = raw[close + 1 :]
+        if suffix and (not suffix.startswith(":") or not suffix[1:].isdigit()):
+            raise ValueError("invalid host port")
+    elif raw.count(":") == 1:
+        candidate, port = raw.rsplit(":", 1)
+        if not port.isdigit():
+            raise ValueError("invalid host port")
+        host = candidate
+    else:
+        host = raw
+
+    try:
+        return ipaddress.ip_address(host).compressed.lower()
+    except ValueError:
+        if ":" in host or not host:
+            raise ValueError("invalid host") from None
+        return host.lower().rstrip(".")
 
 
-def add_origin_validation(app: FastAPI, allowed_origins: list[str]) -> None:
-    """Attach Origin validation. Empty allowlist rejects ANY request that sends Origin."""
-    app.add_middleware(OriginValidationMiddleware, allowed_origins=allowed_origins)
+class HostOriginValidationMiddleware:
+    """Validate the HTTP Host first and any present browser Origin second."""
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        allowed_hosts: list[str],
+        allowed_origins: list[str],
+    ) -> None:
+        self.app = app
+        self._allowed_hosts = {_normalize_host(host) for host in allowed_hosts}
+        self._allowed_origins = set(allowed_origins)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        headers = Headers(scope=scope)
+        if self._allowed_hosts:
+            try:
+                host = _normalize_host(headers.get("host", ""))
+            except ValueError:
+                host = ""
+            if host not in self._allowed_hosts:
+                log.warning("host_rejected")
+                response = JSONResponse({"error": "misdirected request"}, status_code=421)
+                await response(scope, receive, send)
+                return
+
+        origin = headers.get("origin")
+        if origin is not None and origin not in self._allowed_origins:
+            log.warning("origin_rejected")
+            response = JSONResponse({"error": "forbidden origin"}, status_code=403)
+            await response(scope, receive, send)
+            return
+
+        await self.app(scope, receive, send)
+
+
+def add_host_origin_validation(
+    app: FastAPI,
+    allowed_hosts: list[str],
+    allowed_origins: list[str],
+) -> None:
+    """Attach the router's single outer transport guard."""
+    app.add_middleware(
+        HostOriginValidationMiddleware,
+        allowed_hosts=allowed_hosts,
+        allowed_origins=allowed_origins,
+    )

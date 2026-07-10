@@ -41,6 +41,11 @@ def is_insecure_public_bind(auth_mode: str, host: str, allow_insecure: bool) -> 
     return host not in LOOPBACK_HOSTS
 
 
+def is_missing_public_host_allowlist(host: str, allowed_hosts: list[str]) -> bool:
+    """True when a public bind has no explicit DNS-rebinding allowlist."""
+    return host not in LOOPBACK_HOSTS and not allowed_hosts
+
+
 def should_warn_no_rate_limit(auth_mode: str, host: str, rate_limit_rpm: int) -> bool:
     """True for an authenticated, publicly-reachable deployment with no rate limit (D10/M7).
 
@@ -123,6 +128,12 @@ def run(
             "127.0.0.1, or set GF_ALLOW_INSECURE=true to override (local/PoC only).[/red]"
         )
         raise typer.Exit(2)
+    if is_missing_public_host_allowlist(host, settings.GF_ALLOWED_HOSTS):
+        console.print(
+            "[red]Refusing to start: a non-loopback bind requires a nonempty "
+            "GF_ALLOWED_HOSTS allowlist.[/red]"
+        )
+        raise typer.Exit(1)
     if settings.GF_AUTH_MODE == "none" and host not in LOOPBACK_HOSTS:
         console.print(
             f"[yellow]WARNING: serving with GF_AUTH_MODE=none on {host} (GF_ALLOW_INSECURE "

@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from genefoundry_router.config import RouterSettings
 
 
@@ -15,6 +18,7 @@ def test_defaults(monkeypatch):
     assert s.GF_POLL_INTERVAL == 0
     assert s.GF_LOG_LEVEL == "INFO"
     assert s.GF_ALLOWED_ORIGINS == []  # R1.4 - empty = reject any present Origin
+    assert s.GF_ALLOWED_HOSTS == []
     assert s.GF_PUBLIC_BASE_URL is None  # R1.5 - public URL for OAuth metadata
     assert s.GF_TRUSTED_PROXY_HOPS == 1
     assert s.GF_METRICS_TOKEN is None
@@ -24,6 +28,19 @@ def test_allowed_origins_parses_csv(monkeypatch):
     monkeypatch.setenv("GF_ALLOWED_ORIGINS", "https://claude.ai, https://cursor.sh")
     s = RouterSettings(_env_file=None)
     assert s.GF_ALLOWED_ORIGINS == ["https://claude.ai", "https://cursor.sh"]
+
+
+def test_allowed_hosts_csv_is_split() -> None:
+    settings = RouterSettings(
+        _env_file=None,
+        GF_ALLOWED_HOSTS="genefoundry.org,localhost,127.0.0.1,::1",
+    )
+    assert settings.GF_ALLOWED_HOSTS == ["genefoundry.org", "localhost", "127.0.0.1", "::1"]
+
+
+def test_allowed_hosts_rejects_wildcard() -> None:
+    with pytest.raises(ValidationError, match="GF_ALLOWED_HOSTS must not contain wildcard"):
+        RouterSettings(_env_file=None, GF_ALLOWED_HOSTS="*")
 
 
 def test_env_override(monkeypatch):
@@ -46,17 +63,11 @@ def test_metrics_token_blank_normalizes_to_none(monkeypatch):
 
 def test_invalid_auth_mode_rejected(monkeypatch):
     monkeypatch.setenv("GF_AUTH_MODE", "bogus")
-    import pytest
-    from pydantic import ValidationError
-
     with pytest.raises(ValidationError):
         RouterSettings(_env_file=None)
 
 
 def test_negative_trusted_proxy_hops_rejected(monkeypatch):
     monkeypatch.setenv("GF_TRUSTED_PROXY_HOPS", "-1")
-    import pytest
-    from pydantic import ValidationError
-
     with pytest.raises(ValidationError):
         RouterSettings(_env_file=None)

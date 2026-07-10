@@ -30,7 +30,7 @@ from genefoundry_router.observability import (
     set_backend_up,
 )
 from genefoundry_router.registry import BackendDef
-from genefoundry_router.security import add_origin_validation
+from genefoundry_router.security import add_host_origin_validation
 from genefoundry_router.tool_search import apply_tool_search, resolve_entrypoints
 
 log = structlog.get_logger(__name__)
@@ -98,6 +98,7 @@ def build_app(
         path=settings.GF_MCP_PATH,
         stateless_http=True,
         json_response=True,
+        host_origin_protection=False,
     )
 
     async def _relist() -> None:
@@ -129,7 +130,11 @@ def build_app(
         settings.GF_RATE_LIMIT_RPM,
         trusted_proxy_hops=settings.GF_TRUSTED_PROXY_HOPS,
     )  # DoS guard
-    add_origin_validation(app, settings.GF_ALLOWED_ORIGINS)  # R1.4 — MCP Origin MUST
+    add_host_origin_validation(
+        app,
+        allowed_hosts=settings.GF_ALLOWED_HOSTS,
+        allowed_origins=settings.GF_ALLOWED_ORIGINS,
+    )
     app.add_middleware(CorrelationIdMiddleware)
     register_health(app, registry)
     register_metrics(app, token=settings.GF_METRICS_TOKEN)  # R1.7 — /metrics
