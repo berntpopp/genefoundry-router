@@ -153,5 +153,8 @@ def load_registry(path: str | Path, environ: Mapping[str, str]) -> list[BackendD
             raise RegistryError(f"duplicate namespace: {backend.namespace!r}")
         seen_namespaces.add(backend.namespace)
         backend.url = environ.get(backend.url_env)
+        if backend.service_token_env is not None:
+            raw_token = environ.get(backend.service_token_env)
+            backend.service_token = raw_token.strip() if raw_token and raw_token.strip() else None
         backends.append(backend)
     return backends

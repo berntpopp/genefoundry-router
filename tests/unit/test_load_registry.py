@@ -41,6 +41,48 @@ def test_missing_file_raises_registry_error(tmp_path):
         load_registry(tmp_path / "nope.yaml", {})
 
 
+def test_registry_resolves_optional_backend_service_token(tmp_path) -> None:
+    registry = tmp_path / "servers.yaml"
+    registry.write_text(
+        """
+defaults: {transport: http}
+servers:
+  - name: pubtator
+    namespace: pubtator
+    url_env: GF_PUBTATOR_URL
+    service_token_env: GF_PUBTATOR_TOKEN
+""",
+        encoding="utf-8",
+    )
+    backend = load_registry(
+        registry,
+        {
+            "GF_PUBTATOR_URL": "https://pubtator.example/mcp",
+            "GF_PUBTATOR_TOKEN": "service-secret",
+        },
+    )[0]
+    assert backend.service_token == "service-secret"  # noqa: S105 - inert test value
+
+
+def test_registry_treats_blank_backend_service_token_as_unset(tmp_path) -> None:
+    registry = tmp_path / "servers.yaml"
+    registry.write_text(
+        """
+servers:
+  - name: pubtator
+    namespace: pubtator
+    url_env: GF_PUBTATOR_URL
+    service_token_env: GF_PUBTATOR_TOKEN
+""",
+        encoding="utf-8",
+    )
+    backend = load_registry(
+        registry,
+        {"GF_PUBTATOR_URL": "https://pubtator.example/mcp", "GF_PUBTATOR_TOKEN": "  "},
+    )[0]
+    assert backend.service_token is None
+
+
 def test_duplicate_namespace_raises(tmp_path):
     p = tmp_path / "dup.yaml"
     p.write_text(
