@@ -29,6 +29,7 @@ class BackendDef(BaseModel):
     name: str
     namespace: str
     url_env: str
+    service_token_env: str | None = None
     repo: str | None = None
     tags: list[str] = Field(default_factory=list)
     # Canonical entry-point leaf tools for this backend — the first tool an agent reaches
@@ -50,6 +51,7 @@ class BackendDef(BaseModel):
     transport: Literal["http"] = "http"  # R1.1: present in servers.yaml defaults; SSE not offered
     transform: TransformConfig | None = None
     url: str | None = None  # resolved from os.environ[url_env] at load time
+    service_token: str | None = Field(default=None, repr=False)
 
     @field_validator("namespace")
     @classmethod

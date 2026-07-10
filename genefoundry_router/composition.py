@@ -6,6 +6,7 @@ from typing import Any
 
 import structlog
 from fastmcp import FastMCP
+from fastmcp.client.transports import StreamableHttpTransport
 from fastmcp.server import create_proxy
 from fastmcp.server.providers.proxy import FastMCPProxy, ProxyClient, ProxyProvider
 
@@ -19,7 +20,11 @@ DEFAULT_CACHE_TTL = 300
 DEFAULT_BACKEND_TIMEOUT = 120.0
 
 
-def make_proxy_client(target: Any, timeout: float | None = None) -> ProxyClient:
+def make_proxy_client(
+    target: Any,
+    timeout: float | None = None,
+    service_token: str | None = None,
+) -> ProxyClient:
     """Build the router's upstream proxy client with caller-token forwarding DISABLED.
 
     R1.6 — confused-deputy / token-passthrough invariant. fastmcp's ``ProxyClient``
@@ -32,7 +37,17 @@ def make_proxy_client(target: Any, timeout: float | None = None) -> ProxyClient:
     Also applies an outbound ``timeout`` so a hung/slow backend cannot stall the router.
     Safe for in-process targets too: non-HTTP transports lack the flag and are left as-is.
     """
-    client = ProxyClient(target) if timeout is None else ProxyClient(target, timeout=timeout)
+    transport_target = target
+    if isinstance(target, str) and service_token is not None:
+        transport_target = StreamableHttpTransport(
+            target,
+            headers={"Authorization": f"Bearer {service_token}"},
+        )
+    client = (
+        ProxyClient(transport_target)
+        if timeout is None
+        else ProxyClient(transport_target, timeout=timeout)
+    )
     transport = getattr(client, "transport", None)
     if transport is not None and hasattr(transport, "forward_incoming_headers"):
         transport.forward_incoming_headers = False
@@ -57,7 +72,11 @@ def build_proxy(
     if isinstance(proxy_target, str):
         # Production path (a backend URL): control the client so token forwarding is off.
         return FastMCPProxy(
-            client_factory=lambda: make_proxy_client(proxy_target, timeout),
+            client_factory=lambda: make_proxy_client(
+                proxy_target,
+                timeout,
+                service_token=backend.service_token,
+            ),
             name=f"{backend.name}-proxy",
         )
     # In-process target (tests inject a FastMCP server): no HTTP transport, no forwarding.
@@ -86,7 +105,11 @@ def _register_via_provider(
     if proxy_target is None:
         raise ValueError(f"backend {backend.name!r} has no URL to proxy")
     provider = ProxyProvider(
-        client_factory=lambda: make_proxy_client(proxy_target, timeout),
+        client_factory=lambda: make_proxy_client(
+            proxy_target,
+            timeout,
+            service_token=backend.service_token,
+        ),
         cache_ttl=float(backend.cache_ttl),
     )
     server.add_provider(provider, namespace=backend.namespace)
