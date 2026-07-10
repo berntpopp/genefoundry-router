@@ -103,14 +103,24 @@ def test_write_tool_inventory_is_exact() -> None:
 
 
 def test_readonly_preserves_full_surface_read_tools() -> None:
-    names = _tool_names("readonly")
-    assert EXPECTED_WRITE_TOOLS.isdisjoint(names)
+    full_names = _tool_names("full")
+    readonly_names = _tool_names("readonly")
+    assert EXPECTED_WRITE_TOOLS <= full_names
+    assert readonly_names == full_names - EXPECTED_WRITE_TOOLS
     assert {
         "get_publication_annotations",
         "get_pmc_annotations",
         "build_topic_literature_map",
-    } <= names
+    } <= readonly_names
 ```
+
+The inventory is source-backed, not inferred from names. Before freezing it, inspect the tool
+annotations and implementations in `mcp/tools/review/research.py` (stage/review quickstart and
+grounding), `mcp/tools/review/retrieval.py` (review context),
+`mcp/tools/review/evidence_certainty.py` (certainty writes), `mcp/tools/review/indexes.py`
+(evidence indexing), `mcp/tools/text_annotations.py` (remote job submission), and the audit export
+implementation. Add a test that the registered tools carrying `readOnlyHint=False` are exactly
+`EXPECTED_WRITE_TOOLS`; a mismatch fails rather than silently widening the hosted surface.
 
 Change the default-profile assertion to:
 
@@ -175,7 +185,8 @@ Run:
 uv run pytest tests/unit/mcp/test_mcp_profiles.py tests/unit/mcp/test_review_tool_inventory.py -q
 ```
 
-Expected: PASS, with the exact eight-tool write inventory excluded from readonly.
+Expected: PASS, with the exact eight-tool write inventory excluded from readonly. The completeness
+equality proves every non-write tool in the full profile remains available.
 
 - [ ] **Step 5: Commit the profile boundary**
 
@@ -1231,6 +1242,12 @@ self.client = httpx.AsyncClient(
 )
 ```
 
+Update every existing happy-path client/tool fixture to set `settings.api.egress_mode` to
+`"allowlist"` and configure only the exact origin exercised by that fixture. BGI cases allow
+`https://autopvs1.bgi.com`; Ensembl cases allow the matching GRCh37 or GRCh38 origin. Do not add a
+global permissive test default: tests that omit policy configuration must continue proving the
+default-deny behavior.
+
 Replace each BGI `self.client.get` call with:
 
 ```python
@@ -1482,7 +1499,7 @@ git commit -m "docs(security): add patient-data router profile"
 - Modify: `autopvs1-link/CHANGELOG.md`
 - Modify: `genefoundry-router/pyproject.toml`
 - Modify: `genefoundry-router/CHANGELOG.md`
-- Modify: `genefoundry-router/ci/fleet-baseline.json`
+- Modify: `genefoundry-router/genefoundry_router/data/fleet-baseline.json`
 - Modify: GitHub issue comments for `pubtator-link#85`, `autopvs1-link#41`, router `#32/#33`
 
 - [ ] **Step 1: Prove each repository is green before version changes**
@@ -1643,9 +1660,9 @@ After the deployed readonly catalog is authoritative:
 
 ```bash
 uv run python scripts/snapshot_fleet.py --servers-file servers.yaml \
-  --output ci/fleet-baseline.json
+  --output genefoundry_router/data/fleet-baseline.json
 make ci-local
-git add ci/fleet-baseline.json
+git add genefoundry_router/data/fleet-baseline.json
 git commit -m "chore(ci): refresh fleet baseline after policy rollout"
 ```
 

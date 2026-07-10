@@ -95,6 +95,11 @@ and AutoPVS1's effective production logging, remain open below.
   compatible releases, run each full local CI gate, adversarially review, and merge.
 - Establish FastMCP `>=3.4.4,<4` as the fleet floor. Version 3.4.3 introduced the guard but
   broke proxy compatibility; 3.4.4 keeps the guard and makes protection explicit.
+- The 3.4.4 API was verified on 2026-07-10 in an isolated `uv` environment, independently of
+  this repository's pre-upgrade 3.4.2 lock. `FastMCP.http_app` accepts
+  `host_origin_protection: bool | "auto" | None`, `allowed_hosts: list[str] | None`, and
+  `allowed_origins: list[str] | None`. This isolated import/signature check is the prerequisite
+  for the red dependency-upgrade test; the old lock is not evidence against the target API.
 - Preserve full-SHA GitHub Action pins and review dependency changelogs for breaking or
   security-relevant behavior.
 

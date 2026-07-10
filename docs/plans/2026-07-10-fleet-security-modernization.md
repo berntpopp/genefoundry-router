@@ -72,9 +72,10 @@ Use this exact header and rows:
 | gencc-link | #20 | dependabot/github_actions/astral-sh/setup-uv-8.3.2 | pending | pending | pending | pending | pending | pending | n/a | open |
 | gencc-link | #21 | dependabot/uv/uv-42d6deb6a8 | pending | pending | pending | pending | pending | pending | n/a | open |
 | gnomad-link | #29 | dependabot/uv/uv-6350993ea2 | pending | pending | pending | pending | pending | pending | n/a | open |
-| gnomad-link | #30 | dependabot/github_actions/astral-sh/setup-uv-8.3.2 | pending | pending | pending | pending | pending | pending | n/a | open |
+| gnomad-link | #30 | dependabot/github_actions/astral-sh/setup-uv-8.3.1 | pending | pending | pending | pending | pending | pending | n/a | open |
 | autopvs1-link | #41 / router #32 | fix/security-egress-production | pending | pending | pending | pending | pending | pending | pending | open |
-| pubtator-link | #85 / router #33 | fix/write-boundary | pending | pending | pending | pending | pending | pending | pending | open |
+| pubtator-link | #85 | fix/write-boundary | pending | pending | pending | pending | pending | pending | pending | open |
+| genefoundry-router | router #33 | feat/pubtator-write-boundary | pending | pending | pending | pending | pending | pending | pending | open |
 | genefoundry-router | #31 | feat/untrusted-content-contract | pending | pending | pending | pending | pending | pending | pending | open |
 | genefoundry-router | #36 | fix/transport-runtime-drift | pending | pending | pending | pending | pending | pending | pending | open |
 | genefoundry-router | #35 | chore/phase5-tracker | pending | pending | pending | pending | pending | pending | pending | open |
@@ -83,6 +84,10 @@ Use this exact header and rows:
 | genereviews-link | #40 | feat/revision-variant-context | pending | pending | pending | pending | pending | pending | pending | open |
 | genereviews-link | #49 | spike/hybrid-annotation | pending | pending | pending | pending | pending | pending | report | open |
 ```
+
+The gnomAD #30 row records the existing Dependabot branch name (`setup-uv-8.3.1`). Refresh that
+branch's pinned action content to the accepted 8.3.2 target; Dependabot branch names are historical
+identifiers and are not renamed when their content is refreshed.
 
 Append one Phase 5 row each for ClinVar, GenCC, HPO, HGNC, MGI, Mondo, Orphanet, and MaveDB,
 plus one FastMCP guard row for each of the 21 backends.

@@ -65,6 +65,23 @@ For each of the 21 repositories, modify `pyproject.toml`, `uv.lock`, its package
 - Modify: `uv.lock`
 - Create: `tests/unit/test_fastmcp_transport_guard_api.py`
 
+The target API was independently verified on 2026-07-10 without changing this worktree:
+
+```bash
+uv run --isolated --with 'fastmcp==3.4.4' python - <<'PY'
+import inspect
+from fastmcp import FastMCP
+
+signature = inspect.signature(FastMCP.http_app)
+for name in ("host_origin_protection", "allowed_hosts", "allowed_origins"):
+    assert name in signature.parameters
+print(signature)
+PY
+```
+
+The installed 3.4.2 environment remains deliberately old so the repository contract test starts
+red. Do not confuse that expected red state with absence of the verified 3.4.4 API.
+
 - [ ] **Step 1: Write the failing import/signature contract test**
 
 ```python
@@ -151,6 +168,21 @@ def test_allowed_hosts_rejects_wildcard() -> None:
         RouterSettings(_env_file=None, GF_ALLOWED_HOSTS="*")
 ```
 
+Add CLI tests beside the existing insecure-public-bind tests:
+
+```python
+def test_public_bind_requires_nonempty_allowed_hosts() -> None:
+    assert is_missing_public_host_allowlist("0.0.0.0", [])
+
+
+def test_loopback_bind_allows_empty_allowed_hosts() -> None:
+    assert not is_missing_public_host_allowlist("127.0.0.1", [])
+```
+
+Invoke `run --host 0.0.0.0` with authenticated settings and an empty allowlist and assert exit 1
+before `build_app` or `uvicorn.run`. This is an application startup invariant, not only a Compose
+substitution check.
+
 - [ ] **Step 2: Write middleware unit tests before implementation**
 
 Replace `tests/unit/test_security.py` with tests covering one combined guard:
@@ -207,9 +239,11 @@ def test_present_disallowed_origin_returns_403() -> None:
 
 - [ ] **Step 3: Run the new tests and verify they fail**
 
-Run: `uv run pytest tests/unit/test_settings.py tests/unit/test_security.py -q`
+Run: `uv run pytest tests/unit/test_settings.py tests/unit/test_security.py tests/unit/test_cli.py -q`
 
 Expected: FAIL because `GF_ALLOWED_HOSTS` and `add_host_origin_validation` do not exist.
+The CLI test also fails because `is_missing_public_host_allowlist` and its startup refusal do not
+exist.
 
 - [ ] **Step 4: Add settings and the pure-ASGI combined guard**
 
@@ -249,6 +283,16 @@ def add_host_origin_validation(
         allowed_origins=allowed_origins,
     )
 ```
+
+Extend the existing CLI public-bind guard with:
+
+```python
+def is_missing_public_host_allowlist(host: str, allowed_hosts: list[str]) -> bool:
+    return host not in LOOPBACK_HOSTS and not allowed_hosts
+```
+
+In `run`, refuse a non-loopback bind when this predicate is true, regardless of authentication
+mode or `GF_ALLOW_INSECURE`. Empty hosts remain compatibility-safe only for loopback development.
 
 - [ ] **Step 5: Wire only the outer guard and explicitly disable the inner guard**
 
@@ -316,7 +360,7 @@ Update the Docker healthcheck in Task 12 to send `Host: genefoundry.org`; do not
 
 - [ ] **Step 8: Run focused and full router checks**
 
-Run: `uv run pytest tests/unit/test_settings.py tests/unit/test_security.py tests/integration/test_origin_app.py tests/integration/test_host_origin_app.py -q`
+Run: `uv run pytest tests/unit/test_settings.py tests/unit/test_security.py tests/unit/test_cli.py tests/integration/test_origin_app.py tests/integration/test_host_origin_app.py -q`
 
 Expected: all tests pass.
 
@@ -327,7 +371,7 @@ Expected: format, Ruff, LOC, mypy, unit, and integration checks pass.
 - [ ] **Step 9: Commit the router transport boundary**
 
 ```bash
-git add .env.example .env.docker.example genefoundry_router/config.py genefoundry_router/security.py genefoundry_router/server.py tests/unit/test_settings.py tests/unit/test_security.py tests/integration/test_origin_app.py tests/integration/test_host_origin_app.py
+git add .env.example .env.docker.example genefoundry_router/cli.py genefoundry_router/config.py genefoundry_router/security.py genefoundry_router/server.py tests/unit/test_cli.py tests/unit/test_settings.py tests/unit/test_security.py tests/integration/test_origin_app.py tests/integration/test_host_origin_app.py
 git commit -m "feat(security): enforce one outer Host and Origin boundary (#36)"
 ```
 
@@ -1239,23 +1283,29 @@ git commit -m "docs(security): record verified fleet transport guard rollout"
 
 ### Task 13: Open Reviewable Pull Requests Without Deploying
 
-**Remote mutation gate:** Stop here unless the operator explicitly authorizes pushes and PR creation.
+The operator has authorized pushes, PR creation, adversarial review, and merges for this wave.
 
 - [ ] **Step 1: Recheck every branch immediately before push**
 
 Require clean worktrees, green CI, no force push, and no commits outside the issue scope.
 
-- [ ] **Step 2: Push and open draft PRs after authorization**
+- [ ] **Step 2: Push and open focused draft PRs**
 
-Push each branch with `git push -u origin <branch>` and open a draft PR. Router PR title: `security: Host/Origin guard, runtime drift, and untrusted-content contract (#31, #36)`. Backend PR title: `security: enable FastMCP 3.4.4 strict Host/Origin guard`.
+Push each branch with `git push -u origin <branch>` and open a draft PR. Router issue #36 uses
+`fix/transport-runtime-drift` and contains Tasks 1-6 only. After #36 merges, router issue #31 uses
+`feat/untrusted-content-contract` and contains Tasks 7-10. Task 11 backend guard PRs are independent
+of #31 and may proceed in parallel after their dependency/API contract is green. Backend PR title:
+`security: enable FastMCP 3.4.4 strict Host/Origin guard`.
 
 - [ ] **Step 3: Require remote checks**
 
 Each PR must pass quality, typecheck, tests, dependency review, CodeQL, container scan, and SBOM checks present in that repository. Do not merge a PR with skipped required checks.
 
-- [ ] **Step 4: Merge in dependency order after authorization**
+- [ ] **Step 4: Merge in dependency order**
 
-Merge order: FastMCP dependency/API contracts; backend strict guards; router outer guard/runtime drift in warn mode; PubTator fencing; router fencing contract. Production enforcement remains gated by Task 14.
+Merge order: FastMCP dependency/API contracts; backend strict guards; router #36 outer guard/runtime
+drift in warn mode; PubTator fencing; router #31 untrusted-content contract. Production enforcement
+remains gated by Task 14.
 
 ---
 
