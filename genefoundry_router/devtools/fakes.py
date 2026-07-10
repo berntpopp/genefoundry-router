@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 from fastmcp import FastMCP
 from fastmcp.tools import Tool, ToolResult
@@ -94,9 +94,13 @@ def make_backend_from_spec(namespace: str, spec: BackendSpec) -> FastMCP:
     return server
 
 
-def load_manifest(path: str | Path) -> Manifest:
+def load_manifest(source: str | Path | BinaryIO) -> Manifest:
     """Load and validate the committed fleet manifest."""
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if isinstance(source, (str, Path)):
+        raw: str | bytes = Path(source).read_text(encoding="utf-8")
+    else:
+        raw = source.read()
+    data = json.loads(raw)
     return Manifest.model_validate(data)
 
 

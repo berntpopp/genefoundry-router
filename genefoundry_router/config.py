@@ -53,6 +53,8 @@ class RouterSettings(BaseSettings):
 
     # Discovery
     GF_POLL_INTERVAL: int = 0  # seconds; 0 disables the polling re-list
+    GF_DRIFT_MODE: Literal["off", "warn", "enforce"] = "warn"
+    GF_DRIFT_BASELINE: str | None = None
 
     # Transport security (R1.4 — MCP Origin/DNS-rebinding MUST)
     # NoDecode: suppress pydantic-settings' JSON pre-decode of complex env values so the

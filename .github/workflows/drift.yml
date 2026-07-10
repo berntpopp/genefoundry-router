@@ -43,7 +43,7 @@ jobs:
         id: drift
         run: |
           set +e
-          uv run genefoundry-router drift --manifest ci/fleet-baseline.json \
+          uv run genefoundry-router drift \
             > drift_output.txt 2>&1
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           cat drift_output.txt

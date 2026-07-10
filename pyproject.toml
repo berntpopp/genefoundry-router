@@ -65,6 +65,9 @@ Issues = "https://github.com/berntpopp/genefoundry-router/issues"
 [tool.hatch.build.targets.wheel]
 packages = ["genefoundry_router"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"genefoundry_router/data/fleet-baseline.json" = "genefoundry_router/data/fleet-baseline.json"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"

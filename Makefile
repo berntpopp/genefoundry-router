@@ -118,14 +118,15 @@ test-e2e: ## Run the offline end-to-end fake-fleet tests
 	uv run pytest tests/e2e -q
 
 snapshot-fleet: ## Refresh the fleet manifest from live backends (online)
-	uv run python scripts/snapshot_fleet.py --captured-at $$(date -u +%FT%TZ)
+	uv run python scripts/snapshot_fleet.py --out tests/fixtures/fleet_manifest.json \
+		--captured-at $$(date -u +%FT%TZ)
 
 snapshot-catalog: ## Regenerate the discoverability benchmark catalog from the live fleet (online)
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_catalog.py
 
-snapshot-baseline: ## Re-pin the drift baseline (ci/fleet-baseline.json) from the live fleet (online)
+snapshot-baseline: ## Re-pin the packaged drift baseline from the live fleet (online)
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_fleet.py \
-		--out ci/fleet-baseline.json --captured-at $$(date -u +%FT%TZ)
+		--out genefoundry_router/data/fleet-baseline.json --captured-at $$(date -u +%FT%TZ)
 
 ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
 

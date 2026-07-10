@@ -76,7 +76,7 @@ async def _run(servers_file: str, out: Path, captured_at: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Refresh the fake-fleet manifest.")
     parser.add_argument("--servers-file", default="servers.yaml")
-    parser.add_argument("--out", default="tests/fixtures/fleet_manifest.json")
+    parser.add_argument("--out", default="genefoundry_router/data/fleet-baseline.json")
     parser.add_argument("--captured-at", required=True, help="ISO timestamp (date -u +%%FT%%TZ)")
     args = parser.parse_args()
     asyncio.run(_run(args.servers_file, Path(args.out), args.captured_at))

@@ -406,21 +406,26 @@ async def _snapshot_live(
 @app.command()
 def drift(
     servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
-    manifest: str = typer.Option(
-        "tests/fixtures/fleet_manifest.json", help="Reviewed, pinned fleet manifest."
-    ),
+    manifest: str | None = typer.Option(None, help="Reviewed, pinned fleet manifest."),
 ) -> None:
     """Detect tool-definition drift vs the pinned manifest (rug-pull / tool-poisoning tripwire).
 
     Exits non-zero on any added/removed/changed tool so it can run in CI/cron. Refresh the
     pinned manifest with ``make snapshot-fleet`` only after reviewing the change.
     """
+    from importlib.resources import as_file, files
     from pathlib import Path
 
     from genefoundry_router.devtools.fakes import load_manifest
     from genefoundry_router.drift import diff_manifests
 
-    pinned = load_manifest(Path(manifest))
+    configured = manifest or RouterSettings().GF_DRIFT_BASELINE
+    if configured is not None:
+        pinned = load_manifest(Path(configured))
+    else:
+        resource = files("genefoundry_router.data").joinpath("fleet-baseline.json")
+        with as_file(resource) as path:
+            pinned = load_manifest(path)
     live, unreachable = asyncio.run(_snapshot_live(load_registry(servers_file, os.environ)))
     # Exclude unreachable backends from BOTH sides so an outage isn't read as "removed".
     pinned_reachable = pinned.model_copy(

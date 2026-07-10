@@ -16,7 +16,7 @@ def test_drift_ok_when_live_matches_pinned(monkeypatch):
         return load_manifest(PINNED), set()
 
     monkeypatch.setattr("genefoundry_router.cli._snapshot_live", fake)
-    result = runner.invoke(app, ["drift"])
+    result = runner.invoke(app, ["drift", "--manifest", str(PINNED)])
     assert result.exit_code == 0, result.output
     assert "no tool-definition drift" in result.output.lower()
 
@@ -30,7 +30,7 @@ def test_changed_tool_exits_1(monkeypatch):
         return live, set()
 
     monkeypatch.setattr("genefoundry_router.cli._snapshot_live", fake)
-    result = runner.invoke(app, ["drift"])
+    result = runner.invoke(app, ["drift", "--manifest", str(PINNED)])
     assert result.exit_code == 1
     assert "CHANGED" in result.output
 
@@ -46,7 +46,7 @@ def test_unreachable_is_not_drift_exits_2(monkeypatch):
         return live, {gone}
 
     monkeypatch.setattr("genefoundry_router.cli._snapshot_live", fake)
-    result = runner.invoke(app, ["drift"])
+    result = runner.invoke(app, ["drift", "--manifest", str(PINNED)])
     assert result.exit_code == 2  # availability, not a rug-pull
     assert "UNREACHABLE" in result.output
     assert "REMOVED" not in result.output  # the unreachable backend is NOT reported as removed
@@ -63,5 +63,16 @@ def test_drift_takes_precedence_over_unreachable(monkeypatch):
         return live, {gone}
 
     monkeypatch.setattr("genefoundry_router.cli._snapshot_live", fake)
-    result = runner.invoke(app, ["drift"])
+    result = runner.invoke(app, ["drift", "--manifest", str(PINNED)])
     assert result.exit_code == 1  # security beats availability
+
+
+def test_drift_defaults_to_packaged_baseline(monkeypatch) -> None:
+    baseline = Path("genefoundry_router/data/fleet-baseline.json")
+
+    async def fake(_registry):
+        return load_manifest(baseline), set()
+
+    monkeypatch.setattr("genefoundry_router.cli._snapshot_live", fake)
+    result = runner.invoke(app, ["drift"])
+    assert result.exit_code == 0, result.output
