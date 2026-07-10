@@ -5,7 +5,9 @@ gateway must do it: a backend that changes a tool's description or schema *after
 reviewed is the canonical "rug pull" (and the channel for tool-poisoning instructions).
 This module fingerprints each complete security-relevant tool definition and diffs a live
 snapshot against the reviewed baseline packaged with the router. Surface any drift loudly;
-treat ``changed`` as the highest-signal event.
+the runtime/CI pin is ``genefoundry_router/data/fleet-baseline.json`` while
+``tests/fixtures/fleet_manifest.json`` remains the offline fake-fleet fixture. Treat
+``changed`` as the highest-signal event.
 """
 
 from __future__ import annotations

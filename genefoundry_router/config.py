@@ -52,7 +52,7 @@ class RouterSettings(BaseSettings):
     GF_REWRITE_HINTS: bool = True
 
     # Discovery
-    GF_POLL_INTERVAL: int = 0  # seconds; 0 disables the polling re-list
+    GF_POLL_INTERVAL: float = 0  # seconds; 0 disables the polling re-list
     GF_DRIFT_MODE: Literal["off", "warn", "enforce"] = "warn"
     GF_DRIFT_BASELINE: str | None = None
 

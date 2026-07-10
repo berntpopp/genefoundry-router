@@ -8,6 +8,7 @@ from genefoundry_router.observability import (
     set_backend_up,
 )
 from genefoundry_router.registry import BackendDef
+from genefoundry_router.runtime_drift import RuntimeDriftGuard
 
 
 def test_metrics_endpoint_exposes_prometheus_text():
@@ -77,3 +78,24 @@ def test_health_remains_public_when_metrics_token_set():
     resp = TestClient(app).get("/health")
     assert resp.status_code == 200
     assert resp.json()["service"] == "genefoundry"
+
+
+def test_health_and_metrics_expose_runtime_drift() -> None:
+    guard = RuntimeDriftGuard({}, "warn")
+    guard.evaluate(
+        {"gnomad_new_tool": "digest"},
+        phase="startup",
+        unreachable=set(),
+    )
+    app = FastAPI()
+    register_health(app, [], drift_guard=guard)
+    register_metrics(app)
+    client = TestClient(app)
+
+    body = client.get("/health").json()
+    metrics = client.get("/metrics").text
+
+    assert body["status"] == "degraded"
+    assert body["drift"]["added"] == ["gnomad_new_tool"]
+    assert "genefoundry_drift_added 1.0" in metrics
+    assert "genefoundry_drift_last_check_timestamp_seconds" in metrics
