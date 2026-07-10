@@ -1,0 +1,199 @@
+# Completeness inventory for Response-Envelope Standard v1.1.
+# Replace audit sentinels only in a PR containing exact source and hostile-vector evidence.
+version: 1.1
+defaults:
+  max_text_bytes: 2097152
+  max_objects: 128
+  max_depth: 8
+  max_total_text_bytes: 8388608
+backends:
+  - backend: pubtator
+    tool: get_publication_passages
+    json_pointers: [/passages/*/text]
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-literature-v1
+    classification: untrusted-text
+    evidence: pubtator_link/models/publication_passages.py:MCPPublicationPassage.text
+
+  - backend: autopvs1
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: autopvs1_link/mcp/tools/search_tool.py
+  - backend: clingen
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: clingen_link/mcp/tools/erepo.py
+  - backend: clinvar
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: clinvar_link/mcp/tools/variants.py
+  - backend: gencc
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: gencc_link/mcp/tools/assertions.py
+  - backend: genereviews
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: genereview_link/mcp/tools.py
+  - backend: gnomad
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: gnomad_link/mcp/tools/variants.py
+  - backend: gtex
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: gtex_link/mcp/tools/search_fetch.py
+  - backend: hgnc
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: hgnc_link/mcp/tools/genes.py
+  - backend: hpo
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: hpo_link/mcp/tools/annotations.py
+  - backend: litvar
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: litvar_link/mcp/tools/variant.py
+  - backend: mavedb
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: mavedb_link/mcp/tools/score_sets.py
+  - backend: metadome
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: metadome_link/mcp/tools/domains.py
+  - backend: mgi
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: mgi_link/mcp/tools/alleles.py
+  - backend: mondo
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: mondo_link/mcp/tools/diseases.py
+  - backend: orphanet
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: orphanet_link/mcp/tools/diseases.py
+  - backend: panelapp
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: panelapp_link/mcp/tools/panels.py
+  - backend: spliceai
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: spliceailookup_link/mcp/tools/spliceai.py
+  - backend: stringdb
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: stringdb_link/mcp/tools.py
+  - backend: uniprot
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: uniprot_link/mcp/tools/proteins.py
+  - backend: vep
+    tool: __source_audit_required__
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: audit-pending
+    evidence: vep_link/mcp/tools/annotate.py

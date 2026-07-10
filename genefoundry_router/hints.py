@@ -50,6 +50,8 @@ def rewrite_tool_refs(obj: Any, ns: str, namespaces: set[str]) -> int:
     """
     count = 0
     if isinstance(obj, dict):
+        if obj.get("kind") == "untrusted_text":
+            return 0
         for key, value in obj.items():
             if (
                 key in TOOL_REF_KEYS

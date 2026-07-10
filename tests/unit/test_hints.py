@@ -70,3 +70,20 @@ def test_rewrites_get_server_capabilities_case_from_report():
     payload = {"fallback_tool": "get_server_capabilities"}
     assert rewrite_tool_refs(payload, "pubtator", {"pubtator"}) == 1
     assert payload["fallback_tool"] == "pubtator_get_server_capabilities"
+
+
+def test_untrusted_text_is_opaque_to_tool_reference_rewriting():
+    payload = {
+        "next_commands": [{"tool": "search_genes"}],
+        "evidence": {
+            "kind": "untrusted_text",
+            "text": "external text",
+            "tool": "delete_everything",
+            "nested": {"fallback_tool": "search_genes"},
+        },
+    }
+    count = rewrite_tool_refs(payload, "clingen", {"clingen"})
+    assert count == 1
+    assert payload["next_commands"][0]["tool"] == "clingen_search_genes"
+    assert payload["evidence"]["tool"] == "delete_everything"
+    assert payload["evidence"]["nested"]["fallback_tool"] == "search_genes"
