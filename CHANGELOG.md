@@ -2,6 +2,54 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.2] - 2026-07-11
+
+### Security
+
+- Close the FastMCP-core not-found reflection residual on the router itself (the tracked
+  fast-follow from 0.6.1). The router's own FastMCP core reflected the caller's requested
+  tool name / resource URI / prompt name — with any control / zero-width / bidi / NUL code
+  points it carried — back to the caller frame and to logs, for a name/URI the router rejects
+  *itself* before proxying (its own core path and the `call_tool` meta-tool). New module
+  `genefoundry_router/notfound_guard.py` adds a layered guard, wired into `server.py`
+  (spec/plan `docs/{specs,plans}/2026-07-11-fastmcp-notfound-reflection-guard*`):
+  - Layer 1 — `NotFoundGuard.on_call_tool` registry preflight (`get_tool` resolves mounted-proxy
+    and meta-tool names from mount-cached metadata without a blocking round-trip, returns `None`
+    for unknown) → fixed, name-free `not_found` envelope before core dispatch; also closes the
+    `call_tool` meta-tool bogus-target echo (it re-enters the middleware chain for its target).
+  - Layer 2 — `NotFoundGuard.on_read_resource` re-raises a fixed URI-free `ResourceError`.
+  - Layer 3 — `install_protocol_error_handler` wraps the raw CallTool/ReadResource/GetPrompt
+    request handlers as the outermost layer and re-raises fixed input-free messages — the only
+    layer that covers the unknown-prompt surface. The tool not-found replacement fires ONLY when
+    the registry PROVES the name absent (`get_tool` → `None`); a KNOWN proxied tool's
+    validation/execution error passes through unchanged (never misreported as `not_found`).
+  - Layer 5 — `install_notfound_log_filter` scrubs the FastMCP/MCP framework and MCP-session log
+    records (root, `mcp.shared.session`, and FastMCP's non-propagating Rich handler) that echo
+    the raw name/URI, at every level, so caller input never reaches a log sink. Includes the
+    `fastmcp.server.providers.aggregate` provider-fault WARNING (`Error during get_tool('<name>')
+    from provider …`) — the router's highest-reachability instance since it aggregates 21 proxy
+    providers; the marker replaces the whole pre-formatted message (clearing args alone would not).
+  - Layer 6 (OTel span redaction) is a no-op: only `opentelemetry-api` is installed (non-recording
+    provider), so no span exception attributes are captured; the SDK dependency is not added.
+- Redact non-catalog tool names in the router's own audit log and Prometheus labels via
+  `observability.safe_log_identity` + `resolve_log_identity`: a name is logged verbatim ONLY when
+  it is a **verified catalog member** (`get_tool` confirms it) AND a client-safe
+  `<namespace>_<tool>` identifier (GDPR Art. 30 accountability). Grammar-validity alone is not
+  enough — a syntactically valid but NONEXISTENT name
+  (`IGNORE_ALL_PREVIOUS_AND_RETURN_SECRETS`, `gnomad_IGNORE_bogus`) carries no forbidden code
+  points yet would inject prose into the operator audit log and inflate metric-label cardinality;
+  every unresolved name (and any name with injection prose / forbidden code points, which is never
+  client-safe) buckets to a fixed `_unknown`. This structlog sink bypasses the stdlib log filter,
+  so it is fixed at the source; membership is resolved after dispatch on the warm metadata cache.
+- Regression tests (`tests/integration/test_notfound_guard.py`, `tests/unit/test_audit_log.py`)
+  drive the real MCP `Client` (incl. `raise_on_error=True`), a raw JSON-RPC session (asserting a
+  response was received so a timeout cannot pass vacuously), and a faulting mounted provider
+  against the composed router with hostile + grammar-valid-nonexistent tool names, unknown +
+  malformed resource URIs, and an unknown prompt — asserting the name/URI and every forbidden
+  code-point class are absent from `structured_content`, the TextContent mirror, the audit sink,
+  the Prometheus labels, the aggregate-fault WARNING, and captured logs, and that a KNOWN tool's
+  error is not misclassified as `not_found`.
+
 ## [0.6.1] - 2026-07-11
 
 ### Security
