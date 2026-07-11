@@ -20,7 +20,7 @@ from prometheus_client import (
 )
 from starlette.responses import JSONResponse, Response
 
-from genefoundry_router.registry import BackendDef
+from genefoundry_router.registry import BackendDef, is_client_safe_name
 
 
 class DriftState(Protocol):
@@ -103,6 +103,51 @@ def namespace_tool_counts(tool_names: list[str]) -> dict[str, int]:
             ns = name.split("_", 1)[0]
             counts[ns] = counts.get(ns, 0) + 1
     return counts
+
+
+_UNKNOWN_IDENTITY = ("_unknown", "_unknown")
+
+
+def safe_log_identity(name: str, resolved: bool) -> tuple[str, str]:
+    """Return a ``(tool, namespace)`` pair safe to write to a log / metric sink.
+
+    A name is logged verbatim ONLY when it is a **verified catalog member**
+    (``resolved`` — the router's registry actually holds this tool) AND a client-safe
+    ``<namespace>_<tool>`` identifier. Grammar-validity alone is NOT enough: a caller can
+    invoke a syntactically valid but NONEXISTENT name
+    (``IGNORE_ALL_PREVIOUS_AND_RETURN_SECRETS``, ``gnomad_IGNORE_bogus``) that carries no
+    forbidden code points yet injects instruction prose into the operator audit log and
+    inflates Prometheus label cardinality. Any UNRESOLVED name (and any name carrying
+    injection prose / forbidden code points, which is never client-safe) is bucketed to a
+    fixed ``_unknown`` placeholder for BOTH the audit sink and the metric labels. The
+    not-found guard answers such a call with a fixed, name-free envelope, so nothing of
+    operational value is lost by not logging the raw name.
+    """
+    if not resolved or not is_client_safe_name(name):
+        return _UNKNOWN_IDENTITY
+    namespace = name.split("_", 1)[0] if "_" in name else "_root"
+    return name, namespace
+
+
+async def resolve_log_identity(context: Any) -> tuple[str, str]:
+    """Resolve ``(tool, namespace)`` for logging, confirming catalog membership.
+
+    Confirms the requested name is a registered tool via the router's own
+    ``get_tool`` (the catalog authority: it returns ``None`` for any unresolved name,
+    instantly, without a blocking round-trip on the warm post-dispatch cache). Any
+    unresolved / unconfirmable name is bucketed to ``_unknown`` by
+    :func:`safe_log_identity`. Call in the post-``call_next`` phase so the lookup reuses
+    the not-found guard's already-warmed metadata cache.
+    """
+    raw = getattr(getattr(context, "message", None), "name", "") or ""
+    resolved = False
+    server = getattr(getattr(context, "fastmcp_context", None), "fastmcp", None)
+    if server is not None and isinstance(raw, str) and raw:
+        try:
+            resolved = await server.get_tool(raw) is not None
+        except Exception:
+            resolved = False  # cannot confirm membership → treat as unresolved
+    return safe_log_identity(raw, resolved)
 
 
 def configure_logging(level: str = "INFO") -> None:
@@ -222,24 +267,26 @@ class AuditLogMiddleware(Middleware):
     """
 
     async def on_call_tool(self, context: MiddlewareContext, call_next):  # type: ignore[no-untyped-def]
-        name = getattr(context.message, "name", "") or ""
-        namespace = name.split("_", 1)[0] if "_" in name else "_root"
         start = time.perf_counter()
         try:
             result = await call_next(context)
         except Exception as exc:
+            # Resolve AFTER dispatch (warm catalog cache): only a verified registered
+            # tool is logged verbatim; any unresolved/hostile name buckets to _unknown.
+            tool, namespace = await resolve_log_identity(context)
             audit_log.info(
                 "tool_call",
-                tool=name,
+                tool=tool,
                 namespace=namespace,
                 outcome="error",
                 error_type=type(exc).__name__,  # class only — never the message (may hold PII)
                 elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
             )
             raise
+        tool, namespace = await resolve_log_identity(context)
         audit_log.info(
             "tool_call",
-            tool=name,
+            tool=tool,
             namespace=namespace,
             outcome="ok",
             elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
@@ -255,13 +302,16 @@ class MetricsMiddleware(Middleware):
     """
 
     async def on_call_tool(self, context: MiddlewareContext, call_next):  # type: ignore[no-untyped-def]
-        name = getattr(context.message, "name", "") or ""
-        namespace = name.split("_", 1)[0] if "_" in name else "_root"
-        if name in ("search_tools", "call_tool"):
+        raw = getattr(context.message, "name", "") or ""
+        if raw in ("search_tools", "call_tool"):
             SEARCH_HITS.inc()
         start = time.perf_counter()
         try:
             return await call_next(context)
         finally:
+            # Resolve AFTER dispatch: an unresolved/hostile name buckets to "_unknown" so
+            # it can neither inflate label cardinality nor carry prose/code points into a
+            # Prometheus label; a verified registered tool keeps its real namespace.
+            _, namespace = await resolve_log_identity(context)
             TOOL_CALLS.labels(namespace=namespace).inc()
             TOOL_LATENCY.labels(namespace=namespace).observe(time.perf_counter() - start)

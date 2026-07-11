@@ -24,6 +24,11 @@ from genefoundry_router.hints import NamespaceHintMiddleware
 from genefoundry_router.instructions import build_instructions
 from genefoundry_router.limits import add_request_limits
 from genefoundry_router.normalization import apply_normalizations
+from genefoundry_router.notfound_guard import (
+    NotFoundGuard,
+    install_notfound_log_filter,
+    install_protocol_error_handler,
+)
 from genefoundry_router.observability import (
     AuditLogMiddleware,
     MetricsMiddleware,
@@ -74,6 +79,12 @@ def build_server(
         # fleet's self-healing hints resolve through call_tool. Enabled backends only.
         namespaces = {b.namespace for b in registry if b.enabled}
         server.add_middleware(NamespaceHintMiddleware(namespaces))
+    # FastMCP-core not-found reflection guard (Response-Envelope v1.1 fast-follow).
+    # Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary). Registered LAST
+    # so it is the innermost on_call_tool hook — it preflights `get_tool` just before core
+    # dispatch, and (because the call_tool meta-tool re-enters the chain) also covers a
+    # bogus meta-tool target. Layers 3 + 5 are installed below, after tools are mounted.
+    server.add_middleware(NotFoundGuard())
     for backend in registry:
         if not backend.enabled:
             log.info("backend_skipped", backend=backend.name, reason="disabled")
@@ -85,6 +96,14 @@ def build_server(
         register_backend(server, backend, proxy_target=target, timeout=settings.GF_BACKEND_TIMEOUT)
     if enable_search:
         apply_tool_search(server, settings, always_visible=resolve_entrypoints(registry))
+    # Layer 3 (protocol-handler backstop) + Layer 5 (log-scrub filter) of the not-found
+    # guard. Installed here — after every proxy mount — so the CallTool/ReadResource/
+    # GetPrompt handlers exist. The low-level request-handler callables are stable across
+    # the later `add_transform` (tool-search), so this wrapper survives the app path where
+    # search is applied in the lifespan. The log filter attaches to FastMCP/MCP source
+    # loggers (incl. the non-propagating Rich handler) so caller input never reaches a sink.
+    install_protocol_error_handler(server)
+    install_notfound_log_filter()
     return server
 
 
