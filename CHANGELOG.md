@@ -2,6 +2,25 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.5.0] - 2026-07-11
+
+### Security
+
+- Add a patient-data / on-prem deployment profile (`docker/.env.patient-data.example`) that
+  disables AutoPVS1 by omitting its backend URL, preventing third-country transfer of possibly
+  Art. 9 variant data to `autopvs1.bgi.com` (router #32 / autopvs1-link #41). The profile
+  mandates edge auth and drift enforcement and documents the required network-level egress deny.
+- Gate the untrusted-text conformance inventory against the `servers.yaml` registry so a newly
+  federated backend cannot ship a free-text tool without an explicit untrusted-content
+  classification (Response-Envelope Standard v1.1 §9.2).
+
+### Documentation
+
+- Complete the untrusted-text source audit: every backend inventory row now names its exact
+  free-text tool(s) + JSON pointer(s) with model evidence, or is classified `no-untrusted-text`.
+- Add the fleet-modernization reconciliation ledger reconciling merged state against verified
+  git reality with the remaining-work matrix.
+
 ## [0.4.0] - 2026-07-10
 
 ### Security
