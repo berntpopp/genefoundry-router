@@ -106,10 +106,29 @@ as a primary fenced field, just outside the typed `untrusted_text` object. Backe
 a raw upstream error body verbatim into a caller-visible message. They MUST strip the forbidden
 code points listed under Unicode sanitation from every caller-visible message and error string,
 and SHOULD prefer a fixed, status-keyed message over interpolating upstream detail (the raw body
-MUST NOT be written to a log sink either, since it may carry caller-supplied PII). litvar-link and
-mavedb-link have completed this hardening as part of v1.1 adoption; a fleet-wide sweep of the
-remaining backends' error paths is tracked as a follow-up and does not block primary-surface v1.1
-adoption.
+MUST NOT be written to a log sink either, since it may carry caller-supplied PII).
+
+**Status: COMPLETE fleet-wide as of 2026-07-11.** All 21 federated backends have hardened their
+error paths (litvar-link and mavedb-link during v1.1 adoption; the remaining 19 in the
+error-message-sanitation sweep, `docs/specs/2026-07-11-error-message-sanitation-fleet-sweep-design.md`).
+Released patches: uniprot 3.0.1, clingen 3.0.1, spliceai 3.0.3, stringdb 4.0.1, metadome 0.1.4,
+gtex 3.0.1, gnomad 8.0.1, vep 1.0.4, genereviews 5.0.1, gencc 0.7.1, pubtator 6.1.1, orphanet 0.3.1,
+panelapp 0.5.1, clinvar 0.4.1, mgi 0.5.1, autopvs1 4.0.1, hgnc 2.0.1, mondo 0.3.1, hpo 0.3.1.
+Every merge was gated by an adversarial Codex review that drove the real MCP tools with hostile
+upstream 4xx/5xx/timeout bodies and hostile inputs (injection prose + zero-width/bidi/NUL). The
+sweep established, beyond code-point stripping, that caller-visible **structured** fields (`field`,
+`allowed_values`, `hint`, `candidates`, `withdrawn_status`, `replaced_by`, batch/partial-success
+rows, `_meta.next_commands` arguments) MUST be built only from fixed strings, closed enums, or
+grammar-validated identifiers — because instruction-shaped prose carries no forbidden code points,
+so sanitation alone does not neutralize it. Bootstrap/refresh/ingest error paths sever the upstream
+artifact body (`BadGzipFile`/decode errors) and log only the exception class.
+
+> **Fast-follow (tracked separately):** FastMCP-core *not-found* surfaces reflect the caller's own
+> requested name back — an unknown-tool-name or unknown-resource-URI (and a malformed-URI pydantic
+> `-32602`) can echo caller-supplied text before backend middleware runs. This is a caller
+> self-reflection surface (not the upstream external-data residual closed above); a uniform
+> middleware pattern (tool/resource preflight → fixed name-free error; OTel/handler redaction) is
+> tracked as a small dedicated fleet sweep. Several backends already carry the fix.
 
 ## Adoption and compatibility
 

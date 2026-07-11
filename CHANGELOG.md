@@ -2,6 +2,26 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.1] - 2026-07-11
+
+### Security
+
+- Mark the Response-Envelope Standard v1.1 §"Error-message sanitation (secondary surface)" as
+  **COMPLETE fleet-wide**: the tracked upstream error-path text-leak residual is closed on all
+  21 backends. The 19 remaining backends (litvar/mavedb were done during v1.1 adoption) each
+  patch-released an error-message-sanitation fix that (a) severs upstream API 4xx/5xx bodies and
+  transport/decode exception text from caller-visible messages (fixed status-keyed messages),
+  (b) builds caller-visible structured error fields only from fixed strings / closed enums /
+  grammar-validated identifiers (instruction-shaped prose carries no forbidden code points, so
+  code-point sanitation alone is insufficient), and (c) keeps raw bodies/exception text out of
+  log sinks. Every merge was gated by an adversarial Codex (gpt-5.6-sol xhigh) review driving the
+  real MCP tools with hostile upstream bodies and inputs. Spec + plan added under
+  `docs/specs/2026-07-11-error-message-sanitation-fleet-sweep-design.md` and
+  `docs/plans/2026-07-11-error-message-sanitation-fleet-sweep.md`.
+- Fast-follow (tracked, out of scope here): FastMCP-core not-found surfaces (unknown-tool-name /
+  unknown-resource-URI reflection) echo the caller's own requested name — a uniform middleware
+  preflight/redaction sweep is tracked separately; several backends already carry the fix.
+
 ## [0.6.0] - 2026-07-11
 
 ### Security
