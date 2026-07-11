@@ -1,5 +1,15 @@
 # Completeness inventory for Response-Envelope Standard v1.1.
-# Replace audit sentinels only in a PR containing exact source and hostile-vector evidence.
+#
+# Source audit COMPLETE 2026-07-10 (see docs/plans/2026-07-10-fleet-modernization-reconciliation.md
+# §5): every row now names the exact free-text tool(s) + JSON pointer(s) or is classified
+# no-untrusted-text with model evidence. `compatibility` tracks adoption:
+#   breaking-v1.1        = typed untrusted_text object shipped + hostile test passing (pubtator)
+#   pending-v1.1         = untrusted-text surface identified; backend adoption (typed object +
+#                          hostile-vector test) still owed
+#   n/a-no-untrusted-text = verified: returns only structured/numeric/identifier/enum data
+# A backend becomes v1.1 conformant only when its hostile test passes and its output schema
+# exposes the literal typed object. `raw_sha256`/provenance are emitted by the backend, never
+# the router. The router treats any `kind: untrusted_text` subtree as opaque (hints.py).
 version: 1.1
 defaults:
   max_text_bytes: 2097152
@@ -16,184 +26,282 @@ backends:
     test_vector: hostile-literature-v1
     classification: untrusted-text
     evidence: pubtator_link/models/publication_passages.py:MCPPublicationPassage.text
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released 6.0.0
+
+  - backend: genereviews
+    tool: search_passages
+    json_pointers: [/results/*/text, /results/*/snippet]
+    surfaces:
+      - {tool: search_passages, pointer: /results/*/text}
+      - {tool: search_passages, pointer: /results/*/snippet}
+      - {tool: get_passage, pointer: /passage/text}
+      - {tool: get_passages_batch, pointer: /passages/*/text}
+      - {tool: get_chapter_section, pointer: /content}
+      - {tool: get_fulltext, pointer: /text}
+      - {tool: get_abstract, pointer: /text}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-literature-v1
+    classification: untrusted-text
+    evidence: genereview_link/models/genereview_models.py:RankedPassage.text/snippet; PassageDetail.text
+    existing_sanitization: genereview_link/api/eutils_client.py:1286 _clean_content (live path only; not a fence)
+
+  - backend: uniprot
+    tool: get_protein
+    json_pointers: [/function]
+    surfaces:
+      - {tool: get_protein, pointer: /function}
+      - {tool: get_protein_features, pointer: /features/*/description}
+      - {tool: get_protein_diseases, pointer: /diseases/*/involvement}
+      - {tool: get_protein_variants, pointer: /variants/*/description}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: uniprot_link/services/shaping.py:190,270,288,341 (rdfs:comment literals)
+    existing_sanitization: none (SPARQL literal escaping is input-only)
+
+  - backend: hpo
+    tool: get_term
+    json_pointers: [/definition]
+    surfaces:
+      - {tool: get_term, pointer: /definition}
+      - {tool: search_terms, pointer: /results/*/definition}
+      - {tool: search_terms, pointer: /results/*/definition_snippet}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: hpo_link/services/shaping.py:165-170; hpo_link/data/repository.py:72
+    existing_sanitization: none
+
+  - backend: mondo
+    tool: get_disease
+    json_pointers: [/definition]
+    surfaces:
+      - {tool: get_disease, pointer: /definition}
+      - {tool: search_diseases, pointer: /results/*/definition}
+      - {tool: get_disease_batch, pointer: /results/*/definition}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: mondo_link/services/mondo_service.py:157; mondo_link/data/repository.py:86,150,180
+    existing_sanitization: ingest-time OBO cleanup only (_strip_definition); not a fence
+
+  - backend: orphanet
+    tool: get_disease
+    json_pointers: [/definition]
+    surfaces:
+      - {tool: get_disease, pointer: /definition}
+      - {tool: search_diseases, pointer: /results/*/definition}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: orphanet_link/services/orphanet_service.py:174; ingest parsers/product1.py:38
+    existing_sanitization: none
+
+  - backend: mavedb
+    tool: get_score_set
+    json_pointers: [/short_description, /abstract_text, /method_text]
+    surfaces:
+      - {tool: get_score_set, pointer: /short_description}
+      - {tool: get_score_set, pointer: /abstract_text}
+      - {tool: get_score_set, pointer: /method_text}
+      - {tool: get_experiment, pointer: /abstract_text}
+      - {tool: search_score_sets, pointer: /results/*/short_description}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: mavedb_link/services/shaping.py:174,222,223,241,261,262 (depositor prose)
+    existing_sanitization: none
+
+  - backend: clingen
+    tool: get_variant_interpretation
+    json_pointers: [/summary]
+    surfaces:
+      - {tool: get_variant_interpretation, pointer: /summary}
+      - {tool: get_gene_dosage, pointer: /*/haplo_description}
+      - {tool: get_gene_dosage, pointer: /*/triplo_description}
+      - {tool: get_cspec, pointer: /criteria/*/description}
+      - {tool: get_gene_validity, pointer: /assertions/*/disease_name}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: clingen_link/models/models.py:142,75,79,257,236,30
+    existing_sanitization: strip_html() on disease_name only (ERepo summary + CSpec description unfenced)
+
+  - backend: clinvar
+    tool: get_variant
+    json_pointers: [/traits/*/name]
+    surfaces:
+      - {tool: get_variant, pointer: /traits/*/name}
+      - {tool: get_gene_clinvar_summary, pointer: /top_traits/*/name}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: clinvar_link/models/variant_models.py:Trait.name (L26); gene_models.py:34
+    existing_sanitization: none (short submitter labels; lower surface than prose)
+
+  - backend: gencc
+    tool: get_gene_disease_assertion
+    json_pointers: [/assertion/submissions/*/notes]
+    surfaces:
+      - {tool: get_gene_disease_assertion, pointer: /assertion/submissions/*/notes}
+      - {tool: get_gene_curations, pointer: /*/submissions/*/notes}
+      - {tool: get_disease_curations, pointer: /*/submissions/*/notes}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: gencc_link/models/records.py:SubmissionRecord.notes (L117)
+    existing_sanitization: none (notes surfaces only at response_mode=full)
+
+  - backend: panelapp
+    tool: get_panel
+    json_pointers: [/panel/description]
+    surfaces:
+      - {tool: get_panel, pointer: /panel/description}
+      - {tool: search_panels, pointer: /panels/*/description}
+      - {tool: get_panel_genes, pointer: /entities/*/phenotypes}
+      - {tool: get_panel_genes, pointer: /entities/*/evidence}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: panelapp_link/services/shaping.py:109,175,176 (curator prose)
+    existing_sanitization: none (standard/full modes only)
+
+  - backend: litvar
+    tool: search_genetic_variants
+    json_pointers: [/results/*/match]
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: litvar_link/models/endpoint_specific.py:AutocompleteVariantItem.match (L55)
+    existing_sanitization: compact allowlist drops it; full-mode HTML snippet unstripped
+
+  - backend: gnomad
+    tool: get_clinvar_variant_details
+    json_pointers: [/submissions/*/conditions/*/name, /submissions/*/submitter_name]
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: gnomad_link/models/clinvar_models.py:ClinVarCondition.name (L9), ClinVarSubmission.submitter_name (L19)
+    existing_sanitization: none (frequency/constraint output is numeric; ClinVar passthrough only)
+
+  - backend: stringdb
+    tool: get_functional_annotations
+    json_pointers: [/annotations/*/description]
+    surfaces:
+      - {tool: get_functional_annotations, pointer: /annotations/*/description}
+      - {tool: compute_functional_enrichment, pointer: /terms/*/description}
+      - {tool: resolve_protein_identifiers, pointer: /mappings/*/annotation}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: stringdb_link/models/responses.py:65-69,295-299,346-350
+    existing_sanitization: none (interaction scores numeric; descriptions are prose)
+
+  - backend: mgi
+    tool: get_mp_term
+    json_pointers: [/definition]
+    surfaces:
+      - {tool: get_mp_term, pointer: /definition}
+      - {tool: search_phenotype_terms, pointer: /results/*/definition}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: mgi_link/mcp/schemas.py:MP_TERM_SCHEMA.definition (L149)
+    existing_sanitization: none (repository FTS escaping is input-only)
+
+  - backend: gtex
+    tool: get_gene_information
+    json_pointers: [/data/*/description]
+    surfaces:
+      - {tool: get_gene_information, pointer: /data/*/description}
+      - {tool: search_genes, pointer: /data/*/description}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: pending-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: gtex_link/models/responses.py:Gene.description (L241)
+    existing_sanitization: none (low-risk GENCODE descriptor; reviewer may down-scope)
 
   - backend: autopvs1
-    tool: __source_audit_required__
-    json_pointers: []
+    tool: get_variant_pvs1_data
+    json_pointers: [/pvs1/criterion_description]
     max_text_bytes: 2097152
     max_objects: 128
     compatibility: pending-v1.1
     test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: autopvs1_link/mcp/tools/search_tool.py
-  - backend: clingen
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: clingen_link/mcp/tools/erepo.py
-  - backend: clinvar
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: clinvar_link/mcp/tools/variants.py
-  - backend: gencc
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: gencc_link/mcp/tools/assertions.py
-  - backend: genereviews
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: genereview_link/mcp/tools.py
-  - backend: gnomad
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: gnomad_link/mcp/tools/variants.py
-  - backend: gtex
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: gtex_link/mcp/tools/search_fetch.py
+    classification: untrusted-text
+    evidence: autopvs1_link/mcp/presenters/variant.py (PVS1 result scraped from autopvs1.bgi.com)
+    existing_sanitization: shape-validation fail-closed (UpstreamFormatError); low-trust provenance note; not a fence
+
   - backend: hgnc
-    tool: __source_audit_required__
+    tool: none
     json_pointers: []
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: hgnc_link/mcp/tools/genes.py
-  - backend: hpo
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: hpo_link/mcp/tools/annotations.py
-  - backend: litvar
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: litvar_link/mcp/tools/variant.py
-  - backend: mavedb
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: mavedb_link/mcp/tools/score_sets.py
-  - backend: metadome
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: metadome_link/mcp/tools/domains.py
-  - backend: mgi
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: mgi_link/mcp/tools/alleles.py
-  - backend: mondo
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: mondo_link/mcp/tools/diseases.py
-  - backend: orphanet
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: orphanet_link/mcp/tools/diseases.py
-  - backend: panelapp
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: panelapp_link/mcp/tools/panels.py
-  - backend: spliceai
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: spliceailookup_link/mcp/tools/spliceai.py
-  - backend: stringdb
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: stringdb_link/mcp/tools.py
-  - backend: uniprot
-    tool: __source_audit_required__
-    json_pointers: []
-    max_text_bytes: 2097152
-    max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: uniprot_link/mcp/tools/proteins.py
+    compatibility: n/a-no-untrusted-text
+    test_vector: none
+    classification: no-untrusted-text
+    evidence: hgnc_link/mcp/schemas.py:GENE_SCHEMA (name = curated approved symbol; IDs/enums only)
+    existing_sanitization: n/a
+
   - backend: vep
-    tool: __source_audit_required__
+    tool: none
     json_pointers: []
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
-    test_vector: hostile-upstream-text-v1
-    classification: audit-pending
-    evidence: vep_link/mcp/tools/annotate.py
+    compatibility: n/a-no-untrusted-text
+    test_vector: none
+    classification: no-untrusted-text
+    evidence: vep_link/models/responses.py:TranscriptConsequence (SO enums, HGVS notation, numeric scores; extra=ignore)
+    existing_sanitization: n/a
+
+  - backend: metadome
+    tool: none
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: n/a-no-untrusted-text
+    test_vector: none
+    classification: no-untrusted-text
+    evidence: metadome_link/mcp/schemas.py (tolerance scores/positions/IDs; no description field)
+    existing_sanitization: n/a
+
+  - backend: spliceai
+    tool: none
+    json_pointers: []
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: n/a-no-untrusted-text
+    test_vector: none
+    classification: no-untrusted-text
+    evidence: spliceailookup_link/mcp/shaping.py (numeric splice deltas + identifiers; text server-synthesized)
+    existing_sanitization: n/a
