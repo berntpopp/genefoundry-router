@@ -123,12 +123,42 @@ grammar-validated identifiers — because instruction-shaped prose carries no fo
 so sanitation alone does not neutralize it. Bootstrap/refresh/ingest error paths sever the upstream
 artifact body (`BadGzipFile`/decode errors) and log only the exception class.
 
-> **Fast-follow (tracked separately):** FastMCP-core *not-found* surfaces reflect the caller's own
-> requested name back — an unknown-tool-name or unknown-resource-URI (and a malformed-URI pydantic
-> `-32602`) can echo caller-supplied text before backend middleware runs. This is a caller
-> self-reflection surface (not the upstream external-data residual closed above); a uniform
-> middleware pattern (tool/resource preflight → fixed name-free error; OTel/handler redaction) is
-> tracked as a small dedicated fleet sweep. Several backends already carry the fix.
+> **Fast-follow — COMPLETE fleet-wide as of 2026-07-11.** FastMCP-core *not-found* surfaces reflect
+> the caller's own requested name back — an unknown tool name, unknown resource URI, unknown prompt
+> name (and a malformed-URI pydantic `-32602`) can echo caller-supplied text (and forbidden code
+> points) to the caller or into logs before backend middleware runs. This is a caller self-reflection
+> surface (lower-tier than the upstream external-data residual closed above), but it still reaches
+> shared log/telemetry sinks and an agent's context. All 21 federated backends and the router now
+> carry a uniform guard (`docs/specs/2026-07-11-fastmcp-notfound-reflection-guard-design.md`), each
+> hostile-tested via the real MCP surface (raw JSON-RPC + FastMCP Client) and gated by an adversarial
+> Codex review. Released patches: uniprot 3.0.2, clingen 3.0.2, spliceai 3.0.4, stringdb 4.0.2,
+> metadome 0.1.5, gtex 3.0.2, gnomad 8.0.2, vep 1.0.5, genereviews 5.0.2, gencc 0.7.2, pubtator 6.1.2,
+> orphanet 0.3.2, panelapp 0.5.2, clinvar 0.4.2, mgi 0.5.2, autopvs1 4.0.2, hgnc 2.0.2, mondo 0.3.2,
+> hpo 0.3.2, mavedb 0.4.1, litvar 5.0.1; router 0.6.2.
+>
+> The uniform pattern: (1) registry **preflight** in `on_call_tool` → fixed name-free `not_found`
+> envelope with `is_error=True` (so the FastMCP Client does not re-log the name during output-schema
+> validation) and no `_meta.tool` echo; (2) `on_read_resource` boundary → fixed URI-free error;
+> (3) a **protocol-level backstop** wrapping the raw CallTool/ReadResource/GetPrompt handlers (covers
+> the unknown-tool *return* path and the unknown-*prompt* echo), gated on a registry-proven-unresolved
+> check so a known tool's real error is never masked as `not_found`; (4) a marker-based **log scrub**
+> filter attached to FastMCP's actual source loggers **and** its non-propagating Rich handlers at all
+> levels — covering the pre-middleware DEBUG traces (`mcp.server.lowlevel.server` "Tool cache miss",
+> `fastmcp.server.mixins.mcp_operations` "Handler called"), the session-layer malformed-request record
+> (root / `mcp.shared.session` "Failed to validate request"), and the aggregate-provider fault log
+> (`fastmcp.server.providers.aggregate` "Error during …"). Every fixed message is built from constant
+> strings — never the requested name/URI or `str(exc)`. OTel span-attribute redaction is applied only
+> where `opentelemetry-sdk` is a locked dependency (panelapp-link; elsewhere the tracer is a
+> non-recording no-op, so the span sink is not reachable). The router additionally buckets any
+> unresolved tool name to `_unknown` in its structlog audit sink and Prometheus labels, so a
+> grammar-valid but nonexistent name cannot inject into operator logs/metrics.
+>
+> Note: the malformed-URI `-32602` fires at MCP session deserialization *before* any request handler,
+> so mcp core already returns a fixed `"Invalid request parameters"` to the caller; the guard closes
+> only its log residual. The `fastmcp.server.providers.aggregate` fault log is externally reachable
+> only where multiple/remote providers can genuinely fault during lookup (the router, which fans across
+> 21 proxies); on single-provider backends it requires a white-box-injected faulting provider and is
+> covered as defense-in-depth.
 
 ## Adoption and compatibility
 
