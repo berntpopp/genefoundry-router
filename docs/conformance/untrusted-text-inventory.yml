@@ -1,15 +1,20 @@
 # Completeness inventory for Response-Envelope Standard v1.1.
 #
 # Source audit COMPLETE 2026-07-10 (see docs/plans/2026-07-10-fleet-modernization-reconciliation.md
-# §5): every row now names the exact free-text tool(s) + JSON pointer(s) or is classified
-# no-untrusted-text with model evidence. `compatibility` tracks adoption:
-#   breaking-v1.1        = typed untrusted_text object shipped + hostile test passing (pubtator)
-#   pending-v1.1         = untrusted-text surface identified; backend adoption (typed object +
-#                          hostile-vector test) still owed
+# §5); v1.1 fleet adoption COMPLETE 2026-07-11 (see
+# docs/plans/2026-07-11-untrusted-content-fencing-fleet-adoption.md). Every row now names the
+# exact free-text tool(s) + JSON pointer(s) or is classified no-untrusted-text with model/test
+# evidence. `compatibility` tracks adoption:
+#   breaking-v1.1        = typed untrusted_text object shipped + hostile test passing, released
+#   pending-v1.1         = untrusted-text surface identified; backend adoption still owed
 #   n/a-no-untrusted-text = verified: returns only structured/numeric/identifier/enum data
 # A backend becomes v1.1 conformant only when its hostile test passes and its output schema
 # exposes the literal typed object. `raw_sha256`/provenance are emitted by the backend, never
 # the router. The router treats any `kind: untrusted_text` subtree as opaque (hints.py).
+# `measured_exceptions` records a per-tool object-count ceiling above the fleet default 128 MUST
+# be measured against the tool's own real result cap, never inflated arbitrarily (see the v1.1
+# Limits section: "A measured exception MUST retain a hard ceiling and be recorded in the
+# inventory"). The 2 MiB/object and 8 MiB/total byte ceilings are always enforced regardless.
 version: 1.1
 defaults:
   max_text_bytes: 2097152
@@ -34,18 +39,40 @@ backends:
     surfaces:
       - {tool: search_passages, pointer: /results/*/text}
       - {tool: search_passages, pointer: /results/*/snippet}
+      - {tool: search_passages, pointer: /results/*/chapter_title}
+      - {tool: search_passages, pointer: /results/*/heading_path}
       - {tool: get_passage, pointer: /passage/text}
+      - {tool: get_passage, pointer: /passage/chapter_title,heading_path (+neighbors_before/after/*/text)}
       - {tool: get_passages_batch, pointer: /passages/*/text}
+      - {tool: search_passages_batch, pointer: /results/*/hits/*/text,snippet}
       - {tool: get_chapter_section, pointer: /content}
-      - {tool: get_fulltext, pointer: /text}
+      - {tool: get_chapter_section, pointer: /chapter_title,/passages/*/heading_path}
+      - {tool: get_chapter_metadata, pointer: /title,/tables/*/caption,/tables/*/heading_path}
+      - {tool: get_table, pointer: /caption,/heading_path,/header/*,/rows/*/*}
+      - {tool: get_fulltext, pointer: /sections/*/content (recursive)}
+      - {tool: get_fulltext, pointer: /title,/metadata/authors,/metadata/update_info,/metadata/publication_info,/metadata/references/*}
       - {tool: get_abstract, pointer: /text}
+      - {tool: get_abstract, pointer: /title,/journal,/authors/*}
+      - {tool: get_genereview_summary, pointer: /summary,/diagnosis,/management,/other_sections/*/content}
+      - {tool: get_genereview_summary, pointer: /title,/abstract_data/*,/full_text_data/metadata/*}
+      - {tool: get_links, pointer: /link_entries/*/provider}
+      - {tool: search_passages (opt-in table_data), pointer: /results/*/table_data/header/*,/rows/*/*}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - tool: "all list/aggregate-bearing tools (search_passages, search_passages_batch, get_table, get_fulltext, get_genereview_summary)"
+        max_objects: 10000
+        reason: "generic response-wide ceiling (genereview_link/api/untrusted_limits.py collect_untrusted+guard_untrusted_limits) avoids false rejection on long chapters/tables"
+    compatibility: breaking-v1.1
     test_vector: hostile-literature-v1
     classification: untrusted-text
-    evidence: genereview_link/models/genereview_models.py:RankedPassage.text/snippet; PassageDetail.text
-    existing_sanitization: genereview_link/api/eutils_client.py:1286 _clean_content (live path only; not a fence)
+    evidence: >-
+      genereview_link/models/genereview_models.py (RankedPassage/PassageDetail/
+      FencedGeneReviewSection/AbstractData, str -> UntrustedText) +
+      genereview_link/api/untrusted_limits.py (response-wide enforce); hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (11 real-MCP call_tool tests, both
+      structured_content and TextContent mirror)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 5.0.0
 
   - backend: uniprot
     tool: get_protein
@@ -53,30 +80,51 @@ backends:
     surfaces:
       - {tool: get_protein, pointer: /function}
       - {tool: get_protein_features, pointer: /features/*/description}
-      - {tool: get_protein_diseases, pointer: /diseases/*/involvement}
       - {tool: get_protein_variants, pointer: /variants/*/description}
+      - {tool: get_protein_diseases, pointer: /diseases/*/involvement}
+      - {tool: get_protein_diseases, pointer: /diseases/*/definition}
+      - {tool: search_example_queries, pointer: /examples/*/description}
+      - {tool: get_example_query, pointer: /description}
+      - {tool: search_sparql_query, pointer: "/rows/*/<var> (every string cell of a SELECT result)"}
+      - {tool: search_sparql_query, pointer: /data (raw non-JSON serialization blob)}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: get_protein_features, max_objects: 10000, reason: "uncapped embedded annotation list"}
+      - {tool: get_protein_variants, max_objects: 10000, reason: "uncapped embedded annotation list"}
+      - {tool: get_protein_diseases, max_objects: 10000, reason: "uncapped embedded annotation list"}
+      - {tool: search_example_queries, max_objects: 126, reason: "the curated SPARQL-example catalog's own cap"}
+      - {tool: search_sparql_query, max_objects: 8388608, reason: "pinned to the 8 MiB byte-total ceiling (byte-bound, not an arbitrary object count) since a SELECT can legitimately project many cells"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: uniprot_link/services/shaping.py:190,270,288,341 (rdfs:comment literals)
-    existing_sanitization: none (SPARQL literal escaping is input-only)
+    evidence: >-
+      uniprot_link/services/shaping.py + shaping_annotations.py (rdfs:comment literals,
+      str -> UntrustedText) + uniprot_link/services/sparql_service.py::_fence_sparql_rows
+      (SPARQL SELECT cell + raw data-blob fencing); hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 3.0.0
 
   - backend: hpo
     tool: get_term
     json_pointers: [/definition]
     surfaces:
       - {tool: get_term, pointer: /definition}
+      - {tool: get_term, pointer: /comments/*}
       - {tool: search_terms, pointer: /results/*/definition}
       - {tool: search_terms, pointer: /results/*/definition_snippet}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: search_terms, max_objects: 200, reason: "the tool's own limit<=200 result cap"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: hpo_link/services/shaping.py:165-170; hpo_link/data/repository.py:72
-    existing_sanitization: none
+    evidence: >-
+      hpo_link/services/shaping.py (shape_term/shape_search_hit/_fence_field/_fence_comments,
+      str -> UntrustedText); hostile test: tests/unit/mcp/test_untrusted_content_fencing.py
+      (real-MCP facade, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 0.3.0
 
   - backend: mondo
     tool: get_disease
@@ -84,14 +132,20 @@ backends:
     surfaces:
       - {tool: get_disease, pointer: /definition}
       - {tool: search_diseases, pointer: /results/*/definition}
+      - {tool: search_diseases, pointer: /results/*/definition_snippet}
       - {tool: get_disease_batch, pointer: /results/*/definition}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: search_diseases, max_objects: 200, reason: "the tool's own limit<=200 result cap"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: mondo_link/services/mondo_service.py:157; mondo_link/data/repository.py:86,150,180
-    existing_sanitization: ingest-time OBO cleanup only (_strip_definition); not a fence
+    evidence: >-
+      mondo_link/services/mondo_service.py (_fence_definition/_fence_search_hit,
+      str -> UntrustedText; select_fields opaque-leaf guard against fence-bypass); hostile
+      test: tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 0.3.0
 
   - backend: orphanet
     tool: get_disease
@@ -99,13 +153,21 @@ backends:
     surfaces:
       - {tool: get_disease, pointer: /definition}
       - {tool: search_diseases, pointer: /results/*/definition}
+      - {tool: search_diseases, pointer: /results/*/definition_snippet}
+      - {tool: get_disease_batch, pointer: /results/*/definition}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: search_diseases, max_objects: 200, reason: "SEARCH_LIMIT_MAX, the tool's own result cap"}
+      - {tool: get_disease_batch, max_objects: 50, reason: "MAX_BATCH, the tool's own batch-size cap; limits enforced once over the whole batch"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: orphanet_link/services/orphanet_service.py:174; ingest parsers/product1.py:38
-    existing_sanitization: none
+    evidence: >-
+      orphanet_link/mcp/untrusted_fencing.py (MCP-plane fence wired into mcp/tools/diseases.py
+      + mcp/tools/batch.py, str -> UntrustedText); hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 0.3.0
 
   - backend: mavedb
     tool: get_score_set
@@ -114,99 +176,178 @@ backends:
       - {tool: get_score_set, pointer: /short_description}
       - {tool: get_score_set, pointer: /abstract_text}
       - {tool: get_score_set, pointer: /method_text}
+      - {tool: get_score_set, pointer: /score_calibrations/*/baseline_score_description,/notes}
+      - {tool: get_experiment, pointer: /short_description}
       - {tool: get_experiment, pointer: /abstract_text}
+      - {tool: get_experiment, pointer: /method_text}
+      - {tool: get_collection, pointer: /description}
       - {tool: search_score_sets, pointer: /results/*/short_description}
+      - {tool: get_gene_score_sets, pointer: /score_sets/*/short_description}
+      - {tool: search_experiments, pointer: /results/*/short_description,/method_text}
+      - {tool: get_variant_scores, pointer: /calibrations/*/baseline_score_description,/notes}
+      - {tool: get_variant_score, pointer: /calibrations/*/baseline_score_description,/notes}
+      - {tool: get_score_distribution, pointer: /calibrations/*/baseline_score_description,/notes}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - tool: "all list/full-mode tools (search_score_sets, get_gene_score_sets, search_experiments, get_score_set, get_experiment, get_variant_scores/get_variant_score, get_score_distribution)"
+        max_objects: 10000
+        reason: "full-mode listings can legitimately carry 100 rows x up to 3 prose fields plus per-row calibrations"
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: mavedb_link/services/shaping.py:174,222,223,241,261,262 (depositor prose)
-    existing_sanitization: none
+    evidence: >-
+      mavedb_link/services/shaping.py (_fence_prose) + services/calibration.py
+      (baseline_score_description/notes fencing) + mcp/envelope.py (collect_untrusted_texts,
+      whole-response enforce); error-path sanitation also hardened
+      (mavedb_link/api/client.py severs upstream body, mcp/untrusted_content.py
+      sanitize_message strips FORBIDDEN_CODEPOINTS from every caller-visible message);
+      hostile test: tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade,
+      both views, incl. upstream-error-body-not-echoed tests)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 0.4.0
 
   - backend: clingen
     tool: get_variant_interpretation
     json_pointers: [/summary]
     surfaces:
       - {tool: get_variant_interpretation, pointer: /summary}
+      - {tool: get_variant_interpretations, pointer: /records/*/summary}
       - {tool: get_gene_dosage, pointer: /*/haplo_description}
       - {tool: get_gene_dosage, pointer: /*/triplo_description}
+      - {tool: search_dosage, pointer: /records/*/haplo_description,/triplo_description}
       - {tool: get_cspec, pointer: /criteria/*/description}
+      - {tool: get_cspec, pointer: /criteria/*/strengths/*/description}
+      - {tool: get_cspec_criterion, pointer: /record/description,/record/strengths/*/description}
       - {tool: get_gene_validity, pointer: /assertions/*/disease_name}
+      - {tool: search_validity, pointer: /records/*/disease_name}
+      - {tool: get_gene_summary, pointer: /validity/*/disease_name,/dosage/*/haplo_description,/dosage/*/triplo_description}
+      - {tool: get_gene_actionability, pointer: "/records/*/sepio_detail (whole SEPIO document, fenced as one opaque untrusted_text blob when include_detail=true)"}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - tool: "all list-bearing tools (get_variant_interpretations, get_gene_dosage, search_dosage, get_gene_validity, search_validity, get_cspec, get_cspec_criterion, get_gene_summary, get_gene_actionability)"
+        max_objects: 10000
+        reason: "get_gene_validity/get_gene_dosage/get_cspec criteria are unpaginated (return every matching row); CSpec legitimately has >1000 criteria"
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: clingen_link/models/models.py:142,75,79,257,236,30
-    existing_sanitization: strip_html() on disease_name only (ERepo summary + CSpec description unfenced)
+    evidence: >-
+      clingen_link/mcp/shaping.py (shape_record fence-by-domain, collect_fenced_objects
+      response-wide walker) + models/citations.py (validity citation now references MONDO id,
+      not raw disease_name, closing a sibling-duplication leak); hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade via tool_mcp.call_tool,
+      both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 3.0.0
 
   - backend: clinvar
     tool: get_variant
     json_pointers: [/traits/*/name]
     surfaces:
       - {tool: get_variant, pointer: /traits/*/name}
-      - {tool: get_gene_clinvar_summary, pointer: /top_traits/*/name}
+      - {tool: get_variants, pointer: /results/*/traits/*/name}
+      - {tool: search_variants, pointer: /results/*/traits/*/name}
+      - {tool: get_variants_by_gene, pointer: /results/*/traits/*/name}
+      - {tool: get_gene_clinvar_summary, pointer: /top_traits/*/trait}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: "get_variants, search_variants, get_variants_by_gene", max_objects: 10000, reason: "trait count per variant is not capped by the model; page size (100) x an uncapped per-variant condition list can exceed the bare default"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: clinvar_link/models/variant_models.py:Trait.name (L26); gene_models.py:34
-    existing_sanitization: none (short submitter labels; lower surface than prose)
+    evidence: >-
+      clinvar_link/services/clinvar_service.py (_fence_traits/_fence_top_traits,
+      str -> UntrustedText, whole-response enforce) + mcp/output_schemas.py (array-item kind
+      const); NOTE the emitted pointer is /top_traits/*/trait (the GeneClinVarSummary
+      docstring's "name" example was pre-existing documentation drift, not a real field);
+      hostile test: tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade,
+      both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 0.4.0
 
   - backend: gencc
     tool: get_gene_disease_assertion
     json_pointers: [/assertion/submissions/*/notes]
     surfaces:
       - {tool: get_gene_disease_assertion, pointer: /assertion/submissions/*/notes}
-      - {tool: get_gene_curations, pointer: /*/submissions/*/notes}
-      - {tool: get_disease_curations, pointer: /*/submissions/*/notes}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: gencc_link/models/records.py:SubmissionRecord.notes (L117)
-    existing_sanitization: none (notes surfaces only at response_mode=full)
+    evidence: >-
+      gencc_link/services/shaping.py::submission_dict (str -> UntrustedText) +
+      gencc_link/services/gencc_service.py::get_gene_disease_assertion (whole-response
+      enforce); CORRECTION 2026-07-11: get_gene_curations/get_disease_curations do NOT expose
+      a submissions/notes surface (verified empirically: shared assertion_dict() never adds a
+      submissions key; pinned by regression guards
+      test_get_gene_curations_full_mode_has_no_notes_surface_yet and
+      test_get_disease_curations_full_mode_has_no_notes_surface_yet) — the prior two-tool
+      listing was inventory drift, corrected here; hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 0.7.0
 
   - backend: panelapp
     tool: get_panel
     json_pointers: [/panel/description]
     surfaces:
       - {tool: get_panel, pointer: /panel/description}
+      - {tool: get_panel, pointer: /panel/types/*/description}
       - {tool: search_panels, pointer: /panels/*/description}
+      - {tool: search_panels, pointer: /panels/*/types/*/description}
       - {tool: get_panel_genes, pointer: /entities/*/phenotypes}
       - {tool: get_panel_genes, pointer: /entities/*/evidence}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: "search_panels, get_panel_genes", max_objects: 10000, reason: "list tools: a 500-entity page with phenotypes+evidence lists per entity can exceed the bare default"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: panelapp_link/services/shaping.py:109,175,176 (curator prose)
-    existing_sanitization: none (standard/full modes only)
+    evidence: >-
+      panelapp_link/services/shaping.py (_fence_panel_types/_fence_prose_list,
+      str -> UntrustedText); record_id is region-qualified (panel:{region}:{id},
+      panel:{region}:{id}#type:{slug}, panel:{region}:{id}#gene:{symbol}) since PanelApp panel
+      ids are per-region; hostile test: tests/unit/mcp/test_untrusted_content_fencing.py
+      (real-MCP facade, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 0.5.0
 
   - backend: litvar
     tool: search_genetic_variants
     json_pointers: [/results/*/match]
+    surfaces:
+      - {tool: search_genetic_variants, pointer: /results/*/match}
+      - {tool: get_variant_summary, pointer: /result/match}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: search_genetic_variants, max_objects: 100, reason: "MAX_LIMIT, the tool's own result-limit maximum"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: litvar_link/models/endpoint_specific.py:AutocompleteVariantItem.match (L55)
-    existing_sanitization: compact allowlist drops it; full-mode HTML snippet unstripped
+    evidence: >-
+      litvar_link/mcp/shaping.py::fence_match_field (shared by both tools,
+      str -> UntrustedText, whole-response enforce via collect_fenced_matches); error-path
+      also hardened (litvar_link/mcp/errors.py no longer echoes the upstream 4xx body into
+      the envelope message; _sanitize_message strips FORBIDDEN_CODEPOINTS); hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 5.0.0
 
   - backend: gnomad
     tool: get_clinvar_variant_details
     json_pointers: [/submissions/*/conditions/*/name, /submissions/*/submitter_name]
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: get_clinvar_variant_details, max_objects: 10000, reason: "a well-annotated pathogenic variant can carry hundreds of ClinVar submissions; enforced over the emitted (post submissions_limit truncation) set, not the raw upstream count"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: gnomad_link/models/clinvar_models.py:ClinVarCondition.name (L9), ClinVarSubmission.submitter_name (L19)
-    existing_sanitization: none (frequency/constraint output is numeric; ClinVar passthrough only)
+    evidence: >-
+      gnomad_link/mcp/clinvar_fencing.py (MCPClinVarCondition/MCPClinVarSubmission,
+      fence_clinvar_variant; a sibling MCP-plane module, not models/clinvar_models.py, to
+      avoid a circular import); hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 8.0.0
 
   - backend: stringdb
     tool: get_functional_annotations
@@ -217,11 +358,19 @@ backends:
       - {tool: resolve_protein_identifiers, pointer: /mappings/*/annotation}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: "get_functional_annotations, compute_functional_enrichment, resolve_protein_identifiers", max_objects: 10000, reason: "STRING enrichment/annotation lists are effectively uncapped by the tool contract, bounded only by input gene-set size"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: stringdb_link/models/responses.py:65-69,295-299,346-350
-    existing_sanitization: none (interaction scores numeric; descriptions are prose)
+    evidence: >-
+      stringdb_link/mcp/envelope.py (UNTRUSTED_TEXT_FIELDS map, _fence_collection_field,
+      reshape_output_schema embeds UntrustedText at the fenced pointer's array-item schema) —
+      fenced at the envelope/shaping boundary (FastMCP.from_fastapi auto-generated tools;
+      REST responses.py models intentionally untouched); hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (incl.
+      test_list_tools_declares_untrusted_text_object_at_fenced_pointers)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 4.0.0
 
   - backend: mgi
     tool: get_mp_term
@@ -231,11 +380,17 @@ backends:
       - {tool: search_phenotype_terms, pointer: /results/*/definition}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: search_phenotype_terms, max_objects: 200, reason: "the tool's own limit<=200 result cap"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: mgi_link/mcp/schemas.py:MP_TERM_SCHEMA.definition (L149)
-    existing_sanitization: none (repository FTS escaping is input-only)
+    evidence: >-
+      mgi_link/services/shaping.py::fence_mp_definition (shared boundary,
+      str -> UntrustedText) + mgi_link/services/mgi_service.py; hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (incl. real-facade tests proving
+      output_schema structured-content validation)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 0.5.0
 
   - backend: gtex
     tool: get_gene_information
@@ -245,22 +400,46 @@ backends:
       - {tool: search_genes, pointer: /data/*/description}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    measured_exceptions:
+      - {tool: search_genes, max_objects: 1000, reason: "SEARCH_GENES_LIMIT_MAX; limit is now bounded (was previously unbounded) so the object ceiling equals the tool's own capped result maximum"}
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: gtex_link/models/responses.py:Gene.description (L241)
-    existing_sanitization: none (low-risk GENCODE descriptor; reviewer may down-scope)
+    evidence: >-
+      gtex_link/mcp/shaping.py::fence_gene_response (MCPGene mirror model,
+      str -> UntrustedText); the ChatGPT-compatible search/fetch tools (fixed flat-string
+      contract) DROP the upstream description entirely rather than emit it bare or
+      sanitized-only, so no untyped prose surface remains there; hostile test:
+      tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 3.0.0
 
   - backend: autopvs1
     tool: get_variant_pvs1_data
-    json_pointers: [/pvs1/criterion_description]
+    json_pointers: [/pvs1_flowchart/decision_tree/*/code]
+    surfaces:
+      - {tool: "get_variant_pvs1_data, get_cnv_pvs1_data (+ bulk variants)", pointer: /pvs1_flowchart/decision_tree/*/code}
+      - {tool: "get_variant_pvs1_data, get_cnv_pvs1_data (+ bulk variants)", pointer: /pvs1_flowchart/decision_tree/*/description}
+      - {tool: "get_variant_pvs1_data, get_cnv_pvs1_data (+ bulk variants)", pointer: /pvs1_flowchart/decision_tree/*/note_text}
+      - {tool: "get_variant_pvs1_data, get_cnv_pvs1_data (+ bulk variants)", pointer: /pvs1_flowchart/terminal_note}
+      - {tool: "get_variant_pvs1_data, get_cnv_pvs1_data (+ bulk variants)", pointer: "/pvs1_flowchart/path_gloss (summary mode only, the sole carrier once decision_tree is stripped)"}
+      - {tool: "get_variant_pvs1_data, get_cnv_pvs1_data (+ bulk variants)", pointer: /disease_mechanisms/*/disease}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: pending-v1.1
+    compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
-    evidence: autopvs1_link/mcp/presenters/variant.py (PVS1 result scraped from autopvs1.bgi.com)
-    existing_sanitization: shape-validation fail-closed (UpstreamFormatError); low-trust provenance note; not a fence
+    evidence: >-
+      autopvs1_link/mcp/presenters/variant.py (_fence_step/_fence_flowchart_output/
+      _fence_disease_mechanisms) + mcp/contracts.py (FlowchartStepMCP/PVS1FlowchartMCP/
+      DiseaseMechanismMCP, str -> UntrustedText); round-2 de-duplication removed the separate
+      `notes` legend dict and the `decision_tree_raw` full-mode audit copy (both re-shipped
+      decision_tree's prose) so decision_tree is now the single canonical carrier per the
+      standard's no-duplication rule; bulk tools (autopvs1_link/mcp/tools/_bulk_untrusted.py)
+      enforce limits once over the whole bulk response, not per item; the default 128 ceiling
+      was measured sufficient (a realistic full response produces ~51 fenced objects) and kept
+      unmodified; hostile test: tests/unit/mcp/test_untrusted_content_mcp_runtime.py +
+      tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP call_tool, both views)
+    existing_sanitization: v1.1 fence (fence_untrusted_text) released 4.0.0
 
   - backend: hgnc
     tool: none
@@ -270,7 +449,12 @@ backends:
     compatibility: n/a-no-untrusted-text
     test_vector: none
     classification: no-untrusted-text
-    evidence: hgnc_link/mcp/schemas.py:GENE_SCHEMA (name = curated approved symbol; IDs/enums only)
+    evidence: >-
+      hgnc_link/mcp/schemas.py:GENE_SCHEMA (curated approved/alias/previous symbol+name,
+      IDs/enums only) + regression guard
+      tests/unit/mcp/test_no_untrusted_text_surface.py (checks both the declared output
+      schemas and the true SCALAR_FIELDS/LIST_FIELDS backing catalogue, closing the
+      additionalProperties:true loophole)
     existing_sanitization: n/a
 
   - backend: vep
@@ -281,7 +465,12 @@ backends:
     compatibility: n/a-no-untrusted-text
     test_vector: none
     classification: no-untrusted-text
-    evidence: vep_link/models/responses.py:TranscriptConsequence (SO enums, HGVS notation, numeric scores; extra=ignore)
+    evidence: >-
+      vep_link/models/responses.py:TranscriptConsequence (SO enums, HGVS notation, numeric
+      scores; extra=ignore) + regression guard
+      tests/unit/test_no_untrusted_text_surface.py (also empirically clears the raw
+      full-mode colocated_variants passthrough via live Ensembl REST verification, pinning
+      its observed key set as free-text-free)
     existing_sanitization: n/a
 
   - backend: metadome
@@ -292,7 +481,10 @@ backends:
     compatibility: n/a-no-untrusted-text
     test_vector: none
     classification: no-untrusted-text
-    evidence: metadome_link/mcp/schemas.py (tolerance scores/positions/IDs; no description field)
+    evidence: >-
+      metadome_link/mcp/schemas.py (tolerance scores/positions/IDs; no description field) +
+      regression guard tests/unit/mcp/test_no_untrusted_text_surface.py (schema-introspects
+      every *_SCHEMA constant plus the raw upstream TypedDict shapes in api/models.py)
     existing_sanitization: n/a
 
   - backend: spliceai
@@ -303,5 +495,10 @@ backends:
     compatibility: n/a-no-untrusted-text
     test_vector: none
     classification: no-untrusted-text
-    evidence: spliceailookup_link/mcp/shaping.py (numeric splice deltas + identifiers; text server-synthesized)
+    evidence: >-
+      spliceailookup_link/mcp/shaping.py (numeric splice deltas + identifiers; headline/
+      consequence_summary server-synthesized) + regression guard
+      tests/unit/mcp/test_no_untrusted_text_surface.py, which additionally pins the two
+      genuine upstream-sourced passthrough fields (aberration_type: closed 6-value enum;
+      sai10kPredictionsError: single hardcoded sentinel) as bounded, not free prose
     existing_sanitization: n/a

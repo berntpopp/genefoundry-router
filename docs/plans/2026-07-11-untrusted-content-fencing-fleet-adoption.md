@@ -31,10 +31,55 @@ fleet conformance test.
 - `kind` declared as a `Literal["untrusted_text"]` in the tool output schema.
 - A response MUST NOT duplicate the raw or sanitized prose in any sibling field (breaking
   reshape, not additive dual-field).
+- **Fence EVERY prose surface, not just the literal `surfaces` list.** Compact/default modes
+  often emit a truncated snippet of the same upstream prose (`definition_snippet`,
+  `abstract_snippet`, a compact `match`, etc.). That is still untrusted external prose and the
+  default mode is the hot path — fence it too (mutually-exclusive-with-full-field ⇒ no
+  duplication). If a surface is missing from the inventory row, fence the security-complete
+  superset and note it in your report for the router (Task D) to add to the row.
+- **Object-count ceiling = the tool's real result cap, never the bare default 128.** The
+  2 MiB/object and 8 MiB/total byte limits are the real DoS backstop and are always enforced.
+  For object count: a single-record tool passes the default 128; a search/list tool passes its
+  own `limit` maximum (e.g. hpo/mondo search = 200); an uncapped embedded list (uniprot
+  variants/features, panelapp entities, gnomad submissions, stringdb annotations) passes a
+  generous `max_objects=10000` so a legitimately large record never raises. Add a regression
+  test proving a >128-object result does NOT raise. Record the chosen ceiling in the report so
+  the router inventory row reflects it.
+- **Declare the `kind` literal in LIST-ITEM output schemas, not only top-level.** A fenced field
+  inside an array (search `results[]`, `score_sets[]`, `submissions[]`, `entities[]`) must have
+  its array `items` schema declare the `untrusted_text` object (`kind` const/Literal). A bare
+  permissive array hides the literal and is non-conformant even if the runtime data is fenced.
+- **Enforce limits over the WHOLE response, not per-record.** Aggregate every fenced object the
+  response emits (across all records/rows) into one `enforce_untrusted_text_limits` call so the
+  128-object / 8 MiB-total ceilings bound the actual payload. Map `UntrustedTextLimitError` to an
+  explicit typed limit/validation error in the envelope, not a generic `internal_error`.
+- **The hostile-vector test MUST drive the real MCP tool** (via the FastMCP facade /
+  `call_tool`), asserting on `structured_content` AND the `TextContent` JSON mirror — not just the
+  internal shaping function. The synthesized-sibling check must include `tool`, `fallback_tool`,
+  `next_tool`, AND `tool_name`.
+- **Hunt for missed surfaces beyond the inventory row.** The inventory rows are known-incomplete
+  (get_collection.description, genereview_summary, hpo `comments`, uniprot disease-comment +
+  example catalog, compact snippets were all missed). Enumerate EVERY tool the backend serves and
+  fence any upstream free-text field, then report additions for the router (Task D).
+- **No fence-bypass via field projection.** If the backend has a sparse-fieldset / `fields=` /
+  `select_fields` feature, a fenced `untrusted_text` object MUST be treated as an OPAQUE leaf — a
+  projection like `fields=["definition.text"]` must NOT descend into the wrapper and return the
+  bare `text` without `kind`/provenance/`raw_sha256`. Guard the projector against dotting into a
+  fenced object, and add a test.
+- **Snippet digest over raw bytes; never collapse whitespace before fencing.** When fencing a
+  compact snippet, truncate the RAW upstream prose (preserving internal tab/LF/CR) and fence THAT,
+  so `raw_sha256` is over the snippet's true pre-normalization bytes. Do NOT `.split()`/join or
+  whitespace-collapse before the fence — that strips tab/LF/CR the standard requires preserved and
+  makes the digest cover rewritten text.
 - `provenance.retrieved_at` = `datetime.now(UTC)` at serialization (follow the reference).
-- **Sync first (mandatory):** local clones are behind origin. Before branching, in each repo
-  run `git fetch origin && git checkout main && git pull --ff-only origin main`. If `--ff-only`
-  fails (local main diverged), STOP + report — do NOT `reset --hard` over unpushed local work.
+- **Sync first (mandatory):** local clones are behind origin. Base the fencing branch on
+  **pristine `origin/main`**, never on a possibly-diverged local `main`:
+  `git fetch origin && git checkout -B feat/untrusted-content-fencing origin/main`. This
+  ignores any unrelated unpushed local-`main` commit (e.g. mavedb carries a stray
+  `.claude/skills` commit — leave it alone, do NOT discard it). Confirm the branch tip is
+  origin/main's latest release commit before implementing. At release time push the branch
+  straight to origin/main (`git push origin HEAD:main`) — a fast-forward that never drags a
+  local-only commit into the release.
 - Version: `pyproject.toml` is the single source; after bumping run `uv lock && uv sync` so
   the installed version equals pyproject (or the fleet version-guard test fails).
 - Breaking bump per repo convention: **≥1.0 repos → next MAJOR**; **0.x repos → next MINOR**

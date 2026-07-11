@@ -2,6 +2,28 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.0] - 2026-07-11
+
+### Security
+
+- Complete fleet-wide Response-Envelope Standard v1.1 (untrusted-content fencing) adoption:
+  the 16 free-text `-link` backends (autopvs1, clingen, clinvar, gencc, genereviews, gnomad,
+  gtex, hpo, litvar, mavedb, mgi, mondo, orphanet, panelapp, stringdb, uniprot) each shipped a
+  breaking release that fences every upstream free-text surface as the typed `untrusted_text`
+  object and are flipped to `compatibility: breaking-v1.1` in
+  `docs/conformance/untrusted-text-inventory.yml`, with the full set of tool+pointer surfaces
+  and measured per-tool object-count ceilings recorded per row. The 4 no-text backends (hgnc,
+  vep, metadome, spliceai) are confirmed `n/a-no-untrusted-text` with a regression-guard test
+  citation. Corrected the `gencc` row (only `get_gene_disease_assertion` exposes a notes
+  surface; `get_gene_curations`/`get_disease_curations` do not) and the `clinvar` row
+  (`top_traits[].trait`, not `.name`).
+- Add `tests/unit/test_untrusted_content_fleet_conformance.py`, a fleet completeness gate
+  asserting every `untrusted-text` inventory row is `breaking-v1.1` with a named test vector,
+  and every `no-untrusted-text` row is `n/a-no-untrusted-text` with evidence.
+- Ratify `docs/RESPONSE-ENVELOPE-STANDARD-v1.1.md`: a limit breach MUST raise a backend-specific
+  typed execution error (not one fleet-uniform code); document the error-message sanitation
+  requirement for upstream error-body text as a secondary untrusted-content surface.
+
 ## [0.5.0] - 2026-07-11
 
 ### Security
