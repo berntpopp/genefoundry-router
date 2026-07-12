@@ -64,6 +64,53 @@ def should_warn_no_rate_limit(auth_mode: str, host: str, rate_limit_rpm: int) ->
     return rate_limit_rpm <= 0
 
 
+def should_warn_no_metrics_token(auth_mode: str, host: str, metrics_token: str | None) -> bool:
+    """True for an authenticated, publicly-reachable bind exposing ``/metrics`` with no token (F-21).
+
+    Mirrors ``should_warn_no_rate_limit``: on a non-override bind this case fails closed
+    (``refuses_public_metrics_without_token``), so this warning only surfaces once
+    ``GF_ALLOW_INSECURE`` has downgraded that refusal — a PoC operator is still told ``/metrics``
+    is public rather than being silently exposed.
+    """
+    if auth_mode == "none":
+        return False
+    if host in LOOPBACK_HOSTS:
+        return False
+    return not metrics_token
+
+
+def refuses_no_rate_limit(
+    auth_mode: str, host: str, rate_limit_rpm: int, allow_insecure: bool
+) -> bool:
+    """True when startup must FAIL CLOSED: an authenticated, publicly-reachable bind with no
+    positive per-client rate limit (F-21).
+
+    The warn-only ``should_warn_no_rate_limit`` posture let a reachable production deployment
+    run unthrottled by default. For a real (authenticated, non-loopback) bind we now refuse to
+    start unless ``GF_RATE_LIMIT_RPM > 0``. ``GF_ALLOW_INSECURE=true`` downgrades this to the
+    existing non-breaking warning for local/PoC use; ``auth=none`` (handled by the insecure-bind
+    guard) and loopback (not publicly reachable) are out of scope.
+    """
+    if allow_insecure or auth_mode == "none" or host in LOOPBACK_HOSTS:
+        return False
+    return rate_limit_rpm <= 0
+
+
+def refuses_public_metrics_without_token(
+    auth_mode: str, host: str, metrics_token: str | None, allow_insecure: bool
+) -> bool:
+    """True when startup must FAIL CLOSED: an authenticated, publicly-reachable bind that would
+    serve ``GET /metrics`` without ``GF_METRICS_TOKEN`` (F-21).
+
+    ``/metrics`` is registered unconditionally and is public when no token is set, leaking
+    operational telemetry on a reachable bind. ``GF_ALLOW_INSECURE=true`` is the documented
+    local/PoC override; ``auth=none`` and loopback are out of scope.
+    """
+    if allow_insecure or auth_mode == "none" or host in LOOPBACK_HOSTS:
+        return False
+    return not metrics_token
+
+
 LEAF_NAME_RE = re.compile(r"^[a-z0-9_]{1,50}$")
 CANONICAL_VERBS = {"get", "search", "list", "resolve", "find", "compare", "compute", "map"}
 # Ratified Tier-2 sanctioned domain action/compute verbs (Tool-Naming Standard v1.1).
@@ -134,6 +181,25 @@ def run(
             "GF_ALLOWED_HOSTS allowlist.[/red]"
         )
         raise typer.Exit(1)
+    if refuses_no_rate_limit(
+        settings.GF_AUTH_MODE, host, settings.GF_RATE_LIMIT_RPM, settings.GF_ALLOW_INSECURE
+    ):
+        console.print(
+            f"[red]Refusing to start: authenticated public bind ({host}) with "
+            "GF_RATE_LIMIT_RPM=0 (no per-client rate limit) lets one caller drive the fleet's "
+            "egress IPs into upstream throttling/bans. Set GF_RATE_LIMIT_RPM (e.g. 120), or set "
+            "GF_ALLOW_INSECURE=true to override (local/PoC only).[/red]"
+        )
+        raise typer.Exit(1)
+    if refuses_public_metrics_without_token(
+        settings.GF_AUTH_MODE, host, settings.GF_METRICS_TOKEN, settings.GF_ALLOW_INSECURE
+    ):
+        console.print(
+            f"[red]Refusing to start: authenticated public bind ({host}) would serve "
+            "GET /metrics without GF_METRICS_TOKEN (public operational telemetry). Set "
+            "GF_METRICS_TOKEN, or set GF_ALLOW_INSECURE=true to override (local/PoC only).[/red]"
+        )
+        raise typer.Exit(1)
     if settings.GF_AUTH_MODE == "none" and host not in LOOPBACK_HOSTS:
         console.print(
             f"[yellow]WARNING: serving with GF_AUTH_MODE=none on {host} (GF_ALLOW_INSECURE "
@@ -144,6 +210,12 @@ def run(
             f"[yellow]WARNING: authenticated public bind ({host}) with GF_RATE_LIMIT_RPM=0 "
             "(no per-client rate limit). One caller can drive the fleet's egress IPs into "
             "upstream throttling/bans. Set GF_RATE_LIMIT_RPM (e.g. 120) in production.[/yellow]"
+        )
+    if should_warn_no_metrics_token(settings.GF_AUTH_MODE, host, settings.GF_METRICS_TOKEN):
+        console.print(
+            f"[yellow]WARNING: authenticated public bind ({host}) exposes GET /metrics with no "
+            "GF_METRICS_TOKEN — operational telemetry is public. Set GF_METRICS_TOKEN in "
+            "production.[/yellow]"
         )
     registry = load_registry(servers_file, os.environ)
     application = build_app(settings, registry)

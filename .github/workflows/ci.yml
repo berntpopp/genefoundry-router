@@ -37,6 +37,20 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev --frozen
 
+      # Pinned actionlint (version + sha256) so `make ci-local`'s lint-actions target lints
+      # every workflow in CI (F-01). The YAML-parse unit test is the always-on syntax guard.
+      - name: Install actionlint (pinned)
+        run: |
+          set -euo pipefail
+          VER=1.7.7
+          SHA=023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757
+          curl -fsSL -o actionlint.tgz \
+            "https://github.com/rhysd/actionlint/releases/download/v${VER}/actionlint_${VER}_linux_amd64.tar.gz"
+          echo "${SHA}  actionlint.tgz" | sha256sum -c -
+          tar -xzf actionlint.tgz actionlint
+          sudo mv actionlint /usr/local/bin/actionlint
+          actionlint --version
+
       # Static checks + a single parallel test run (xdist). Fast feedback on every PR.
       - name: Run CI checks (format, lint, typecheck, tests)
         run: make ci-local

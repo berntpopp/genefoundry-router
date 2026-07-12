@@ -55,7 +55,8 @@ jobs:
         run: curl -fsS -m 10 --retry 3 -o /dev/null "$FLEET_PROBE_HEARTBEAT_URL" || true
       - name: Warn on unreachable backends (availability, not a contract violation)
         if: ${{ steps.probe.outputs.exit_code == '2' }}
-        run: echo "::warning::fleet-probe: some backends were unreachable (availability, not a transport-contract violation)"
+        run: |
+          echo "::warning::fleet-probe: some backends were unreachable (availability, not a transport-contract violation)"
       - name: Fail on non-conformance
         if: ${{ steps.probe.outputs.exit_code == '1' }}
         run: |

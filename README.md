@@ -129,7 +129,7 @@ Structure lives in committed `servers.yaml`; URLs/secrets in gitignored `.env` (
 | `GF_MCP_PATH` | `/mcp` | MCP mount path |
 | `GF_SERVERS_FILE` | `servers.yaml` | Backend registry |
 | `GF_AUTH_MODE` | `none` | `none` \| `jwt` \| `oauth` (use jwt/oauth in production) |
-| `GF_ALLOW_INSECURE` | `false` | Opt-in to serve `auth=none` on a non-loopback bind (PoC only; the router refuses otherwise) |
+| `GF_ALLOW_INSECURE` | `false` | Opt-in to serve `auth=none` on a non-loopback bind, and downgrade the production rate-limit / metrics-token guards to warnings (PoC only; the router refuses otherwise) |
 | `GF_PUBLIC_BASE_URL` | _(unset)_ | Router's canonical public URL — OAuth resource URI + Protected-Resource-Metadata |
 | `GF_ALLOWED_HOSTS` | _(empty)_ | CSV Host allowlist; required for every non-loopback bind |
 | `GF_JWT_ISSUER` | _(unset)_ | jwt/oauth: token issuer URL (e.g. `https://auth.example.org/realms/genefoundry`) |
@@ -138,6 +138,8 @@ Structure lives in committed `servers.yaml`; URLs/secrets in gitignored `.env` (
 | `GF_OAUTH_CLIENT_ID` / `GF_OAUTH_CLIENT_SECRET` | _(unset)_ | oauth: upstream provider client credentials |
 | `GF_OAUTH_AUTHORIZE_URL` / `GF_OAUTH_TOKEN_URL` | _(unset)_ | oauth: upstream provider authorize/token endpoints |
 | `GF_ALLOWED_ORIGINS` | _(empty)_ | CSV `Origin` allowlist (DNS-rebinding defense) |
+| `GF_RATE_LIMIT_RPM` | `0` | Per-client requests/min (429 over). An authenticated non-loopback bind **refuses to start** with `0`; set a positive value in production (`GF_ALLOW_INSECURE` downgrades to a warning) |
+| `GF_METRICS_TOKEN` | _(unset)_ | Bearer token for `GET /metrics`. An authenticated non-loopback bind **refuses to start** without it (`GF_ALLOW_INSECURE` downgrades to a warning) |
 | `GF_DRIFT_MODE` | `warn` | Runtime catalog policy: `off` \| `warn` \| `enforce` |
 | `GF_DRIFT_BASELINE` | _(packaged)_ | Optional path override for the reviewed packaged baseline |
 | `GF_<NAME>_URL` | _(unset)_ | Per-backend `/mcp` URL (e.g. `GF_GNOMAD_URL`) |
@@ -149,7 +151,10 @@ forwarded to a backend (confused-deputy defense).
 ### Authentication
 
 The router refuses to start `auth=none` on a non-loopback bind unless `GF_ALLOW_INSECURE=true`
-(the explicit, logged escape hatch for a deliberately-public PoC). For production, enable one of
+(the explicit, logged escape hatch for a deliberately-public PoC). It likewise **refuses to start an
+authenticated, non-loopback ("production") bind that has no positive `GF_RATE_LIMIT_RPM`, or that
+would serve `GET /metrics` without `GF_METRICS_TOKEN`** — `GF_ALLOW_INSECURE=true` downgrades both to
+warnings for local/PoC use. For production, enable one of
 two **resource-server** modes — the router *validates* tokens against an identity provider, it does
 not mint them, so an IdP (e.g. self-hosted Keycloak) is required:
 
