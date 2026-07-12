@@ -69,16 +69,22 @@ decoded_streaming_byte_cap
 fixed_host_free_non_retryable_error
 ```
 
-## Staged adoption ledger
+## Reviewer-attested staged adoption ledger
 
 The manifest contains every R-05 repository from the beginning. A `pending` row is intentional:
 it has no claimed revision or conformance hash and lets each backend migrate independently. A row
-may change to `adopted` only when its `version` remains `v1`, `revision` is the 40-character
-source revision that vendors the suite, and `conformance_sha256` equals the canonical fixture
-hash. It must also name the checked-in evidence pair
+may change to `adopted` only as a **reviewer-attested declaration**: its `version` remains `v1`,
+`reviewed_commit` is the reviewed 40-character Git commit identifier, and
+`conformance_sha256` equals the canonical fixture hash. Its `attestation` records the reviewer,
+review date, and the checked-in evidence pair
 `ci/http-policy-v1-evidence/<repository>/test_http_policy_v1.py` and
 `ci/http-policy-v1-evidence/<repository>/attestation.json`. The attestation repeats the
-repository, immutable revision, expected vendored path, and fixture hash; the router test
-re-hashes the evidence copy and rejects a missing, altered, or out-of-layout attestation. Router
-CI validates that declaration without live network probes; a stale or incomplete adoption
-declaration fails the gate.
+repository, reviewed commit, expected vendored path, conformance-file SHA-256, canonical-fixture
+SHA-256, reviewer, and review date; the router test re-hashes the evidence copy and rejects a
+missing, altered, or out-of-layout attestation.
+
+This source-only gate does not independently verify that the named backend commit exists on
+GitHub, that its tree contains the referenced file, or that the declaration has been pushed.
+Those provenance checks require external review and push against the backend repository. Router
+CI validates only the internally consistent, source-controlled reviewer attestation and makes no
+stronger adoption claim; a stale or incomplete declaration fails the gate.
