@@ -1,6 +1,7 @@
 {
   "policy_version": "v1",
-  "conformance_contract_sha256": "338f1ea0855a5d6e68d75a082e2154b63e6a90b200dab63b7b6d0eaec1723628",
+  "conformance_fixture": "ci/http-policy-v1-conformance.py",
+  "conformance_contract_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
   "required_conformance_cases": [
     "https_only",
     "reject_syntactic_userinfo",
@@ -16,56 +17,64 @@
       "version": "v1",
       "conformance_file": "tests/conformance/test_http_policy_v1.py",
       "revision": null,
-      "conformance_sha256": null
+      "conformance_sha256": null,
+      "evidence": null
     },
     "litvar-link": {
       "status": "pending",
       "version": "v1",
       "conformance_file": "tests/conformance/test_http_policy_v1.py",
       "revision": null,
-      "conformance_sha256": null
+      "conformance_sha256": null,
+      "evidence": null
     },
     "metadome-link": {
       "status": "pending",
       "version": "v1",
       "conformance_file": "tests/conformance/test_http_policy_v1.py",
       "revision": null,
-      "conformance_sha256": null
+      "conformance_sha256": null,
+      "evidence": null
     },
     "panelapp-link": {
       "status": "pending",
       "version": "v1",
       "conformance_file": "tests/conformance/test_http_policy_v1.py",
       "revision": null,
-      "conformance_sha256": null
+      "conformance_sha256": null,
+      "evidence": null
     },
     "spliceailookup-link": {
       "status": "pending",
       "version": "v1",
       "conformance_file": "tests/conformance/test_http_policy_v1.py",
       "revision": null,
-      "conformance_sha256": null
+      "conformance_sha256": null,
+      "evidence": null
     },
     "stringdb-link": {
       "status": "pending",
       "version": "v1",
       "conformance_file": "tests/conformance/test_http_policy_v1.py",
       "revision": null,
-      "conformance_sha256": null
+      "conformance_sha256": null,
+      "evidence": null
     },
     "uniprot-link": {
       "status": "pending",
       "version": "v1",
       "conformance_file": "tests/conformance/test_http_policy_v1.py",
       "revision": null,
-      "conformance_sha256": null
+      "conformance_sha256": null,
+      "evidence": null
     },
     "vep-link": {
       "status": "pending",
       "version": "v1",
       "conformance_file": "tests/conformance/test_http_policy_v1.py",
       "revision": null,
-      "conformance_sha256": null
+      "conformance_sha256": null,
+      "evidence": null
     }
   }
 }
