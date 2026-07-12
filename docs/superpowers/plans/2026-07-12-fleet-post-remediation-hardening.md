@@ -26,7 +26,7 @@ the httpx **request event-hook** form (spec §4 Recipe B), never disable-+-manua
 - **No token passthrough**; backends stay unpublished; Streamable-HTTP only. Research-use-only disclaimers preserved.
 - **Redirect allowlists are derived from the configured base URL host(s) at client-build time — never hardcoded.** Byte caps **fail closed (raise), never truncate.**
 - Do NOT touch `.github/workflows/container-security.yml` (already present fleet-wide).
-- Secret-scanning is a **repo setting** (operator follow-up) — PR only documents it; never block on it.
+- Secret-scanning is a **repo setting** — the PR documents it; enablement happens at Phase 4 via `gh api` + verify (never a diff, never block ci-local on it, never false-close the issue on docs alone).
 - Router drift re-pin (F-11/F-12/F-20) is **post-deploy** — do NOT block a PR on it.
 
 ---
@@ -94,7 +94,10 @@ Wire into the existing `httpx.AsyncClient(...)`: keep `follow_redirects=True`, a
 `event_hooks={"request": [make_url_guard(ALLOWED)]}`, `max_redirects=5`. `ALLOWED` comes from
 `build_host_allowlist(<configured base url(s)>, *extra_redirect_targets)`.
 
-**Byte cap** — replace the buffered `.json()/.text/.content` read with a capped streamed read:
+**Byte cap** — two forms; pick per client. Define `ResponseTooLargeError` alongside
+`DisallowedURLError` (also non-retryable).
+
+*Small JSON/API responses* (all Recipe-B API clients; caps ≤64 MB so in-memory buffering is safe):
 
 ```python
 MAX_RESPONSE_BYTES = ...  # per-repo, from spec §4 table
@@ -105,9 +108,29 @@ async def _read_capped(client, method, url, *, max_bytes, **kw):
         async for chunk in resp.aiter_bytes():
             total += len(chunk)
             if total > max_bytes:
-                raise DisallowedURLError(f"response exceeded {max_bytes} bytes")  # or a ResponseTooLargeError
+                raise ResponseTooLargeError(f"response exceeded {max_bytes} bytes")
             chunks.append(chunk)
         return b"".join(chunks)
+```
+
+*Large artifacts* (genereviews bundle 2 GiB / corpus 4 GiB — F-05/F-06): **NEVER buffer in memory.**
+Stream to a temp file while counting bytes + updating a running SHA-256; abort + unlink past the cap;
+caller verifies the committed digest then atomically `os.replace`:
+
+```python
+async def _download_capped_to_file(client, url, dest, *, max_bytes, **kw):
+    h, total = hashlib.sha256(), 0
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    async with client.stream("GET", url, **kw) as resp:
+        resp.raise_for_status()
+        with tmp.open("wb") as fh:
+            async for chunk in resp.aiter_bytes():
+                total += len(chunk)
+                if total > max_bytes:
+                    fh.close(); tmp.unlink(missing_ok=True)
+                    raise ResponseTooLargeError(f"download exceeded {max_bytes} bytes")
+                fh.write(chunk); h.update(chunk)
+    return h.hexdigest(), tmp  # caller: verify digest vs committed anchor, then os.replace(tmp, dest)
 ```
 
 **Guard-exception classification:** `DisallowedURLError` must NOT subclass the client's retryable
@@ -161,11 +184,12 @@ Each card = one PR. All follow the Global Constraints + reference the cited prim
 from pathlib import Path
 import yaml
 def test_all_workflows_parse():
-    for f in Path(".github/workflows").glob("*.yml"):
+    d = Path(".github/workflows")
+    for f in (*d.glob("*.yml"), *d.glob("*.yaml")):  # Actions loads BOTH extensions
         yaml.safe_load(f.read_text())  # must not raise
 ```
   Run it against the pre-fix file first to see it FAIL, then fix, then PASS.
-- [ ] **actionlint:** add `actionlint` to `make ci-local` (download SHA-pinned binary in CI or `uvx`/pre-commit); ensure it runs over `.github/workflows/*.yml`.
+- [ ] **actionlint:** add `actionlint` to `make ci-local` (download SHA-pinned binary in CI or `uvx`/pre-commit); ensure it runs over `.github/workflows/*.yml` AND `*.yaml`.
 - [ ] **F-21:** in `cli.py`, graduate `should_warn_no_rate_limit` from warn to **fail-closed** for an authenticated non-loopback bind: refuse startup unless `GF_RATE_LIMIT_RPM > 0`, mirroring `is_insecure_public_bind`; require `GF_METRICS_TOKEN` when `/metrics` is exposed on a non-loopback bind. `GF_ALLOW_INSECURE=true` remains the documented dev override. Tests: (a) auth non-loopback + rpm=0 + no override → exits nonzero; (b) + `GF_ALLOW_INSECURE=true` → warns, starts; (c) loopback → starts; (d) non-loopback + no metrics token → refuses `/metrics` exposure or fails closed per chosen semantics.
 - [ ] Document secure defaults + dev overrides in `SECURITY.md`. `make ci-local` GREEN.
 
@@ -190,7 +214,7 @@ def test_all_workflows_parse():
 ### genereviews-link (#92) — F-05, F-06, F-13, F-18(setting), F-19 — Tier H
 
 - [ ] **F-05:** `corpus/archive.py` — replace `timeout=None` with `httpx.Timeout(connect=30,read=60,write=30,pool=30)`; compressed + expanded byte ceilings (NCBI tarball ~613 MB → cap ~4 GiB, fail-closed on streamed read); member-count limit; bounded per-worker memory in `corpus/parallel.py` (don't read whole compressed members into RAM).
-- [ ] **F-06:** P-B on the download client `ingest/github_release.py` — allowlist `github.com` + **`release-assets.githubusercontent.com`** (+ defensive `objects.githubusercontent.com`, `github-releases.githubusercontent.com`); `api.github.com` for the resolve client; per-read `httpx.Timeout` (not total); caps bundle 2 GiB / sha256 1 MiB. Anchor bundle authenticity in a **committed digest** (config/repo constant), compared post-download; NOT the same-host `.sha256`. NCBI clients keep `follow_redirects=False`.
+- [ ] **F-06:** P-B on the download client `ingest/github_release.py` — allowlist `github.com` + **`release-assets.githubusercontent.com`** (+ defensive `objects.githubusercontent.com`, `github-releases.githubusercontent.com`); `api.github.com` for the resolve client; per-read `httpx.Timeout` (not total); caps bundle 2 GiB / sha256 1 MiB / **sidedata 64 MiB**, the bundle **streamed to file via P-B `_download_capped_to_file` (never buffered in RAM)**. Anchor bundle authenticity in a **committed digest** (config/repo constant), compared post-download; NOT the same-host `.sha256`. NCBI clients keep `follow_redirects=False`.
 - [ ] **F-13:** validate `--schema` against a strict PostgreSQL identifier grammar; safe identifier quoting for dynamic SQL.
 - [ ] **F-18:** document secret-scanning. **F-19:** P-A (L28 + L65). `make ci-local` GREEN.
 
@@ -202,7 +226,7 @@ def test_all_workflows_parse():
 
 ### uniprot-link (#16) — F-08, F-17, F-19 — Tier H (one PR)
 
-- [ ] **F-08:** in `services/queries/validation.py:160-172` clamp explicit SELECT LIMIT structurally (don't be fooled by LIMIT-like comment/literal text); reject or strictly bound CONSTRUCT/DESCRIBE. Tests: huge explicit LIMIT and LIMIT-in-comment/literal cannot bypass; graph-returning forms bounded/rejected.
+- [ ] **F-08:** in `services/queries/validation.py:160-172` clamp explicit SELECT LIMIT structurally (don't be fooled by LIMIT-like comment/literal text); **for a SELECT with NO explicit LIMIT, inject/clamp a structural default LIMIT (= `max_limit`) before execution — an unbounded SELECT must not pass**; reject or strictly bound CONSTRUCT/DESCRIBE. Tests: huge explicit LIMIT, LIMIT-in-comment/literal, AND no-LIMIT SELECT cannot bypass; graph-returning forms bounded/rejected.
 - [ ] **F-17 (shared cap):** P-B on `api/client.py` (allowlist from `config.base_url` → `sparql.uniprot.org`; SPARQL is POST; byte cap **~32 MiB, ABOVE the 8 MiB text fence, error-on-exceed never truncate**).
 - [ ] **F-19:** P-A (L26). `make ci-local` GREEN.
 
@@ -299,7 +323,13 @@ re-run ci-local, re-gate. Never merge on an unresolved FIX.
 ## Phase 4 — Merge order
 
 router (#47) → all backends → security-profile (#1) LAST (submodule → final router SHA). FF-merge to
-`main` on green + Codex-SHIP; close each issue. No force-push.
+`main` on green + Codex-SHIP. **Issue-close gate:** close an issue only when its findings are truly
+closed. For the 7 secret-scanning repos (autopvs1, genereviews, litvar, pubtator, gtex, stringdb,
+gnomad), F-18 is NOT closed by PR docs alone — run
+`gh api -X PATCH repos/berntpopp/<repo> -f 'security_and_analysis[secret_scanning][status]=enabled' -f 'security_and_analysis[secret_scanning_push_protection][status]=enabled'`
+and **verify** with `gh api repos/berntpopp/<repo> --jq '.security_and_analysis'` BEFORE closing; if
+the token lacks permission, leave the issue open with F-18 marked deferred (do not false-close). No
+force-push.
 
 ## Phase 5 — Local docker manual test in Codex + Claude (per changed backend)
 

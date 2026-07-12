@@ -151,6 +151,10 @@ Per client:
   LIMIT/graph-form clamp policy is separate logic in the same PR.
 - **panelapp** — the DRF `next` URL is validated **inside the pagination loop** (not the redirect
   hook), same-origin, with the page/row ceilings as fail-loud guards.
+- **genereviews** — although not in the table above, its **download** client
+  (`ingest/github_release.py`) also uses this event-hook; its cross-host CDN allowlist
+  (`release-assets.githubusercontent.com`) and stream-to-file caps are detailed in **Recipe E** — it
+  is the one *required* cross-host redirect in the fleet.
 
 ### Recipe C — F-03 / F-09 bound-input + fixed-enum-error (autopvs1 REST, mavedb HGVS)
 
