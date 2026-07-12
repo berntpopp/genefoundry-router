@@ -74,6 +74,7 @@ class SnapshotMeta(BaseModel):
     captured_at: str
     source: str
     router_servers_file: str
+    release_candidate: dict[str, Any] | None = None
 
 
 class Manifest(BaseModel):

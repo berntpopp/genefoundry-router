@@ -61,6 +61,14 @@ def test_metrics_token_blank_normalizes_to_none(monkeypatch):
     assert s.GF_METRICS_TOKEN is None
 
 
+def test_production_rejects_development_unsafe_observability_acknowledgement(monkeypatch):
+    monkeypatch.setenv("GF_DEPLOYMENT_MODE", "production")
+    monkeypatch.setenv("GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY", "true")
+
+    with pytest.raises(ValidationError, match="development mode"):
+        RouterSettings(_env_file=None)
+
+
 def test_blank_drift_baseline_uses_packaged_default(monkeypatch) -> None:
     monkeypatch.setenv("GF_DRIFT_BASELINE", "   ")
     assert RouterSettings(_env_file=None).GF_DRIFT_BASELINE is None

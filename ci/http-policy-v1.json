@@ -1,0 +1,128 @@
+{
+  "policy_version": "v1",
+  "conformance_fixture": "ci/http-policy-v1-conformance.py",
+  "conformance_contract_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+  "required_conformance_cases": [
+    "https_only",
+    "reject_syntactic_userinfo",
+    "normalized_exact_origin",
+    "request_hook_checks_each_redirect_hop",
+    "redirect_limit_at_most_five",
+    "decoded_streaming_byte_cap",
+    "fixed_host_free_non_retryable_error"
+  ],
+  "repositories": {
+    "gtex-link": {
+      "status": "adopted",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "reviewed_commit": "2e73a07a5aeb353fa649167db36fc16736ecbd02",
+      "conformance_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+      "attestation": {
+        "kind": "reviewer-attested",
+        "reviewer": "bernt-popp",
+        "reviewed_on": "2026-07-12",
+        "attestation": "ci/http-policy-v1-evidence/gtex-link/attestation.json",
+        "conformance_copy": "ci/http-policy-v1-evidence/gtex-link/test_http_policy_v1.py"
+      }
+    },
+    "litvar-link": {
+      "status": "adopted",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "reviewed_commit": "c53f829b744941d2caf1c6f4932eff5524b7bc54",
+      "conformance_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+      "attestation": {
+        "kind": "reviewer-attested",
+        "reviewer": "bernt-popp",
+        "reviewed_on": "2026-07-12",
+        "attestation": "ci/http-policy-v1-evidence/litvar-link/attestation.json",
+        "conformance_copy": "ci/http-policy-v1-evidence/litvar-link/test_http_policy_v1.py"
+      }
+    },
+    "metadome-link": {
+      "status": "adopted",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "reviewed_commit": "019e430b79c90423af61c3d5ad623bb2eb35ce6b",
+      "conformance_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+      "attestation": {
+        "kind": "reviewer-attested",
+        "reviewer": "bernt-popp",
+        "reviewed_on": "2026-07-12",
+        "attestation": "ci/http-policy-v1-evidence/metadome-link/attestation.json",
+        "conformance_copy": "ci/http-policy-v1-evidence/metadome-link/test_http_policy_v1.py"
+      }
+    },
+    "panelapp-link": {
+      "status": "adopted",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "reviewed_commit": "dab7952cbb593c2dd86223b537d6c62d9cb3beb0",
+      "conformance_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+      "attestation": {
+        "kind": "reviewer-attested",
+        "reviewer": "bernt-popp",
+        "reviewed_on": "2026-07-12",
+        "attestation": "ci/http-policy-v1-evidence/panelapp-link/attestation.json",
+        "conformance_copy": "ci/http-policy-v1-evidence/panelapp-link/test_http_policy_v1.py"
+      }
+    },
+    "spliceailookup-link": {
+      "status": "adopted",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "reviewed_commit": "21a8110461c0cb83e252da622cc868058a9c0241",
+      "conformance_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+      "attestation": {
+        "kind": "reviewer-attested",
+        "reviewer": "bernt-popp",
+        "reviewed_on": "2026-07-12",
+        "attestation": "ci/http-policy-v1-evidence/spliceailookup-link/attestation.json",
+        "conformance_copy": "ci/http-policy-v1-evidence/spliceailookup-link/test_http_policy_v1.py"
+      }
+    },
+    "stringdb-link": {
+      "status": "adopted",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "reviewed_commit": "60bf70b104bdf473abbf8634c8885716e8b3b0b5",
+      "conformance_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+      "attestation": {
+        "kind": "reviewer-attested",
+        "reviewer": "bernt-popp",
+        "reviewed_on": "2026-07-12",
+        "attestation": "ci/http-policy-v1-evidence/stringdb-link/attestation.json",
+        "conformance_copy": "ci/http-policy-v1-evidence/stringdb-link/test_http_policy_v1.py"
+      }
+    },
+    "uniprot-link": {
+      "status": "adopted",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "reviewed_commit": "4e61658f1b76512d9925d601b2943032d4f00670",
+      "conformance_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+      "attestation": {
+        "kind": "reviewer-attested",
+        "reviewer": "bernt-popp",
+        "reviewed_on": "2026-07-12",
+        "attestation": "ci/http-policy-v1-evidence/uniprot-link/attestation.json",
+        "conformance_copy": "ci/http-policy-v1-evidence/uniprot-link/test_http_policy_v1.py"
+      }
+    },
+    "vep-link": {
+      "status": "adopted",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "reviewed_commit": "3b06cb2e25e3c51ee0df6a33ac8ea6b3cfb95eea",
+      "conformance_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+      "attestation": {
+        "kind": "reviewer-attested",
+        "reviewer": "bernt-popp",
+        "reviewed_on": "2026-07-12",
+        "attestation": "ci/http-policy-v1-evidence/vep-link/attestation.json",
+        "conformance_copy": "ci/http-policy-v1-evidence/vep-link/test_http_policy_v1.py"
+      }
+    }
+  }
+}

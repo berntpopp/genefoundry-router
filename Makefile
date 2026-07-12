@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
 
 .DEFAULT_GOAL := help
 
@@ -64,9 +64,12 @@ test-cov: ## Run tests with coverage
 
 test-all: test-cov ## Alias for full test run with coverage
 
+http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption ledger
+	uv run pytest tests/unit/test_http_policy_adoption.py -q
+
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-actions typecheck test-fast test-integration ## Fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-actions typecheck http-policy-adoption test-fast test-integration ## Fast local CI-equivalent checks
 
 precommit: ci-local ## Run checks expected before commit
 
@@ -131,8 +134,10 @@ snapshot-catalog: ## Regenerate the discoverability benchmark catalog from the l
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_catalog.py
 
 snapshot-baseline: ## Re-pin the packaged drift baseline from the live fleet (online)
+	@test -f "$(RELEASE_CANDIDATE_INVENTORY)" || (echo "RELEASE_CANDIDATE_INVENTORY=<source-controlled inventory path> is required"; exit 2)
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_fleet.py \
-		--out genefoundry_router/data/fleet-baseline.json --captured-at $$(date -u +%FT%TZ)
+		--out genefoundry_router/data/fleet-baseline.json --captured-at $$(date -u +%FT%TZ) \
+		--candidate-inventory "$(RELEASE_CANDIDATE_INVENTORY)"
 
 ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
 

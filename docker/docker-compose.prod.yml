@@ -1,6 +1,7 @@
 services:
   genefoundry-router:
     environment:
+      GF_DEPLOYMENT_MODE: production
       GF_LOG_LEVEL: INFO
       GF_ALLOWED_HOSTS: "${GF_ALLOWED_HOSTS:?set the public router hostname}"
       GF_HEALTHCHECK_HOST: "${GF_HEALTHCHECK_HOST:?set the public health-check Host}"
