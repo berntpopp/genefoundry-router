@@ -33,9 +33,47 @@ class ToolDefinition(BaseModel):
     execution: dict[str, Any] | None = None
 
 
+def _canonical_json_schema(value: Any) -> Any:
+    """Canonicalize a JSON Schema's ``required`` so equivalent schemas hash alike.
+
+    ``required`` is an unordered set of property names, so neither its order nor an empty
+    list carries meaning -- but SHA-256 sees both. The two sides of the tripwire read a
+    tool from different places and disagree on exactly this key:
+
+    * FastMCP's server-side ``Tool.parameters`` emits ``"required": []`` for a tool with
+      no required arguments and orders the names as declared; the MCP wire schema a client
+      sees -- what ``snapshot_fleet`` captures into the reviewed baseline -- omits the
+      empty key and can order the names differently.
+
+    Without this, every no-required-argument tool and every multi-required-argument tool
+    fingerprinted differently at runtime than in the pin, so ``GF_DRIFT_MODE=enforce``
+    could never start. CI stayed green throughout because ``drift`` compares a wire
+    snapshot against a wire baseline and never sees the server-side representation.
+
+    Representation-only: dropping an *empty* list and sorting a set of names cannot mask a
+    real change, since gaining or losing a required argument still changes the sorted list.
+    """
+    if isinstance(value, dict):
+        canonical: dict[str, Any] = {}
+        for key, item in value.items():
+            if key == "required" and isinstance(item, list):
+                if not item:
+                    continue  # absent == empty, per JSON Schema
+                if all(isinstance(name, str) for name in item):
+                    canonical[key] = sorted(item)
+                    continue
+            canonical[key] = _canonical_json_schema(item)
+        return canonical
+    if isinstance(value, list):
+        return [_canonical_json_schema(item) for item in value]
+    return value
+
+
 def tool_fingerprint(tool: ToolDefinition) -> str:
     """Stable SHA-256 over a complete security-relevant tool definition."""
     payload = tool.model_dump(mode="json", by_alias=True, exclude_none=False)
+    for schema_key in ("inputSchema", "outputSchema"):
+        payload[schema_key] = _canonical_json_schema(payload[schema_key])
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 

@@ -137,7 +137,7 @@ snapshot-baseline: ## Re-pin the packaged drift baseline from the live fleet (on
 	@test -f "$(RELEASE_CANDIDATE_INVENTORY)" || (echo "RELEASE_CANDIDATE_INVENTORY=<source-controlled inventory path> is required"; exit 2)
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_fleet.py \
 		--out genefoundry_router/data/fleet-baseline.json --captured-at $$(date -u +%FT%TZ) \
-		--candidate-inventory "$(RELEASE_CANDIDATE_INVENTORY)"
+		--candidate-inventory "$(RELEASE_CANDIDATE_INVENTORY)" --normalized
 
 ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
 
