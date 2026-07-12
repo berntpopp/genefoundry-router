@@ -1,0 +1,10 @@
+{
+  "kind": "reviewer-attested",
+  "repository": "uniprot-link",
+  "reviewed_commit": "4e61658f1b76512d9925d601b2943032d4f00670",
+  "conformance_file": "tests/conformance/test_http_policy_v1.py",
+  "conformance_file_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+  "canonical_fixture_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+  "reviewer": "bernt-popp",
+  "reviewed_on": "2026-07-12"
+}

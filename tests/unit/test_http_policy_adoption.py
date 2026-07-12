@@ -118,6 +118,18 @@ def test_http_policy_v1_adoption_manifest_allows_only_truthful_pending_or_adopte
             _validate_reviewer_attestation(repository, entry, expected_hash)
 
 
+def test_http_policy_v1_adoption_manifest_records_reviewer_attested_adoption_for_every_target() -> (
+    None
+):
+    manifest = json.loads(MANIFEST_PATH.read_text())
+
+    assert {
+        repository
+        for repository, entry in manifest["repositories"].items()
+        if entry["status"] == "adopted"
+    } == EXPECTED_REPOSITORIES
+
+
 def test_http_policy_v1_fixture_covers_every_normative_case() -> None:
     fixture = CONFORMANCE_FIXTURE.read_text()
 

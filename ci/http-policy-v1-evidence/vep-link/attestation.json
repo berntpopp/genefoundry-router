@@ -1,0 +1,10 @@
+{
+  "kind": "reviewer-attested",
+  "repository": "vep-link",
+  "reviewed_commit": "3b06cb2e25e3c51ee0df6a33ac8ea6b3cfb95eea",
+  "conformance_file": "tests/conformance/test_http_policy_v1.py",
+  "conformance_file_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+  "canonical_fixture_sha256": "c2aad4ecb0ec88839fe2caa1e059ddef491a11abd52a38bb8bb4f3b1bd56a2ee",
+  "reviewer": "bernt-popp",
+  "reviewed_on": "2026-07-12"
+}
