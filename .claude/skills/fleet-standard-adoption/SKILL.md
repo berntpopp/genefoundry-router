@@ -1,6 +1,6 @@
 ---
 name: fleet-standard-adoption
-description: Use when bringing this repo into compliance with a GeneFoundry fleet standard (tool-naming, response-envelope, container-hardening, versioning, or MCP transport) or closing its tracking issue.
+description: Use when bringing this repo into compliance with a GeneFoundry fleet standard (tool-naming, response-envelope, container-hardening, versioning, MCP transport, or logging) or closing its tracking issue.
 ---
 
 # Fleet-Standard Adoption
@@ -8,10 +8,11 @@ description: Use when bringing this repo into compliance with a GeneFoundry flee
 Follow `AGENTS.md` first. The canonical standards live under `docs/` (the sibling router repo for `*-link`; `docs/` in the router):
 
 - `TOOL-NAMING-STANDARD-v1.md` — `verb_noun` snake_case, stable, collision-free names (lets the router drop any `transform`).
-- `RESPONSE-ENVELOPE-STANDARD-v1.md` — `success`, the payload, flat execution-error fields (`error_code` / `message` / `retryable` / `recovery_action`), and `_meta` (`data_version`, untrusted-content fencing). The nested `error:{...}` shape is deferred — don't use it.
+- `RESPONSE-ENVELOPE-STANDARD-v1.1.md` (current; supersedes v1) — `success`, the payload, flat execution-error fields (`error_code` / `message` / `retryable` / `recovery_action`), and `_meta` (`data_version`). v1.1 adds **untrusted-content fencing** and **error-message sanitation** (fixed/enum error fields — never reflect caller-supplied or upstream text into caller-visible fields or logs; see the FastMCP not-found reflection guard). The nested `error:{...}` shape is deferred — don't use it.
 - `CONTAINER-HARDENING-STANDARD-v1.md` — non-root, read-only, cap-drop, digest-pin, Trivy + SBOM.
 - `VERSIONING-STANDARD-v1.md` — single-source metadata version; no `serverInfo.version` framework leak.
 - `MCP-TRANSPORT-STANDARD-v1.md` — single stateless `/mcp` (no 307 split), canonical `serverInfo` / health.
+- Logging & CLI Standard v1 — structured logging + CLI conventions (canonical text tracked per-repo; no router doc).
 
 ## Workflow
 

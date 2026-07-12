@@ -5,7 +5,7 @@ description: Use when reviewing genefoundry-router security before deploy, when 
 
 # Security Review (router)
 
-Follow `AGENTS.md` first. The router is the **trust boundary**: it owns edge auth and must never forward the caller's token to backends. Ground in docs/SECURITY-ASSESSMENT-2026-06-29.md.
+Follow `AGENTS.md` first. The router is the **trust boundary**: it owns edge auth and must never forward the caller's token to backends. Ground in docs/SECURITY-ASSESSMENT-2026-06-29.md, docs/RESPONSE-ENVELOPE-STANDARD-v1.1.md (§Error-message sanitation), and the FastMCP not-found reflection guard.
 
 ## Checklist
 
@@ -17,6 +17,7 @@ Follow `AGENTS.md` first. The router is the **trust boundary**: it owns edge aut
 6. **PII-safe audit log** — tool / namespace / outcome / elapsed / correlation-id only; never args, results, or exception text.
 7. **Backends not publicly reachable** — expose-only behind the proxy; verify their ports aren't on the public IP.
 8. **Tool-definition drift** — `make fleet-probe` / `genefoundry-router drift` as a rug-pull / tool-poisoning tripwire; re-pin the baseline only after reviewing the diff.
+9. **Error-message / identity sanitation** — never reflect a caller-supplied tool / resource / prompt name or URI (grammar-valid but possibly nonexistent) into caller-visible error text, the structlog audit sink, or Prometheus labels; registry-unresolved names bucket to `_unknown` (`safe_log_identity` in `observability.py`), and the AggregateProvider provider-fault log is scrubbed (`notfound_guard.py`). See Response-Envelope v1.1 §Error-message sanitation and the FastMCP not-found reflection guard.
 
 ## Common mistakes
 

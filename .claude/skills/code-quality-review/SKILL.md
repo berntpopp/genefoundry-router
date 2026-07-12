@@ -17,7 +17,7 @@ Review in this order — don't rush past a step to get to style nits:
 4. **Dependencies** — new deps pinned in `uv.lock`, mainstream, no post-install hooks.
 5. **Correctness** — logic, error handling, edge cases, response-envelope shape (`success` + flat `error_code`/`message`/`_meta`).
 6. **Efficiency** — N+1 upstream calls, unbounded loops/inputs, missing size caps.
-7. **Style / fleet rules** — modern typing (`X | None`), the 600-LOC budget, thin handlers, no PII in logs.
+7. **Style / fleet rules** — modern typing (`X | None`), the per-file line budget (`scripts/check_file_size.py`), thin handlers, no PII in logs.
 
 ## Report each finding
 
