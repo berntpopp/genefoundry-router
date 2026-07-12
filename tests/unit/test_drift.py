@@ -121,3 +121,25 @@ def test_fingerprint_canonicalizes_nested_required() -> None:
         inputSchema={"$defs": {"Inner": {"type": "object", "properties": {}, "required": []}}},
     )
     assert tool_fingerprint(wire) == tool_fingerprint(server_side)
+
+
+def test_canonical_schema_makes_a_capture_reproducible() -> None:
+    """A stored definition must not depend on FastMCP's `required` ordering.
+
+    Regression: the captured baseline and the inventory's definitions_sha256 recorded
+    `required` exactly as the server emitted it, and that order is not stable across
+    rebuilds. Re-capturing an unchanged fleet therefore produced a different digest and a
+    noisy baseline diff -- so the reviewed release manifest churned on every rebuild, and
+    `make snapshot-baseline` could fail closed on an attestation mismatch for a backend
+    that had not changed at all.
+    """
+    from genefoundry_router.drift import canonical_json_schema
+
+    one = {"type": "object", "required": ["b", "a"], "properties": {}}
+    other = {"type": "object", "required": ["a", "b"], "properties": {}}
+    assert canonical_json_schema(one) == canonical_json_schema(other)
+
+    # and it survives nesting, where FastMCP also emits $defs
+    nested_one = {"$defs": {"X": {"required": ["z", "y"]}}}
+    nested_other = {"$defs": {"X": {"required": ["y", "z"]}}}
+    assert canonical_json_schema(nested_one) == canonical_json_schema(nested_other)
