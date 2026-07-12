@@ -83,6 +83,11 @@ repository, reviewed commit, expected vendored path, conformance-file SHA-256, c
 SHA-256, reviewer, and review date; the router test re-hashes the evidence copy and rejects a
 missing, altered, or out-of-layout attestation.
 
+`reviewer` MUST be a non-empty reviewer identity in the GitHub-style identifier form (letters,
+digits, `.`, `_`, and `-`; no whitespace), not a placeholder such as `reviewer-handle` or
+`unknown`. `reviewed_on` MUST be a parseable ISO-8601 calendar date in canonical `YYYY-MM-DD`
+form. The manifest values and evidence-attestation values must match exactly.
+
 This source-only gate does not independently verify that the named backend commit exists on
 GitHub, that its tree contains the referenced file, or that the declaration has been pushed.
 Those provenance checks require external review and push against the backend repository. Router
