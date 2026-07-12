@@ -3,87 +3,108 @@
   "backends": {
     "gnomad": {
       "endpoint": "https://gnomad-link.genefoundry.org/mcp",
-      "revision": "37180c8555eabd4c71001166a1a677ee1b046c95"
+      "revision": "37180c8555eabd4c71001166a1a677ee1b046c95",
+      "definitions_sha256": "159bf09f82abec2a495f1fec55b6db8e2793ff29eb059cf0da20b90f11b768ba"
     },
     "gtex": {
       "endpoint": "https://gtex-link.genefoundry.org/mcp",
-      "revision": "9b7d90b53347ec1d52201a19c34f544140629adf"
+      "revision": "9b7d90b53347ec1d52201a19c34f544140629adf",
+      "definitions_sha256": "53bf17f832b2c521d60917e531e7b7d2e06ed4600bf24a18153f64b034e05412"
     },
     "hgnc": {
       "endpoint": "https://hgnc-link.genefoundry.org/mcp",
-      "revision": "b5caa199f73818d2e0d08bf3cbbfa28a86829062"
+      "revision": "b5caa199f73818d2e0d08bf3cbbfa28a86829062",
+      "definitions_sha256": "9ed35a046f7dfc5a9c41ca4f4a22ffc71fa147c99d877a0838a8b9fad00a1b67"
     },
     "mgi": {
       "endpoint": "https://mgi-link.genefoundry.org/mcp",
-      "revision": "cac918aa9d7daa2a47bb3e76ea0d0fc8b43f6329"
+      "revision": "cac918aa9d7daa2a47bb3e76ea0d0fc8b43f6329",
+      "definitions_sha256": "c6f8ea958a93c6a84a08b07ff336ffe7c2623da06cffa624a15efdca7b0ab4a4"
     },
     "uniprot": {
       "endpoint": "https://uniprot-link.genefoundry.org/mcp",
-      "revision": "157b17ea7f328d0fdb4c514d805a6c69668c4a3d"
+      "revision": "157b17ea7f328d0fdb4c514d805a6c69668c4a3d",
+      "definitions_sha256": "9557def825139907addaf46f34e5bbed70643a1ae8a1092965fdf110ffeabf3d"
     },
     "clingen": {
       "endpoint": "https://clingen-link.genefoundry.org/mcp",
-      "revision": "14da780caa90650a67f7993ec2472e55e05ed6a2"
+      "revision": "14da780caa90650a67f7993ec2472e55e05ed6a2",
+      "definitions_sha256": "5c16daa1695a2ec1137b257759aa840b4503924aaf1252a5cfb217ce46905b4f"
     },
     "gencc": {
       "endpoint": "https://gencc-link.genefoundry.org/mcp",
-      "revision": "718b8a3f158833998d24e7b3b0790a72492d1ef7"
+      "revision": "718b8a3f158833998d24e7b3b0790a72492d1ef7",
+      "definitions_sha256": "41e6ce41101c5ca1652ddccbf9fc9968fa0c791b2af00f76c2607740acf1a7e3"
     },
     "litvar": {
       "endpoint": "https://litvar-link.genefoundry.org/mcp",
-      "revision": "bba7e01da64042e05d385064f76db75ad9750708"
+      "revision": "bba7e01da64042e05d385064f76db75ad9750708",
+      "definitions_sha256": "f7596d5e8561b94871719080d5168583b07d423c0077ab7decb3be8c407add1e"
     },
     "stringdb": {
       "endpoint": "https://stringdb-link.genefoundry.org/mcp",
-      "revision": "923e3aec16697ba2b9d2fbd19a324f9a0445987f"
+      "revision": "923e3aec16697ba2b9d2fbd19a324f9a0445987f",
+      "definitions_sha256": "ad928723a936f39d4608701b4424c976c368897d286cf3e2c6192af1137536c1"
     },
     "autopvs1": {
       "endpoint": "https://autopvs1-link.genefoundry.org/mcp",
-      "revision": "1532cff5fed7600cf5863843defc7f0da0c7bc73"
+      "revision": "1532cff5fed7600cf5863843defc7f0da0c7bc73",
+      "definitions_sha256": "ed4e27e312b6071c756a1e2e4e9f97d1d5a5fa17ee5d1fe6801097de0d2b447f"
     },
     "spliceai": {
       "endpoint": "https://spliceailookup-link.genefoundry.org/mcp",
-      "revision": "2da45a535758f4087691001d175cbd5961461e93"
+      "revision": "2da45a535758f4087691001d175cbd5961461e93",
+      "definitions_sha256": "81b40c7c8c01a7dc3fc6c105ec32d05e794d27f601f206eed38e6976d1771545"
     },
     "genereviews": {
       "endpoint": "https://genereviews-link.genefoundry.org/mcp",
-      "revision": "320dca106f9232efb1c097056aa390d171eca9b6"
+      "revision": "320dca106f9232efb1c097056aa390d171eca9b6",
+      "definitions_sha256": "4d070b10070d9d403e22286590081afaea28113f2e9247b1a0467d4f8091a72d"
     },
     "pubtator": {
       "endpoint": "https://pubtator-link.genefoundry.org/mcp",
-      "revision": "e4ea404dff4a72e1cd88fb020319a1c5b8e9d11d"
+      "revision": "e4ea404dff4a72e1cd88fb020319a1c5b8e9d11d",
+      "definitions_sha256": "33e24cfe8b685b63cce0a42c8cb49c6d7c48a2d24e9034ebb6435cd9bbf67c19"
     },
     "clinvar": {
       "endpoint": "https://clinvar-link.genefoundry.org/mcp",
-      "revision": "0189d164e83be2b41c6ef48105ea65d9e411ad50"
+      "revision": "0189d164e83be2b41c6ef48105ea65d9e411ad50",
+      "definitions_sha256": "959bf76fbc8e44819dc074f47f974a25c937eb337afbacec06eec7aa68c043ca"
     },
     "vep": {
       "endpoint": "https://vep-link.genefoundry.org/mcp",
-      "revision": "a898c79e2aeef99bceddf8a2b083985f7cc5d3df"
+      "revision": "a898c79e2aeef99bceddf8a2b083985f7cc5d3df",
+      "definitions_sha256": "87116bab4a2757072768d3a0561cb9556f76cd95faff6be536d0363607df95f6"
     },
     "panelapp": {
       "endpoint": "https://panelapp-link.genefoundry.org/mcp",
-      "revision": "617d40e4ed1b49611198583ab7f901f289b4fa1b"
+      "revision": "617d40e4ed1b49611198583ab7f901f289b4fa1b",
+      "definitions_sha256": "4ee7e3174433e7e9a8c0cf6751ef19f12f9cd7040f309d037836e5d6e878b8d0"
     },
     "mondo": {
       "endpoint": "https://mondo-link.genefoundry.org/mcp",
-      "revision": "794316cda1627555ade8f441cc9f5ed6e81b8b78"
+      "revision": "794316cda1627555ade8f441cc9f5ed6e81b8b78",
+      "definitions_sha256": "fa20d43d3c9f336ec02ae304514604fdf367f50f790af2a6f54d3673be059831"
     },
     "mavedb": {
       "endpoint": "https://mavedb-link.genefoundry.org/mcp",
-      "revision": "a90d0f2ab54bc0708a55e5f61703eff944e2a795"
+      "revision": "a90d0f2ab54bc0708a55e5f61703eff944e2a795",
+      "definitions_sha256": "3d7fdb2ee47c8cd63b3fcbcc26c8941f5b0b8bdcc0c4a7e719b699897ac56b7d"
     },
     "hpo": {
       "endpoint": "https://hpo-link.genefoundry.org/mcp",
-      "revision": "bbdadc53869edbd7bd862c2fffcfbb12156811dc"
+      "revision": "bbdadc53869edbd7bd862c2fffcfbb12156811dc",
+      "definitions_sha256": "69fe98a2989699eba602ea19e03d6ad832fd2088b1d94d26615895ba48c145ac"
     },
     "metadome": {
       "endpoint": "https://metadome-link.genefoundry.org/mcp",
-      "revision": "33d567b99b2308350d8a3f105660c4970435ea52"
+      "revision": "33d567b99b2308350d8a3f105660c4970435ea52",
+      "definitions_sha256": "519ecb2d3e093262442a201225264f0877f701519a4ca958658fcbe0245e71ca"
     },
     "orphanet": {
       "endpoint": "https://orphanet-link.genefoundry.org/mcp",
-      "revision": "69d11a1adf9bef0939e539739ca0d1efbea3a4f6"
+      "revision": "69d11a1adf9bef0939e539739ca0d1efbea3a4f6",
+      "definitions_sha256": "00b5d15a12990a38ea67c1737e788b2db98f4ca2adc6ea62ecfa2d91660ed67c"
     }
   }
 }

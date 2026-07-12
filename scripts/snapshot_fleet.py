@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -30,6 +31,15 @@ class ReleaseCandidateCaptureError(RuntimeError):
 
 
 _COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def backend_definitions_digest(spec: BackendSpec) -> str:
+    """Return the canonical attestation digest for one normalized backend definition set."""
+    canonical = json.dumps(
+        spec.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def load_release_candidate_inventory(path: Path) -> dict[str, Any]:
@@ -48,11 +58,16 @@ def load_release_candidate_inventory(path: Path) -> dict[str, Any]:
             raise ReleaseCandidateCaptureError("release-candidate inventory has invalid backend entry")
         endpoint = entry.get("endpoint")
         revision = entry.get("revision")
+        definitions_sha256 = entry.get("definitions_sha256")
         if not isinstance(endpoint, str) or not endpoint.startswith("https://"):
             raise ReleaseCandidateCaptureError("release-candidate endpoint must be an HTTPS URL")
         if not isinstance(revision, str) or not _COMMIT_SHA_RE.fullmatch(revision):
             raise ReleaseCandidateCaptureError(
                 "release-candidate revision must be a 40-character commit SHA"
+            )
+        if not isinstance(definitions_sha256, str) or not _SHA256_RE.fullmatch(definitions_sha256):
+            raise ReleaseCandidateCaptureError(
+                "release-candidate definitions_sha256 must be a SHA-256 digest"
             )
     return inventory
 
@@ -125,6 +140,14 @@ async def _run(
             else b.url
         )
         fresh = await _snapshot_backend(endpoint) if endpoint else None
+        if release_candidate_inventory is not None and fresh is not None:
+            expected_digest = release_candidate_inventory["backends"][b.namespace][
+                "definitions_sha256"
+            ]
+            if backend_definitions_digest(fresh) != expected_digest:
+                raise ReleaseCandidateCaptureError(
+                    f"definition attestation mismatch for required release-candidate backend {b.namespace}"
+                )
         prior_spec = prior.backends.get(b.namespace) if prior else None
         merged = merge_backend(
             prior_spec, fresh, release_candidate=release_candidate_inventory is not None

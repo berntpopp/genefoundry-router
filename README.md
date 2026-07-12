@@ -224,7 +224,7 @@ beats availability: drift + an outage still exits `1`.
 | File | What | Keep in sync |
 |------|------|--------------|
 | `ci/fleet-urls.env` | Public `GF_*_URL=https://<name>-link.genefoundry.org/mcp` for every enabled backend — the URLs CI probes | `make` test `test_ci_fleet_urls.py` asserts it matches `servers.yaml` exactly |
-| `ci/release-candidate-inventory.json` | Reviewed release identity plus immutable 40-hex backend revisions and exact HTTPS MCP endpoints | Must cover `servers.yaml`'s enabled namespaces exactly; snapshot capture uses these endpoints, not ambient URL variables |
+| `ci/release-candidate-inventory.json` | Reviewed release identity plus immutable 40-hex backend revisions, exact HTTPS MCP endpoints, and canonical per-backend definition SHA-256 attestations | Must cover `servers.yaml`'s enabled namespaces exactly; snapshot capture uses these endpoints, not ambient URL variables, and refuses a definition digest mismatch |
 | `genefoundry_router/data/fleet-baseline.json` | The packaged reviewed-release tool-definition pin | `make snapshot-baseline RELEASE_CANDIDATE_INVENTORY=ci/release-candidate-inventory.json` only after reviewing candidate definitions and immutable provenance |
 
 **Runtime response:** in `enforce` mode, a changed startup failure means operators must review the

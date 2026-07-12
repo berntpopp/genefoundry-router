@@ -7,6 +7,7 @@ from genefoundry_router.devtools.fakes import BackendSpec, ToolSpec, load_manife
 from scripts.snapshot_fleet import (
     ReleaseCandidateCaptureError,
     _run,
+    backend_definitions_digest,
     load_release_candidate_inventory,
     merge_backend,
 )
@@ -36,15 +37,29 @@ def test_release_candidate_inventory_rejects_non_immutable_revision(tmp_path):
         load_release_candidate_inventory(inventory)
 
 
+def test_release_candidate_inventory_requires_definition_attestation(tmp_path):
+    inventory = tmp_path / "candidate.json"
+    inventory.write_text(
+        '{"identity":"release-1","backends":{"one":{"endpoint":"https://one.example/mcp","revision":"'
+        + "a" * 40
+        + '"}}}'
+    )
+
+    with pytest.raises(ReleaseCandidateCaptureError, match="definitions_sha256"):
+        load_release_candidate_inventory(inventory)
+
+
 def test_candidate_snapshot_uses_inventory_endpoint_and_records_full_provenance(
     monkeypatch, tmp_path
 ):
+    spec = BackendSpec(version="1", tools=[ToolSpec(name="get_one")])
     inventory = {
         "identity": "release-1",
         "backends": {
             "one": {
                 "endpoint": "https://candidate.example/mcp",
                 "revision": "a" * 40,
+                "definitions_sha256": backend_definitions_digest(spec),
             }
         },
     }
@@ -52,7 +67,7 @@ def test_candidate_snapshot_uses_inventory_endpoint_and_records_full_provenance(
 
     async def snapshot(url: str) -> BackendSpec:
         seen.append(url)
-        return BackendSpec(version="1", tools=[ToolSpec(name="get_one")])
+        return spec
 
     monkeypatch.setattr(
         "scripts.snapshot_fleet.load_registry",
@@ -69,3 +84,30 @@ def test_candidate_snapshot_uses_inventory_endpoint_and_records_full_provenance(
     assert seen == ["https://candidate.example/mcp"]
     assert manifest.snapshot_meta.release_candidate == inventory
     assert manifest.backends["one"].tools == [ToolSpec(name="get_one")]
+
+
+def test_candidate_snapshot_refuses_definition_digest_mismatch(monkeypatch, tmp_path):
+    inventory = {
+        "identity": "release-1",
+        "backends": {
+            "one": {
+                "endpoint": "https://candidate.example/mcp",
+                "revision": "a" * 40,
+                "definitions_sha256": "0" * 64,
+            }
+        },
+    }
+
+    async def snapshot(_url: str) -> BackendSpec:
+        return BackendSpec(version="1", tools=[ToolSpec(name="get_one")])
+
+    monkeypatch.setattr(
+        "scripts.snapshot_fleet.load_registry",
+        lambda *_args: [SimpleNamespace(enabled=True, namespace="one", url=None)],
+    )
+    monkeypatch.setattr("scripts.snapshot_fleet._snapshot_backend", snapshot)
+
+    with pytest.raises(ReleaseCandidateCaptureError, match="definition attestation mismatch"):
+        asyncio.run(
+            _run("servers.yaml", tmp_path / "baseline.json", "2026-07-12T00:00:00Z", inventory)
+        )
