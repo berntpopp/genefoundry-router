@@ -14,6 +14,18 @@ COPY genefoundry_router ./genefoundry_router
 RUN uv sync --frozen --no-dev --no-editable
 
 FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1 AS production
+
+# Runtime identity. The deploy builds from a source checkout rather than pulling a
+# registry image, so there is no immutable OCI digest to pin; stamping the exact
+# commit into the image is what lets an operator prove the running container was
+# built from the revision the router's release inventory pins, instead of trusting
+# a moving `main`. VCS_REF is unprefixed on purpose: a <SERVICE>_-prefixed name
+# would land in the pydantic settings namespace.
+ARG VCS_REF=unknown
+LABEL org.opencontainers.image.source="https://github.com/berntpopp/genefoundry-router" \
+      org.opencontainers.image.revision="${VCS_REF}"
+ENV VCS_REF="${VCS_REF}"
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/build/.venv/bin:$PATH" \
