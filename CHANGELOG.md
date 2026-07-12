@@ -2,6 +2,15 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.3] - 2026-07-12
+
+### Build
+
+- Consolidate Dependabot updates: `uvicorn[standard]` floor `>=0.50.0` → `>=0.51.0` (#46),
+  `ruff` `0.15.20` → `0.15.21` (#45), `mypy` `2.1.0` → `2.2.0` (#44). Dev/build tooling + ASGI
+  server bumps only — no runtime behavior or API change; `make ci-local` green under the new
+  toolchain.
+
 ## [0.6.2] - 2026-07-11
 
 ### Security
