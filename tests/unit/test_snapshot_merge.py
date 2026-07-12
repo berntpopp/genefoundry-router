@@ -64,15 +64,22 @@ def test_candidate_snapshot_uses_inventory_endpoint_and_records_full_provenance(
         },
     }
     seen: list[str] = []
+    seen_tokens: list[str | None] = []
 
-    async def snapshot(url: str) -> BackendSpec:
+    async def snapshot(url: str, service_token: str | None = None) -> BackendSpec:
         seen.append(url)
+        seen_tokens.append(service_token)
         return spec
 
     monkeypatch.setattr(
         "scripts.snapshot_fleet.load_registry",
         lambda *_args: [
-            SimpleNamespace(enabled=True, namespace="one", url="https://wrong.example/mcp")
+            SimpleNamespace(
+                enabled=True,
+                namespace="one",
+                url="https://wrong.example/mcp",
+                service_token="svc-token",  # noqa: S106 - test fixture, not a credential
+            )
         ],
     )
     monkeypatch.setattr("scripts.snapshot_fleet._snapshot_backend", snapshot)
@@ -82,6 +89,9 @@ def test_candidate_snapshot_uses_inventory_endpoint_and_records_full_provenance(
 
     manifest = load_manifest(output)
     assert seen == ["https://candidate.example/mcp"]
+    # A token-protected backend must be probed with the router's service credential,
+    # otherwise its /mcp answers 401 and the capture fails it as "unreachable".
+    assert seen_tokens == ["svc-token"]
     assert manifest.snapshot_meta.release_candidate == inventory
     assert manifest.backends["one"].tools == [ToolSpec(name="get_one")]
 
@@ -98,12 +108,14 @@ def test_candidate_snapshot_refuses_definition_digest_mismatch(monkeypatch, tmp_
         },
     }
 
-    async def snapshot(_url: str) -> BackendSpec:
+    async def snapshot(_url: str, _service_token: str | None = None) -> BackendSpec:
         return BackendSpec(version="1", tools=[ToolSpec(name="get_one")])
 
     monkeypatch.setattr(
         "scripts.snapshot_fleet.load_registry",
-        lambda *_args: [SimpleNamespace(enabled=True, namespace="one", url=None)],
+        lambda *_args: [
+            SimpleNamespace(enabled=True, namespace="one", url=None, service_token=None)
+        ],
     )
     monkeypatch.setattr("scripts.snapshot_fleet._snapshot_backend", snapshot)
 

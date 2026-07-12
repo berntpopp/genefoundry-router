@@ -55,7 +55,9 @@ def load_release_candidate_inventory(path: Path) -> dict[str, Any]:
         raise ReleaseCandidateCaptureError("release-candidate inventory requires backends")
     for namespace, entry in backends.items():
         if not isinstance(namespace, str) or not isinstance(entry, dict):
-            raise ReleaseCandidateCaptureError("release-candidate inventory has invalid backend entry")
+            raise ReleaseCandidateCaptureError(
+                "release-candidate inventory has invalid backend entry"
+            )
         endpoint = entry.get("endpoint")
         revision = entry.get("revision")
         definitions_sha256 = entry.get("definitions_sha256")
@@ -81,11 +83,19 @@ def merge_backend(
     return fresh if fresh is not None else prior
 
 
-async def _snapshot_backend(url: str) -> BackendSpec | None:
+async def _snapshot_backend(url: str, service_token: str | None = None) -> BackendSpec | None:
     from fastmcp import Client
+    from fastmcp.client.transports import StreamableHttpTransport
+
+    # A backend that requires the router's service credential (pubtator) answers /mcp with
+    # 401 to an anonymous probe, which a release-candidate capture reads as "unreachable"
+    # and fails closed on. Present the same credential the router uses at runtime.
+    target: Any = url
+    if service_token:
+        target = StreamableHttpTransport(url, headers={"Authorization": f"Bearer {service_token}"})
 
     try:
-        async with Client(url) as client:
+        async with Client(target) as client:
             tools = await client.list_tools()
             version = None
             init = getattr(client, "initialize_result", None)
@@ -139,7 +149,7 @@ async def _run(
             if release_candidate_inventory is not None
             else b.url
         )
-        fresh = await _snapshot_backend(endpoint) if endpoint else None
+        fresh = await _snapshot_backend(endpoint, b.service_token) if endpoint else None
         if release_candidate_inventory is not None and fresh is not None:
             expected_digest = release_candidate_inventory["backends"][b.namespace][
                 "definitions_sha256"
