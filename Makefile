@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
 
 .DEFAULT_GOAL := help
 
@@ -64,9 +64,12 @@ test-cov: ## Run tests with coverage
 
 test-all: test-cov ## Alias for full test run with coverage
 
+http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption ledger
+	uv run pytest tests/unit/test_http_policy_adoption.py -q
+
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-actions typecheck test-fast test-integration ## Fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-actions typecheck http-policy-adoption test-fast test-integration ## Fast local CI-equivalent checks
 
 precommit: ci-local ## Run checks expected before commit
 

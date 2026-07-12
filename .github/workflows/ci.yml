@@ -37,6 +37,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev --frozen
 
+      # Source-only gate: validates the staged R-05 ledger without probing any backend.
+      - name: Validate HTTP policy v1 adoption ledger
+        run: make http-policy-adoption
+
       # Pinned actionlint (version + sha256) so `make ci-local`'s lint-actions target lints
       # every workflow in CI (F-01). The YAML-parse unit test is the always-on syntax guard.
       - name: Install actionlint (pinned)

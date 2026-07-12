@@ -1,0 +1,71 @@
+{
+  "policy_version": "v1",
+  "conformance_contract_sha256": "338f1ea0855a5d6e68d75a082e2154b63e6a90b200dab63b7b6d0eaec1723628",
+  "required_conformance_cases": [
+    "https_only",
+    "reject_syntactic_userinfo",
+    "normalized_exact_origin",
+    "request_hook_checks_each_redirect_hop",
+    "redirect_limit_at_most_five",
+    "decoded_streaming_byte_cap",
+    "fixed_host_free_non_retryable_error"
+  ],
+  "repositories": {
+    "gtex-link": {
+      "status": "pending",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "revision": null,
+      "conformance_sha256": null
+    },
+    "litvar-link": {
+      "status": "pending",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "revision": null,
+      "conformance_sha256": null
+    },
+    "metadome-link": {
+      "status": "pending",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "revision": null,
+      "conformance_sha256": null
+    },
+    "panelapp-link": {
+      "status": "pending",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "revision": null,
+      "conformance_sha256": null
+    },
+    "spliceailookup-link": {
+      "status": "pending",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "revision": null,
+      "conformance_sha256": null
+    },
+    "stringdb-link": {
+      "status": "pending",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "revision": null,
+      "conformance_sha256": null
+    },
+    "uniprot-link": {
+      "status": "pending",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "revision": null,
+      "conformance_sha256": null
+    },
+    "vep-link": {
+      "status": "pending",
+      "version": "v1",
+      "conformance_file": "tests/conformance/test_http_policy_v1.py",
+      "revision": null,
+      "conformance_sha256": null
+    }
+  }
+}

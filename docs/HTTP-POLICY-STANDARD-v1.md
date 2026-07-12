@@ -1,0 +1,77 @@
+# GeneFoundry Outbound HTTP Policy Standard v1
+
+## Status and scope
+
+This is the normative outbound HTTP policy for the R-05 remediation set: `gtex-link`,
+`litvar-link`, `metadome-link`, `panelapp-link`, `spliceailookup-link`, `stringdb-link`,
+`uniprot-link`, and `vep-link`. The router owns this source-controlled recipe. Each backend
+must vendor the v1 marker and the conformance cases recorded in
+[`ci/http-policy-v1.json`](../ci/http-policy-v1.json); this is not a shared runtime package.
+
+## Required URL predicate
+
+Before **every** outbound request, a backend MUST parse the destination URL and accept it only
+when all of the following hold:
+
+1. Its scheme is exactly HTTPS.
+2. It has no syntactic userinfo. This includes a syntactically present but empty form such as
+   `https://:@host/`; do not rely solely on a parsed username value.
+3. Its normalized `(hostname, effective port)` exactly equals an explicitly configured allowed
+   origin. Host names are lower-cased. The effective port is `443` when the URL omits a port;
+   `:443` and an omitted port are equivalent. A non-443 port is permitted only when the
+   configured allowed origin explicitly names that same port.
+
+The allowlist is a full-origin allowlist, not a suffix, substring, IP-address, or DNS-resolution
+allowlist. Each backend documents only its required service origins and may not silently broaden
+them.
+
+## Redirects and response limits
+
+Clients MAY keep `follow_redirects=True` to preserve their existing HTTP method semantics, but
+they MUST set `max_redirects` to five or fewer. An `httpx` request event hook (or an equivalent
+mechanism that is demonstrably invoked before sending a request) MUST apply the URL predicate to
+the initial request and every redirect hop. Redirects do not inherit trust from their source URL.
+
+Every response body MUST be consumed through a decoded-byte accumulator. The configured cap
+applies to decoded bytes actually read and parsing MUST stop before accepting a byte that crosses
+the cap. `Content-Length` MAY provide an early rejection but is only a preflight optimization:
+missing, false, or compressed content length cannot bypass the decoded-byte cap.
+
+## Failure behavior
+
+URL-policy, redirect-limit, and decoded-byte-cap failures MUST use a fixed, host-free error
+message. They MUST NOT include the URL, hostname, scheme, port, path, query, or userinfo in the
+exception, logs, or MCP envelope. These failures are non-retryable: retry loops and retry
+classifiers MUST not resend a policy-rejected request.
+
+Backends preserve their documented upstream status/envelope mapping, deadlines, chunking, and
+other service-specific behavior after this policy check. The policy does not authorize token
+forwarding or change the router/backends trust boundary.
+
+## Vended conformance contract
+
+Each adopting backend vendors tests with all case identifiers below, in this exact order. Their
+configuration fixtures may vary only for that backend's documented allowed origins, byte cap, and
+service semantics. The vendored file is
+`tests/conformance/test_http_policy_v1.py`. The canonical content is the newline-separated case
+list (including the final newline); its SHA-256 is
+`338f1ea0855a5d6e68d75a082e2154b63e6a90b200dab63b7b6d0eaec1723628`.
+
+```text
+https_only
+reject_syntactic_userinfo
+normalized_exact_origin
+request_hook_checks_each_redirect_hop
+redirect_limit_at_most_five
+decoded_streaming_byte_cap
+fixed_host_free_non_retryable_error
+```
+
+## Staged adoption ledger
+
+The manifest contains every R-05 repository from the beginning. A `pending` row is intentional:
+it has no claimed revision or conformance hash and lets each backend migrate independently. A row
+may change to `adopted` only when its `version` remains `v1`, `revision` is the 40-character
+source revision that vendors the suite, and `conformance_sha256` equals the canonical contract
+hash. Router CI validates that declaration without live network probes; a stale or incomplete
+adoption declaration fails the gate.
