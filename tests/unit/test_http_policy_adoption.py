@@ -184,6 +184,10 @@ def test_http_policy_v1_rejects_placeholder_or_invalid_reviewer(reviewer: str) -
         _validate_reviewer(reviewer)
 
 
+def test_http_policy_v1_accepts_one_character_reviewer_identity() -> None:
+    assert _validate_reviewer("a") == "a"
+
+
 @pytest.mark.parametrize("reviewed_on", ["", "YYYY-MM-DD", "2026-02-29", "2026-7-12"])
 def test_http_policy_v1_rejects_invalid_review_date(reviewed_on: str) -> None:
     with pytest.raises((AssertionError, ValueError)):
