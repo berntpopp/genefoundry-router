@@ -127,11 +127,51 @@ async def _snapshot_backend(url: str, service_token: str | None = None) -> Backe
         return None
 
 
+async def _normalized_catalog(registry: list[Any]) -> dict[str, list[ToolSpec]]:
+    """Capture the router's OWN normalized catalog, grouped by namespace.
+
+    The runtime guard fingerprints ``definitions_from_tools(apply_normalizations(...))`` --
+    the post-proxy, post-transform definitions the model actually receives. Those are NOT
+    the raw definitions a backend advertises: FastMCP rebuilds each tool's schema when the
+    normalization pass applies a ToolTransform (tag injection / renames), which reorders
+    ``required`` and adds ``additionalProperties: false``. Pinning the raw backend view
+    therefore never matches the runtime, and GF_DRIFT_MODE=enforce could not start.
+
+    Capture the same side the guard reads, so the pin and the runtime are comparable by
+    construction. Backend-side provenance is still attested separately, against the raw
+    probe, via the release-candidate inventory's definitions_sha256.
+    """
+    from genefoundry_router.config import RouterSettings
+    from genefoundry_router.normalization import apply_normalizations
+    from genefoundry_router.runtime_drift import _model_dict
+    from genefoundry_router.server import build_server
+
+    server = build_server(RouterSettings(), registry, enable_search=False)
+    tools = await apply_normalizations(server, registry)
+
+    by_namespace: dict[str, list[ToolSpec]] = {}
+    for tool in tools:
+        namespace, _, leaf = tool.name.partition("_")
+        by_namespace.setdefault(namespace, []).append(
+            ToolSpec(
+                name=leaf,
+                description=tool.description or "",
+                inputSchema=tool.parameters or {"type": "object", "properties": {}},
+                outputSchema=tool.output_schema,
+                annotations=_model_dict(tool.annotations),
+                execution=_model_dict(tool.execution),
+                tags=sorted(tool.tags or []),
+            )
+        )
+    return by_namespace
+
+
 async def _run(
     servers_file: str,
     out: Path,
     captured_at: str,
     release_candidate_inventory: dict[str, Any] | None = None,
+    normalized: bool = False,
 ) -> None:
     prior = load_manifest(out) if out.exists() else None
     registry = [b for b in load_registry(servers_file, os.environ) if b.enabled]
@@ -164,6 +204,20 @@ async def _run(
         )
         if merged is not None:
             backends[b.namespace] = merged
+
+    if normalized:
+        # Swap in the router's normalized definitions (the ones the runtime guard hashes),
+        # keeping each backend's version from the probe above. The raw probe is still what
+        # the release-candidate digest attests, so backend provenance is unaffected.
+        catalog = await _normalized_catalog(registry)
+        for namespace, spec in list(backends.items()):
+            tools = catalog.get(namespace)
+            if tools is None:
+                raise ReleaseCandidateCaptureError(
+                    f"backend {namespace} contributed no tools to the normalized catalog"
+                )
+            backends[namespace] = spec.model_copy(update={"tools": tools})
+
     manifest = Manifest(
         snapshot_meta=SnapshotMeta(
             captured_at=captured_at,
@@ -187,13 +241,23 @@ def main() -> None:
         type=Path,
         help="Source-controlled immutable endpoint/revision inventory for a reviewed candidate.",
     )
+    parser.add_argument(
+        "--normalized",
+        action="store_true",
+        help=(
+            "Pin the router's normalized catalog (what the runtime drift guard hashes) "
+            "instead of the raw backend definitions. Required for the runtime baseline."
+        ),
+    )
     args = parser.parse_args()
     candidate = (
         load_release_candidate_inventory(args.candidate_inventory)
         if args.candidate_inventory is not None
         else None
     )
-    asyncio.run(_run(args.servers_file, Path(args.out), args.captured_at, candidate))
+    asyncio.run(
+        _run(args.servers_file, Path(args.out), args.captured_at, candidate, args.normalized)
+    )
 
 
 if __name__ == "__main__":

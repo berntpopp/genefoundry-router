@@ -80,3 +80,44 @@ def test_diff_manifests_flags_changed_tool() -> None:
     report = diff_manifests(pinned, live)
     assert report.changed == ["mondo_resolve_disease"]
     assert report.has_drift
+
+
+def test_fingerprint_ignores_required_representation_not_content() -> None:
+    """`required` is an unordered set; absent and [] are identical in JSON Schema.
+
+    Regression: the runtime guard hashes FastMCP's server-side Tool.parameters (which
+    emits "required": [] and orders names as declared) while the reviewed baseline was
+    captured from the MCP wire schema (which omits the empty key and may order names
+    differently). Identical tools hashed differently, so GF_DRIFT_MODE=enforce could
+    never start. CI never caught it because `drift` compares wire against wire.
+    """
+    wire = ToolDefinition(name="t", inputSchema={"type": "object", "properties": {}})
+    server_side = ToolDefinition(
+        name="t", inputSchema={"type": "object", "properties": {}, "required": []}
+    )
+    assert tool_fingerprint(wire) == tool_fingerprint(server_side)
+
+    one_order = ToolDefinition(name="u", inputSchema={"required": ["b", "a"]})
+    other_order = ToolDefinition(name="u", inputSchema={"required": ["a", "b"]})
+    assert tool_fingerprint(one_order) == tool_fingerprint(other_order)
+
+
+def test_fingerprint_still_detects_a_real_required_change() -> None:
+    """Canonicalizing representation must not blunt the tripwire."""
+    before = ToolDefinition(name="t", inputSchema={"required": ["a"]})
+    gained = ToolDefinition(name="t", inputSchema={"required": ["a", "b"]})
+    lost = ToolDefinition(name="t", inputSchema={"required": []})
+    assert tool_fingerprint(before) != tool_fingerprint(gained)
+    assert tool_fingerprint(before) != tool_fingerprint(lost)
+
+
+def test_fingerprint_canonicalizes_nested_required() -> None:
+    """The same equivalence holds for schemas nested under properties/$defs."""
+    wire = ToolDefinition(
+        name="t", inputSchema={"$defs": {"Inner": {"type": "object", "properties": {}}}}
+    )
+    server_side = ToolDefinition(
+        name="t",
+        inputSchema={"$defs": {"Inner": {"type": "object", "properties": {}, "required": []}}},
+    )
+    assert tool_fingerprint(wire) == tool_fingerprint(server_side)
