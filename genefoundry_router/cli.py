@@ -497,74 +497,37 @@ def validate(
     )
 
 
-async def _snapshot_live(
-    registry: list[BackendDef], attempts: int = 2
-) -> tuple[Manifest, set[str]]:
-    """Snapshot reachable backends' tools; return (live_manifest, unreachable_namespaces).
+async def _snapshot_live(registry: list[BackendDef]) -> tuple[Manifest, set[str]]:
+    """Snapshot the router's NORMALIZED live catalog; return (manifest, unreachable).
 
-    A backend is *unreachable* if it is enabled but has no URL, or if listing its tools
-    fails after ``attempts`` tries. Unreachable backends are excluded from the manifest and
-    reported separately, so an outage (or a missing ``GF_*_URL``) is never mistaken for a
-    removed tool. Per-backend timeouts keep one hung backend from stalling the whole run.
+    Must capture the same definitions the runtime guard fingerprints and the pin stores --
+    see genefoundry_router.catalog. Snapshotting each backend directly would compare a raw
+    backend catalog against a normalized pin and report drift on a fleet that never moved.
+
+    A backend that is enabled but unconfigured, or that harvested no tools, is reported
+    unreachable and excluded from the diff, so an outage is never mistaken for a removed
+    tool.
     """
-    from fastmcp import Client
+    from genefoundry_router.catalog import capture_normalized_catalog
+    from genefoundry_router.devtools.fakes import BackendSpec, Manifest, SnapshotMeta
 
-    from genefoundry_router.devtools.fakes import (
-        BackendSpec,
-        Manifest,
-        SnapshotMeta,
-        ToolSpec,
-    )
+    by_namespace, unreachable = await capture_normalized_catalog(registry)
 
-    backends: dict[str, BackendSpec] = {}
-    unreachable: set[str] = set()
-    for b in registry:
-        if not b.enabled:
-            continue
-        if not b.url:  # enabled but unconfigured: unreachable, NOT a removed tool
-            unreachable.add(b.namespace)
-            console.print(f"[yellow]WARN[/yellow] {b.name}: no URL configured ({b.url_env})")
-            continue
-        tools = None
-        last_exc: Exception | None = None
-        for _ in range(attempts):
-            try:
-                # Bounded so one hung backend can't exceed the CI job timeout.
-                async with Client(_backend_transport(b), timeout=30, init_timeout=10) as client:
-                    tools = await client.list_tools()
-                break
-            except Exception as exc:  # transient: retry, then mark unreachable
-                last_exc = exc
-        if tools is None:
-            unreachable.add(b.namespace)
-            console.print(f"[yellow]WARN[/yellow] {b.name} unreachable: {last_exc}")
-            continue
-        backends[b.namespace] = BackendSpec(
-            version=None,
-            tools=[
-                ToolSpec(
-                    name=t.name,
-                    description=t.description or "",
-                    inputSchema=t.inputSchema or {"type": "object", "properties": {}},
-                    outputSchema=t.outputSchema,
-                    annotations=(
-                        t.annotations.model_dump(mode="json", exclude_none=False)
-                        if t.annotations is not None
-                        else None
-                    ),
-                    execution=(
-                        t.execution.model_dump(mode="json", exclude_none=False)
-                        if t.execution is not None
-                        else None
-                    ),
-                    tags=list((t.meta or {}).get("fastmcp", {}).get("tags", [])),
-                )
-                for t in tools
-            ],
-        )
+    for backend in registry:
+        if backend.enabled and not backend.url:
+            unreachable.add(backend.namespace)
+            console.print(
+                f"[yellow]WARN[/yellow] {backend.name}: no URL configured ({backend.url_env})"
+            )
+    for namespace in sorted(unreachable):
+        by_namespace.pop(namespace, None)
+
     manifest = Manifest(
         snapshot_meta=SnapshotMeta(captured_at="live", source="live", router_servers_file=""),
-        backends=backends,
+        backends={
+            namespace: BackendSpec(version=None, tools=tools)
+            for namespace, tools in by_namespace.items()
+        },
     )
     return manifest, unreachable
 
