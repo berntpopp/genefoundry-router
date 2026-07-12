@@ -33,7 +33,7 @@ class ToolDefinition(BaseModel):
     execution: dict[str, Any] | None = None
 
 
-def _canonical_json_schema(value: Any) -> Any:
+def canonical_json_schema(value: Any) -> Any:
     """Canonicalize a JSON Schema's ``required`` so equivalent schemas hash alike.
 
     ``required`` is an unordered set of property names, so neither its order nor an empty
@@ -62,10 +62,10 @@ def _canonical_json_schema(value: Any) -> Any:
                 if all(isinstance(name, str) for name in item):
                     canonical[key] = sorted(item)
                     continue
-            canonical[key] = _canonical_json_schema(item)
+            canonical[key] = canonical_json_schema(item)
         return canonical
     if isinstance(value, list):
-        return [_canonical_json_schema(item) for item in value]
+        return [canonical_json_schema(item) for item in value]
     return value
 
 
@@ -73,7 +73,7 @@ def tool_fingerprint(tool: ToolDefinition) -> str:
     """Stable SHA-256 over a complete security-relevant tool definition."""
     payload = tool.model_dump(mode="json", by_alias=True, exclude_none=False)
     for schema_key in ("inputSchema", "outputSchema"):
-        payload[schema_key] = _canonical_json_schema(payload[schema_key])
+        payload[schema_key] = canonical_json_schema(payload[schema_key])
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 

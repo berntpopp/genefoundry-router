@@ -17,6 +17,7 @@ import re
 from typing import Any
 
 from genefoundry_router.config import load_registry
+from genefoundry_router.drift import canonical_json_schema
 from genefoundry_router.devtools.fakes import (
     BackendSpec,
     Manifest,
@@ -105,8 +106,10 @@ async def _snapshot_backend(url: str, service_token: str | None = None) -> Backe
             ToolSpec(
                 name=t.name,
                 description=t.description or "",
-                inputSchema=t.inputSchema or {"type": "object", "properties": {}},
-                outputSchema=t.outputSchema,
+                inputSchema=canonical_json_schema(
+                    t.inputSchema or {"type": "object", "properties": {}}
+                ),
+                outputSchema=canonical_json_schema(t.outputSchema),
                 annotations=(
                     t.annotations.model_dump(mode="json", exclude_none=False)
                     if t.annotations is not None

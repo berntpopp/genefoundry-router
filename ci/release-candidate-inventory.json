@@ -1,110 +1,131 @@
 {
   "backends": {
     "autopvs1": {
-      "definitions_sha256": "0b5505533409c13093daf8659af4470ac5c4b07c8b875cbdabcb7bf9040ee253",
+      "definitions_sha256": "61a01abf238dd5c546236c727edd7db82669e72ccde07503cd3939c64adad40f",
       "endpoint": "https://autopvs1-link.genefoundry.org/mcp",
-      "revision": "40dd483e3e22549abd5edf005340bfc6aae1e466"
+      "revision": "2bb1b2bf39ffce03143005ffe0083ea1f28bb42e",
+      "version": "4.0.2"
     },
     "clingen": {
       "definitions_sha256": "27f504493ec2cc5319dc9c64f7a60a7f43c71e3c5c1af627f4ee81913b2f7102",
       "endpoint": "https://clingen-link.genefoundry.org/mcp",
-      "revision": "14da780caa90650a67f7993ec2472e55e05ed6a2"
+      "revision": "672c2f751b157a8b593ef39a07ee8f5430f3bfa6",
+      "version": "3.0.3"
     },
     "clinvar": {
-      "definitions_sha256": "f9203e4eba6e3e89c3c177b4a094f077bced007ffeb6905202bca4c54dbf9f61",
+      "definitions_sha256": "2456c42b64fa8c41d9afbf18541497644e30b89fbcb55f6038f131dc2b7b57c7",
       "endpoint": "https://clinvar-link.genefoundry.org/mcp",
-      "revision": "0189d164e83be2b41c6ef48105ea65d9e411ad50"
+      "revision": "682d74d73eb6b77f0ae009c64127577dda842b9e",
+      "version": "0.4.2"
     },
     "gencc": {
-      "definitions_sha256": "d8a62f806855caf9129bcb2f79439d960a76382471e56883fa5abcea2a6051b0",
+      "definitions_sha256": "a3a258e4cdef3a5deb45166b0bfbc8b4801187536ac424a4d62c78c3f2caefd1",
       "endpoint": "https://gencc-link.genefoundry.org/mcp",
-      "revision": "718b8a3f158833998d24e7b3b0790a72492d1ef7"
+      "revision": "00bdcd7885855b1c5d7679fb2a1d98aa45f23e5e",
+      "version": "0.7.2"
     },
     "genereviews": {
-      "definitions_sha256": "b417de5ea4d9edb08a44bc926081c724754bdf089d1c4ab7b2115f0eb9568f77",
+      "definitions_sha256": "ff36459bec1e95717ab436e40c1179612f9905f32330d54cb6b5ad5da905c268",
       "endpoint": "https://genereviews-link.genefoundry.org/mcp",
-      "revision": "b65bbb5064db469c71bf3f3e6b4c1e414d7a1fbb"
+      "revision": "8e52a6756c2f5c5004d5ea1c1e9ff6e20a0593c9",
+      "version": "5.0.3"
     },
     "gnomad": {
-      "definitions_sha256": "6c4351d9c3ed54f4cc2da5f97bfef0304d3663d937e8dccb2c6a72a73f7b041f",
+      "definitions_sha256": "368c54dbcd01fffd4ef9f3c4a98fb519a19a91afeacdad475174bf155205238f",
       "endpoint": "https://gnomad-link.genefoundry.org/mcp",
-      "revision": "18ccd2907427d4de61f41bd3217b43b95ee9577c"
+      "revision": "65fbbf5cc57592a87241821a5522b6508d924fba",
+      "version": "8.0.2"
     },
     "gtex": {
       "definitions_sha256": "18c3c28e56e282fd24133293410c2d4477761dc9a7e8e37eacd7e94a2f0b7cca",
       "endpoint": "https://gtex-link.genefoundry.org/mcp",
-      "revision": "12dd30c705d42f9cff9f98fe1f5a6cec929a8cc3"
+      "revision": "d266df64206da43084292a204e61e6f66739787c",
+      "version": "3.0.3"
     },
     "hgnc": {
       "definitions_sha256": "bcaeae6eb4e15432ecc2b8ca090cad9baf78e6d160a0fa74de8e0e5dc4a2c33a",
       "endpoint": "https://hgnc-link.genefoundry.org/mcp",
-      "revision": "b5caa199f73818d2e0d08bf3cbbfa28a86829062"
+      "revision": "df7086b11a3f28b35ab2a0221ae3e247599898eb",
+      "version": "2.0.2"
     },
     "hpo": {
       "definitions_sha256": "63b25b094861b62436d9e149812a7c67b4be68618ef0515c4597b20ec74c4b7d",
       "endpoint": "https://hpo-link.genefoundry.org/mcp",
-      "revision": "bbdadc53869edbd7bd862c2fffcfbb12156811dc"
+      "revision": "270551ac5976f6d1d6dde03d360bbdcc671ce618",
+      "version": "0.3.2"
     },
     "litvar": {
-      "definitions_sha256": "2947453392eb4500dbb6cccac392281a577085fa829997109eb25926751bfa09",
+      "definitions_sha256": "023777b639e196a270620c5260a5e0fefc0d86cc11975a044c4c846eaf0dd225",
       "endpoint": "https://litvar-link.genefoundry.org/mcp",
-      "revision": "003491713636497e77aee94270d4f929cb04b939"
+      "revision": "16be20ba03e978ed532393a59a26c34a09aa6354",
+      "version": "5.0.2"
     },
     "mavedb": {
       "definitions_sha256": "7a4b9ee1e5eecbe2d41122c63230a4628893452fc6bb4209c63633f3fdf42d20",
       "endpoint": "https://mavedb-link.genefoundry.org/mcp",
-      "revision": "b368f6e484f4a84f0dad9ec11a2fd010d405ff19"
+      "revision": "d6f180e66adf61b2ae938aa83b981234a6172ce3",
+      "version": "0.4.2"
     },
     "metadome": {
-      "definitions_sha256": "4376fd4ee51d8d9f3e5f16a0caa5144d786dc25d8684e9ca1fdfdb43a8a445ab",
+      "definitions_sha256": "eb828ceefd8eeaa167986155854013904031724fee5af661a2910347a1914790",
       "endpoint": "https://metadome-link.genefoundry.org/mcp",
-      "revision": "db5efb37c36f86dc5f0e59d2284b56fa06fef892"
+      "revision": "347a49eddf16a7f8ad42de2008f4ce1bb34a4cfe",
+      "version": "0.1.6"
     },
     "mgi": {
       "definitions_sha256": "7fc98f1914036c5fe2381fd9379ff76d492d41301d2992dbece32abf20799508",
       "endpoint": "https://mgi-link.genefoundry.org/mcp",
-      "revision": "d9db479594da7621c1cde831e44a45e992345ee7"
+      "revision": "2abafc5ab36a71452c66ce1197a69265134a6aae",
+      "version": "0.5.3"
     },
     "mondo": {
-      "definitions_sha256": "d0414eb3a3f3523a13dfed01e847ae5358248cdffa02bc33bac98728e9fd6ca0",
+      "definitions_sha256": "721c9ce138565edf3efd02339aab3ae5619029c956ea5be5d32b493d5f69746e",
       "endpoint": "https://mondo-link.genefoundry.org/mcp",
-      "revision": "794316cda1627555ade8f441cc9f5ed6e81b8b78"
+      "revision": "8ac7827461c32b44a0df7a2b374c7b47dee015af",
+      "version": "0.3.2"
     },
     "orphanet": {
       "definitions_sha256": "e1568cde92fe356f79b7005942134f868139e818a75e73cbe1a9cfe59f18e357",
       "endpoint": "https://orphanet-link.genefoundry.org/mcp",
-      "revision": "f2432829be7825d02afb7370636b731783fbc461"
+      "revision": "9af12c9d141ef1c00a7dcb4568d5fc324033d9c6",
+      "version": "0.3.3"
     },
     "panelapp": {
-      "definitions_sha256": "1865ad9bd6cc6f274199ffec804dda37f4e4d9ab3406ef92f13297f6b042c70f",
+      "definitions_sha256": "c3ccb14f58d36f93509031853187c910fcbb95c787b4e129b852f44fce936526",
       "endpoint": "https://panelapp-link.genefoundry.org/mcp",
-      "revision": "64b8d033e521de8f32904599d643ec92cdb7e511"
+      "revision": "46e0792986b93429efc45cb3fd40758891ee4012",
+      "version": "0.5.3"
     },
     "pubtator": {
-      "definitions_sha256": "d241137404bdd7ac26e7d1c0876ed81e77d9ef42508e96968684f1751706bfc8",
+      "definitions_sha256": "fc5cfa22ec90680fef7be26444c1f1826f5aa6e47aeaafa07f50461188665429",
       "endpoint": "https://pubtator-link.genefoundry.org/mcp",
-      "revision": "e4ea404dff4a72e1cd88fb020319a1c5b8e9d11d"
+      "revision": "9bc6cb78a2eaf8bf85e8ff1e75b1d5abfdc0da83",
+      "version": "6.1.2"
     },
     "spliceai": {
       "definitions_sha256": "37827c712b7ac11c2105b1f3dee02aa8c51fdf757f00c0a1c57f3bd384fe60ed",
       "endpoint": "https://spliceailookup-link.genefoundry.org/mcp",
-      "revision": "abd7b4d62cf18481e39f2818c2ab6ed4668a5d00"
+      "revision": "4528b24b183db97245687da0eabb2c494765529f",
+      "version": "3.0.5"
     },
     "stringdb": {
-      "definitions_sha256": "3318ce75c2b29ff1d967dc11aea75a9e834a924491b4cc5794772b30c8f38d69",
+      "definitions_sha256": "d6ab0272537eb301448bc921cf3086940911787ae7179c6aec048c27db05aec3",
       "endpoint": "https://stringdb-link.genefoundry.org/mcp",
-      "revision": "6e55756e4edbe15a218ae0c1316f9095a4afe8f0"
+      "revision": "632dd8edf203e5e8743010406ad32e6861a566ac",
+      "version": "4.0.3"
     },
     "uniprot": {
       "definitions_sha256": "da4716f5efa6d696610a358798eda17a1567e7c6b6f3aded80e064193fbe2004",
       "endpoint": "https://uniprot-link.genefoundry.org/mcp",
-      "revision": "9e9330a8136ed6b7f36c8aac339ebd379a13997c"
+      "revision": "89cd53c56bdd60853dec78cd856c81102e679845",
+      "version": "4.0.0"
     },
     "vep": {
-      "definitions_sha256": "6fd9f8bfc699b79f84b3cb05407b99ee760314ff663aa0a48633bd7d206b710a",
+      "definitions_sha256": "4c9893d71be0ea855e24d2c245166ecc8834c20f2c3c0dfda7b8678c64182d03",
       "endpoint": "https://vep-link.genefoundry.org/mcp",
-      "revision": "934d4225f6e832ddad35c129efb1d66e281d0b81"
+      "revision": "7bf65eaea0d4ebccdb47a7b0ed0e7fe4ecaadbbb",
+      "version": "1.0.6"
     }
   },
-  "identity": "fleet-release-candidate-2026-07-12-security-wave"
+  "identity": "fleet-2026-07-12-vcs-attested"
 }

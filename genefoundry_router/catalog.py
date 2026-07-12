@@ -33,6 +33,7 @@ async def capture_normalized_catalog(
     """
     from genefoundry_router.config import RouterSettings
     from genefoundry_router.devtools.fakes import ToolSpec
+    from genefoundry_router.drift import canonical_json_schema
     from genefoundry_router.normalization import apply_normalizations
     from genefoundry_router.runtime_drift import _model_dict
     from genefoundry_router.server import _seed_reachability, build_server
@@ -49,8 +50,10 @@ async def capture_normalized_catalog(
             ToolSpec(
                 name=leaf,
                 description=tool.description or "",
-                inputSchema=tool.parameters or {"type": "object", "properties": {}},
-                outputSchema=tool.output_schema,
+                inputSchema=canonical_json_schema(
+                    tool.parameters or {"type": "object", "properties": {}}
+                ),
+                outputSchema=canonical_json_schema(tool.output_schema),
                 annotations=_model_dict(tool.annotations),
                 execution=_model_dict(tool.execution),
                 tags=sorted(tool.tags or []),
