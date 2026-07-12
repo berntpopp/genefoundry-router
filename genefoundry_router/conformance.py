@@ -74,13 +74,24 @@ def _jsonrpc(resp: httpx.Response) -> dict[str, Any]:
 
 
 def run_probe(
-    base_url: str, *, expected_name: str, tier: str, require_auth: bool = False
+    base_url: str,
+    *,
+    expected_name: str,
+    tier: str,
+    require_auth: bool = False,
+    service_token: str | None = None,
 ) -> Report:
     base = base_url.rstrip("/")
     rep = Report(base, expected_name, tier)
     is_router = expected_name == "genefoundry"
+    # A backend gated by the router's service credential answers an anonymous probe with
+    # 401, which the probe would otherwise report as a transport-contract failure. Present
+    # the same credential the runtime proxy uses (composition.make_proxy_client).
+    headers = dict(_HEADERS)
+    if service_token:
+        headers["Authorization"] = f"Bearer {service_token}"
     with httpx.Client(timeout=30.0, follow_redirects=False) as client:
-        init = client.post(f"{base}/mcp", json=_INIT, headers=_HEADERS)
+        init = client.post(f"{base}/mcp", json=_INIT, headers=headers)
 
         if require_auth:
             rep.check(
@@ -118,14 +129,14 @@ def run_probe(
         name = result.get("serverInfo", {}).get("name")
         rep.check(f"serverInfo.name == {expected_name!r}", name == expected_name, f"got {name!r}")
 
-        tl = client.post(f"{base}/mcp", json=_TOOLS_LIST, headers=_HEADERS)
+        tl = client.post(f"{base}/mcp", json=_TOOLS_LIST, headers=headers)
         tools = _jsonrpc(tl).get("result", {}).get("tools", [])
         rep.check("tools/list returns ≥ 1 tool", len(tools) >= 1, f"{len(tools)} tools")
 
         bad = client.post(
             f"{base}/mcp",
             json=_TOOLS_LIST,
-            headers={**_HEADERS, "MCP-Protocol-Version": UNSUPPORTED_PROTOCOL},
+            headers={**headers, "MCP-Protocol-Version": UNSUPPORTED_PROTOCOL},
         )
         rep.check(
             "unsupported MCP-Protocol-Version → 400 (post-init)",

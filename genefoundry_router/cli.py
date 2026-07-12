@@ -6,7 +6,7 @@ import asyncio
 import os
 import re
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import typer
 import uvicorn
@@ -279,6 +279,23 @@ def run(
     uvicorn.run(application, host=host, port=port, log_level=log_level.lower())
 
 
+def _backend_transport(backend: BackendDef) -> Any:
+    """Target for a diagnostic client, carrying the backend's service credential.
+
+    A backend gated by the router's service token (pubtator) answers an anonymous probe
+    with 401. Without this, doctor/drift/fleet-probe report it permanently unreachable --
+    blinding the drift tripwire on the one write-capable backend -- while the runtime
+    proxy talks to it fine, because only composition.make_proxy_client sends the header.
+    """
+    from fastmcp.client.transports import StreamableHttpTransport
+
+    if backend.url and backend.service_token:
+        return StreamableHttpTransport(
+            backend.url, headers={"Authorization": f"Bearer {backend.service_token}"}
+        )
+    return backend.url
+
+
 async def _probe_backend(backend: BackendDef) -> dict[str, object]:
     """Connect to a backend's /mcp URL and count its tools."""
     from fastmcp import Client
@@ -286,7 +303,7 @@ async def _probe_backend(backend: BackendDef) -> dict[str, object]:
     if backend.url is None:
         return {"name": backend.name, "reachable": False, "tools": 0, "error": "no URL"}
     try:
-        async with Client(backend.url) as client:
+        async with Client(_backend_transport(backend)) as client:
             tools = await client.list_tools()
         return {
             "name": backend.name,
@@ -405,7 +422,16 @@ def fleet_probe(
         base = b.url[: -len("/mcp")] if b.url.endswith("/mcp") else b.url
         try:
             results.append(
-                (b.name, run_probe(base, expected_name=expected_server_name(b), tier=tier), None)
+                (
+                    b.name,
+                    run_probe(
+                        base,
+                        expected_name=expected_server_name(b),
+                        tier=tier,
+                        service_token=b.service_token,
+                    ),
+                    None,
+                )
             )
         except httpx.HTTPError as exc:  # DNS/TLS/connect/timeout — a transport error, not a verdict
             results.append((b.name, None, str(exc)))
@@ -504,7 +530,7 @@ async def _snapshot_live(
         for _ in range(attempts):
             try:
                 # Bounded so one hung backend can't exceed the CI job timeout.
-                async with Client(b.url, timeout=30, init_timeout=10) as client:
+                async with Client(_backend_transport(b), timeout=30, init_timeout=10) as client:
                     tools = await client.list_tools()
                 break
             except Exception as exc:  # transient: retry, then mark unreachable
