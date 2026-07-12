@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 import yaml
-from pydantic import ValidationError, field_validator
+from pydantic import ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from genefoundry_router.exceptions import RegistryError
@@ -139,6 +139,18 @@ class RouterSettings(BaseSettings):
         if v < 0:
             raise ValueError("GF_TRUSTED_PROXY_HOPS must be >= 0")
         return v
+
+    @model_validator(mode="after")
+    def _development_unsafe_observability_is_never_a_production_setting(self) -> RouterSettings:
+        """Reject a development-only acknowledgement in the production profile."""
+        if (
+            self.GF_DEPLOYMENT_MODE == "production"
+            and self.GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY
+        ):
+            raise ValueError(
+                "GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY is valid only in development mode"
+            )
+        return self
 
 
 def load_registry(path: str | Path, environ: Mapping[str, str]) -> list[BackendDef]:

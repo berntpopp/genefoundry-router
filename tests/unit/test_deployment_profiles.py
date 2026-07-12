@@ -51,6 +51,7 @@ def test_production_compose_declares_production_reachability_mode() -> None:
     compose = yaml.safe_load(Path("docker/docker-compose.prod.yml").read_text(encoding="utf-8"))
     environment = compose["services"]["genefoundry-router"]["environment"]
     assert environment["GF_DEPLOYMENT_MODE"] == "production"
+    assert "GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY" not in environment
 
 
 def test_patient_profile_covers_every_non_autopvs1_public_backend() -> None:

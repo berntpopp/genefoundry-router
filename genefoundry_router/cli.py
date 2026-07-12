@@ -117,12 +117,29 @@ def should_warn_development_unsafe_observability(
     metrics_token: str | None,
 ) -> bool:
     """Warn when the named development-only observability override is active."""
-    return (
-        auth_mode != "none"
-        and deployment_mode == "development"
-        and development_override
-        and (rate_limit_rpm <= 0 or not metrics_token)
-    )
+    return auth_mode != "none" and deployment_mode == "development" and development_override
+
+
+def development_unsafe_observability_error(
+    auth_mode: str,
+    deployment_mode: str,
+    acknowledgement: bool,
+    host: str,
+    rate_limit_rpm: int,
+    metrics_token: str | None,
+) -> str | None:
+    """Validate the narrow local-development escape hatch for observability controls."""
+    missing_controls = auth_mode != "none" and (rate_limit_rpm <= 0 or not metrics_token)
+    if acknowledgement and deployment_mode != "development":
+        return "GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY is valid only in development mode"
+    if acknowledgement and host not in LOOPBACK_HOSTS:
+        return "GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY is valid only on a loopback bind"
+    if missing_controls and deployment_mode == "development" and not acknowledgement:
+        return (
+            "authenticated development without rate limiting and/or a metrics token requires "
+            "GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY=true on loopback"
+        )
+    return None
 
 
 LEAF_NAME_RE = re.compile(r"^[a-z0-9_]{1,50}$")
@@ -194,6 +211,17 @@ def run(
             "[red]Refusing to start: a non-loopback bind requires a nonempty "
             "GF_ALLOWED_HOSTS allowlist.[/red]"
         )
+        raise typer.Exit(1)
+    unsafe_observability_error = development_unsafe_observability_error(
+        settings.GF_AUTH_MODE,
+        settings.GF_DEPLOYMENT_MODE,
+        settings.GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY,
+        host,
+        settings.GF_RATE_LIMIT_RPM,
+        settings.GF_METRICS_TOKEN,
+    )
+    if unsafe_observability_error:
+        console.print(f"[red]Refusing to start: {unsafe_observability_error}.[/red]")
         raise typer.Exit(1)
     if refuses_no_rate_limit(
         settings.GF_AUTH_MODE,

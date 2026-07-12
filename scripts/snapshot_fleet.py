@@ -12,6 +12,8 @@ import asyncio
 import json
 import os
 from pathlib import Path
+import re
+from typing import Any
 
 from genefoundry_router.config import load_registry
 from genefoundry_router.devtools.fakes import (
@@ -25,6 +27,34 @@ from genefoundry_router.devtools.fakes import (
 
 class ReleaseCandidateCaptureError(RuntimeError):
     """A required backend could not be included in a reviewed release capture."""
+
+
+_COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+
+
+def load_release_candidate_inventory(path: Path) -> dict[str, Any]:
+    """Load immutable endpoint/revision provenance for a reviewed candidate fleet."""
+    try:
+        inventory = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ReleaseCandidateCaptureError(f"invalid release-candidate inventory: {path}") from exc
+    if not isinstance(inventory, dict) or not isinstance(inventory.get("identity"), str):
+        raise ReleaseCandidateCaptureError("release-candidate inventory requires an identity")
+    backends = inventory.get("backends")
+    if not isinstance(backends, dict) or not backends:
+        raise ReleaseCandidateCaptureError("release-candidate inventory requires backends")
+    for namespace, entry in backends.items():
+        if not isinstance(namespace, str) or not isinstance(entry, dict):
+            raise ReleaseCandidateCaptureError("release-candidate inventory has invalid backend entry")
+        endpoint = entry.get("endpoint")
+        revision = entry.get("revision")
+        if not isinstance(endpoint, str) or not endpoint.startswith("https://"):
+            raise ReleaseCandidateCaptureError("release-candidate endpoint must be an HTTPS URL")
+        if not isinstance(revision, str) or not _COMMIT_SHA_RE.fullmatch(revision):
+            raise ReleaseCandidateCaptureError(
+                "release-candidate revision must be a 40-character commit SHA"
+            )
+    return inventory
 
 
 def merge_backend(
@@ -73,23 +103,40 @@ async def _snapshot_backend(url: str) -> BackendSpec | None:
 
 
 async def _run(
-    servers_file: str, out: Path, captured_at: str, release_candidate: str | None = None
+    servers_file: str,
+    out: Path,
+    captured_at: str,
+    release_candidate_inventory: dict[str, Any] | None = None,
 ) -> None:
     prior = load_manifest(out) if out.exists() else None
     registry = [b for b in load_registry(servers_file, os.environ) if b.enabled]
+    if release_candidate_inventory is not None:
+        candidate_backends = release_candidate_inventory["backends"]
+        enabled = {backend.namespace for backend in registry}
+        if set(candidate_backends) != enabled:
+            raise ReleaseCandidateCaptureError(
+                "release-candidate inventory must cover exactly the enabled registry backends"
+            )
     backends: dict[str, BackendSpec] = {}
     for b in registry:
-        fresh = await _snapshot_backend(b.url) if b.url else None
+        endpoint = (
+            release_candidate_inventory["backends"][b.namespace]["endpoint"]
+            if release_candidate_inventory is not None
+            else b.url
+        )
+        fresh = await _snapshot_backend(endpoint) if endpoint else None
         prior_spec = prior.backends.get(b.namespace) if prior else None
-        merged = merge_backend(prior_spec, fresh, release_candidate=release_candidate is not None)
+        merged = merge_backend(
+            prior_spec, fresh, release_candidate=release_candidate_inventory is not None
+        )
         if merged is not None:
             backends[b.namespace] = merged
     manifest = Manifest(
         snapshot_meta=SnapshotMeta(
             captured_at=captured_at,
-            source="release-candidate" if release_candidate else "live",
+            source="release-candidate" if release_candidate_inventory else "live",
             router_servers_file=servers_file,
-            release_candidate=release_candidate,
+            release_candidate=release_candidate_inventory,
         ),
         backends=backends,
     )
@@ -103,11 +150,17 @@ def main() -> None:
     parser.add_argument("--out", default="genefoundry_router/data/fleet-baseline.json")
     parser.add_argument("--captured-at", required=True, help="ISO timestamp (date -u +%%FT%%TZ)")
     parser.add_argument(
-        "--release-candidate",
-        help="Reviewed candidate identity; fail instead of retaining stale unreachable backends.",
+        "--candidate-inventory",
+        type=Path,
+        help="Source-controlled immutable endpoint/revision inventory for a reviewed candidate.",
     )
     args = parser.parse_args()
-    asyncio.run(_run(args.servers_file, Path(args.out), args.captured_at, args.release_candidate))
+    candidate = (
+        load_release_candidate_inventory(args.candidate_inventory)
+        if args.candidate_inventory is not None
+        else None
+    )
+    asyncio.run(_run(args.servers_file, Path(args.out), args.captured_at, candidate))
 
 
 if __name__ == "__main__":

@@ -3,7 +3,95 @@
     "captured_at": "2026-06-30T05:34:05Z",
     "source": "release-candidate",
     "router_servers_file": "servers.yaml",
-    "release_candidate": "fleet-2026-07-12-reviewed"
+    "release_candidate": {
+      "identity": "fleet-release-candidate-2026-07-12",
+      "backends": {
+        "gnomad": {
+          "endpoint": "https://gnomad-link.genefoundry.org/mcp",
+          "revision": "37180c8555eabd4c71001166a1a677ee1b046c95"
+        },
+        "gtex": {
+          "endpoint": "https://gtex-link.genefoundry.org/mcp",
+          "revision": "9b7d90b53347ec1d52201a19c34f544140629adf"
+        },
+        "hgnc": {
+          "endpoint": "https://hgnc-link.genefoundry.org/mcp",
+          "revision": "b5caa199f73818d2e0d08bf3cbbfa28a86829062"
+        },
+        "mgi": {
+          "endpoint": "https://mgi-link.genefoundry.org/mcp",
+          "revision": "cac918aa9d7daa2a47bb3e76ea0d0fc8b43f6329"
+        },
+        "uniprot": {
+          "endpoint": "https://uniprot-link.genefoundry.org/mcp",
+          "revision": "157b17ea7f328d0fdb4c514d805a6c69668c4a3d"
+        },
+        "clingen": {
+          "endpoint": "https://clingen-link.genefoundry.org/mcp",
+          "revision": "14da780caa90650a67f7993ec2472e55e05ed6a2"
+        },
+        "gencc": {
+          "endpoint": "https://gencc-link.genefoundry.org/mcp",
+          "revision": "718b8a3f158833998d24e7b3b0790a72492d1ef7"
+        },
+        "litvar": {
+          "endpoint": "https://litvar-link.genefoundry.org/mcp",
+          "revision": "bba7e01da64042e05d385064f76db75ad9750708"
+        },
+        "stringdb": {
+          "endpoint": "https://stringdb-link.genefoundry.org/mcp",
+          "revision": "923e3aec16697ba2b9d2fbd19a324f9a0445987f"
+        },
+        "autopvs1": {
+          "endpoint": "https://autopvs1-link.genefoundry.org/mcp",
+          "revision": "1532cff5fed7600cf5863843defc7f0da0c7bc73"
+        },
+        "spliceai": {
+          "endpoint": "https://spliceailookup-link.genefoundry.org/mcp",
+          "revision": "2da45a535758f4087691001d175cbd5961461e93"
+        },
+        "genereviews": {
+          "endpoint": "https://genereviews-link.genefoundry.org/mcp",
+          "revision": "320dca106f9232efb1c097056aa390d171eca9b6"
+        },
+        "pubtator": {
+          "endpoint": "https://pubtator-link.genefoundry.org/mcp",
+          "revision": "e4ea404dff4a72e1cd88fb020319a1c5b8e9d11d"
+        },
+        "clinvar": {
+          "endpoint": "https://clinvar-link.genefoundry.org/mcp",
+          "revision": "0189d164e83be2b41c6ef48105ea65d9e411ad50"
+        },
+        "vep": {
+          "endpoint": "https://vep-link.genefoundry.org/mcp",
+          "revision": "a898c79e2aeef99bceddf8a2b083985f7cc5d3df"
+        },
+        "panelapp": {
+          "endpoint": "https://panelapp-link.genefoundry.org/mcp",
+          "revision": "617d40e4ed1b49611198583ab7f901f289b4fa1b"
+        },
+        "mondo": {
+          "endpoint": "https://mondo-link.genefoundry.org/mcp",
+          "revision": "794316cda1627555ade8f441cc9f5ed6e81b8b78"
+        },
+        "mavedb": {
+          "endpoint": "https://mavedb-link.genefoundry.org/mcp",
+          "revision": "a90d0f2ab54bc0708a55e5f61703eff944e2a795"
+        },
+        "hpo": {
+          "endpoint": "https://hpo-link.genefoundry.org/mcp",
+          "revision": "bbdadc53869edbd7bd862c2fffcfbb12156811dc"
+        },
+        "metadome": {
+          "endpoint": "https://metadome-link.genefoundry.org/mcp",
+          "revision": "33d567b99b2308350d8a3f105660c4970435ea52"
+        },
+        "orphanet": {
+          "endpoint": "https://orphanet-link.genefoundry.org/mcp",
+          "revision": "69d11a1adf9bef0939e539739ca0d1efbea3a4f6"
+        }
+      }
+    }
   },
   "backends": {
     "gnomad": {

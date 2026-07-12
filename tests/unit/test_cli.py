@@ -76,12 +76,67 @@ def test_run_refuses_production_loopback_without_controls(monkeypatch, tmp_path)
         "genefoundry_router.cli.uvicorn.run",
         lambda *_args, **_kwargs: called.setdefault("ran", True),
     )
+    monkeypatch.setattr("genefoundry_router.cli.build_app", lambda *_args, **_kwargs: object())
 
     result = runner.invoke(app, ["run", "--servers-file", str(yaml), "--host", "127.0.0.1"])
 
     assert result.exit_code == 1
     assert "GF_RATE_LIMIT_RPM" in result.output
     assert called == {}
+
+
+def test_development_loopback_requires_unsafe_observability_acknowledgement(
+    monkeypatch, tmp_path
+) -> None:
+    yaml = _write_registry(tmp_path)
+    monkeypatch.setenv("GF_DEPLOYMENT_MODE", "development")
+    monkeypatch.setenv("GF_AUTH_MODE", "jwt")
+    monkeypatch.setenv("GF_RATE_LIMIT_RPM", "0")
+    monkeypatch.delenv("GF_METRICS_TOKEN", raising=False)
+
+    result = runner.invoke(app, ["run", "--servers-file", str(yaml), "--host", "127.0.0.1"])
+
+    assert result.exit_code == 1
+    assert "GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY" in result.output
+
+
+def test_development_unsafe_observability_acknowledgement_is_loopback_only(
+    monkeypatch, tmp_path
+) -> None:
+    yaml = _write_registry(tmp_path)
+    monkeypatch.setenv("GF_DEPLOYMENT_MODE", "development")
+    monkeypatch.setenv("GF_AUTH_MODE", "jwt")
+    monkeypatch.setenv("GF_RATE_LIMIT_RPM", "0")
+    monkeypatch.setenv("GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY", "true")
+    monkeypatch.setenv("GF_ALLOWED_HOSTS", "router.test")
+
+    result = runner.invoke(
+        app,
+        ["run", "--servers-file", str(yaml), "--host", "0.0.0.0"],  # noqa: S104
+    )
+
+    assert result.exit_code == 1
+    assert "loopback" in result.output
+
+
+def test_development_loopback_acknowledgement_warns_and_serves(monkeypatch, tmp_path) -> None:
+    yaml = _write_registry(tmp_path)
+    monkeypatch.setenv("GF_DEPLOYMENT_MODE", "development")
+    monkeypatch.setenv("GF_AUTH_MODE", "jwt")
+    monkeypatch.setenv("GF_RATE_LIMIT_RPM", "0")
+    monkeypatch.setenv("GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY", "true")
+    called: dict[str, bool] = {}
+    monkeypatch.setattr(
+        "genefoundry_router.cli.uvicorn.run",
+        lambda *_args, **_kwargs: called.setdefault("ran", True),
+    )
+    monkeypatch.setattr("genefoundry_router.cli.build_app", lambda *_args, **_kwargs: object())
+
+    result = runner.invoke(app, ["run", "--servers-file", str(yaml), "--host", "127.0.0.1"])
+
+    assert result.exit_code == 0, result.output
+    assert "WARNING" in result.output
+    assert called == {"ran": True}
 
 
 def test_public_bind_requires_nonempty_allowed_hosts() -> None:

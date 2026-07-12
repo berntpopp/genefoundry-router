@@ -131,7 +131,7 @@ Structure lives in committed `servers.yaml`; URLs/secrets in gitignored `.env` (
 | `GF_AUTH_MODE` | `none` | `none` \| `jwt` \| `oauth` (use jwt/oauth in production) |
 | `GF_DEPLOYMENT_MODE` | `development` | `development` \| `production`; explicit reachability policy, because a loopback listener can still be published by a reverse proxy |
 | `GF_ALLOW_INSECURE` | `false` | Opt-in to serve `auth=none` on a non-loopback bind (PoC only; it never weakens production observability controls) |
-| `GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY` | `false` | Explicit, warning-emitting acknowledgement for an authenticated local development router without the production rate-limit and/or metrics-token controls; ignored in production |
+| `GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY` | `false` | Explicit, warning-emitting acknowledgement required for an authenticated development router without the production controls; valid only on loopback and rejected in production/non-loopback use |
 | `GF_PUBLIC_BASE_URL` | _(unset)_ | Router's canonical public URL — OAuth resource URI + Protected-Resource-Metadata |
 | `GF_ALLOWED_HOSTS` | _(empty)_ | CSV Host allowlist; required for every non-loopback bind |
 | `GF_JWT_ISSUER` | _(unset)_ | jwt/oauth: token issuer URL (e.g. `https://auth.example.org/realms/genefoundry`) |
@@ -158,7 +158,8 @@ authenticated `GF_DEPLOYMENT_MODE=production` router that has no positive `GF_RA
 would serve `GET /metrics` without `GF_METRICS_TOKEN`** — including a loopback listener published by a
 reverse proxy. `GF_ALLOW_INSECURE` only controls the unauthenticated public-bind guard; it cannot weaken
 production observability controls. A local authenticated development router may set the separately named
-`GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY=true`; this emits a warning and is ignored in production.
+`GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY=true`; this emits a warning and is accepted only for an
+authenticated loopback development process. Production configuration and non-loopback use are rejected.
 For production, enable one of
 two **resource-server** modes — the router *validates* tokens against an identity provider, it does
 not mint them, so an IdP (e.g. self-hosted Keycloak) is required:
@@ -223,14 +224,16 @@ beats availability: drift + an outage still exits `1`.
 | File | What | Keep in sync |
 |------|------|--------------|
 | `ci/fleet-urls.env` | Public `GF_*_URL=https://<name>-link.genefoundry.org/mcp` for every enabled backend — the URLs CI probes | `make` test `test_ci_fleet_urls.py` asserts it matches `servers.yaml` exactly |
-| `genefoundry_router/data/fleet-baseline.json` | The packaged reviewed-release tool-definition pin | `make snapshot-baseline RELEASE_CANDIDATE=<reviewed identity>` only after reviewing candidate definitions |
+| `ci/release-candidate-inventory.json` | Reviewed release identity plus immutable 40-hex backend revisions and exact HTTPS MCP endpoints | Must cover `servers.yaml`'s enabled namespaces exactly; snapshot capture uses these endpoints, not ambient URL variables |
+| `genefoundry_router/data/fleet-baseline.json` | The packaged reviewed-release tool-definition pin | `make snapshot-baseline RELEASE_CANDIDATE_INVENTORY=ci/release-candidate-inventory.json` only after reviewing candidate definitions and immutable provenance |
 
 **Runtime response:** in `enforce` mode, a changed startup failure means operators must review the
 live definition before the router accepts traffic. Poll-time changes and additions are
 quarantined; additions/removals mark health degraded without killing unaffected tools.
 
-**Re-pin discipline:** `make snapshot-baseline RELEASE_CANDIDATE=<reviewed identity>` is allowed only after code review of the complete
-definition diff. Treat it as security-relevant and never re-pin merely to restore green status.
+**Re-pin discipline:** `make snapshot-baseline RELEASE_CANDIDATE_INVENTORY=ci/release-candidate-inventory.json` is allowed only after code review of the complete
+definition diff and the candidate inventory's endpoint/revision provenance. Treat it as
+security-relevant and never re-pin merely to restore green status.
 Never auto-refresh in CI; that would silently bless a rug pull.
 
 **Enabling it (one-time, on the default branch).** All three settings are configured in

@@ -131,10 +131,10 @@ snapshot-catalog: ## Regenerate the discoverability benchmark catalog from the l
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_catalog.py
 
 snapshot-baseline: ## Re-pin the packaged drift baseline from the live fleet (online)
-	@test -n "$(RELEASE_CANDIDATE)" || (echo "RELEASE_CANDIDATE=<reviewed candidate identity> is required"; exit 2)
+	@test -f "$(RELEASE_CANDIDATE_INVENTORY)" || (echo "RELEASE_CANDIDATE_INVENTORY=<source-controlled inventory path> is required"; exit 2)
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_fleet.py \
 		--out genefoundry_router/data/fleet-baseline.json --captured-at $$(date -u +%FT%TZ) \
-		--release-candidate "$(RELEASE_CANDIDATE)"
+		--candidate-inventory "$(RELEASE_CANDIDATE_INVENTORY)"
 
 ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
 

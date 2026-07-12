@@ -1,7 +1,15 @@
+import asyncio
+from types import SimpleNamespace
+
 import pytest
 
-from genefoundry_router.devtools.fakes import BackendSpec, ToolSpec
-from scripts.snapshot_fleet import ReleaseCandidateCaptureError, merge_backend
+from genefoundry_router.devtools.fakes import BackendSpec, ToolSpec, load_manifest
+from scripts.snapshot_fleet import (
+    ReleaseCandidateCaptureError,
+    _run,
+    load_release_candidate_inventory,
+    merge_backend,
+)
 
 
 def test_required_release_candidate_backend_cannot_retain_prior_snapshot():
@@ -16,3 +24,48 @@ def test_merge_prefers_new_when_present():
     merged = merge_backend(prior, fresh, release_candidate=True)
     assert merged.version == "2.0.0"
     assert [t.name for t in merged.tools] == ["get_y"]
+
+
+def test_release_candidate_inventory_rejects_non_immutable_revision(tmp_path):
+    inventory = tmp_path / "candidate.json"
+    inventory.write_text(
+        '{"identity":"release-1","backends":{"one":{"endpoint":"https://one.example/mcp","revision":"main"}}}'
+    )
+
+    with pytest.raises(ReleaseCandidateCaptureError, match="40-character commit SHA"):
+        load_release_candidate_inventory(inventory)
+
+
+def test_candidate_snapshot_uses_inventory_endpoint_and_records_full_provenance(
+    monkeypatch, tmp_path
+):
+    inventory = {
+        "identity": "release-1",
+        "backends": {
+            "one": {
+                "endpoint": "https://candidate.example/mcp",
+                "revision": "a" * 40,
+            }
+        },
+    }
+    seen: list[str] = []
+
+    async def snapshot(url: str) -> BackendSpec:
+        seen.append(url)
+        return BackendSpec(version="1", tools=[ToolSpec(name="get_one")])
+
+    monkeypatch.setattr(
+        "scripts.snapshot_fleet.load_registry",
+        lambda *_args: [
+            SimpleNamespace(enabled=True, namespace="one", url="https://wrong.example/mcp")
+        ],
+    )
+    monkeypatch.setattr("scripts.snapshot_fleet._snapshot_backend", snapshot)
+    output = tmp_path / "baseline.json"
+
+    asyncio.run(_run("servers.yaml", output, "2026-07-12T00:00:00Z", inventory))
+
+    manifest = load_manifest(output)
+    assert seen == ["https://candidate.example/mcp"]
+    assert manifest.snapshot_meta.release_candidate == inventory
+    assert manifest.backends["one"].tools == [ToolSpec(name="get_one")]

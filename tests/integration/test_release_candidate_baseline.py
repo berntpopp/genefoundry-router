@@ -1,20 +1,27 @@
 """Offline release-contract gate for the packaged drift baseline."""
 
+import json
 from pathlib import Path
 
 from genefoundry_router.devtools.fakes import load_manifest
 
 BASELINE = Path("genefoundry_router/data/fleet-baseline.json")
 RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
+RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 
 
 def test_packaged_baseline_matches_reviewed_release_candidate_full_definitions() -> None:
     baseline = load_manifest(BASELINE)
     candidate = load_manifest(RELEASE_CANDIDATE)
+    inventory = json.loads(RELEASE_INVENTORY.read_text(encoding="utf-8"))
 
     assert candidate.snapshot_meta.source == "release-candidate"
-    assert candidate.snapshot_meta.release_candidate
+    assert candidate.snapshot_meta.release_candidate == inventory
+    assert set(inventory["backends"]) == set(candidate.backends)
+    assert all(entry["endpoint"].startswith("https://") for entry in inventory["backends"].values())
+    assert all(len(entry["revision"]) == 40 for entry in inventory["backends"].values())
     assert baseline.backends == candidate.backends
+    assert baseline.snapshot_meta.release_candidate == inventory
 
 
 def test_release_candidate_baseline_has_corrected_tool_metadata() -> None:
