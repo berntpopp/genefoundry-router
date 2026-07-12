@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import yaml
+
 PATIENT_PROFILE = Path("docker/.env.patient-data.example")
 PUBLIC_PROFILE = Path(".env.example")
 
@@ -43,6 +45,12 @@ def test_patient_profile_is_authenticated_and_locked_down() -> None:
     # The profile must still federate the approved read-only backends.
     assert "GF_GNOMAD_URL" in assignments
     assert "GF_CLINVAR_URL" in assignments
+
+
+def test_production_compose_declares_production_reachability_mode() -> None:
+    compose = yaml.safe_load(Path("docker/docker-compose.prod.yml").read_text(encoding="utf-8"))
+    environment = compose["services"]["genefoundry-router"]["environment"]
+    assert environment["GF_DEPLOYMENT_MODE"] == "production"
 
 
 def test_patient_profile_covers_every_non_autopvs1_public_backend() -> None:

@@ -14,6 +14,7 @@ from genefoundry_router.exceptions import RegistryError
 from genefoundry_router.registry import BackendDef
 
 AuthMode = Literal["none", "jwt", "oauth"]
+DeploymentMode = Literal["development", "production"]
 
 
 class RouterSettings(BaseSettings):
@@ -31,6 +32,9 @@ class RouterSettings(BaseSettings):
     GF_PORT: int = 8000
     GF_MCP_PATH: str = "/mcp"
     GF_LOG_LEVEL: str = "INFO"
+    # Reachability is a deployment concern, not a socket-address heuristic. Production
+    # Compose sets this explicitly because a loopback listener may sit behind a proxy.
+    GF_DEPLOYMENT_MODE: DeploymentMode = "development"
 
     # Registry
     GF_SERVERS_FILE: str = "servers.yaml"
@@ -47,6 +51,9 @@ class RouterSettings(BaseSettings):
     GF_RATE_LIMIT_RPM: int = 0  # per-client requests/min (429 over); 0 = off, enable in prod
     GF_TRUSTED_PROXY_HOPS: int = 1  # trusted hops at the tail of X-Forwarded-For
     GF_METRICS_TOKEN: str | None = None  # optional bearer token for GET /metrics
+    # Development-only acknowledgement for an authenticated local router without the
+    # production observability controls. It never weakens production checks.
+    GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY: bool = False
 
     # Rewrite bare tool references in backend responses to namespaced form (Finding 1).
     GF_REWRITE_HINTS: bool = True

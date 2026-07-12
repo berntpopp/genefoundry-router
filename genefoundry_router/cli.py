@@ -46,6 +46,11 @@ def is_missing_public_host_allowlist(host: str, allowed_hosts: list[str]) -> boo
     return host not in LOOPBACK_HOSTS and not allowed_hosts
 
 
+def requires_observability_controls(auth_mode: str, deployment_mode: str) -> bool:
+    """Whether authenticated deployment policy requires rate-limit and metrics controls."""
+    return auth_mode != "none" and deployment_mode == "production"
+
+
 def should_warn_no_rate_limit(auth_mode: str, host: str, rate_limit_rpm: int) -> bool:
     """True for an authenticated, publicly-reachable deployment with no rate limit (D10/M7).
 
@@ -79,36 +84,45 @@ def should_warn_no_metrics_token(auth_mode: str, host: str, metrics_token: str |
     return not metrics_token
 
 
-def refuses_no_rate_limit(
-    auth_mode: str, host: str, rate_limit_rpm: int, allow_insecure: bool
-) -> bool:
-    """True when startup must FAIL CLOSED: an authenticated, publicly-reachable bind with no
-    positive per-client rate limit (F-21).
+def refuses_no_rate_limit(auth_mode: str, rate_limit_rpm: int, deployment_mode: str) -> bool:
+    """True when authenticated production lacks a positive per-client rate limit.
 
-    The warn-only ``should_warn_no_rate_limit`` posture let a reachable production deployment
-    run unthrottled by default. For a real (authenticated, non-loopback) bind we now refuse to
-    start unless ``GF_RATE_LIMIT_RPM > 0``. ``GF_ALLOW_INSECURE=true`` downgrades this to the
-    existing non-breaking warning for local/PoC use; ``auth=none`` (handled by the insecure-bind
-    guard) and loopback (not publicly reachable) are out of scope.
+    Deployment mode is explicit because a loopback listener may be published by a
+    reverse proxy. Neither the bind address nor the unauthenticated-bind escape hatch
+    participates in this production decision.
     """
-    if allow_insecure or auth_mode == "none" or host in LOOPBACK_HOSTS:
+    if not requires_observability_controls(auth_mode, deployment_mode):
         return False
     return rate_limit_rpm <= 0
 
 
 def refuses_public_metrics_without_token(
-    auth_mode: str, host: str, metrics_token: str | None, allow_insecure: bool
+    auth_mode: str, metrics_token: str | None, deployment_mode: str
 ) -> bool:
-    """True when startup must FAIL CLOSED: an authenticated, publicly-reachable bind that would
-    serve ``GET /metrics`` without ``GF_METRICS_TOKEN`` (F-21).
+    """True when authenticated production would expose metrics without a token.
 
-    ``/metrics`` is registered unconditionally and is public when no token is set, leaking
-    operational telemetry on a reachable bind. ``GF_ALLOW_INSECURE=true`` is the documented
-    local/PoC override; ``auth=none`` and loopback are out of scope.
+    This uses the explicit deployment contract rather than listener address because
+    the reverse proxy, not the local socket, determines external reachability.
     """
-    if allow_insecure or auth_mode == "none" or host in LOOPBACK_HOSTS:
+    if not requires_observability_controls(auth_mode, deployment_mode):
         return False
     return not metrics_token
+
+
+def should_warn_development_unsafe_observability(
+    auth_mode: str,
+    deployment_mode: str,
+    development_override: bool,
+    rate_limit_rpm: int,
+    metrics_token: str | None,
+) -> bool:
+    """Warn when the named development-only observability override is active."""
+    return (
+        auth_mode != "none"
+        and deployment_mode == "development"
+        and development_override
+        and (rate_limit_rpm <= 0 or not metrics_token)
+    )
 
 
 LEAF_NAME_RE = re.compile(r"^[a-z0-9_]{1,50}$")
@@ -182,24 +196,39 @@ def run(
         )
         raise typer.Exit(1)
     if refuses_no_rate_limit(
-        settings.GF_AUTH_MODE, host, settings.GF_RATE_LIMIT_RPM, settings.GF_ALLOW_INSECURE
+        settings.GF_AUTH_MODE,
+        settings.GF_RATE_LIMIT_RPM,
+        settings.GF_DEPLOYMENT_MODE,
     ):
         console.print(
-            f"[red]Refusing to start: authenticated public bind ({host}) with "
+            "[red]Refusing to start: authenticated production deployment with "
             "GF_RATE_LIMIT_RPM=0 (no per-client rate limit) lets one caller drive the fleet's "
-            "egress IPs into upstream throttling/bans. Set GF_RATE_LIMIT_RPM (e.g. 120), or set "
-            "GF_ALLOW_INSECURE=true to override (local/PoC only).[/red]"
+            "egress IPs into upstream throttling/bans. Set GF_RATE_LIMIT_RPM (e.g. 120).[/red]"
         )
         raise typer.Exit(1)
     if refuses_public_metrics_without_token(
-        settings.GF_AUTH_MODE, host, settings.GF_METRICS_TOKEN, settings.GF_ALLOW_INSECURE
+        settings.GF_AUTH_MODE,
+        settings.GF_METRICS_TOKEN,
+        settings.GF_DEPLOYMENT_MODE,
     ):
         console.print(
-            f"[red]Refusing to start: authenticated public bind ({host}) would serve "
+            "[red]Refusing to start: authenticated production deployment would serve "
             "GET /metrics without GF_METRICS_TOKEN (public operational telemetry). Set "
-            "GF_METRICS_TOKEN, or set GF_ALLOW_INSECURE=true to override (local/PoC only).[/red]"
+            "GF_METRICS_TOKEN.[/red]"
         )
         raise typer.Exit(1)
+    if should_warn_development_unsafe_observability(
+        settings.GF_AUTH_MODE,
+        settings.GF_DEPLOYMENT_MODE,
+        settings.GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY,
+        settings.GF_RATE_LIMIT_RPM,
+        settings.GF_METRICS_TOKEN,
+    ):
+        console.print(
+            "[yellow]WARNING: GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY is enabled; "
+            "the authenticated development router has no production rate limit and/or "
+            "metrics token. This override is development-only.[/yellow]"
+        )
     if settings.GF_AUTH_MODE == "none" and host not in LOOPBACK_HOSTS:
         console.print(
             f"[yellow]WARNING: serving with GF_AUTH_MODE=none on {host} (GF_ALLOW_INSECURE "

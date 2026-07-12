@@ -1,7 +1,8 @@
 """Refresh tests/fixtures/fleet_manifest.json from live (or local) backends.
 
-Online, on-demand only — never run in tests. Per-backend resilient: an unreachable
-backend keeps its prior manifest entry instead of being clobbered.
+Online, on-demand only — never run in tests. Ordinary fixture refreshes may retain a
+prior entry, but a reviewed release-candidate capture fails closed if any required
+backend cannot be harvested.
 """
 
 from __future__ import annotations
@@ -22,8 +23,16 @@ from genefoundry_router.devtools.fakes import (
 )
 
 
-def merge_backend(prior: BackendSpec | None, fresh: BackendSpec | None) -> BackendSpec | None:
-    """Prefer a fresh snapshot; fall back to the prior entry when unreachable."""
+class ReleaseCandidateCaptureError(RuntimeError):
+    """A required backend could not be included in a reviewed release capture."""
+
+
+def merge_backend(
+    prior: BackendSpec | None, fresh: BackendSpec | None, *, release_candidate: bool = False
+) -> BackendSpec | None:
+    """Prefer fresh data; a release candidate never silently retains stale data."""
+    if release_candidate and fresh is None:
+        raise ReleaseCandidateCaptureError("required release-candidate backend was unreachable")
     return fresh if fresh is not None else prior
 
 
@@ -63,20 +72,24 @@ async def _snapshot_backend(url: str) -> BackendSpec | None:
         return None
 
 
-async def _run(servers_file: str, out: Path, captured_at: str) -> None:
+async def _run(
+    servers_file: str, out: Path, captured_at: str, release_candidate: str | None = None
+) -> None:
     prior = load_manifest(out) if out.exists() else None
-    registry = [b for b in load_registry(servers_file, os.environ) if b.enabled and b.url]
+    registry = [b for b in load_registry(servers_file, os.environ) if b.enabled]
     backends: dict[str, BackendSpec] = {}
     for b in registry:
-        assert b.url is not None
-        fresh = await _snapshot_backend(b.url)
+        fresh = await _snapshot_backend(b.url) if b.url else None
         prior_spec = prior.backends.get(b.namespace) if prior else None
-        merged = merge_backend(prior_spec, fresh)
+        merged = merge_backend(prior_spec, fresh, release_candidate=release_candidate is not None)
         if merged is not None:
             backends[b.namespace] = merged
     manifest = Manifest(
         snapshot_meta=SnapshotMeta(
-            captured_at=captured_at, source="live", router_servers_file=servers_file
+            captured_at=captured_at,
+            source="release-candidate" if release_candidate else "live",
+            router_servers_file=servers_file,
+            release_candidate=release_candidate,
         ),
         backends=backends,
     )
@@ -89,8 +102,12 @@ def main() -> None:
     parser.add_argument("--servers-file", default="servers.yaml")
     parser.add_argument("--out", default="genefoundry_router/data/fleet-baseline.json")
     parser.add_argument("--captured-at", required=True, help="ISO timestamp (date -u +%%FT%%TZ)")
+    parser.add_argument(
+        "--release-candidate",
+        help="Reviewed candidate identity; fail instead of retaining stale unreachable backends.",
+    )
     args = parser.parse_args()
-    asyncio.run(_run(args.servers_file, Path(args.out), args.captured_at))
+    asyncio.run(_run(args.servers_file, Path(args.out), args.captured_at, args.release_candidate))
 
 
 if __name__ == "__main__":

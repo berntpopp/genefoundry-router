@@ -6,6 +6,8 @@ from genefoundry_router.cli import (
     is_insecure_public_bind,
     refuses_no_rate_limit,
     refuses_public_metrics_without_token,
+    requires_observability_controls,
+    should_warn_development_unsafe_observability,
     should_warn_no_metrics_token,
     should_warn_no_rate_limit,
 )
@@ -63,34 +65,50 @@ def test_no_rate_limit_warning_when_auth_none() -> None:
 # downgrades both to the existing warnings for local/PoC use.
 @pytest.mark.parametrize("mode", ["jwt", "oauth"])
 def test_refuse_public_auth_bind_without_rate_limit(mode: str) -> None:
-    assert refuses_no_rate_limit(mode, _PUBLIC, rate_limit_rpm=0, allow_insecure=False) is True
+    assert refuses_no_rate_limit(mode, rate_limit_rpm=0, deployment_mode="production") is True
 
 
 @pytest.mark.parametrize("mode", ["jwt", "oauth"])
 def test_no_refuse_when_public_auth_bind_is_rate_limited(mode: str) -> None:
-    assert refuses_no_rate_limit(mode, _PUBLIC, rate_limit_rpm=120, allow_insecure=False) is False
+    assert refuses_no_rate_limit(mode, rate_limit_rpm=120, deployment_mode="production") is False
 
 
 @pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1"])
 def test_no_refuse_rate_limit_on_loopback(host: str) -> None:
-    assert refuses_no_rate_limit("jwt", host, rate_limit_rpm=0, allow_insecure=False) is False
+    assert refuses_no_rate_limit("jwt", rate_limit_rpm=0, deployment_mode="development") is False
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1"])
+def test_production_requires_controls_on_loopback(host: str) -> None:
+    assert requires_observability_controls("jwt", "production") is True
+    assert refuses_no_rate_limit("jwt", rate_limit_rpm=0, deployment_mode="production") is True
+    assert (
+        refuses_public_metrics_without_token(
+            "jwt", metrics_token=None, deployment_mode="production"
+        )
+        is True
+    )
+
+
+def test_insecure_bind_override_cannot_downgrade_production_controls() -> None:
+    assert refuses_no_rate_limit("jwt", rate_limit_rpm=0, deployment_mode="production") is True
+
+
+def test_development_only_override_warns_when_controls_are_omitted() -> None:
+    assert should_warn_development_unsafe_observability(
+        "jwt", "development", True, rate_limit_rpm=0, metrics_token=None
+    )
 
 
 def test_no_refuse_rate_limit_when_auth_none() -> None:
     # Handled by the insecure-bind guard; don't also refuse here.
-    assert refuses_no_rate_limit("none", _PUBLIC, rate_limit_rpm=0, allow_insecure=False) is False
-
-
-def test_rate_limit_refusal_downgraded_by_allow_insecure() -> None:
-    assert refuses_no_rate_limit("jwt", _PUBLIC, rate_limit_rpm=0, allow_insecure=True) is False
+    assert refuses_no_rate_limit("none", rate_limit_rpm=0, deployment_mode="production") is False
 
 
 @pytest.mark.parametrize("mode", ["jwt", "oauth"])
 def test_refuse_public_metrics_without_token(mode: str) -> None:
     assert (
-        refuses_public_metrics_without_token(
-            mode, _PUBLIC, metrics_token=None, allow_insecure=False
-        )
+        refuses_public_metrics_without_token(mode, metrics_token=None, deployment_mode="production")
         is True
     )
 
@@ -98,7 +116,7 @@ def test_refuse_public_metrics_without_token(mode: str) -> None:
 def test_no_refuse_metrics_with_token() -> None:
     assert (
         refuses_public_metrics_without_token(
-            "jwt", _PUBLIC, metrics_token=_TOKEN, allow_insecure=False
+            "jwt", metrics_token=_TOKEN, deployment_mode="production"
         )
         is False
     )
@@ -107,15 +125,8 @@ def test_no_refuse_metrics_with_token() -> None:
 @pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1"])
 def test_no_refuse_metrics_on_loopback(host: str) -> None:
     assert (
-        refuses_public_metrics_without_token("jwt", host, metrics_token=None, allow_insecure=False)
-        is False
-    )
-
-
-def test_metrics_refusal_downgraded_by_allow_insecure() -> None:
-    assert (
         refuses_public_metrics_without_token(
-            "jwt", _PUBLIC, metrics_token=None, allow_insecure=True
+            "jwt", metrics_token=None, deployment_mode="development"
         )
         is False
     )

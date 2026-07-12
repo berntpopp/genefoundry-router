@@ -65,6 +65,25 @@ def test_run_serves_loopback_without_auth(monkeypatch, tmp_path):
     assert called == {"ran": True}
 
 
+def test_run_refuses_production_loopback_without_controls(monkeypatch, tmp_path) -> None:
+    yaml = _write_registry(tmp_path)
+    monkeypatch.setenv("GF_DEPLOYMENT_MODE", "production")
+    monkeypatch.setenv("GF_AUTH_MODE", "jwt")
+    monkeypatch.setenv("GF_RATE_LIMIT_RPM", "0")
+    monkeypatch.delenv("GF_METRICS_TOKEN", raising=False)
+    called: dict[str, bool] = {}
+    monkeypatch.setattr(
+        "genefoundry_router.cli.uvicorn.run",
+        lambda *_args, **_kwargs: called.setdefault("ran", True),
+    )
+
+    result = runner.invoke(app, ["run", "--servers-file", str(yaml), "--host", "127.0.0.1"])
+
+    assert result.exit_code == 1
+    assert "GF_RATE_LIMIT_RPM" in result.output
+    assert called == {}
+
+
 def test_public_bind_requires_nonempty_allowed_hosts() -> None:
     assert is_missing_public_host_allowlist("0.0.0.0", [])  # noqa: S104
 

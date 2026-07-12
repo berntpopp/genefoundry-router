@@ -14,12 +14,13 @@ from genefoundry_router.devtools.fakes import load_manifest
 BASELINE = Path("genefoundry_router/data/fleet-baseline.json")
 
 
-def test_baseline_is_a_live_snapshot():
+def test_baseline_is_a_reviewed_release_candidate_snapshot():
     manifest = load_manifest(BASELINE)
-    assert manifest.snapshot_meta.source == "live", (
-        "drift baseline must be a live fleet snapshot (make snapshot-baseline), "
-        "not the local fake-fleet stub"
+    assert manifest.snapshot_meta.source == "release-candidate", (
+        "drift baseline must be a reviewed release-candidate snapshot "
+        "(make snapshot-baseline RELEASE_CANDIDATE=<identity>), not the local fake-fleet stub"
     )
+    assert manifest.snapshot_meta.release_candidate
 
 
 def test_baseline_covers_exactly_the_enabled_backends():
