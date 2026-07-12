@@ -2,6 +2,16 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.4] - 2026-07-12
+
+### Security
+
+- Add the reviewed fleet release-candidate baseline gate, proxy-aware production
+  bind controls, and the versioned HTTP Policy v1 adoption/conformance ledger.
+  The router now rejects candidate baseline drift, requires fleet adoption
+  evidence, and documents the canonical outbound HTTP safeguards used by the
+  affected backends.
+
 ## [0.6.3] - 2026-07-12
 
 ### Build
