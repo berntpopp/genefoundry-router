@@ -155,6 +155,48 @@ def test_prepared_fixture_environment_reaches_both_services() -> None:
     assert document["services"]["app-data-init"]["environment"]["APP_DATA_SHA256"] == "abc"
 
 
+def test_declared_smoke_environment_reaches_the_application_container() -> None:
+    """The declared `smoke_environment` must survive the move onto the Compose path.
+
+    The release gate used to pass it as `docker run --env`. Both gates now start the app
+    through Compose, so the override is the only thing that can carry it; a repo that
+    declares an environment its app needs to bind and serve would otherwise never get it.
+    """
+    config = _config(smoke_environment=["APP_AUTH_MODE=none", "APP_ALLOWED_HOSTS=localhost"])
+
+    environment = _render(config)["services"]["app"]["environment"]
+
+    assert environment["APP_AUTH_MODE"] == "none"
+    assert environment["APP_ALLOWED_HOSTS"] == "localhost"
+
+
+def test_prepared_fixture_values_win_over_the_declared_smoke_environment() -> None:
+    """A preparation hook computes values at run time; the declaration is only a default."""
+    config = _config(smoke_environment=["APP_DATA_SHA256=declared"])
+
+    environment = _render(config, environment={"APP_DATA_SHA256": "prepared"})["services"]["app"][
+        "environment"
+    ]
+
+    assert environment["APP_DATA_SHA256"] == "prepared"
+
+
+def test_declaring_the_smoke_environment_does_not_change_the_router_stack() -> None:
+    """Carrying the declaration must be a no-op for every repository releasing today.
+
+    The router declares exactly the values the renderer already applies, and the backends
+    declare none, so no `smoke.profile: compose` stack changes shape.
+    """
+    raw = json.loads(Path("container-release.json").read_text())
+    declared = ReleaseConfig.model_validate(raw)
+    without = ReleaseConfig.model_validate(raw | {"smoke_environment": []})
+
+    assert declared.smoke_environment
+    assert render_smoke_override(declared, image=_IMAGE, host_port=18000) == render_smoke_override(
+        without, image=_IMAGE, host_port=18000
+    )
+
+
 def test_a_sidecar_profile_without_a_declared_sidecar_fails_closed() -> None:
     config = _config(smoke={"profile": "immutable-bundle"})
 

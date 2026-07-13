@@ -222,6 +222,11 @@ jobs:
       IMAGE: ${{ needs.prepare.outputs.image }}
       SOURCE_ALIAS: ${{ needs.prepare.outputs.source_alias }}
       SOURCE_DIGEST: ${{ needs.prepare.outputs.source_digest }}
+      COMPOSE_OVERRIDE: compose.release-gate.yml
+      COMPOSE_PROJECT_NAME: genefoundry-release-gate-${{ github.run_id }}-${{ github.run_attempt }}
+      # The `runner` context is NOT available in a job-level `env:` block; using it there is
+      # an invalid-context error that kills the whole run before a single job starts. The
+      # smoke paths are therefore derived from $RUNNER_TEMP inside each step.
     steps:
       - name: Checkout exact tagged caller source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -331,38 +336,150 @@ jobs:
           chmod 0755 "$RUNNER_TEMP/skopeo"
           "$RUNNER_TEMP/skopeo" --insecure-policy copy "oci-archive:$OCI_ARCHIVE" "docker-daemon:$CI_IMAGE"
 
-      - name: Run exact image health MCP and hardening gate
+      - name: Prepare declared smoke fixtures
+        id: prepare-smoke
         shell: bash
         run: |
           set -euo pipefail
+          SMOKE_ENV_FILE="$RUNNER_TEMP/smoke.env"
+          SMOKE_EFFECTIVE_ENV="$RUNNER_TEMP/smoke-effective.env"
+          SMOKE_FIXTURE_DIR="$RUNNER_TEMP/smoke-fixtures"
+          : > "$SMOKE_ENV_FILE"
+          mkdir -p "$SMOKE_FIXTURE_DIR"
+          preparation="$(jq -r '.preparation // empty' container-release.json)"
+          if [ -z "$preparation" ]; then
+            echo "no preparation hook declared"
+            exit 0
+          fi
+          # The model already constrains `preparation` to this one reviewable path; assert
+          # it here too so a config schema regression can never widen it to arbitrary shell.
+          test "$preparation" = "docker/ci-prepare-smoke.sh"
+          test -f "$preparation" && test ! -L "$preparation"
+          # Runs with `contents: read` only: no secrets, no OIDC, no package write.
+          env -i PATH="$PATH" HOME="$HOME" \
+            GF_SMOKE_FIXTURE_DIR="$SMOKE_FIXTURE_DIR" \
+            GF_SMOKE_ENV_FILE="$SMOKE_ENV_FILE" \
+            bash "$preparation"
+          # Later steps consume the fixtures but never re-execute the script.
+          find "$SMOKE_FIXTURE_DIR" -type f -print0 | sort -z \
+            | xargs -0 -r sha256sum > "$RUNNER_TEMP/fixture-manifest.sha256"
+          cat "$RUNNER_TEMP/fixture-manifest.sha256"
+
+      - name: Generate the no-build smoke stack for the exact gated image
+        shell: bash
+        run: |
+          set -euo pipefail
+          SMOKE_ENV_FILE="$RUNNER_TEMP/smoke.env"
+          SMOKE_EFFECTIVE_ENV="$RUNNER_TEMP/smoke-effective.env"
+          SMOKE_FIXTURE_DIR="$RUNNER_TEMP/smoke-fixtures"
           service="$(jq -er '.service.name' container-release.json)"
-          port="$(jq -er '.service.container_port' container-release.json)"
-          # Honour the declared probe paths. _container-ci.yml already reads these; hardcoding
-          # /health and /mcp here silently probed the wrong endpoint for any backend that serves
-          # a different path (stringdb declares /api/health), burning the 90s wait loop.
+          compose_args=()
+          while IFS= read -r file; do
+            compose_args+=(-f "$file")
+          done < <(jq -r '.service.compose_files[]' container-release.json)
+          # The deployed contract names the image through one required variable. Resolve that
+          # same variable to the exact image gated in this run, so the stack can never rebuild
+          # or pull anything else.
+          image_template="$(docker compose --project-name "$service" "${compose_args[@]}" \
+            config --no-interpolate --format json \
+            | jq -er --arg service "$service" '.services[$service].image')"
+          [[ "$image_template" =~ ^\$\{([A-Z][A-Z0-9_]*):\?[^\}]+\}$ ]]
+          image_variable="${BASH_REMATCH[1]}"
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py render-smoke-override \
+            --config container-release.json --image "$CI_IMAGE" --host-port 18000 \
+            --env-file "$SMOKE_ENV_FILE" --servers servers.yaml --out "$COMPOSE_OVERRIDE"
+          # The smoke stack resolves required base-compose variables from the prepared
+          # fixture first, then from an inert placeholder.
+          smoke_env_args=()
+          while IFS='=' read -r key value; do
+            [ -n "$key" ] && smoke_env_args+=("$key=$value")
+          done < "$SMOKE_ENV_FILE"
+          while read -r variable required _; do
+            if [ "$required" = true ] && ! grep -q "^$variable=" "$SMOKE_ENV_FILE"; then
+              value=example.test
+              if [ "$variable" = "$image_variable" ]; then value="$CI_IMAGE"; fi
+              smoke_env_args+=("$variable=$value")
+            fi
+          done < <(docker compose "${compose_args[@]}" config --variables | tail -n +2)
+          printf '%s\n' "${smoke_env_args[@]}" > "$SMOKE_EFFECTIVE_ENV"
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+            -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+            config --format json > "$RUNNER_TEMP/compose-smoke.json"
+
+      - name: Start the declared smoke stack without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          SMOKE_ENV_FILE="$RUNNER_TEMP/smoke.env"
+          SMOKE_EFFECTIVE_ENV="$RUNNER_TEMP/smoke-effective.env"
+          SMOKE_FIXTURE_DIR="$RUNNER_TEMP/smoke-fixtures"
+          service="$(jq -er '.service.name' container-release.json)"
+          timeout="$(jq -er '.service.startup_timeout_seconds' container-release.json)"
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          # Re-verify every prepared fixture immediately before it is mounted.
+          if [ -s "$RUNNER_TEMP/fixture-manifest.sha256" ]; then
+            sha256sum -c "$RUNNER_TEMP/fixture-manifest.sha256"
+          fi
+          # Compose starts every declared sidecar through the application's depends_on graph
+          # and honours service_completed_successfully / service_healthy before the app runs.
+          # A bare `docker run` started the application alone, with no database and an empty
+          # data volume, so every data-bearing backend passed CI and then failed this gate —
+          # and a release tag is immutable, so each failure burned a version.
+          docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+            -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+            up --detach --no-build --wait --wait-timeout "$timeout" "$service"
+
+      - name: Gate health MCP and hardening on the composed application container
+        shell: bash
+        run: |
+          set -euo pipefail
+          SMOKE_ENV_FILE="$RUNNER_TEMP/smoke.env"
+          SMOKE_EFFECTIVE_ENV="$RUNNER_TEMP/smoke-effective.env"
+          SMOKE_FIXTURE_DIR="$RUNNER_TEMP/smoke-fixtures"
+          service="$(jq -er '.service.name' container-release.json)"
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          # Honour the declared probe paths. Hardcoding /health and /mcp silently probed the
+          # wrong endpoint for any backend that serves a different path (stringdb declares
+          # /api/health).
           health_path="$(jq -er '.service.health_path' container-release.json)"
           mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
-          # Schema-validated KEY=VALUE assignments; the charset forbids whitespace and
-          # shell metacharacters, so an entry cannot split the argument or reach a shell.
-          smoke_env=()
-          while IFS= read -r assignment; do
-            smoke_env+=(--env "$assignment")
-          done < <(jq -r '.smoke_environment // [] | .[]' container-release.json)
-          container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
-            --security-opt no-new-privileges:true --pids-limit 256 \
-            --tmpfs /tmp:rw,noexec,nosuid,size=64m "${smoke_env[@]}" \
-            -p "127.0.0.1:18000:$port" "$CI_IMAGE")"
-          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
-          for _ in $(seq 1 90); do curl -fsS "http://127.0.0.1:18000$health_path" && break; sleep 1; done
+          curl -fsS -H 'Host: localhost' \
+            "http://127.0.0.1:18000$health_path" > "$RUNNER_TEMP/release-gate-health.json"
           curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \
-            -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+            -H 'Host: localhost' -H 'Content-Type: application/json' \
+            -H 'Accept: application/json, text/event-stream' \
             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-gate","version":"1"}}}' \
             "http://127.0.0.1:18000$mcp_path"
-          grep -Fq 'result' "$RUNNER_TEMP/mcp-init.json"
-          inspect="$(docker inspect "$container_id")"
-          jq -e '.[0].Config.User != "" and .[0].Config.User != "0" and .[0].Config.User != "root"' <<<"$inspect"
-          jq -e '.[0].HostConfig.ReadonlyRootfs and (.[0].HostConfig.CapDrop | index("ALL") != null)' <<<"$inspect"
-          test -n "$service"
+          grep -Fq '"result"' "$RUNNER_TEMP/mcp-init.json"
+          grep -Fq '"serverInfo"' "$RUNNER_TEMP/mcp-init.json"
+          # The hardening invariants are asserted against the container Compose started, which
+          # is the one that just served /health and MCP initialize.
+          container_id="$(docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+            -f "$base_compose" -f "$COMPOSE_OVERRIDE" ps -q "$service")"
+          test -n "$container_id"
+          docker inspect "$container_id" > "$RUNNER_TEMP/release-gate-inspect.json"
+          inspect="$RUNNER_TEMP/release-gate-inspect.json"
+          jq -e '.[0].Config.User != "" and .[0].Config.User != "0" and .[0].Config.User != "root"' "$inspect"
+          jq -e '.[0].HostConfig.ReadonlyRootfs == true' "$inspect"
+          jq -e '.[0].HostConfig.CapDrop | index("ALL") != null' "$inspect"
+          jq -e '.[0].HostConfig.SecurityOpt | any(. == "no-new-privileges:true")' "$inspect"
+          jq -e '.[0].HostConfig.PidsLimit > 0 and .[0].HostConfig.Memory > 0' "$inspect"
+
+      - name: Tear down smoke stack
+        id: teardown
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          SMOKE_EFFECTIVE_ENV="$RUNNER_TEMP/smoke-effective.env"
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json 2>/dev/null || true)"
+          if [ -n "$base_compose" ] && [ -f "$COMPOSE_OVERRIDE" ] && [ -f "$SMOKE_EFFECTIVE_ENV" ]; then
+            docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+              -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+              down --volumes --remove-orphans || true
+          fi
+          # The gated image itself must survive: the scanner and the SBOM still read it.
 
       - name: Scan exact image to Trivy JSON
         id: trivy
@@ -593,6 +710,10 @@ jobs:
     env:
       PUBLISHED_DIGEST: ${{ needs.publish-attest.outputs.published_digest }}
       IMAGE: ${{ needs.prepare.outputs.image }}
+      COMPOSE_PROJECT_PREFIX: gf-release-capture-${{ github.run_id }}-${{ github.run_attempt }}
+      # The `runner` context is NOT available in a job-level `env:` block; using it there is
+      # an invalid-context error that kills the whole run before a single job starts. The
+      # smoke paths are therefore derived from $RUNNER_TEMP inside each step.
     steps:
       - name: Checkout exact tagged caller source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -619,40 +740,107 @@ jobs:
           enable-cache: false
           version: "0.8.7"
 
-      - name: Pull and run exact published digest
+      - name: Prepare declared smoke fixtures
+        id: prepare-smoke
         shell: bash
         run: |
           set -euo pipefail
+          SMOKE_ENV_FILE="$RUNNER_TEMP/smoke.env"
+          SMOKE_EFFECTIVE_ENV="$RUNNER_TEMP/smoke-effective.env"
+          SMOKE_FIXTURE_DIR="$RUNNER_TEMP/smoke-fixtures"
+          : > "$SMOKE_ENV_FILE"
+          mkdir -p "$SMOKE_FIXTURE_DIR"
+          preparation="$(jq -r '.preparation // empty' container-release.json)"
+          if [ -z "$preparation" ]; then
+            echo "no preparation hook declared"
+            exit 0
+          fi
+          # The model already constrains `preparation` to this one reviewable path; assert
+          # it here too so a config schema regression can never widen it to arbitrary shell.
+          test "$preparation" = "docker/ci-prepare-smoke.sh"
+          test -f "$preparation" && test ! -L "$preparation"
+          # Runs with `contents: read` and `packages: read` only: no secrets, no OIDC.
+          env -i PATH="$PATH" HOME="$HOME" \
+            GF_SMOKE_FIXTURE_DIR="$SMOKE_FIXTURE_DIR" \
+            GF_SMOKE_ENV_FILE="$SMOKE_ENV_FILE" \
+            bash "$preparation"
+          # Later steps consume the fixtures but never re-execute the script.
+          find "$SMOKE_FIXTURE_DIR" -type f -print0 | sort -z \
+            | xargs -0 -r sha256sum > "$RUNNER_TEMP/fixture-manifest.sha256"
+          cat "$RUNNER_TEMP/fixture-manifest.sha256"
+
+      - name: Pull and capture definitions from the published digest stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          SMOKE_ENV_FILE="$RUNNER_TEMP/smoke.env"
+          SMOKE_EFFECTIVE_ENV="$RUNNER_TEMP/smoke-effective.env"
+          SMOKE_FIXTURE_DIR="$RUNNER_TEMP/smoke-fixtures"
           uv sync --project .container-release-tools --group dev --frozen
           docker pull "$IMAGE@${PUBLISHED_DIGEST}"
-          port="$(jq -er '.service.container_port' container-release.json)"
+          service="$(jq -er '.service.name' container-release.json)"
+          timeout="$(jq -er '.service.startup_timeout_seconds' container-release.json)"
           health_path="$(jq -er '.service.health_path' container-release.json)"
           mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
-          # Schema-validated KEY=VALUE assignments; the charset forbids whitespace and
-          # shell metacharacters, so an entry cannot split the argument or reach a shell.
-          smoke_env=()
-          while IFS= read -r assignment; do
-            smoke_env+=(--env "$assignment")
-          done < <(jq -r '.smoke_environment // [] | .[]' container-release.json)
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          compose_args=()
+          while IFS= read -r file; do
+            compose_args+=(-f "$file")
+          done < <(jq -r '.service.compose_files[]' container-release.json)
+          # Resolve the deployed contract's required image variable to the published digest,
+          # so the stack runs exactly the manifest that was gated, attested, and pushed.
+          image_template="$(docker compose --project-name "$service" "${compose_args[@]}" \
+            config --no-interpolate --format json \
+            | jq -er --arg service "$service" '.services[$service].image')"
+          [[ "$image_template" =~ ^\$\{([A-Z][A-Z0-9_]*):\?[^\}]+\}$ ]]
+          image_variable="${BASH_REMATCH[1]}"
+          smoke_env_args=()
+          while IFS='=' read -r key value; do
+            [ -n "$key" ] && smoke_env_args+=("$key=$value")
+          done < "$SMOKE_ENV_FILE"
+          while read -r variable required _; do
+            if [ "$required" = true ] && ! grep -q "^$variable=" "$SMOKE_ENV_FILE"; then
+              value=example.test
+              if [ "$variable" = "$image_variable" ]; then
+                value="$IMAGE@$PUBLISHED_DIGEST"
+              fi
+              smoke_env_args+=("$variable=$value")
+            fi
+          done < <(docker compose "${compose_args[@]}" config --variables | tail -n +2)
+          printf '%s\n' "${smoke_env_args[@]}" > "$SMOKE_EFFECTIVE_ENV"
+          if [ -s "$RUNNER_TEMP/fixture-manifest.sha256" ]; then
+            sha256sum -c "$RUNNER_TEMP/fixture-manifest.sha256"
+          fi
           mkdir -p "$RUNNER_TEMP/capture"
+          # Two contexts prove the definitions are stable. Each is a whole Compose stack with
+          # its own sidecars and named volumes, so each gets its own project name as well as
+          # its own loopback port; the two can never collide.
           capture_tools() {
             local label="$1"
             local host_port="$2"
             local tools_json="$3"
             local context_json="$4"
-            local container_id
-            container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
-              --security-opt no-new-privileges:true \
-              --tmpfs /tmp:rw,noexec,nosuid,size=64m "${smoke_env[@]}" \
-              -p "127.0.0.1:${host_port}:$port" "$IMAGE@$PUBLISHED_DIGEST")"
-            trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' RETURN
-            for _ in $(seq 1 90); do
-              curl -fsS "http://127.0.0.1:${host_port}${health_path}" && break
-              sleep 1
-            done
+            local project="${COMPOSE_PROJECT_PREFIX}-${label}"
+            local override="compose.release-capture-${label}.yml"
+            uv run --project .container-release-tools \
+              python .container-release-tools/scripts/container_release.py render-smoke-override \
+              --config container-release.json --image "$IMAGE@$PUBLISHED_DIGEST" \
+              --host-port "$host_port" --env-file "$SMOKE_ENV_FILE" --servers servers.yaml \
+              --out "$override"
+            # Registered before the stack starts, so a failed `up` is torn down as well.
+            trap 'docker compose --project-name "$project" --env-file "$SMOKE_EFFECTIVE_ENV" -f "$base_compose" -f "$override" down --volumes --remove-orphans >/dev/null 2>&1 || true' RETURN
+            # Compose starts every declared sidecar through the application's depends_on graph
+            # and honours service_completed_successfully / service_healthy before the app runs.
+            docker compose --project-name "$project" --env-file "$SMOKE_EFFECTIVE_ENV" \
+              -f "$base_compose" -f "$override" \
+              up --detach --no-build --wait --wait-timeout "$timeout" "$service"
+            curl -fsS -H 'Host: localhost' \
+              "http://127.0.0.1:${host_port}${health_path}" \
+              > "$RUNNER_TEMP/capture/${label}-health.json"
             curl -fsS -D "$RUNNER_TEMP/capture/${label}.headers" \
               -o "$RUNNER_TEMP/capture/${label}-initialize.json" \
-              -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+              -H 'Host: localhost' -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
               --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-capture","version":"1"}}}' \
               "http://127.0.0.1:${host_port}${mcp_path}"
             grep -Fq '"serverInfo"' "$RUNNER_TEMP/capture/${label}-initialize.json"
@@ -662,7 +850,8 @@ jobs:
               session_args=(-H "Mcp-Session-Id: $session")
             fi
             curl -fsS -o "$RUNNER_TEMP/capture/${label}-tools-response.json" \
-              -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+              -H 'Host: localhost' -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
               "${session_args[@]}" \
               --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
               "http://127.0.0.1:${host_port}${mcp_path}"
@@ -688,6 +877,22 @@ jobs:
             --out-context "$RUNNER_TEMP/capture/mcp-capture-context.json"
           cd "$RUNNER_TEMP/capture"
           sha256sum mcp-definitions.json mcp-capture-context.json > SHA256SUMS
+
+      - name: Tear down smoke stack
+        id: teardown
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          SMOKE_EFFECTIVE_ENV="$RUNNER_TEMP/smoke-effective.env"
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json 2>/dev/null || true)"
+          for label in a b; do
+            override="compose.release-capture-${label}.yml"
+            if [ -n "$base_compose" ] && [ -f "$override" ] && [ -f "$SMOKE_EFFECTIVE_ENV" ]; then
+              docker compose --project-name "${COMPOSE_PROJECT_PREFIX}-${label}" \
+                --env-file "$SMOKE_EFFECTIVE_ENV" -f "$base_compose" -f "$override" \
+                down --volumes --remove-orphans || true
+            fi
+          done
 
       - name: Upload published definition capture
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
