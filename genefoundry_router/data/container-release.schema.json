@@ -1,0 +1,439 @@
+{
+  "$comment": "This checked-in schema enforces structural constraints. Acceptance additionally requires semantic validation through ReleaseConfig or ApplicationReleaseManifest; cross-field equality is enforced by Pydantic validators.",
+  "$defs": {
+    "DefinitionsConfig": {
+      "additionalProperties": false,
+      "description": "How MCP definition identity relates to authoritative data.",
+      "properties": {
+        "contract": {
+          "enum": [
+            "data-independent",
+            "data-bound"
+          ],
+          "title": "Contract",
+          "type": "string"
+        }
+      },
+      "required": [
+        "contract"
+      ],
+      "title": "DefinitionsConfig",
+      "type": "object"
+    },
+    "ExternalReferenceData": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "digest": [
+          "release_tag"
+        ],
+        "release_tag": [
+          "digest"
+        ]
+      },
+      "description": "An immutable reference artifact mounted outside the application image.",
+      "properties": {
+        "image_allowlist": {
+          "default": [],
+          "items": {
+            "pattern": "^(?!/)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+            "type": "string"
+          },
+          "title": "Image Allowlist",
+          "type": "array"
+        },
+        "release_tag": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Release Tag"
+        },
+        "digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Digest"
+        },
+        "mode": {
+          "const": "external-reference",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "ExternalReferenceData",
+      "type": "object"
+    },
+    "NoAuthoritativeData": {
+      "additionalProperties": false,
+      "description": "A service with no persistent authoritative local dataset.",
+      "properties": {
+        "mode": {
+          "const": "none",
+          "title": "Mode",
+          "type": "string"
+        },
+        "image_allowlist": {
+          "default": [],
+          "items": {
+            "pattern": "^(?!/)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+            "type": "string"
+          },
+          "title": "Image Allowlist",
+          "type": "array"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "NoAuthoritativeData",
+      "type": "object"
+    },
+    "RestoredDatabaseData": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "digest": [
+          "release_tag"
+        ],
+        "release_tag": [
+          "digest"
+        ]
+      },
+      "description": "An immutable data-only artifact restored into an external database.",
+      "properties": {
+        "image_allowlist": {
+          "default": [],
+          "items": {
+            "pattern": "^(?!/)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+            "type": "string"
+          },
+          "title": "Image Allowlist",
+          "type": "array"
+        },
+        "release_tag": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Release Tag"
+        },
+        "digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Digest"
+        },
+        "mode": {
+          "const": "restored-database",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "RestoredDatabaseData",
+      "type": "object"
+    },
+    "RuntimeCacheConfig": {
+      "additionalProperties": false,
+      "description": "Derived writable state that is not an authoritative-data mode.",
+      "properties": {
+        "path": {
+          "pattern": "^/(?!/)(?!$)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+          "title": "Path",
+          "type": "string"
+        },
+        "eviction": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Eviction",
+          "type": "string"
+        },
+        "deletable_without_authoritative_data_loss": {
+          "const": true,
+          "title": "Deletable Without Authoritative Data Loss",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "eviction",
+        "deletable_without_authoritative_data_loss"
+      ],
+      "title": "RuntimeCacheConfig",
+      "type": "object"
+    },
+    "ServiceConfig": {
+      "additionalProperties": false,
+      "description": "Runtime endpoint and Compose facts needed by standard smoke gates.",
+      "properties": {
+        "compose_files": {
+          "default": [
+            "docker/docker-compose.yml"
+          ],
+          "items": {
+            "pattern": "^(?!/)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Compose Files",
+          "type": "array"
+        },
+        "name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "container_port": {
+          "default": 8000,
+          "maximum": 65535,
+          "minimum": 1,
+          "title": "Container Port",
+          "type": "integer"
+        },
+        "health_path": {
+          "default": "/health",
+          "pattern": "^/(?!/)(?!$)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[?#\\u0000-\\u001f\\u007f])[^/?#]+(?:/[^/?#]+)*$",
+          "title": "Health Path",
+          "type": "string"
+        },
+        "mcp_path": {
+          "default": "/mcp",
+          "pattern": "^/(?!/)(?!$)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[?#\\u0000-\\u001f\\u007f])[^/?#]+(?:/[^/?#]+)*$",
+          "title": "Mcp Path",
+          "type": "string"
+        },
+        "startup_timeout_seconds": {
+          "default": 90,
+          "maximum": 3600,
+          "minimum": 1,
+          "title": "Startup Timeout Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ServiceConfig",
+      "type": "object"
+    },
+    "SmokeConfig": {
+      "additionalProperties": false,
+      "description": "A centrally implemented smoke-test profile.",
+      "properties": {
+        "profile": {
+          "default": "compose",
+          "enum": [
+            "compose",
+            "compose-two-context",
+            "immutable-bundle",
+            "postgres-bundle",
+            "prepared-live-fixture"
+          ],
+          "title": "Profile",
+          "type": "string"
+        }
+      },
+      "title": "SmokeConfig",
+      "type": "object"
+    },
+    "UpstreamLiveData": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "digest": [
+          "release_tag"
+        ],
+        "release_tag": [
+          "digest"
+        ]
+      },
+      "description": "Transitional authoritative data materialized directly from an upstream.",
+      "properties": {
+        "image_allowlist": {
+          "default": [],
+          "items": {
+            "pattern": "^(?!/)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+            "type": "string"
+          },
+          "title": "Image Allowlist",
+          "type": "array"
+        },
+        "release_tag": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Release Tag"
+        },
+        "digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Digest"
+        },
+        "mode": {
+          "const": "upstream-live",
+          "title": "Mode",
+          "type": "string"
+        },
+        "egress_allowlist": {
+          "items": {
+            "pattern": "^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)(?:\\.(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?))*(?::(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Egress Allowlist",
+          "type": "array"
+        },
+        "reproducible_rollback": {
+          "const": false,
+          "default": false,
+          "title": "Reproducible Rollback",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "mode",
+        "egress_allowlist"
+      ],
+      "title": "UpstreamLiveData",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Per-repository facts consumed by the central container release workflow.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "dockerfile": {
+      "default": "docker/Dockerfile",
+      "pattern": "^(?!/)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+      "title": "Dockerfile",
+      "type": "string"
+    },
+    "target": {
+      "default": "production",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+      "title": "Target",
+      "type": "string"
+    },
+    "platform": {
+      "const": "linux/amd64",
+      "default": "linux/amd64",
+      "title": "Platform",
+      "type": "string"
+    },
+    "service": {
+      "$ref": "#/$defs/ServiceConfig"
+    },
+    "data": {
+      "discriminator": {
+        "mapping": {
+          "external-reference": "#/$defs/ExternalReferenceData",
+          "none": "#/$defs/NoAuthoritativeData",
+          "restored-database": "#/$defs/RestoredDatabaseData",
+          "upstream-live": "#/$defs/UpstreamLiveData"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NoAuthoritativeData"
+        },
+        {
+          "$ref": "#/$defs/ExternalReferenceData"
+        },
+        {
+          "$ref": "#/$defs/RestoredDatabaseData"
+        },
+        {
+          "$ref": "#/$defs/UpstreamLiveData"
+        }
+      ],
+      "title": "Data"
+    },
+    "runtime_cache": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RuntimeCacheConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "definitions": {
+      "$ref": "#/$defs/DefinitionsConfig"
+    },
+    "smoke": {
+      "$ref": "#/$defs/SmokeConfig"
+    },
+    "preparation": {
+      "anyOf": [
+        {
+          "const": "docker/ci-prepare-smoke.sh",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Preparation"
+    }
+  },
+  "required": [
+    "service",
+    "definitions"
+  ],
+  "title": "ReleaseConfig",
+  "type": "object"
+}
