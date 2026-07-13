@@ -217,6 +217,8 @@ def test_build_gate_builds_only_when_absent_and_never_uses_release_cache() -> No
     assert "build_required == 'false'" in str(job)
     assert "--to-oci-layout" in text
     assert "inspect-oci" in text
+    assert "allowlist_args+=(--allowlist" in text
+    assert "--image-allowlist" not in text
     assert "evaluate-trivy" in text
     assert "trivy version --format json" in text
     assert "trivy-native.json" in text

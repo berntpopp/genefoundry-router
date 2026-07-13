@@ -303,7 +303,7 @@ jobs:
           mapfile -t image_allowlist < <(jq -er '.data.image_allowlist[]?' container-release.json)
           allowlist_args=()
           for allowed_path in "${image_allowlist[@]}"; do
-            allowlist_args+=(--image-allowlist "$allowed_path")
+            allowlist_args+=(--allowlist "$allowed_path")
           done
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py inspect-oci \
