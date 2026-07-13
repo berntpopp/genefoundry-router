@@ -192,7 +192,9 @@ def test_build_gate_builds_only_when_absent_and_never_uses_release_cache() -> No
     assert not any(key.startswith("cache-") for key in inputs)
     text = _run_text(job)
     trivy = next(
-        step for step in _steps(job) if str(step.get("uses", "")).startswith("aquasecurity/trivy-action@")
+        step
+        for step in _steps(job)
+        if str(step.get("uses", "")).startswith("aquasecurity/trivy-action@")
     )
     assert trivy["with"]["cache-dir"] == TRIVY_CACHE_DIR
     evaluate_trivy = next(
