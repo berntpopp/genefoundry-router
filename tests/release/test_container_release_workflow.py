@@ -194,7 +194,14 @@ def test_build_gate_builds_only_when_absent_and_never_uses_release_cache() -> No
     assert "--to-oci-layout" in text
     assert "inspect-oci" in text
     assert "evaluate-trivy" in text
+    assert "trivy version --format json" in text
+    assert "trivy-native.json" in text
+    assert "{schema_version: 1, scan: $scan[0], version: $version[0]}" in text
     assert "sha256sum" in text
+    assert "/tmp/release-build" not in str(job)
+    assert "OCI_ARCHIVE=$RUNNER_TEMP/release-build/image.oci.tar" in text
+    assert "OCI_LAYOUT=$RUNNER_TEMP/release-build/oci-layout" in text
+    assert "steps.evidence-paths.outputs.archive" in str(inputs["outputs"])
 
 
 def test_publish_verifies_artifact_before_registry_login_or_write() -> None:

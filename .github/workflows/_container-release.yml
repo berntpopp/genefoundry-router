@@ -187,8 +187,6 @@ jobs:
       image_digest: ${{ steps.evidence.outputs.image_digest }}
     env:
       CI_IMAGE: release-gate:${{ needs.prepare.outputs.source_sha }}
-      OCI_ARCHIVE: /tmp/release-build/image.oci.tar
-      OCI_LAYOUT: /tmp/release-build/oci-layout
       IMAGE: ${{ needs.prepare.outputs.image }}
       SOURCE_ALIAS: ${{ needs.prepare.outputs.source_alias }}
       SOURCE_DIGEST: ${{ needs.prepare.outputs.source_digest }}
@@ -224,6 +222,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.0.0
 
+      - name: Prepare immutable evidence directory
+        id: evidence-paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/release-build"
+          echo "OCI_ARCHIVE=$RUNNER_TEMP/release-build/image.oci.tar" >> "$GITHUB_ENV"
+          echo "OCI_LAYOUT=$RUNNER_TEMP/release-build/oci-layout" >> "$GITHUB_ENV"
+          echo "archive=$RUNNER_TEMP/release-build/image.oci.tar" >> "$GITHUB_OUTPUT"
+
       - name: Build production OCI layout exactly once
         if: ${{ needs.prepare.outputs.build_required == 'true' }}
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.0.0
@@ -233,7 +241,7 @@ jobs:
           target: production
           platforms: linux/amd64
           tags: ${{ needs.prepare.outputs.source_alias }}
-          outputs: type=oci,dest=${{ runner.temp }}/release-build/image.oci.tar
+          outputs: type=oci,dest=${{ steps.evidence-paths.outputs.archive }}
           push: false
           provenance: false
           sbom: false
@@ -261,9 +269,15 @@ jobs:
           set -euo pipefail
           mkdir -p "$OCI_LAYOUT"
           if [ ! -f "$OCI_LAYOUT/index.json" ]; then tar -xf "$OCI_ARCHIVE" -C "$OCI_LAYOUT"; fi
+          mapfile -t image_allowlist < <(jq -er '.data.image_allowlist[]?' container-release.json)
+          allowlist_args=()
+          for allowed_path in "${image_allowlist[@]}"; do
+            allowlist_args+=(--image-allowlist "$allowed_path")
+          done
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py inspect-oci \
-            --layout "$OCI_LAYOUT" > "$RUNNER_TEMP/release-build/content-report.json"
+            --layout "$OCI_LAYOUT" "${allowlist_args[@]}" \
+            > "$RUNNER_TEMP/release-build/content-report.json"
           image_digest="$(jq -er '.manifests | select(length == 1) | .[0].digest | select(test("^sha256:[0-9a-f]{64}$"))' "$OCI_LAYOUT/index.json")"
           if [ -n "$SOURCE_DIGEST" ]; then test "$image_digest" = "$SOURCE_DIGEST"; fi
           manifest_hex="${image_digest#sha256:}"
@@ -310,7 +324,7 @@ jobs:
         with:
           image-ref: ${{ env.CI_IMAGE }}
           format: json
-          output: ${{ runner.temp }}/release-build/trivy.json
+          output: ${{ runner.temp }}/release-build/trivy-native.json
           exit-code: "0"
           vuln-type: os,library
 
@@ -321,6 +335,18 @@ jobs:
           set -euo pipefail
           scanner_exit=3
           if [ "${{ steps.trivy.outcome }}" = success ]; then scanner_exit=0; fi
+          if [ "$scanner_exit" -eq 0 ]; then
+            trivy version --format json > "$RUNNER_TEMP/release-build/trivy-version.json"
+          else
+            test -f "$RUNNER_TEMP/release-build/trivy-native.json" || \
+              printf '{}\n' > "$RUNNER_TEMP/release-build/trivy-native.json"
+            printf '{}\n' > "$RUNNER_TEMP/release-build/trivy-version.json"
+          fi
+          jq -n \
+            --slurpfile scan "$RUNNER_TEMP/release-build/trivy-native.json" \
+            --slurpfile version "$RUNNER_TEMP/release-build/trivy-version.json" \
+            '{schema_version: 1, scan: $scan[0], version: $version[0]}' \
+            > "$RUNNER_TEMP/release-build/trivy.json"
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py evaluate-trivy \
             --report "$RUNNER_TEMP/release-build/trivy.json" --scanner-exit "$scanner_exit" \

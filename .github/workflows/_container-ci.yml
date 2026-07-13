@@ -258,11 +258,14 @@ jobs:
             "http://127.0.0.1:18000$mcp_path"
           grep -Fq '"serverInfo"' "$RUNNER_TEMP/mcp-initialize.out"
           session="$(awk 'tolower($1) == "mcp-session-id:" {gsub("\\r", "", $2); print $2}' "$RUNNER_TEMP/mcp.headers")"
-          test -n "$session"
+          session_args=()
+          if [ -n "$session" ]; then
+            session_args=(-H "Mcp-Session-Id: $session")
+          fi
           curl -fsS -o "$RUNNER_TEMP/mcp-tools-list.out" \
             -H 'Host: localhost' -H 'Content-Type: application/json' \
             -H 'Accept: application/json, text/event-stream' \
-            -H "Mcp-Session-Id: $session" \
+            "${session_args[@]}" \
             --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
             "http://127.0.0.1:18000$mcp_path"
           grep -Fq '"tools"' "$RUNNER_TEMP/mcp-tools-list.out"
@@ -290,7 +293,7 @@ jobs:
         with:
           image-ref: ${{ env.CI_IMAGE }}
           format: json
-          output: trivy.json
+          output: trivy-native.json
           exit-code: "0"
           vuln-type: os,library
 
@@ -306,9 +309,19 @@ jobs:
       - name: Evaluate versioned vulnerability policy
         if: ${{ always() && steps.build.outcome == 'success' }}
         run: |
+          set -euo pipefail
+          scanner_exit="$(cat scanner.exit)"
+          if [ "$scanner_exit" -eq 0 ]; then
+            trivy version --format json > trivy-version.json
+          else
+            test -f trivy-native.json || printf '{}\n' > trivy-native.json
+            printf '{}\n' > trivy-version.json
+          fi
+          jq -n --slurpfile scan trivy-native.json --slurpfile version trivy-version.json \
+            '{schema_version: 1, scan: $scan[0], version: $version[0]}' > trivy.json
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py evaluate-trivy \
-            --report trivy.json --scanner-exit "$(cat scanner.exit)" \
+            --report trivy.json --scanner-exit "$scanner_exit" \
             --out "$RUNNER_TEMP/trivy-verdict.json"
 
       - name: Generate non-attested SPDX JSON SBOM
@@ -348,5 +361,7 @@ jobs:
             ${{ runner.temp }}/mcp-tools-list.out
             ${{ runner.temp }}/trivy-verdict.json
             trivy.json
+            trivy-native.json
+            trivy-version.json
             scanner.exit
             sbom.spdx.json

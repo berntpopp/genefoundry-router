@@ -199,16 +199,23 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
     assert ".service.mcp_path" in run_text
     assert "initialize" in run_text and "tools/list" in run_text
     assert "Mcp-Session-Id" in run_text
+    assert 'if [ -n "$session" ]' in run_text
+    assert 'session_args=(-H "Mcp-Session-Id: $session")' in run_text
+    assert '"${session_args[@]}"' in run_text
     assert "docker inspect" in run_text
     assert "no-new-privileges" in run_text
     trivy = next(
         step for step in steps if str(step.get("uses", "")).startswith("aquasecurity/trivy-action@")
     )
     assert trivy["with"]["format"] == "json"
-    assert trivy["with"]["output"] == "trivy.json"
+    assert trivy["with"]["output"] == "trivy-native.json"
     assert trivy["with"]["exit-code"] == "0"
+    assert "trivy version --format json" in run_text
+    assert "--slurpfile scan trivy-native.json" in run_text
+    assert "--slurpfile version trivy-version.json" in run_text
+    assert "{schema_version: 1, scan: $scan[0], version: $version[0]}" in run_text
     assert "evaluate-trivy" in run_text
-    assert '--scanner-exit "$(cat scanner.exit)"' in run_text
+    assert '--scanner-exit "$scanner_exit"' in run_text
     sbom = next(
         step for step in steps if str(step.get("uses", "")).startswith("anchore/sbom-action@")
     )
