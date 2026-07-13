@@ -44,7 +44,9 @@ A consistent, audited hardening baseline across the fleet is exactly such a meas
    only in the builder stage. The production stage installs **no** toolchain — at most `curl`
    for the healthcheck. (Router: `docker/Dockerfile`, `builder` → `production`.)
 2. **Pin the base image by digest, not just tag.** `FROM python:3.12-slim@sha256:…` so a rebuild
-   is byte-reproducible and not silently re-pointed. Tag-only pinning (`python:3.12-slim`) is the
+   remains traceable to its selected base and is not silently re-pointed. Digest pins and a frozen
+   lockfile do not make Debian repositories, wheels, timestamps, or compression byte-reproducible.
+   Tag-only pinning (`python:3.12-slim`) is the
    v1 floor; **digest pinning is required for a medical-grade deployment** and is tracked by
    Renovate/Dependabot for patch bumps.
 3. **Install dependencies from a frozen lockfile.** `uv sync --frozen --no-dev --no-editable`
@@ -66,9 +68,10 @@ A consistent, audited hardening baseline across the fleet is exactly such a meas
      (router: `/tmp` `rw,noexec,nosuid,size=64m,mode=1777`);
    - persistent state (e.g. a backend's built SQLite/index that must survive restart) → a
      **named volume mounted read-write only at that path**, everything else read-only.
-9. **Bundled reference data is read-only.** SQLite/OBO/parquet artifacts baked at build time are
-   served read-only; their dataset version is recorded (ties to the Response-Envelope
-   `data_version`/`snapshot_version`). No runtime mutation of reference data.
+9. **Application images are code-only.** Authoritative SQLite/OBO/parquet/corpus content is an
+   independently released, digest-verified artifact mounted read-only after hardened
+   materialization. Only exact, bounded code/schema/baseline resources may be allowlisted in an
+   application image. Runtime state and mutable caches use separate explicit writable mounts.
 
 ### 3. Kernel & privilege surface — drop everything
 
@@ -171,61 +174,96 @@ posture. Tiers below are the adoption baseline; each repo's tracking issue close
 > reference) but, like the fleet, still owes the three universal items — digest pinning, image
 > scanning, and SBOM. Fixing them on the router first sets the pattern the fleet copies.
 
-### Canonical Trivy gate block (ratified 2026-06-30, copy-paste fleet reference)
+### Canonical Trivy evidence gate (ratified 2026-07-13, fleet reference)
 
-Every repo's `.github/workflows/container-security.yml` MUST use the **2-step "scan-is-the-gate"
-form** below (Category B). Rationale: `severity: CRITICAL,HIGH` + `ignore-unfixed: true` limits
-the gate to *actionable* CVEs only (no unfixable base-image noise); `exit-code: "1"` enforces the
-policy from L129/L168/L208; `if: always()` on SBOM + upload ensures evidence is retained even when
-the gate fires; one image scan per run (no redundant report step).
+Every repository MUST separate **scanner operation** from **policy evaluation**. The authoritative
+scan is Trivy JSON with `exit-code: "0"`, `severity: CRITICAL,HIGH`, and `ignore-unfixed: true`.
+The scanner process status is captured independently. A successful process does not itself mean
+the image passed policy, and a failed process is not misreported as a vulnerability finding.
 
-```yaml
-      - name: Trivy scan (fail on fixable CRITICAL/HIGH)
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: <repo>:scan          # e.g. gnomad-link:scan
-          format: table
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: "1"
+The release tooling consumes one `trivy.json` evidence envelope:
 
-      - name: Generate SBOM (CycloneDX)
-        if: always()                       # SBOM is non-gating; produce it even when the scan fails
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: <repo>:scan
-          format: cyclonedx
-          output: <repo>-sbom.cdx.json
-          exit-code: "0"
-
-      - name: Upload scan artifacts
-        if: always()                       # keep evidence on a failing gate
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: container-security-artifacts
-          path: <repo>-sbom.cdx.json
+```json
+{
+  "schema_version": 1,
+  "scan": {"...": "native JSON from trivy image --format json"},
+  "version": {"...": "native JSON from trivy version --format json"}
+}
 ```
+
+Generate the two native documents with the same pinned Trivy binary, assemble the envelope with a
+strict JSON tool, and then run the repository-owned evaluator:
+
+```text
+evaluate-trivy --report trivy.json --scanner-exit scanner.exit --out verdict.json
+```
+
+The command's shared exit contract is stable across every release subcommand:
+
+| Exit | JSON `verdict` | Meaning |
+|---:|---|---|
+| `0` | `pass` | complete, fresh evidence and no fixable HIGH/CRITICAL finding |
+| `1` | `policy_violation` | complete evidence contains a fixable HIGH/CRITICAL finding |
+| `2` | `invalid_evidence` | malformed, incomplete, ambiguous, or stale evidence |
+| `3` | `infrastructure_failure` | Trivy itself exited non-zero; retry or repair infrastructure |
+
+The workflow MUST branch on the evaluator's JSON `verdict` and matching exit code. It MUST NOT
+infer policy from the raw Trivy process exit, a table, SARIF, or presence/absence of a report file.
+The verdict records the pinned Trivy version, database `UpdatedAt`, `NextUpdate`, and
+`DownloadedAt`, scan creation time, and bounded identifying fields for findings. Unfixable
+HIGH/CRITICAL findings, if present in the native JSON, remain evidence but do not gate.
 
 **Key implementation notes:**
 
-- **`exit-code` default is `0`.** The `trivy-action` does **not** fail by default —
-  omitting `exit-code: "1"` makes the step always green, which is the root cause of 12
-  Category A repos not gating despite having a scan step.
-- **`ignore-unfixed: true` is load-bearing.** Without it, flipping `exit-code` to `"1"` on a
-  Category A scan (no `severity` / `ignore-unfixed`) gates on *all* severities including
-  unfixable base-image CVEs (`libc`/`zlib` with no upstream fix), sending every backend
-  red on CVEs nobody can action — a self-inflicted outage. Always pair the three fields
-  (`severity: CRITICAL,HIGH`, `ignore-unfixed: true`, `exit-code: "1"`) as a unit.
-- **SARIF + `exit-code` gotcha:** `trivy-action` issue #309 documents that `exit-code` does
-  not respect `severity` when `format: sarif` is used — the step always exits `0` regardless.
-  If a SARIF upload to GitHub code-scanning is desired (e.g. `genereviews-link`), keep it as
-  a *separate non-gating step* and use a plain `format: table` step for the actual gate.
-- **Schedule:** the workflow runs on a weekly schedule too. A fresh Trivy DB can turn a
-  previously-green `main` red when a new fixable CVE is disclosed; that is the intended
-  forcing function (L129: "re-scan on a schedule"). Runbook for a red scheduled run: bump the
-  base image digest and/or lockfile, then re-run. If scheduled red runs become noisy, mirror
-  the router's `drift.yml` heartbeat pattern (open/refresh a tracking issue instead of only a
-  red ✗) — not required for initial conformance.
+- **Capture the process result before evaluation.** Configure Trivy's policy exit to zero, retain
+  its real process status in `scanner.exit`, and run evidence assembly/evaluation under
+  `if: always()`. Any non-zero scanner result maps to infrastructure failure even when a partial
+  JSON file exists.
+- **Freshness is evidence, not an assumption.** `trivy version --format json` MUST contain the
+  vulnerability database version and aware `UpdatedAt`, `NextUpdate`, and `DownloadedAt`
+  timestamps. The evaluator rejects missing, misordered, future, or already-expired metadata.
+  Evaluation allows at most five minutes of clock skew and rejects scan reports older than one
+  hour plus that skew; reruns therefore rescan the immutable image digest instead of replaying old
+  vulnerability evidence.
+- **Fixability is evaluated from validated JSON.** Only HIGH/CRITICAL entries with a nonempty
+  `FixedVersion` return `policy_violation`. Unfixable entries are retained without making routine
+  releases permanently red on base-image CVEs with no upstream remediation.
+- **SARIF is non-gating.** If GitHub code-scanning output is desired, generate and upload SARIF in
+  a separate best-effort reporting job. A SARIF document is never accepted by the evaluator and
+  cannot substitute for authoritative JSON evidence.
+- **Retain evidence on all outcomes.** Upload `trivy.json`, `scanner.exit`, and `verdict.json` with
+  `if: always()` together with the SBOM. A release proceeds only on a validated `pass` verdict.
+- **Schedule:** re-scan deployed digests weekly. Newly disclosed fixable CVEs should open or
+  refresh a deduplicated remediation issue. Scanner/database/registry infrastructure errors are
+  tracked separately and never described as application vulnerability findings.
+
+### Application image publication and deployment (ratified 2026-07-13)
+
+- A protected exact stable `vX.Y.Z` tag is the only publication authority. Pull requests and
+  branch workflows are read-only and cannot publish.
+- Release jobs build one `linux/amd64` OCI manifest, inspect every layer and image configuration,
+  run the hardened container plus MCP conformance, scan it, and preserve SBOM/provenance evidence.
+  AMD64 is the sole v1 platform. ARM64 requires native platform-specific build, content, scan,
+  runtime, MCP, and data tests before a multi-platform index is permitted.
+- Images carry complete OCI title, description, source, URL, documentation, version, full
+  revision, creation time, license, and vendor labels plus
+  `org.genefoundry.research-use-only=true` and `org.genefoundry.data-policy=code-only`.
+- Production accepts a reviewed digest only, clears every inherited `build:`, and publishes no
+  backend host port. The deployment verifier checks the immutable release, exact signer workflow
+  and revision, provenance and SPDX SBOM attestations, labels, data identity, and Compose model.
+- New GHCR packages require a one-time bootstrap before a real release: link the package to its
+  source repository, set public package visibility, verify an anonymous pull, delete only the
+  disposable bootstrap tag, and retain no standing package PAT. The controls ledger also proves
+  protected tags, immutable releases, protected release environment, linkage, public visibility,
+  anonymous access, and rollback-digest retention.
+- The rollback tuple is image digest + application version/revision + data release/digest/schema
+  (or explicit `none`) + MCP-definition digest. Preserve and test the previous-known-good tuple;
+  an older image tag alone is not a rollback.
+- A digest collision, partial publication, attestation/SBOM failure, anonymous-pull regression,
+  mutable GitHub Release, or definition mismatch is an incident. Do not overwrite aliases or
+  assets. Retain evidence and resume only the original protected-tag event after remediation.
+- **Research use only. Not clinical decision support.** Origin and integrity evidence does not
+  establish clinical validity, regulatory approval, or correctness of biomedical data.
 
 ## References
 
@@ -267,12 +305,10 @@ the gate fires; one image scan per run (no redundant report step).
 
 ## Open: Standard v1.1 (pending decision)
 
-1. **Image signing / provenance** — adopt `cosign`/Sigstore signatures + build provenance
-   attestations so the host (and an auditor) can verify image authenticity, not just integrity.
-2. **Distroless or `chainguard`-style base** — drop `curl`/shell from the runtime entirely
+1. **Distroless or `chainguard`-style base** — drop `curl`/shell from the runtime entirely
    (healthcheck via a static binary or the orchestrator's HTTP probe). Smaller CVE surface,
    at some debuggability cost.
-3. **Rootless runtime** — Podman/rootless Docker on the host as defense-in-depth beyond
+2. **Rootless runtime** — Podman/rootless Docker on the host as defense-in-depth beyond
    in-container non-root.
-4. **Runtime security monitoring** — Falco/eBPF anomaly detection on the fleet host (egress,
+3. **Runtime security monitoring** — Falco/eBPF anomaly detection on the fleet host (egress,
    unexpected exec). Pairs with the router's tool-definition drift detection.

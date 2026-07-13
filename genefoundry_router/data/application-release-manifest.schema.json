@@ -1,0 +1,474 @@
+{
+  "$comment": "This checked-in schema enforces structural constraints. Acceptance additionally requires semantic validation through ReleaseConfig or ApplicationReleaseManifest; cross-field equality is enforced by Pydantic validators.",
+  "$defs": {
+    "ExternalReferenceRequirements": {
+      "additionalProperties": false,
+      "description": "Exact external reference artifact required by the application.",
+      "properties": {
+        "release_tag": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "title": "Release Tag",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_compatibility": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Schema Compatibility",
+          "type": "array"
+        },
+        "mode": {
+          "const": "external-reference",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "release_tag",
+        "digest",
+        "mode"
+      ],
+      "title": "ExternalReferenceRequirements",
+      "type": "object"
+    },
+    "ImageIdentity": {
+      "additionalProperties": false,
+      "description": "Published application image identity.",
+      "properties": {
+        "name": {
+          "pattern": "^ghcr\\.io/[a-z0-9](?:[a-z0-9._-]{0,99})/[a-z0-9](?:[a-z0-9._-]{0,99})$",
+          "title": "Name",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "platforms": {
+          "items": {
+            "$ref": "#/$defs/PlatformImage"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Platforms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "digest",
+        "platforms"
+      ],
+      "title": "ImageIdentity",
+      "type": "object"
+    },
+    "McpEvidence": {
+      "additionalProperties": false,
+      "description": "Canonical MCP definition evidence and its data contract.",
+      "properties": {
+        "definitions_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Definitions Sha256",
+          "type": "string"
+        },
+        "capture_context_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Capture Context Sha256",
+          "type": "string"
+        },
+        "definition_contract": {
+          "enum": [
+            "data-independent",
+            "data-bound"
+          ],
+          "title": "Definition Contract",
+          "type": "string"
+        }
+      },
+      "required": [
+        "definitions_sha256",
+        "capture_context_sha256",
+        "definition_contract"
+      ],
+      "title": "McpEvidence",
+      "type": "object"
+    },
+    "NoDataRequirements": {
+      "additionalProperties": false,
+      "description": "A released application with no authoritative data identity.",
+      "properties": {
+        "mode": {
+          "const": "none",
+          "title": "Mode",
+          "type": "string"
+        },
+        "schema_compatibility": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Schema Compatibility",
+          "type": "array"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "NoDataRequirements",
+      "type": "object"
+    },
+    "PlatformImage": {
+      "additionalProperties": false,
+      "description": "The accepted manifest for one tested platform.",
+      "properties": {
+        "platform": {
+          "const": "linux/amd64",
+          "title": "Platform",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "digest"
+      ],
+      "title": "PlatformImage",
+      "type": "object"
+    },
+    "ReleaseAssets": {
+      "additionalProperties": false,
+      "description": "Closed v1 release-asset set, addressed by each asset's SHA-256.",
+      "properties": {
+        "image-manifest.json": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Image-Manifest.Json",
+          "type": "string"
+        },
+        "sbom.spdx.json": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Sbom.Spdx.Json",
+          "type": "string"
+        },
+        "mcp-definitions.json": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Mcp-Definitions.Json",
+          "type": "string"
+        },
+        "mcp-capture-context.json": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Mcp-Capture-Context.Json",
+          "type": "string"
+        },
+        "trivy.json": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Trivy.Json",
+          "type": "string"
+        },
+        "attestation-bundle.json": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Attestation-Bundle.Json",
+          "type": "string"
+        },
+        "trusted-root.json": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Trusted-Root.Json",
+          "type": "string"
+        },
+        "verification.json": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Verification.Json",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image-manifest.json",
+        "sbom.spdx.json",
+        "mcp-definitions.json",
+        "mcp-capture-context.json",
+        "trivy.json",
+        "attestation-bundle.json",
+        "trusted-root.json",
+        "verification.json"
+      ],
+      "title": "ReleaseAssets",
+      "type": "object"
+    },
+    "RestoredDatabaseRequirements": {
+      "additionalProperties": false,
+      "description": "Exact restored database artifact required by the application.",
+      "properties": {
+        "release_tag": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "title": "Release Tag",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_compatibility": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Schema Compatibility",
+          "type": "array"
+        },
+        "mode": {
+          "const": "restored-database",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "release_tag",
+        "digest",
+        "mode"
+      ],
+      "title": "RestoredDatabaseRequirements",
+      "type": "object"
+    },
+    "SecurityEvidence": {
+      "additionalProperties": false,
+      "description": "Digests for the scanner, SBOM, provenance, and verification evidence.",
+      "properties": {
+        "scanner": {
+          "const": "trivy",
+          "title": "Scanner",
+          "type": "string"
+        },
+        "scanner_version": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Scanner Version",
+          "type": "string"
+        },
+        "database_updated_at": {
+          "format": "date-time",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})$",
+          "title": "Database Updated At",
+          "type": "string"
+        },
+        "sbom_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sbom Sha256",
+          "type": "string"
+        },
+        "scanner_evidence_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Scanner Evidence Sha256",
+          "type": "string"
+        },
+        "attestation_bundle_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Attestation Bundle Sha256",
+          "type": "string"
+        },
+        "trusted_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Trusted Root Sha256",
+          "type": "string"
+        },
+        "verification_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verification Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scanner",
+        "scanner_version",
+        "database_updated_at",
+        "sbom_sha256",
+        "scanner_evidence_sha256",
+        "attestation_bundle_sha256",
+        "trusted_root_sha256",
+        "verification_sha256"
+      ],
+      "title": "SecurityEvidence",
+      "type": "object"
+    },
+    "SourceIdentity": {
+      "additionalProperties": false,
+      "description": "Stable source tag and exact Git commit.",
+      "properties": {
+        "tag": {
+          "pattern": "^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Tag",
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tag",
+        "revision"
+      ],
+      "title": "SourceIdentity",
+      "type": "object"
+    },
+    "UpstreamLiveRequirements": {
+      "additionalProperties": false,
+      "description": "Observed upstream identity with explicitly degraded rollback.",
+      "properties": {
+        "release_tag": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "title": "Release Tag",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_compatibility": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Schema Compatibility",
+          "type": "array"
+        },
+        "mode": {
+          "const": "upstream-live",
+          "title": "Mode",
+          "type": "string"
+        },
+        "reproducible_rollback": {
+          "const": false,
+          "title": "Reproducible Rollback",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "release_tag",
+        "digest",
+        "mode",
+        "reproducible_rollback"
+      ],
+      "title": "UpstreamLiveRequirements",
+      "type": "object"
+    },
+    "WorkflowIdentity": {
+      "additionalProperties": false,
+      "description": "Caller and exact router-owned reusable workflow identity.",
+      "properties": {
+        "caller": {
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,38})/[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,99})/\\.github/workflows/[A-Za-z0-9_-](?:[A-Za-z0-9_.-]{0,99})\\.ya?ml$",
+          "title": "Caller",
+          "type": "string"
+        },
+        "standard": {
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,38})/[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,99})/\\.github/workflows/[A-Za-z0-9_-](?:[A-Za-z0-9_.-]{0,99})\\.ya?ml$",
+          "title": "Standard",
+          "type": "string"
+        },
+        "standard_revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Standard Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "caller",
+        "standard",
+        "standard_revision"
+      ],
+      "title": "WorkflowIdentity",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Complete immutable evidence record for one accepted application image.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "repository": {
+      "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,38})/[A-Za-z0-9_.-]{1,100}$",
+      "title": "Repository",
+      "type": "string"
+    },
+    "version": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/SourceIdentity"
+    },
+    "image": {
+      "$ref": "#/$defs/ImageIdentity"
+    },
+    "workflow": {
+      "$ref": "#/$defs/WorkflowIdentity"
+    },
+    "mcp": {
+      "$ref": "#/$defs/McpEvidence"
+    },
+    "security_evidence": {
+      "$ref": "#/$defs/SecurityEvidence"
+    },
+    "release_assets": {
+      "$ref": "#/$defs/ReleaseAssets"
+    },
+    "data_requirements": {
+      "discriminator": {
+        "mapping": {
+          "external-reference": "#/$defs/ExternalReferenceRequirements",
+          "none": "#/$defs/NoDataRequirements",
+          "restored-database": "#/$defs/RestoredDatabaseRequirements",
+          "upstream-live": "#/$defs/UpstreamLiveRequirements"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NoDataRequirements"
+        },
+        {
+          "$ref": "#/$defs/ExternalReferenceRequirements"
+        },
+        {
+          "$ref": "#/$defs/RestoredDatabaseRequirements"
+        },
+        {
+          "$ref": "#/$defs/UpstreamLiveRequirements"
+        }
+      ],
+      "title": "Data Requirements"
+    }
+  },
+  "required": [
+    "repository",
+    "version",
+    "source",
+    "image",
+    "workflow",
+    "mcp",
+    "security_evidence",
+    "release_assets",
+    "data_requirements"
+  ],
+  "title": "ApplicationReleaseManifest",
+  "type": "object"
+}

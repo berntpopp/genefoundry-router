@@ -21,9 +21,9 @@ a final verdict and were not treated as completed reviews.
 | ID | Finding | Disposition |
 |---|---|---|
 | B1 | Claimed `job.workflow_*` contexts do not exist | Rejected. Current GitHub Actions documentation exposes `job.workflow_repository`, `job.workflow_ref`, and `job.workflow_sha` for reusable workflows. The design adds non-empty, expected-repository/path, and SHA-ref assertions so any future context change fails closed. |
-| B2 | A backfill dispatched at an old tag may not contain the workflow | Accepted. Backfill dispatches the caller on `main`, accepts an exact tag input, resolves the tag through GitHub, and checks out and validates the resolved commit. |
+| B2 | A backfill dispatched at an old tag may not contain the workflow | Superseded after plan review. Dispatch from `main` binds GitHub provenance to the wrong source ref/SHA, while dispatch at the old tag lacks the adopted caller/config. Pre-adoption tags are not backfilled; a new post-adoption version/tag is required. |
 | H1 | Publishing the version alias before all acceptance gates creates a selectable partial release | Accepted. PUSH creates only the source-SHA alias. The version alias is created after immutable release publication and verification. |
-| H2 | Executing leaf code in a job with registry/content write and OIDC permissions crosses the privilege boundary | Accepted. The workflow now has read-only preparation/build/gate and capture jobs, a non-executing publisher/attestor, and a separate non-executing finalizer. A verified saved image crosses the job boundary without a rebuild. |
+| H2 | Executing leaf code in a job with registry/content write and OIDC permissions crosses the privilege boundary | Accepted. The workflow now has read-only preparation/build/gate, capture, and evidence-assembly jobs plus non-executing publisher/attestor and finalizer jobs. A verified OCI layout with a build-declared digest crosses the job boundary without a rebuild or Docker recompression. |
 | H3 | Raw Trivy exit status cannot reliably distinguish findings from scanner failure | Accepted. Trivy emits JSON with exit zero; an independent versioned evaluator distinguishes valid policy findings from operational or parse failures. |
 | H4 | Fixture-derived MCP definitions may differ from production-data definitions | Accepted. Repositories declare either a two-context-proven `data-independent` contract or a `data-bound` contract tied to the exact production data identity. |
 | H5 | The data model omitted services materializing authoritative data from live upstreams | Accepted. A transitional `upstream-live` mode records egress and the lack of reproducible data rollback, with migration to immutable external references. |
@@ -53,4 +53,7 @@ The review also resulted in these accepted changes:
 
 All accepted findings are reflected in the reviewed design. The rejected B1
 finding is closed by authoritative platform documentation plus fail-closed
-workflow assertions. No blocking finding remains open at design handoff.
+workflow assertions. The later plan review further hardened OCI digest transfer,
+data modes, and backfill semantics; its separate disposition record is normative
+where this initial review was superseded. No blocking finding remains open at
+design handoff.

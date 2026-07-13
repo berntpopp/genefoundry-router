@@ -7,6 +7,7 @@ services:
     ports: !reset []
     expose:
       - "8000"
+    pull_policy: missing
     networks:
       - npm-network
 

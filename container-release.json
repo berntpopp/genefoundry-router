@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "dockerfile": "docker/Dockerfile",
+  "target": "production",
+  "platform": "linux/amd64",
+  "service": {
+    "compose_files": [
+      "docker/docker-compose.yml",
+      "docker/docker-compose.prod.yml"
+    ],
+    "name": "genefoundry-router",
+    "container_port": 8000,
+    "health_path": "/health",
+    "mcp_path": "/mcp",
+    "startup_timeout_seconds": 90
+  },
+  "data": {
+    "mode": "none",
+    "image_allowlist": [
+      "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/__init__.py",
+      "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/application-release-manifest.schema.json",
+      "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/container-release.schema.json",
+      "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/fleet-baseline.json",
+      "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/image-content-policy-v1.json"
+    ]
+  },
+  "definitions": {
+    "contract": "data-independent"
+  },
+  "smoke": {
+    "profile": "compose-two-context"
+  }
+}

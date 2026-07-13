@@ -1,5 +1,11 @@
 services:
   genefoundry-router:
+    build: !reset null
+    image: ${GENEFOUNDRY_IMAGE:?set a verified digest-addressed image}
+    pull_policy: missing
+    ports: !reset []
+    expose:
+      - "8000"
     environment:
       GF_DEPLOYMENT_MODE: production
       GF_LOG_LEVEL: INFO
@@ -11,16 +17,16 @@ services:
       # durable fastmcp_data volume (below) — NOT /tmp (tmpfs, wiped every restart,
       # which caused "Client Not Registered" and forced clients to reconnect).
       FASTMCP_HOME: /data/fastmcp
+    # Repeat the security boundary explicitly in this reference overlay. !override
+    # prevents Compose list merging from duplicating inherited entries.
     read_only: true
-    tmpfs:
+    tmpfs: !override
       - /tmp:rw,noexec,nosuid,size=64m,mode=1777
-    volumes:
-      # read_only rootfs still allows writes to explicit volume mounts. app (uid 10001)
-      # owns /data via the Dockerfile so the fresh named volume initializes writable.
+    volumes: !override
       - fastmcp_data:/data
-    security_opt:
+    security_opt: !override
       - no-new-privileges:true
-    cap_drop:
+    cap_drop: !override
       - ALL
     init: true
     deploy:
@@ -35,8 +41,3 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
-
-volumes:
-  # Durable OAuthProxy client/token store. Survives router restarts + redeploys so
-  # registered MCP clients stay registered (no more "Client Not Registered").
-  fastmcp_data:

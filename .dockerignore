@@ -17,3 +17,8 @@ docs/
 scripts/
 tests/
 htmlcov/
+data/
+datasets/
+corpus/
+output/
+outputs/

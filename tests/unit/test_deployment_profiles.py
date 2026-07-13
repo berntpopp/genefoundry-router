@@ -12,9 +12,28 @@ from __future__ import annotations
 from pathlib import Path
 
 import yaml
+from yaml.nodes import MappingNode, ScalarNode, SequenceNode
 
 PATIENT_PROFILE = Path("docker/.env.patient-data.example")
 PUBLIC_PROFILE = Path(".env.example")
+
+
+class _ComposeLoader(yaml.SafeLoader):
+    """Safe YAML loader that understands Compose's merge-control tags."""
+
+
+def _construct_reset(loader: _ComposeLoader, node: yaml.Node) -> object:
+    if isinstance(node, SequenceNode):
+        return loader.construct_sequence(node)
+    if isinstance(node, MappingNode):
+        return loader.construct_mapping(node)
+    if isinstance(node, ScalarNode) and node.value.lower() in {"null", "~", ""}:
+        return None
+    return loader.construct_scalar(node)
+
+
+_ComposeLoader.add_constructor("!reset", _construct_reset)
+_ComposeLoader.add_constructor("!override", _construct_reset)
 
 
 def _assignments(text: str) -> dict[str, str]:
@@ -48,7 +67,10 @@ def test_patient_profile_is_authenticated_and_locked_down() -> None:
 
 
 def test_production_compose_declares_production_reachability_mode() -> None:
-    compose = yaml.safe_load(Path("docker/docker-compose.prod.yml").read_text(encoding="utf-8"))
+    compose = yaml.load(
+        Path("docker/docker-compose.prod.yml").read_text(encoding="utf-8"),
+        Loader=_ComposeLoader,  # noqa: S506 -- SafeLoader with fixed Compose tags only
+    )
     environment = compose["services"]["genefoundry-router"]["environment"]
     assert environment["GF_DEPLOYMENT_MODE"] == "production"
     assert "GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY" not in environment

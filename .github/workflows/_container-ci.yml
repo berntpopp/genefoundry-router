@@ -1,0 +1,373 @@
+name: Reusable container CI
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  container-ci:
+    name: Build once and gate the OCI image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      CI_IMAGE: genefoundry-router-ci:${{ github.sha }}
+      OCI_ARCHIVE: image.oci.tar
+      OCI_LAYOUT: image-oci-layout
+      COMPOSE_OVERRIDE: compose.container-ci.yml
+      COMPOSE_PROJECT_NAME: genefoundry-container-ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Verify called-workflow identity
+        id: workflow-identity
+        shell: bash
+        env:
+          JOB_CONTEXT: ${{ toJSON(job) }}
+        run: |
+          set -euo pipefail
+          WORKFLOW_REPOSITORY="$(jq -er '.workflow_repository' <<< "$JOB_CONTEXT")"
+          WORKFLOW_REF="$(jq -er '.workflow_ref' <<< "$JOB_CONTEXT")"
+          WORKFLOW_SHA="$(jq -er '.workflow_sha' <<< "$JOB_CONTEXT")"
+          test -n "$WORKFLOW_REPOSITORY"
+          test -n "$WORKFLOW_REF"
+          test -n "$WORKFLOW_SHA"
+          test "$WORKFLOW_REPOSITORY" = "berntpopp/genefoundry-router"
+          case "$WORKFLOW_REF" in
+            berntpopp/genefoundry-router/.github/workflows/_container-ci.yml@*) ;;
+            *) echo "unexpected called workflow: $WORKFLOW_REF" >&2; exit 1 ;;
+          esac
+          [[ "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]
+          echo "repository=$WORKFLOW_REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "sha=$WORKFLOW_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout caller repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Checkout exact container standard revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ steps.workflow-identity.outputs.repository }}
+          ref: ${{ steps.workflow-identity.outputs.sha }}
+          path: .container-release-tools
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+          version: "0.8.7"
+
+      - name: Install exact standard tools
+        run: uv sync --project .container-release-tools --group dev --frozen
+
+      - name: Validate release configuration, version, and lockfile
+        run: |
+          set -euo pipefail
+          uv run --project .container-release-tools python - <<'PY'
+          import json
+          from pathlib import Path
+          from genefoundry_router.release.models import ReleaseConfig
+
+          ReleaseConfig.model_validate(json.loads(Path("container-release.json").read_text()))
+          PY
+          uv lock --check
+          version="$(uv version --short)"
+          grep -Fq "## [$version]" CHANGELOG.md
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.0.0
+
+      - name: Derive bounded build cache scope
+        id: cache-scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          repository="${{ github.repository }}"
+          dockerfile="docker/Dockerfile"
+          platform="linux/amd64"
+          dockerfile_hash="$(sha256sum "$dockerfile" | cut -d' ' -f1)"
+          buildx_hash="$(docker buildx version | sha256sum | cut -d' ' -f1)"
+          lock_hash="$(sha256sum uv.lock | cut -d' ' -f1)"
+          scope="ci-v1-${repository//\//-}-${dockerfile//\//-}-${platform//\//-}-${dockerfile_hash:0:16}-${buildx_hash:0:16}-${lock_hash:0:16}"
+          echo "scope=$scope" >> "$GITHUB_OUTPUT"
+
+      - name: Build production OCI layout once
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.0.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: production
+          platforms: linux/amd64
+          tags: ${{ env.CI_IMAGE }}
+          outputs: type=oci,dest=${{ env.OCI_ARCHIVE }}
+          push: false
+          provenance: false
+          sbom: false
+          build-args: |
+            APP_VERSION=0.0.0
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=1970-01-01T00:00:00Z
+          cache-from: type=gha,scope=${{ steps.cache-scope.outputs.scope }}
+          cache-to: type=gha,mode=min,ignore-error=true,scope=${{ steps.cache-scope.outputs.scope }}
+
+      - name: Inspect every OCI layer and image configuration
+        run: |
+          set -euo pipefail
+          mkdir -p "$OCI_LAYOUT"
+          tar -xf "$OCI_ARCHIVE" -C "$OCI_LAYOUT"
+          allowlist_args=()
+          while IFS= read -r path; do
+            allowlist_args+=(--allowlist "$path")
+          done < <(jq -r '.data.image_allowlist[]' container-release.json)
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py inspect-oci \
+            --layout "$OCI_LAYOUT" "${allowlist_args[@]}" \
+            > "$RUNNER_TEMP/content-report.json"
+
+      - name: Install pinned OCI importer
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=1.23.0
+          sha256=15696e068c02a163e20013fab79f40cdc6c8022d99e1aee8676f6d540404691a
+          curl -fsSL --proto '=https' --tlsv1.2 \
+            -o "$RUNNER_TEMP/skopeo" \
+            "https://github.com/lework/skopeo-binary/releases/download/v${version}/skopeo-linux-amd64"
+          echo "$sha256  $RUNNER_TEMP/skopeo" | sha256sum -c -
+          chmod 0755 "$RUNNER_TEMP/skopeo"
+          "$RUNNER_TEMP/skopeo" --version
+
+      - name: Import the exact OCI layout into the local daemon
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/skopeo" --insecure-policy copy \
+            "oci-archive:$OCI_ARCHIVE" "docker-daemon:$CI_IMAGE"
+
+      - name: Validate effective production Compose and generate no-build smoke stack
+        run: |
+          set -euo pipefail
+          service="$(jq -er '.service.name' container-release.json)"
+          compose_args=()
+          while IFS= read -r file; do
+            compose_args+=(-f "$file")
+          done < <(jq -r '.service.compose_files[]' container-release.json)
+          docker compose --project-name "$service" "${compose_args[@]}" \
+            config --no-interpolate --format json > "$RUNNER_TEMP/compose-production.raw.json"
+          image_template="$(jq -er --arg service "$service" '.services[$service].image' \
+            "$RUNNER_TEMP/compose-production.raw.json")"
+          [[ "$image_template" =~ ^\$\{([A-Z][A-Z0-9_]*):\?[^\}]+\}$ ]]
+          image_variable="${BASH_REMATCH[1]}"
+          production_image="ghcr.io/${GITHUB_REPOSITORY,,}@sha256:$(printf 'a%.0s' {1..64})"
+          environment_args=()
+          while read -r variable required _; do
+            if [ "$required" = true ]; then
+              value=example.test
+              if [ "$variable" = "$image_variable" ]; then value="$production_image"; fi
+              environment_args+=("$variable=$value")
+            fi
+          done < <(docker compose "${compose_args[@]}" config --variables | tail -n +2)
+          env "${environment_args[@]}" docker compose --project-name "$service" \
+            "${compose_args[@]}" config --format json > "$RUNNER_TEMP/compose-production.json"
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py validate-compose \
+            --rendered "$RUNNER_TEMP/compose-production.json" --service "$service"
+          python - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          config = json.loads(Path("container-release.json").read_text())
+          service = config["service"]["name"]
+          port = config["service"]["container_port"]
+          servers = Path("servers.yaml")
+          keys = sorted(
+              set(re.findall(r"url_env:\s*([A-Z0-9_]+)", servers.read_text()))
+              if servers.is_file()
+              else set()
+          )
+          environment = "\n".join(f"      {key}: http://127.0.0.1:9/mcp" for key in keys)
+          override = f"""services:
+            {service}:
+              build: !reset null
+              image: {__import__('os').environ['CI_IMAGE']}
+              pull_policy: never
+              env_file: !reset []
+              environment:
+                GF_AUTH_MODE: none
+                GF_ALLOW_INSECURE: "true"
+                GF_ALLOWED_HOSTS: localhost,127.0.0.1
+                GF_HEALTHCHECK_HOST: localhost
+                GF_DRIFT_MODE: warn
+          {environment}
+              ports: !override
+                - 127.0.0.1:18000:{port}
+              read_only: true
+              tmpfs: !override
+                - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+              cap_drop: !override
+                - ALL
+              security_opt: !override
+                - no-new-privileges:true
+              init: true
+              deploy:
+                resources:
+                  limits:
+                    cpus: "1.0"
+                    memory: 1G
+                    pids: 256
+              logging:
+                driver: json-file
+                options:
+                  max-size: 10m
+                  max-file: "2"
+          """
+          Path(__import__('os').environ["COMPOSE_OVERRIDE"]).write_text(override)
+          PY
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+            config --format json > "$RUNNER_TEMP/compose.json"
+
+      - name: Start exact local image without rebuilding
+        run: |
+          set -euo pipefail
+          service="$(jq -er '.service.name' container-release.json)"
+          timeout="$(jq -er '.service.startup_timeout_seconds' container-release.json)"
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+            up --detach --no-build --wait --wait-timeout "$timeout" "$service"
+
+      - name: Probe health and MCP initialize/list-tools conformance
+        shell: bash
+        run: |
+          set -euo pipefail
+          health_path="$(jq -er '.service.health_path' container-release.json)"
+          mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
+          curl -fsS -H 'Host: localhost' \
+            "http://127.0.0.1:18000$health_path" > "$RUNNER_TEMP/health.json"
+          curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-initialize.out" \
+            -H 'Host: localhost' -H 'Content-Type: application/json' \
+            -H 'Accept: application/json, text/event-stream' \
+            --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"container-ci","version":"1"}}}' \
+            "http://127.0.0.1:18000$mcp_path"
+          grep -Fq '"serverInfo"' "$RUNNER_TEMP/mcp-initialize.out"
+          session="$(awk 'tolower($1) == "mcp-session-id:" {gsub("\\r", "", $2); print $2}' "$RUNNER_TEMP/mcp.headers")"
+          session_args=()
+          if [ -n "$session" ]; then
+            session_args=(-H "Mcp-Session-Id: $session")
+          fi
+          curl -fsS -o "$RUNNER_TEMP/mcp-tools-list.out" \
+            -H 'Host: localhost' -H 'Content-Type: application/json' \
+            -H 'Accept: application/json, text/event-stream' \
+            "${session_args[@]}" \
+            --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+            "http://127.0.0.1:18000$mcp_path"
+          grep -Fq '"tools"' "$RUNNER_TEMP/mcp-tools-list.out"
+
+      - name: Assert runtime identity and hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          service="$(jq -er '.service.name' container-release.json)"
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          container_id="$(docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" ps -q "$service")"
+          test -n "$container_id"
+          docker inspect "$container_id" > "$RUNNER_TEMP/docker-inspect.json"
+          jq -e '.[0].Config.User != "" and .[0].Config.User != "0" and .[0].Config.User != "root"' "$RUNNER_TEMP/docker-inspect.json"
+          jq -e '.[0].HostConfig.ReadonlyRootfs == true' "$RUNNER_TEMP/docker-inspect.json"
+          jq -e '.[0].HostConfig.CapDrop | index("ALL") != null' "$RUNNER_TEMP/docker-inspect.json"
+          jq -e '.[0].HostConfig.SecurityOpt | any(. == "no-new-privileges:true")' "$RUNNER_TEMP/docker-inspect.json"
+          jq -e '.[0].HostConfig.PidsLimit > 0 and .[0].HostConfig.Memory > 0' "$RUNNER_TEMP/docker-inspect.json"
+          test "$(docker image inspect "$CI_IMAGE" --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')" = "${{ github.sha }}"
+
+      - name: Scan exact image to Trivy JSON
+        id: trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.35.0
+        with:
+          image-ref: ${{ env.CI_IMAGE }}
+          format: json
+          output: trivy-native.json
+          exit-code: "0"
+          vuln-type: os,library
+          cache-dir: ${{ github.workspace }}/.cache/trivy
+
+      - name: Record scanner process result
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        run: |
+          if [ "${{ steps.trivy.outcome }}" = success ]; then
+            echo 0 > scanner.exit
+          else
+            echo 3 > scanner.exit
+          fi
+
+      - name: Evaluate versioned vulnerability policy
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        env:
+          TRIVY_CACHE_DIR: ${{ github.workspace }}/.cache/trivy
+        run: |
+          set -euo pipefail
+          scanner_exit="$(cat scanner.exit)"
+          if [ "$scanner_exit" -eq 0 ]; then
+            trivy version --format json > trivy-version.json
+          else
+            test -f trivy-native.json || printf '{}\n' > trivy-native.json
+            printf '{}\n' > trivy-version.json
+          fi
+          jq -n --slurpfile scan trivy-native.json --slurpfile version trivy-version.json \
+            '{schema_version: 1, scan: $scan[0], version: $version[0]}' > trivy.json
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py evaluate-trivy \
+            --report trivy.json --scanner-exit "$scanner_exit" \
+            --out "$RUNNER_TEMP/trivy-verdict.json"
+
+      - name: Generate non-attested SPDX JSON SBOM
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ env.CI_IMAGE }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: false
+
+      - name: Tear down smoke stack
+        id: teardown
+        if: ${{ always() }}
+        run: |
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json 2>/dev/null || true)"
+          if [ -n "$base_compose" ] && [ -f "$COMPOSE_OVERRIDE" ]; then
+            docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+              down --volumes --remove-orphans || true
+          fi
+          docker image rm "$CI_IMAGE" || true
+
+      - name: Upload short-retention CI evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        with:
+          name: container-ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 3
+          path: |
+            ${{ runner.temp }}/content-report.json
+            ${{ runner.temp }}/compose.json
+            ${{ runner.temp }}/compose-production.json
+            ${{ runner.temp }}/docker-inspect.json
+            ${{ runner.temp }}/health.json
+            ${{ runner.temp }}/mcp-initialize.out
+            ${{ runner.temp }}/mcp-tools-list.out
+            ${{ runner.temp }}/trivy-verdict.json
+            trivy.json
+            trivy-native.json
+            trivy-version.json
+            scanner.exit
+            sbom.spdx.json

@@ -13,19 +13,7 @@ COPY genefoundry_router ./genefoundry_router
 # production stage. A plain editable install breaks across multi-stage COPY.
 RUN uv sync --frozen --no-dev --no-editable
 
-FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1 AS production
-
-# Runtime identity. The deploy builds from a source checkout rather than pulling a
-# registry image, so there is no immutable OCI digest to pin; stamping the exact
-# commit into the image is what lets an operator prove the running container was
-# built from the revision the router's release inventory pins, instead of trusting
-# a moving `main`. VCS_REF is unprefixed on purpose: a <SERVICE>_-prefixed name
-# would land in the pydantic settings namespace.
-ARG VCS_REF=unknown
-LABEL org.opencontainers.image.source="https://github.com/berntpopp/genefoundry-router" \
-      org.opencontainers.image.revision="${VCS_REF}"
-ENV VCS_REF="${VCS_REF}"
-
+FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1 AS prepared
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/build/.venv/bin:$PATH" \
@@ -40,7 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
     # /build/.venv (which contains no pip), so the interpreter-level pip is pure
     # attack surface. Removing it drops pip-only CVEs (e.g. CVE-2026-6357) that
     # the container-scan gate flags on a package the runtime never uses.
-    && rm -rf /usr/local/lib/python3.14/site-packages/pip \
+    && rm -rf /usr/local/lib/python3.14/ensurepip \
+              /usr/local/lib/python3.14/site-packages/pip \
               /usr/local/lib/python3.14/site-packages/pip-*.dist-info \
               /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.14 \
     # Persistent-store mount point for FASTMCP_HOME (OAuthProxy client/token store).
@@ -49,10 +38,60 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && mkdir -p /data && chown app:app /data
 WORKDIR /home/app/web
 COPY --from=builder /build/.venv /build/.venv
-COPY genefoundry_router ./genefoundry_router
 COPY servers.yaml pyproject.toml README.md ./
-RUN test -f genefoundry_router/data/fleet-baseline.json
-USER app
+RUN /build/.venv/bin/python -c \
+      "from importlib.resources import files; assert files('genefoundry_router.data').joinpath('fleet-baseline.json').is_file()" \
+    # Bytecode is runtime cache, not release content. The final read-only image
+    # must not carry interpreter caches inherited from the base or build steps.
+    && find /usr/local/lib/python3.14 -type d -name __pycache__ -prune -exec rm -rf '{}' +
+# Set-id bits are unnecessary under the non-root/no-new-privileges runtime
+# contract and are rejected by the per-layer public-image policy.
+RUN find / -xdev -perm /6000 -exec chmod a-s '{}' + \
+    && test -z "$(find / -xdev -perm /6000 -print -quit)"
+# Debian currently ships one regular-file hardlink pair. Assert that exact
+# inventory before removing the redundant alias so flattening cannot conceal
+# a new or unexpected hardlink from the content gate.
+RUN actual="$(find / -xdev -type f -links +1 -printf '%i %p\n' | sort -k2,2)" \
+    && expected="$(printf '%s %s\n%s %s\n' \
+         "$(stat -c '%i' /usr/bin/perl)" /usr/bin/perl \
+         "$(stat -c '%i' /usr/bin/perl5.40.1)" /usr/bin/perl5.40.1 | sort -k2,2)" \
+    && { test "$actual" = "$expected" || { printf 'unexpected hardlinks:\n%s\n' "$actual"; exit 1; }; } \
+    && rm -f /usr/bin/perl5.40.1
+
+# Flatten the prepared filesystem into one release layer. The content gate still
+# rejects set-id files and hardlinks in every layer, so a risky base-image layer
+# cannot be hidden by a later chmod or deletion.
+FROM scratch AS production
+COPY --from=prepared / /
+
+# Public release identity. Release automation supplies all three values from the
+# validated source tag/commit and build record; the defaults identify an explicitly
+# non-release local build. None of these arguments may contain secrets.
+ARG APP_VERSION=0.0.0
+ARG VCS_REF=0000000000000000000000000000000000000000
+ARG BUILD_DATE=1970-01-01T00:00:00Z
+LABEL org.opencontainers.image.title="GeneFoundry Router" \
+      org.opencontainers.image.description="FastMCP gateway for the GeneFoundry research MCP fleet" \
+      org.opencontainers.image.source="https://github.com/berntpopp/genefoundry-router" \
+      org.opencontainers.image.url="https://github.com/berntpopp/genefoundry-router" \
+      org.opencontainers.image.documentation="https://github.com/berntpopp/genefoundry-router#container-release-and-deployment" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="GeneFoundry" \
+      org.genefoundry.research-use-only="true" \
+      org.genefoundry.data-policy="code-only"
+ENV VCS_REF="${VCS_REF}" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/build/.venv/bin:$PATH" \
+    GF_HOST=0.0.0.0 \
+    GF_PORT=8000 \
+    GF_MCP_PATH=/mcp \
+    GF_HEALTHCHECK_HOST=localhost
+WORKDIR /home/app/web
+USER 10001:10001
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=10s \
     CMD curl -f -H "Host: ${GF_HEALTHCHECK_HOST}" http://localhost:8000/health || exit 1

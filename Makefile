@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
 
 .DEFAULT_GOAL := help
 
@@ -59,8 +59,11 @@ test-unit: test-fast ## Alias for parallel unit tests
 test-integration: ## Run in-process integration, conformance, and discoverability-benchmark tests
 	uv run pytest tests/integration tests/conformance tests/discoverability -q || [ $$? -eq 5 ]  # exit 5 = none collected
 
+test-release: ## Run release control-plane tests
+	uv run pytest tests/release -q
+
 test-cov: ## Run tests with coverage
-	uv run pytest tests/unit tests/integration tests/conformance tests/discoverability --cov=$(PKG) --cov-report=term-missing --cov-report=html --cov-report=xml
+	uv run pytest tests/unit tests/integration tests/conformance tests/discoverability tests/release --cov=$(PKG) --cov-report=term-missing --cov-report=html --cov-report=xml
 
 test-all: test-cov ## Alias for full test run with coverage
 
@@ -69,7 +72,7 @@ http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption 
 
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-actions typecheck http-policy-adoption test-fast test-integration ## Fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
 
 precommit: ci-local ## Run checks expected before commit
 
@@ -110,12 +113,25 @@ docker-restart: ## Recreate the container to re-read ../.env (no image rebuild)
 	$(DOCKER_COMPOSE) -f docker/docker-compose.yml up -d --force-recreate
 
 docker-prod-config: ## Render production Compose configuration
-	GF_ALLOWED_HOSTS=$${GF_ALLOWED_HOSTS:-genefoundry.org} \
+	GENEFOUNDRY_IMAGE=$${GENEFOUNDRY_IMAGE:-ghcr.io/berntpopp/genefoundry-router@sha256:0000000000000000000000000000000000000000000000000000000000000000} \
+		GF_ALLOWED_HOSTS=$${GF_ALLOWED_HOSTS:-genefoundry.org} \
 		GF_HEALTHCHECK_HOST=$${GF_HEALTHCHECK_HOST:-genefoundry.org} \
 		$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
 
 docker-npm-config: ## Render NPM Compose configuration
-	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
+	GENEFOUNDRY_IMAGE=$${GENEFOUNDRY_IMAGE:-ghcr.io/berntpopp/genefoundry-router@sha256:0000000000000000000000000000000000000000000000000000000000000000} \
+		$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
+
+container-validate: ## Validate container release configuration (CONFIG=path)
+	uv run python scripts/container_release.py validate-config --config "$(or $(CONFIG),container-release.json)"
+
+container-content: ## Inspect an OCI layout (OCI_LAYOUT=path)
+	@test -n "$(OCI_LAYOUT)" || (echo "OCI_LAYOUT=<OCI image-layout path> is required"; exit 2)
+	uv run python scripts/container_release.py inspect-oci --layout "$(OCI_LAYOUT)"
+
+container-deploy-verify: ## Verify a reviewed deployment manifest (MANIFEST=path)
+	@test -n "$(MANIFEST)" || (echo "MANIFEST=<application release manifest> is required"; exit 2)
+	uv run python scripts/container_release.py verify-deployment --manifest "$(MANIFEST)"
 
 dev-fleet: ## Run the offline fake MCP fleet (port 9100)
 	uv run python -m genefoundry_router.devtools.fake_fleet
@@ -134,10 +150,10 @@ snapshot-catalog: ## Regenerate the discoverability benchmark catalog from the l
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_catalog.py
 
 release-candidate: ## Author ci/release-candidate-inventory.json from the live fleet (online)
-	@test -n "$(REVISIONS)" || (echo "REVISIONS=<path to namespace->commit JSON> is required (strato: manage.py attest --json)"; exit 2)
+	@test -n "$(RELEASE_MANIFESTS)" || (echo "RELEASE_MANIFESTS=<verified application release manifest set> is required"; exit 2)
 	@test -n "$(IDENTITY)" || (echo "IDENTITY=<reviewed release identity> is required"; exit 2)
 	uv run --env-file ci/fleet-urls.env python scripts/make_release_candidate.py \
-		--identity "$(IDENTITY)" --revisions "$(REVISIONS)"
+		--identity "$(IDENTITY)" --release-manifests "$(RELEASE_MANIFESTS)"
 
 .PHONY: snapshot-baseline
 snapshot-baseline: ## Re-pin the packaged drift baseline from the live fleet (online)

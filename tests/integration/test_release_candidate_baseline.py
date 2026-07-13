@@ -3,17 +3,23 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from genefoundry_router.devtools.fakes import load_manifest
+from scripts.snapshot_fleet import ReleaseCandidateCaptureError, load_release_candidate_inventory
 
 BASELINE = Path("genefoundry_router/data/fleet-baseline.json")
 RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 
 
-def test_packaged_baseline_matches_reviewed_release_candidate_full_definitions() -> None:
+def test_pre_oci_baseline_is_preserved_but_blocked_from_new_candidate_use() -> None:
     baseline = load_manifest(BASELINE)
     candidate = load_manifest(RELEASE_CANDIDATE)
     inventory = json.loads(RELEASE_INVENTORY.read_text(encoding="utf-8"))
+
+    with pytest.raises(ReleaseCandidateCaptureError, match="router application release"):
+        load_release_candidate_inventory(RELEASE_INVENTORY)
 
     assert candidate.snapshot_meta.source == "release-candidate"
     assert candidate.snapshot_meta.release_candidate == inventory

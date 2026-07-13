@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "max_layers": 256,
+  "max_entries": 200000,
+  "max_file_bytes": 67108864,
+  "max_total_bytes": 1073741824,
+  "max_blob_bytes": 1073741824,
+  "max_uncompressed_layer_bytes": 1073741824,
+  "max_uncompressed_image_bytes": 2147483648,
+  "magic_scan_bytes": 65536,
+  "max_path_bytes": 4096,
+  "max_diagnostic_bytes": 65536,
+  "max_allowlist_entries": 128,
+  "max_allowlist_file_bytes": 4194304,
+  "max_allowlist_total_bytes": 16777216,
+  "max_diagnostics": 256,
+  "allowlist_media_types": {
+    ".css": "text/plain; charset=utf-8",
+    ".csv": "text/plain; charset=utf-8",
+    ".html": "text/plain; charset=utf-8",
+    ".json": "text/plain; charset=utf-8",
+    ".md": "text/plain; charset=utf-8",
+    ".py": "text/plain; charset=utf-8",
+    ".sql": "text/plain; charset=utf-8",
+    ".txt": "text/plain; charset=utf-8",
+    ".xml": "text/plain; charset=utf-8",
+    ".yaml": "text/plain; charset=utf-8",
+    ".yml": "text/plain; charset=utf-8"
+  },
+  "layer_media_types": [
+    "application/vnd.oci.image.layer.v1.tar",
+    "application/vnd.oci.image.layer.v1.tar+gzip"
+  ],
+  "required_dockerignore": [
+    ".git/",
+    ".env",
+    ".env.*",
+    ".venv/",
+    "__pycache__/",
+    ".pytest_cache/",
+    ".ruff_cache/",
+    ".mypy_cache/",
+    ".coverage",
+    "htmlcov/",
+    "venv/",
+    "data/",
+    "datasets/",
+    "corpus/",
+    "output/",
+    "outputs/"
+  ]
+}

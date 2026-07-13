@@ -131,18 +131,21 @@ changes. Coupling them causes needless multi-gigabyte image rebuilds and makes
 rollback ambiguous.
 
 Every application image is code-only. Data-aware repositories use one of four
-declared modes:
+authoritative-data modes:
 
 - `none`: no persistent local dataset is required;
-- `external-reference`: an immutable reference artifact is mounted or
-  materialized into a volume;
+- `external-reference`: an immutable reference artifact is materialized into a
+  versioned directory and mounted read-only by the application;
+- `restored-database`: an immutable, data-only artifact is restored by a
+  non-privileged init service into a database volume whose identity gates
+  application readiness;
 - `upstream-live`: authoritative reference data is materialized directly from a
   declared upstream at startup or refresh time; this transitional mode records
-  the egress allowlist and explicitly cannot promise reproducible data rollback;
-- `runtime-cache`: only derived cache/state is written to an explicit volume.
+  the egress allowlist and explicitly cannot promise reproducible data rollback.
 
-A repository may use a reference mode plus `runtime-cache`; the configuration
-records the cache property independently. `upstream-live` is not treated as
+A derived runtime cache is an independent typed property, not a fifth data mode.
+It records its writable path, eviction semantics, and whether it may be deleted
+without losing authoritative data. `upstream-live` is not treated as
 equivalent to an immutable bundle. GenCC, HGNC, MGI, and any other repository
 found materializing authoritative data from live upstreams are tracked for
 conversion to `external-reference` rather than being misclassified as `none`.
@@ -163,10 +166,13 @@ A pull request and a release are different trust transitions and therefore each
 performs its own build. Within either transition the image is built exactly once.
 The job must not scan one build and push another.
 
-For the initial AMD64-only release, BuildKit loads the production image into the
-runner's Docker image store. All smoke, content, hardening, and vulnerability
-gates operate on that local image. The job then pushes that image and records the
-digest returned by the registry. It does not invoke a second Docker build.
+For the initial AMD64-only release, BuildKit exports a single-manifest OCI layout
+and the read-only build job computes its manifest digest before credentials are
+introduced. All smoke, per-layer content, hardening, and vulnerability gates
+operate on that exact layout/image. A non-executing publisher uses a pinned,
+checksum-verified daemonless registry client to copy the identical manifest and
+blobs to GHCR, then proves the registry digest equals the build-declared digest.
+It does not invoke a second Docker build or let Docker recompress the image.
 
 ### Verification is a deployment action
 
@@ -319,15 +325,13 @@ Each repository has:
 
 - `container-ci.yml`, triggered only when application, lockfile, Docker,
   Compose, release configuration, or workflow files change;
-- `container-release.yml`, triggered on exact `v*` tag pushes and supporting a
-  guarded manual backfill for an already-existing tag.
+- `container-release.yml`, triggered only by exact stable `vX.Y.Z` tag pushes.
 
-Manual backfill dispatches the caller workflow from `main` with an exact `tag`
-input. It does not dispatch at the historical tag ref, which may predate the
-workflow file. VALIDATE resolves the supplied tag to a full commit using the
-GitHub API, verifies tag/version/main ancestry against that tree, and checks out
-the resolved commit. Tests prove tag-push and backfill inputs converge on the
-same full source revision and release key.
+Pre-adoption tags are not backfilled: running a dispatch from `main` would bind
+GitHub provenance to `main`, while running at the old tag would execute a caller
+and configuration that do not exist there. Existing versions require a new
+reviewed release commit/version/tag after adoption. A failed tag-push workflow is
+resumed by rerunning the original tag event, not by accepting a free-text ref.
 
 Both callers reference the router reusable workflow by a full 40-character
 commit SHA. Action pins inside the central workflow are also full SHAs.
@@ -369,33 +373,48 @@ it can publish the immutable source release and add the accepted version alias.
 It does not receive OIDC or attestation permission. No single job receives every
 permission in the combined release set.
 
+The caller declares the combined permission ceiling required by reusable
+workflows, while each called job downscopes it as above. Publisher and finalizer
+also target a protected `release` environment restricted to exact stable tag
+refs and required maintainers where the account plan supports that control. The
+control ledger fails closed when the required environment protection is absent;
+it does not silently downgrade to documentation.
+
 `artifact-metadata: write` is added only if the linked-artifact feature is used
 and supported. Permissions are job-scoped. No PAT is distributed to the fleet.
 
 ### Release job isolation
 
-The reusable release workflow is a multi-job pipeline:
+The reusable release workflow is a six-job pipeline:
 
-1. `prepare` runs optional fixture preparation with `contents: read` only and
-   uploads a digest manifest.
+1. `prepare` validates the tag and queries the source-SHA alias. It runs optional
+   fixture preparation with `contents: read`/`packages: read` only and decides
+   whether the gate path builds a new OCI layout or pulls the existing digest.
 2. `build-gate` checks out and executes leaf code with `contents: read` only,
-   builds once, runs all local gates, saves the exact image as a Docker archive,
-   and uploads the archive, SBOM, scan evidence, definition fixtures, and their
-   digests with minimal retention.
+   builds once only when no source alias exists, otherwise imports the existing
+   manifest as an OCI layout. It computes the build-declared digest, runs every
+   local gate, and uploads the OCI layout, SBOM, scan evidence, definition
+   fixtures, and an immutable artifact digest with minimal retention.
 3. `publish-attest` does not check out or execute leaf code. It downloads and
-   verifies the saved-image/evidence artifact, loads but does not run the image,
-   pushes only the source-SHA alias, and creates attestations. This is the only
-   job with OIDC and attestation permissions.
+   verifies the OCI-layout/evidence artifact, performs a byte-preserving
+   daemonless push of only the source-SHA alias, proves registry digest equality,
+   and creates attestations. This is the only job with OIDC and attestation
+   permissions.
 4. `capture` has `contents: read` and `packages: read`, pulls by digest, runs the
    published image under the validated smoke configuration, and emits the MCP
    capture.
-5. `finalize` verifies all evidence, publishes the immutable GitHub Release, and
-   finally creates the human version alias for the accepted digest.
+5. `assemble-evidence` has read permissions only. It combines the published
+   capture, attestation bundle, build evidence, and release-asset hashes into the
+   final release manifest and uploads one digest-pinned finalization artifact.
+6. `finalize` does not check out or execute leaf code. It uses pinned runner
+   binaries to verify the finalization artifact, publishes the immutable GitHub
+   Release, and creates the human version alias by applying the identical
+   manifest bytes to a second tag.
 
 Every Compose input that is executed, including generated smoke overrides, is
 rendered and checked for Docker socket mounts, host networking, privileged mode,
 excess capabilities, unsafe host paths, and rebuilds. Transferring the saved
-image costs artifact bandwidth, but it is required to keep executable leaf code
+OCI layout costs artifact bandwidth, but it is required to keep executable leaf code
 away from publication credentials while preserving the single-build guarantee.
 
 ### Concurrency
@@ -432,8 +451,12 @@ Streamable HTTP initialization, advertised server name/version, and tool listing
 
 ## Image-content policy
 
-`.dockerignore` is necessary but not sufficient. The release tooling exports the
-container's merged root filesystem and evaluates the actual result.
+`.dockerignore` is necessary but not sufficient. The release tooling evaluates
+every layer blob and the image-config blob in the OCI layout, not only a flattened
+root filesystem. A file copied in one layer and whiteout-deleted later remains a
+publicly retrievable policy violation. The validator also inspects `Config.Env`,
+entrypoint/command, labels, user, and build history for secret-shaped values and
+forbidden metadata.
 
 The default deny policy includes:
 
@@ -449,6 +472,9 @@ The default deny policy includes:
 Small code resources such as SQL schemas, JSON schemas, controlled vocabularies,
 and package metadata are allowed only by exact path. Globally allowing a `data`
 directory is prohibited because it would have hidden the ClinGen violation.
+Leaf allowlists are bounded by centrally enforced path, extension/media-type,
+per-file, aggregate-size, and entry-count ceilings; their canonical digest is
+part of the release manifest and changes require code-owner review.
 
 The validator also checks `.dockerignore` for `.git`, environment files, root
 data/output directories where applicable, and local caches. It reports build
@@ -519,8 +545,11 @@ provenance can expose build arguments; all future authenticated build inputs mus
 use BuildKit secret mounts.
 
 The build/export path explicitly disables Buildx-generated provenance and SBOM
-outputs. The v1 publication path is `--load`, local gates, `docker save`, verified
-artifact transfer, and `docker push` of the loaded image in the publisher job.
+outputs. The v1 publication path is an AMD64 OCI-layout export, digest calculation
+in the read-only build job, local gates, immutable artifact transfer, and a
+byte-preserving daemonless registry copy in the publisher job. The release build
+does not consume PR-writable GitHub Actions cache; CI may use a versioned bounded
+cache, while release builds use no cache or a release-only trust scope.
 No fleet workflow may use `docker/build-push-action` with `push: true`; GitHub
 provenance and SBOM attestations are attached explicitly after the registry
 digest is known. This avoids an implicit attestation manifest/index changing the
@@ -568,8 +597,8 @@ admits the digest to fleet inventory; `ALIASED` adds the human convenience tag.
 - tag matches strict stable SemVer syntax;
 - tag version equals installed metadata and `pyproject.toml`;
 - tagged commit is reachable from protected `main`;
-- remote tag still equals the validated `resolved_source_sha` (which equals
-  `GITHUB_SHA` on a tag-push run but not necessarily on a `main` backfill run);
+- event is a tag push and remote tag still equals `GITHUB_SHA` and the validated
+  `resolved_source_sha`;
 - lockfile is frozen and contains the project version;
 - changelog contains the version;
 - repository configuration and Docker/Compose contracts pass;
@@ -581,16 +610,19 @@ it does not fail because an older deployed backend is temporarily unreachable.
 
 ### BUILD
 
-- build the production target once;
+- query the source-SHA alias before building;
+- when absent, build the production target once to an OCI layout;
+- when present, pull that exact manifest into an OCI layout and do not rebuild;
 - pass the full source revision and deterministic source-derived metadata;
 - add required OCI labels;
-- load the AMD64 image into Docker;
-- record local image ID and configuration digest.
+- require one AMD64 image manifest with no implicit attestation index;
+- compute and record the manifest digest, configuration digest, and every blob
+  digest in the read-only job.
 
 ### GATE
 
-- run health/MCP conformance on the local image;
-- run content and hardening assertions;
+- run health/MCP conformance on a container imported from the exact OCI layout;
+- inspect every layer and image config, then run runtime hardening assertions;
 - run the Trivy gate;
 - generate the SBOM;
 - capture pre-push evidence.
@@ -598,10 +630,11 @@ it does not fail because an older deployed backend is temporarily unreachable.
 ### PUSH
 
 - authenticate to GHCR using `GITHUB_TOKEN`;
-- load the verified saved-image artifact without executing it;
-- push only the full-source-SHA alias from the same gated image;
-- record the registry digest;
-- verify the source alias resolves to that digest;
+- verify the immutable OCI-layout artifact without executing or loading it into
+  Docker;
+- push only the full-source-SHA alias with a pinned daemonless OCI client;
+- verify the source alias registry digest equals the build-declared manifest
+  digest exactly;
 - fail on a pre-existing mismatched source alias;
 - verify anonymous pull succeeds so package visibility is public.
 
@@ -616,9 +649,11 @@ The workflow never deletes or overwrites a package version to make a rerun pass.
 - retain verification output in the release record.
 
 The verifier uses `gh attestation verify --signer-digest <40-hex>` in addition to
-`--signer-repo`, `--signer-workflow`, `--source-digest`, and structured JSON
-checks. This enforces the exact SHA-pinned reusable workflow rather than only its
-path.
+`--signer-repo`, `--signer-workflow`, `--source-ref refs/tags/vX.Y.Z`,
+`--source-digest`, `--predicate-type https://slsa.dev/provenance/v1`,
+`--deny-self-hosted-runners`, and structured certificate JSON checks. This
+enforces the exact SHA-pinned reusable workflow rather than only its path and
+separates source-repository identity from the cross-repository signer identity.
 
 ### CAPTURE
 
@@ -644,9 +679,12 @@ data-independence flag.
   manifest;
 - verify the remote tag still points to `resolved_source_sha`;
 - publish the draft once all prior phases pass;
-- verify the published release is immutable;
-- create the human `X.Y.Z` alias as the final operation by copying the accepted
-  digest without rebuilding it, then verify the alias resolves to that digest.
+- verify the published release is immutable using a pinned GitHub CLI version
+  that provides `gh release verify` and `gh release verify-asset`;
+- create the human `X.Y.Z` alias as the final operation by applying the identical
+  accepted manifest bytes with a pinned daemonless registry client, never by
+  creating a wrapper index, then verify both aliases resolve to the attested
+  digest.
 
 Repository release immutability locks the release assets and associated tag after
 publication. Draft-first publication is required because immutable release assets
@@ -663,7 +701,8 @@ published release and is not used as a generic retry mechanism.
 - Failure after PUSH leaves an unaccepted digest with no completed immutable
   release record and no human version alias. Production cannot select it.
 - A rerun that finds a source-SHA alias with expected source labels resumes from
-  registry verification and repeats gates against the existing digest.
+  registry verification, imports the existing manifest as an OCI layout, and
+  repeats gates against that digest without rebuilding.
 - A rerun that finds a mismatched digest fails as a collision/incident.
 - A completed immutable release short-circuits successfully only after all
   release assets and attestations verify; a missing version alias is then safely
@@ -746,14 +785,26 @@ Each data-bearing repository records:
 - compatible application/schema range;
 - research-use disclaimer where applicable.
 
-Publication uses:
+`redistribution_allowed` is a hard publication gate, not descriptive metadata.
+When false or legally unresolved, public publication aborts and deployment uses
+a reviewed operator-supplied/pre-seeded artifact or remains `upstream-live`.
+Every distributable artifact includes the required license, notice, attribution,
+and upstream citation plus the dated reviewer/evidence for that decision.
+
+Publication uses a credential-free build job followed by a non-executing publish
+job. The build job runs transformation code and uploads a digest-pinned workflow
+artifact. The publish job has narrowly scoped contents/OIDC/attestation
+permissions, runs only pinned runner tools, publishes and attests the already
+built bytes, and never checks out or executes leaf code. Publication then uses:
 
 1. an exact `data-<stable-version>` or dataset-specific immutable tag;
 2. a draft GitHub Release;
 3. upload without `--clobber`;
 4. asset digest verification;
 5. publish once;
-6. GitHub immutable-release verification.
+6. GitHub immutable-release and asset verification;
+7. an offline-verifiable artifact attestation bound to the exact pinned data
+   publisher workflow SHA.
 
 A checksum sidecar stored beside a bundle detects transport corruption but is not
 the trust root. Production configuration contains the reviewed expected digest
@@ -765,9 +816,26 @@ is never reused, deleted to recycle its tag, or modified. Asset replacement via
 `--clobber` is prohibited after publication and is not the normal draft-retry
 mechanism.
 
-Reference data is mounted read-only after materialization. Mutable caches live in
-separate writable paths. Downloaders retain the fleet's HTTPS allowlist, redirect,
-size, time, archive-expansion, and atomic-replacement controls.
+Reference data is materialized by a hardened init service into an immutable
+`data/<digest-prefix>/` directory on a writable volume. A lock serializes
+materializers; a temporary symlink plus parent-directory `fsync` atomically moves
+`data/current`, and the application mounts the selected directory read-only with
+no egress. SQLite snapshots are produced without WAL state and opened with
+read-only/immutable URI semantics. Mutable caches live in separate writable
+paths. A first-class pre-seeded local-artifact path supports offline deployments.
+Downloaders retain the fleet's HTTPS allowlist, redirect, stall/throughput,
+compressed/expanded size, member-count, node/link/mode, streaming decompression,
+and canonical expanded-tree-digest controls.
+
+Every data-bound service exposes expected and actual data identity in readiness;
+startup remains not-ready until they match. Production data pins change only in
+a reviewed consumer PR and never resolve `latest`. Published rollback artifacts
+are retained, a previous-known-good digest is recorded, schema compatibility is
+a range, and integration tests boot the current image with the prior compatible
+data release. Capacity policy retains the required rollback set and garbage
+collects only unreferenced materializations. `upstream-live` instead records that
+data rollback is unavailable and defines image-only rollback plus new upstream
+materialization as an explicit degraded recovery path.
 
 An `upstream-live` backend records the resolved upstream identity and observed
 digest after materialization, but that observation is not equivalent to a
@@ -784,7 +852,8 @@ Before `clingen-link` publishes a public application image:
 3. update the weekly data workflow to publish a draft immutable data release
    rather than committing refreshed bytes for image inclusion;
 4. require exact bundle identity and digest in production;
-5. mount/decompress the verified bundle through explicit tmpfs/volume paths;
+5. materialize the verified bundle through a write-only init service into a
+   versioned directory and mount the selected snapshot read-only in the app;
 6. retain a tiny synthetic fixture for CI only;
 7. add regression tests proving the production image contains no snapshot.
 
@@ -794,6 +863,13 @@ ClinVar, MaveDB, HPO, Orphanet, GeneReviews, and any other producer found by the
 implementation audit adopt the same immutable publisher contract. MaveDB removes
 `--clobber`. Production defaults that resolve `latest` are replaced by required
 exact configuration.
+
+`restored-database` artifacts are data-only custom-format dumps; repository
+migrations own schema. Restore runs without egress as a non-superuser role using
+`pg_restore --no-owner --no-privileges --single-transaction --exit-on-error`
+after a TOC allowlist proves the archive contains only permitted data entries.
+Downloaded plain SQL is never passed to `psql`, and readiness verifies the
+restored control-row identity before serving MCP traffic.
 
 ## Production Compose design
 
@@ -856,10 +932,12 @@ The deployment command fails before `compose up` unless all checks pass:
 The deployment host never trusts an image-reported digest. It records the digest
 it verified and passed to Docker.
 
-The online path uses GitHub/Sigstore services. The release also retains the
-attestation bundle and the trusted-root material needed by GitHub CLI offline
-verification. An institutional or air-gapped deployment imports those reviewed
-assets and uses `gh attestation verify --bundle ... --custom-trusted-root ...`.
+The online path uses GitHub/Sigstore services. The release also retains the exact
+image-manifest JSON bytes, attestation bundle, and trusted-root material needed
+by a minimum-version-pinned GitHub CLI offline verification. The verifier proves
+the local manifest-file SHA-256 equals the reviewed OCI digest before using
+`gh attestation verify --bundle ... --custom-trusted-root ...` and applies the
+same signer/source/predicate/runner policy as online verification.
 The runbook distinguishes the online credential/network requirements from the
 offline trust-root refresh procedure.
 
@@ -871,7 +949,7 @@ The rollback unit is:
 application image digest
 + application version/revision
 + data release and digest
-+ schema version
++ compatible schema range and actual schema version
 + MCP definition digest
 ```
 
@@ -880,9 +958,11 @@ or database using the repository's documented method. Startup fails closed when
 an image is incompatible with the mounted data schema. Destructive automatic
 migrations are not added as part of this release standard.
 
-A rollback test proves that the prior deployment tuple can still start against
-its prior data snapshot. Merely pulling an older image is not evidence of a safe
-rollback.
+A rollback test proves that the current image can start against the prior
+compatible data release and that the full prior deployment tuple can still start
+against its prior data snapshot. Deployment configuration records a
+previous-known-good tuple, and published data/release retention must preserve it.
+Merely pulling an older image is not evidence of a safe rollback.
 
 For transitional `upstream-live` backends, the release record states that the
 full rollback tuple cannot be guaranteed and deployment requires an operator
@@ -947,16 +1027,16 @@ previously published digest is never mutated.
 
 1. One container build per PR event and one per release event.
 2. Consolidate build, conformance, hardening, scan, and SBOM work into one
-   read-only build/gate job, then transfer the exact saved image to credentialed
+   read-only build/gate job, then transfer the exact OCI layout to credentialed
    non-executing jobs.
 3. Use path filters so documentation-only changes do not build images.
 4. Cancel superseded PR runs.
 5. Never cancel release or data-publication runs.
-6. Use a full-SHA-pinned Buildx/setup action and the current GitHub Actions cache
-   backend, scoped by repository, platform, Dockerfile
-   target, and workflow generation.
-7. Default cache export to bounded `mode=min`; cache failures do not fail a
-   correct build.
+6. CI uses a full-SHA-pinned Buildx/setup action and a bounded GitHub Actions
+   cache scoped by repository, platform, Dockerfile target, and workflow
+   generation. Release builds never consume PR-writable cache.
+7. Default CI cache export to bounded `mode=min`; cache failures do not fail a
+   correct CI build.
 8. Do not publish or sign PR images.
 9. Do not download production-scale data when a deterministic small fixture can
    prove startup and MCP definitions.
@@ -990,6 +1070,8 @@ The implementation audits or configures:
   force movement to the release role;
 - immutable GitHub Releases for future releases;
 - default `GITHUB_TOKEN` read-only permissions;
+- protected release environments for credential-bearing jobs, with exact-tag
+  restrictions and required reviewers where supported;
 - full-SHA action pinning;
 - public GHCR package visibility and repository linkage;
 - anonymous pull verification;
@@ -1007,6 +1089,12 @@ any real application release, a bootstrap procedure:
 3. sets package visibility to public through the account package settings;
 4. verifies a genuinely anonymous registry-token request and manifest `HEAD`;
 5. removes the disposable tag while preserving the configured package.
+
+Bootstrap uses `GITHUB_TOKEN` where package linkage permits it; any exceptional
+short-lived package token is revoked in the same procedure and recorded. No
+standing PAT remains. Release publication preflights both source and version
+aliases and fails on any different existing digest because GHCR tags remain
+mutable for every holder of package-write authority.
 
 The resulting per-repository public/linkage/retention status is committed as a
 generated conformance ledger. Release jobs verify anonymous access before
@@ -1050,9 +1138,8 @@ to fleet inventory.
 - permission tests proving PR jobs are read-only;
 - permission tests proving leaf code, fixture scripts, Compose services, and
   application containers never run in package/content-write or OIDC jobs;
-- trigger tests proving release jobs accept only exact tags or guarded backfill;
-- tests proving backfill runs from `main`, resolves the requested tag, and
-  converges with tag-push source identity;
+- trigger tests proving release jobs accept only exact stable tag pushes and
+  reject branch dispatch/backfill inputs;
 - concurrency tests proving release runs are never cancelled;
 - tests distinguishing Trivy operational failure, valid clean JSON, and valid
   policy-failing JSON;
@@ -1060,8 +1147,9 @@ to fleet inventory.
   gating;
 - test that a failure before immutable release publication leaves no `X.Y.Z`
   alias;
-- test that `--load`/saved-image/`docker push` is the only publication path and
-  no `build-push-action` step uses `push: true`;
+- test that OCI-layout/daemonless-copy is the only publication path, registry
+  digest equals the build-declared digest, and no `build-push-action` step uses
+  `push: true`;
 - a static fleet check asserting exactly one production-image build step per
   container CI or release invocation and no duplicate workflow build;
 - test that no workflow besides the release caller can publish the application
@@ -1072,12 +1160,13 @@ to fleet inventory.
 - build every production target;
 - run the exact local image through health/MCP conformance;
 - assert required runtime hardening;
-- inspect merged rootfs for forbidden content;
+- inspect every OCI layer and image-config blob for forbidden content/metadata;
 - render base/prod/proxy Compose combinations;
 - for pilots, push to a disposable test package or local registry and verify
   digest preservation and manifest generation;
-- transfer the saved image between isolated jobs and prove the publisher does
-  not execute repository-controlled code;
+- transfer the OCI layout between isolated jobs, reject a tampered layout before
+  any registry write, and prove the publisher does not execute
+  repository-controlled code;
 - pull the published digest and recapture definitions during real release.
 
 ### Data tests
@@ -1142,11 +1231,12 @@ Resolve standard defects centrally before fleet fan-out.
 Add typed configuration and thin callers to the remaining repositories. Remove
 duplicate image builds. Convert production Compose to digest-only images.
 
-### Phase 5: GitHub controls and backfill
+### Phase 5: GitHub controls and release preparation
 
-Audit rulesets, immutable releases, package visibility, and retention. Use the
-guarded manual backfill only for reviewed existing tags. Create new release tags
-only for versions explicitly selected in Phase 0.
+Audit rulesets, environments, immutable releases, package visibility, and
+retention. Pre-adoption tags remain unpublished as containers. Create new
+post-adoption release versions/tags only for versions explicitly selected in
+Phase 0.
 
 ### Phase 6: fleet reconciliation and deployment
 
