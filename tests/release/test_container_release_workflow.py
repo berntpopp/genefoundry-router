@@ -431,3 +431,20 @@ def test_every_job_that_pushes_to_ghcr_authenticates_first() -> None:
             continue
         logs_in = any("docker/login-action" in str(step.get("uses", "")) for step in _steps(job))
         assert logs_in, f"{name} pushes to GHCR without authenticating"
+
+
+def test_release_gates_probe_the_declared_paths() -> None:
+    """The release gates must probe `.service.health_path` / `.mcp_path`, not fixed paths.
+
+    _container-ci.yml already reads them, but the release gate hardcoded /health and /mcp.
+    stringdb declares /api/health and only passed because its app happens to serve both; a
+    backend serving only its declared path would exhaust the 90s wait loop and fail.
+    """
+    workflow = _load(REUSABLE)
+
+    for job_name in ("build-gate", "capture"):
+        run_text = _run_text(workflow["jobs"][job_name])
+        assert ".service.health_path" in run_text, job_name
+        assert ".service.mcp_path" in run_text, job_name
+        assert "18000/health" not in run_text, job_name
+        assert "${host_port}/health" not in run_text, job_name

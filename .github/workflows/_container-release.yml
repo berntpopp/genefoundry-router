@@ -337,6 +337,11 @@ jobs:
           set -euo pipefail
           service="$(jq -er '.service.name' container-release.json)"
           port="$(jq -er '.service.container_port' container-release.json)"
+          # Honour the declared probe paths. _container-ci.yml already reads these; hardcoding
+          # /health and /mcp here silently probed the wrong endpoint for any backend that serves
+          # a different path (stringdb declares /api/health), burning the 90s wait loop.
+          health_path="$(jq -er '.service.health_path' container-release.json)"
+          mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
           # Schema-validated KEY=VALUE assignments; the charset forbids whitespace and
           # shell metacharacters, so an entry cannot split the argument or reach a shell.
           smoke_env=()
@@ -348,11 +353,11 @@ jobs:
             --tmpfs /tmp:rw,noexec,nosuid,size=64m "${smoke_env[@]}" \
             -p "127.0.0.1:18000:$port" "$CI_IMAGE")"
           trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
-          for _ in $(seq 1 90); do curl -fsS http://127.0.0.1:18000/health && break; sleep 1; done
+          for _ in $(seq 1 90); do curl -fsS "http://127.0.0.1:18000$health_path" && break; sleep 1; done
           curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \
             -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-gate","version":"1"}}}' \
-            http://127.0.0.1:18000/mcp
+            "http://127.0.0.1:18000$mcp_path"
           grep -Fq 'result' "$RUNNER_TEMP/mcp-init.json"
           inspect="$(docker inspect "$container_id")"
           jq -e '.[0].Config.User != "" and .[0].Config.User != "0" and .[0].Config.User != "root"' <<<"$inspect"
@@ -621,6 +626,8 @@ jobs:
           uv sync --project .container-release-tools --group dev --frozen
           docker pull "$IMAGE@${PUBLISHED_DIGEST}"
           port="$(jq -er '.service.container_port' container-release.json)"
+          health_path="$(jq -er '.service.health_path' container-release.json)"
+          mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
           # Schema-validated KEY=VALUE assignments; the charset forbids whitespace and
           # shell metacharacters, so an entry cannot split the argument or reach a shell.
           smoke_env=()
@@ -640,14 +647,14 @@ jobs:
               -p "127.0.0.1:${host_port}:$port" "$IMAGE@$PUBLISHED_DIGEST")"
             trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' RETURN
             for _ in $(seq 1 90); do
-              curl -fsS "http://127.0.0.1:${host_port}/health" && break
+              curl -fsS "http://127.0.0.1:${host_port}${health_path}" && break
               sleep 1
             done
             curl -fsS -D "$RUNNER_TEMP/capture/${label}.headers" \
               -o "$RUNNER_TEMP/capture/${label}-initialize.json" \
               -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
               --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-capture","version":"1"}}}' \
-              "http://127.0.0.1:${host_port}/mcp"
+              "http://127.0.0.1:${host_port}${mcp_path}"
             grep -Fq '"serverInfo"' "$RUNNER_TEMP/capture/${label}-initialize.json"
             session="$(awk 'tolower($1) == "mcp-session-id:" {gsub("\\r", "", $2); print $2}' "$RUNNER_TEMP/capture/${label}.headers")"
             session_args=()
@@ -658,7 +665,7 @@ jobs:
               -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
               "${session_args[@]}" \
               --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-              "http://127.0.0.1:${host_port}/mcp"
+              "http://127.0.0.1:${host_port}${mcp_path}"
             jq -er '.result.tools | type == "array" and length > 0' \
               "$RUNNER_TEMP/capture/${label}-tools-response.json" >/dev/null
             jq -c '.result.tools' "$RUNNER_TEMP/capture/${label}-tools-response.json" \
