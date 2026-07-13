@@ -448,3 +448,21 @@ def test_release_gates_probe_the_declared_paths() -> None:
         assert ".service.mcp_path" in run_text, job_name
         assert "18000/health" not in run_text, job_name
         assert "${host_port}/health" not in run_text, job_name
+
+
+def test_no_job_level_env_uses_the_runner_context() -> None:
+    """`runner` is not a valid context in `jobs.<job_id>.env`.
+
+    Only github, needs, strategy, matrix, vars, secrets and inputs are. Referencing
+    runner.temp there is an invalid-context error that kills the workflow before any job
+    starts: the run ends with zero jobs and "This run likely failed because of a workflow
+    file issue". This silently disabled Container CI across the whole fleet — every
+    backend's required gate reported failure while never executing a single job, and the
+    release runs kept passing because the release workflow happened not to have it. Use
+    the $RUNNER_TEMP shell variable, or a step-level env, instead.
+    """
+    for path in (REUSABLE, ROOT / ".github/workflows/_container-ci.yml"):
+        workflow = _load(path)
+        for name, job in workflow["jobs"].items():
+            for key, value in (job.get("env") or {}).items():
+                assert "runner." not in str(value), f"{path.name}:{name}.env.{key} = {value}"

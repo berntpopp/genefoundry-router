@@ -18,7 +18,6 @@ jobs:
       OCI_LAYOUT: image-oci-layout
       COMPOSE_OVERRIDE: compose.container-ci.yml
       COMPOSE_PROJECT_NAME: genefoundry-container-ci-${{ github.run_id }}-${{ github.run_attempt }}
-      SMOKE_EFFECTIVE_ENV: ${{ runner.temp }}/smoke-effective.env
     steps:
       - name: Verify called-workflow identity
         id: workflow-identity
@@ -233,9 +232,9 @@ jobs:
               smoke_env_args+=("$variable=$value")
             fi
           done < <(docker compose "${compose_args[@]}" config --variables | tail -n +2)
-          printf '%s\n' "${smoke_env_args[@]}" > "$SMOKE_EFFECTIVE_ENV"
+          printf '%s\n' "${smoke_env_args[@]}" > "$RUNNER_TEMP/smoke-effective.env"
           base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
-          docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+          docker compose --env-file "$RUNNER_TEMP/smoke-effective.env" \
             -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
             config --format json > "$RUNNER_TEMP/compose.json"
 
@@ -251,7 +250,7 @@ jobs:
           fi
           # Compose starts every declared sidecar through the application's depends_on graph
           # and honours service_completed_successfully / service_healthy before the app runs.
-          docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+          docker compose --env-file "$RUNNER_TEMP/smoke-effective.env" \
             -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
             up --detach --no-build --wait --wait-timeout "$timeout" "$service"
 
@@ -288,7 +287,7 @@ jobs:
           set -euo pipefail
           service="$(jq -er '.service.name' container-release.json)"
           base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
-          container_id="$(docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+          container_id="$(docker compose --env-file "$RUNNER_TEMP/smoke-effective.env" \
             -f "$base_compose" -f "$COMPOSE_OVERRIDE" ps -q "$service")"
           test -n "$container_id"
           docker inspect "$container_id" > "$RUNNER_TEMP/docker-inspect.json"
@@ -354,8 +353,8 @@ jobs:
         if: ${{ always() }}
         run: |
           base_compose="$(jq -er '.service.compose_files[0]' container-release.json 2>/dev/null || true)"
-          if [ -n "$base_compose" ] && [ -f "$COMPOSE_OVERRIDE" ] && [ -f "$SMOKE_EFFECTIVE_ENV" ]; then
-            docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+          if [ -n "$base_compose" ] && [ -f "$COMPOSE_OVERRIDE" ] && [ -f "$RUNNER_TEMP/smoke-effective.env" ]; then
+            docker compose --env-file "$RUNNER_TEMP/smoke-effective.env" \
               -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
               down --volumes --remove-orphans || true
           fi
