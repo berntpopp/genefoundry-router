@@ -54,6 +54,13 @@ def _run_text(job: dict[str, Any]) -> str:
     return "\n".join(str(step.get("run", "")) for step in _steps(job))
 
 
+def _commands(job: dict[str, Any]) -> str:
+    """The executed shell of a job, with comment lines removed."""
+    return "\n".join(
+        line for line in _run_text(job).splitlines() if not line.lstrip().startswith("#")
+    )
+
+
 def _all_steps(workflow: dict[str, Any]) -> list[dict[str, Any]]:
     return [step for job in workflow["jobs"].values() for step in _steps(job)]
 
@@ -333,14 +340,112 @@ def test_gate_containers_receive_the_declared_smoke_environment() -> None:
     The router refuses to bind a non-loopback address without an explicit auth and
     allowed-hosts configuration, so a gate that runs the image bare can never reach
     /health or /mcp. The environment is read from the caller's container-release.json
-    rather than hardcoded, because backends declare none.
+    rather than hardcoded, because backends declare none. Now that both gates start the
+    stack through Compose, `render-smoke-override` is what carries the declared
+    environment onto the application service; it must therefore be handed the config.
     """
     workflow = _load(REUSABLE)
 
     for job_name in ("build-gate", "capture"):
-        run_text = _run_text(workflow["jobs"][job_name])
-        assert ".smoke_environment" in run_text, job_name
-        assert "--env" in run_text, job_name
+        render = next(
+            step
+            for step in _steps(workflow["jobs"][job_name])
+            if "render-smoke-override" in str(step.get("run", ""))
+        )
+        assert "--config container-release.json" in str(render["run"]), job_name
+
+
+def test_release_gates_bring_up_the_declared_sidecar_bearing_smoke_stack() -> None:
+    """Both release gates must start the same Compose stack `_container-ci.yml` proves.
+
+    A bare `docker run` starts the application alone: no PostgreSQL sidecar, no data-init
+    sidecar, no populated volume. Every data-bearing backend would pass its PR checks and
+    then fail the release gate, and release tags are immutable, so each failure burns a
+    version. Compose starts the declared sidecars through the app's `depends_on` graph and
+    honours `service_completed_successfully` / `service_healthy` before the app runs.
+    """
+    workflow = _load(REUSABLE)
+
+    for job_name in ("build-gate", "capture"):
+        job = workflow["jobs"][job_name]
+        run_text = _run_text(job)
+        assert ".preparation" in run_text, job_name
+        assert 'test "$preparation" = "docker/ci-prepare-smoke.sh"' in run_text, job_name
+        assert "render-smoke-override" in run_text, job_name
+        assert "--host-port" in run_text, job_name
+        assert ".service.compose_files[0]" in run_text, job_name
+        assert ".service.startup_timeout_seconds" in run_text, job_name
+        assert "up --detach --no-build --wait --wait-timeout" in run_text, job_name
+        assert "fixture-manifest.sha256" in run_text, job_name
+        # The application image is never started outside the composed stack.
+        assert "docker run" not in _commands(job), job_name
+
+
+def test_release_gates_smoke_the_exact_image_under_release() -> None:
+    """The gated stack must run the exact image, never one rebuilt by Compose.
+
+    `build-gate` smokes the local tag imported from the gated OCI layout; `capture` smokes
+    the published digest. `--no-build` and the override's `pull_policy: never` keep Compose
+    from substituting anything else.
+    """
+    workflow = _load(REUSABLE)
+    build_gate = _run_text(workflow["jobs"]["build-gate"])
+    capture = _run_text(workflow["jobs"]["capture"])
+
+    assert '--image "$CI_IMAGE"' in build_gate
+    assert '--image "$IMAGE@$PUBLISHED_DIGEST"' in capture
+    assert "docker compose" in build_gate and "--no-build" in build_gate
+    assert "docker compose" in capture and "--no-build" in capture
+
+
+def test_build_gate_asserts_hardening_on_the_composed_application_container() -> None:
+    """The hardening and MCP assertions must survive the move onto Compose.
+
+    They are now made against the application container Compose started, resolved with
+    `docker compose ps -q`, rather than against a container id returned by `docker run`.
+    """
+    run_text = _run_text(_load(REUSABLE)["jobs"]["build-gate"])
+
+    assert 'ps -q "$service"' in run_text
+    assert "docker inspect" in run_text
+    assert '.[0].Config.User != "" and .[0].Config.User != "0" and .[0].Config.User != "root"' in (
+        run_text
+    )
+    assert ".[0].HostConfig.ReadonlyRootfs" in run_text
+    assert '.[0].HostConfig.CapDrop | index("ALL") != null' in run_text
+    assert "no-new-privileges" in run_text
+    assert '"method":"initialize"' in run_text
+    assert "grep -Fq '\"result\"'" in run_text
+
+
+def test_capture_keeps_two_isolated_contexts_on_distinct_ports_and_projects() -> None:
+    """The two capture contexts prove definition stability and must not collide.
+
+    Each context now brings up a whole Compose stack with its own named volumes and
+    sidecars, so each needs its own project name as well as its own loopback port.
+    """
+    capture = _run_text(_load(REUSABLE)["jobs"]["capture"])
+
+    assert "capture_tools a " in capture
+    assert "capture_tools b " in capture
+    assert "18000" in capture and "18001" in capture
+    assert "--project-name" in capture
+    assert "mcp-tools-a.json" in capture and "mcp-tools-b.json" in capture
+
+
+def test_release_gates_always_tear_down_their_smoke_stacks() -> None:
+    """A failed gate must not leak containers, networks, or populated volumes."""
+    workflow = _load(REUSABLE)
+
+    for job_name in ("build-gate", "capture"):
+        teardown = next(
+            step for step in _steps(workflow["jobs"][job_name]) if step.get("id") == "teardown"
+        )
+        assert teardown["if"] == "${{ always() }}", job_name
+        assert "docker compose" in str(teardown["run"]), job_name
+        assert " down " in str(teardown["run"]), job_name
+        # The scanner and SBOM still need the gated image after the stack is gone.
+        assert "docker image rm" not in str(teardown["run"]), job_name
 
 
 def test_publish_addresses_the_oci_layout_by_digest_not_ref_name() -> None:

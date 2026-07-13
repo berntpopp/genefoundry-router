@@ -103,6 +103,20 @@ def _hardening(image: str | None) -> dict[str, Any]:
     return service
 
 
+def _declared(config: ReleaseConfig) -> dict[str, str]:
+    """The repository's checked-in ``smoke_environment``, as a mapping.
+
+    Both central gates start the application through Compose, so the override is the only
+    thing that can carry the declaration onto the container. The values are schema-bounded
+    ``KEY=VALUE`` assignments and never carry a secret.
+    """
+    environment: dict[str, str] = {}
+    for assignment in config.smoke_environment:
+        key, _, value = assignment.partition("=")
+        environment[key] = value
+    return environment
+
+
 def _application(
     config: ReleaseConfig,
     image: str,
@@ -114,6 +128,8 @@ def _application(
     service["environment"] = {
         **_ROUTER_ENVIRONMENT,
         **dict.fromkeys(url_env_keys, "http://127.0.0.1:9/mcp"),
+        **_declared(config),
+        # A preparation hook computes its values at run time, so it wins over a default.
         **environment,
     }
     service["ports"] = _Override([f"127.0.0.1:{host_port}:{config.service.container_port}"])
