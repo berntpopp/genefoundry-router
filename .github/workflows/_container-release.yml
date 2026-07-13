@@ -747,8 +747,13 @@ jobs:
           printf '%s\n' \
             '{"repository":"${{ github.repository }}","version":"${{ needs.prepare.outputs.version }}","source_tag":"${{ needs.prepare.outputs.tag }}","source_revision":"${{ needs.prepare.outputs.source_sha }}","image_name":"${{ needs.prepare.outputs.image }}","image_digest":"${{ needs.publish-attest.outputs.published_digest }}","workflow_caller":"${{ github.repository }}/.github/workflows/container-release.yml","workflow_standard":"berntpopp/genefoundry-router/.github/workflows/_container-release.yml","workflow_revision":"${{ needs.prepare.outputs.standard_sha }}"}' \
             > "$RUNNER_TEMP/final/identity.json"
-          jq -n --arg version "$(jq -r '.ArtifactName // "unknown"' "$RUNNER_TEMP/build/trivy.json")" \
-            --arg updated "$(jq -r '.Metadata.DB.UpdatedAt' "$RUNNER_TEMP/build/trivy.json")" \
+          # Scanner identity comes from `trivy version`, not from the scan report: the report
+          # carries no ArtifactName/Metadata.DB for an OCI-archive scan, so those reads yielded
+          # null and produced the literal string "null", which is not an RFC3339 timestamp.
+          # `version` is the scanner's version, not the scanned artifact's name. Use -er so a
+          # missing field fails the release instead of silently sealing unusable evidence.
+          jq -n --arg version "$(jq -er '.Version' "$RUNNER_TEMP/build/trivy-version.json")" \
+            --arg updated "$(jq -er '.VulnerabilityDB.UpdatedAt' "$RUNNER_TEMP/build/trivy-version.json")" \
             '{version:$version,database_updated_at:$updated}' > "$RUNNER_TEMP/final/scanner.json"
           printf '{"mode":"none","schema_compatibility":[]}' > "$RUNNER_TEMP/final/data.json"
           uv run --project .container-release-tools \

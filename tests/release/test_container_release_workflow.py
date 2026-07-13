@@ -372,3 +372,18 @@ def test_attestation_verify_never_pairs_mutually_exclusive_signer_flags() -> Non
         "--signer-workflow berntpopp/genefoundry-router/.github/workflows/"
         "_container-release.yml" in text
     )
+
+
+def test_scanner_identity_is_read_from_trivy_version_not_the_scan_report() -> None:
+    """Scanner evidence must come from `trivy version`, not the scan report.
+
+    The scan report of an OCI archive carries no ArtifactName or Metadata.DB, so reading
+    them yielded null and sealed the literal string "null" as the database timestamp,
+    which is not RFC3339 and failed manifest validation after the image was already
+    published. `version` is the scanner's version, not the scanned artifact's name.
+    """
+    assemble = _run_text(_load(REUSABLE)["jobs"]["assemble-evidence"])
+
+    assert "trivy-version.json" in assemble
+    assert ".ArtifactName" not in assemble
+    assert ".Metadata.DB.UpdatedAt" not in assemble
