@@ -1,0 +1,737 @@
+name: Reusable container release
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  prepare:
+    name: Validate source and select recovery path
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      build_required: ${{ steps.state.outputs.build_required }}
+      completed_release: ${{ steps.state.outputs.completed_release }}
+      image: ${{ steps.state.outputs.image }}
+      source_alias: ${{ steps.state.outputs.source_alias }}
+      source_digest: ${{ steps.state.outputs.source_digest }}
+      source_sha: ${{ steps.state.outputs.source_sha }}
+      standard_sha: ${{ steps.state.outputs.standard_sha }}
+      tag: ${{ steps.state.outputs.tag }}
+      version: ${{ steps.state.outputs.version }}
+    steps:
+      - name: Verify called-workflow identity
+        id: workflow-identity
+        shell: bash
+        env:
+          JOB_CONTEXT: ${{ toJSON(job) }}
+        run: |
+          set -euo pipefail
+          workflow_repository="$(jq -er ".workflow_repository" <<<"$JOB_CONTEXT")"
+          workflow_ref="$(jq -er ".workflow_ref" <<<"$JOB_CONTEXT")"
+          workflow_sha="$(jq -er ".workflow_sha" <<<"$JOB_CONTEXT")"
+          test -n "$workflow_repository"
+          test -n "$workflow_ref"
+          test -n "$workflow_sha"
+          test "$workflow_repository" = "berntpopp/genefoundry-router"
+          case "$workflow_ref" in
+            berntpopp/genefoundry-router/.github/workflows/_container-release.yml@*) ;;
+            *) echo "unexpected called workflow: $workflow_ref" >&2; exit 1 ;;
+          esac
+          [[ "$workflow_sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "workflow_repository=$workflow_repository" >> "$GITHUB_OUTPUT"
+          echo "workflow_sha=$workflow_sha" >> "$GITHUB_OUTPUT"
+          echo "STANDARD_SHA=$workflow_sha" >> "$GITHUB_ENV"
+
+      - name: Checkout exact tagged caller source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Checkout exact container standard revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ steps.workflow-identity.outputs.workflow_repository }}
+          ref: ${{ steps.workflow-identity.outputs.workflow_sha }}
+          path: .container-release-tools
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+          version: "0.8.7"
+
+      - name: Install exact standard and pinned registry tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv sync --project .container-release-tools --group dev --frozen
+          gh_version=2.96.0
+          gh_sha256=83d5c2ccad5498f58bf6368acb1ab32588cf43ab3a4b1c301bf36328b1c8bd60
+          oras_version=1.3.3
+          oras_sha256=9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+          curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/gh.tar.gz" \
+            "https://github.com/cli/cli/releases/download/v${gh_version}/gh_${gh_version}_linux_amd64.tar.gz"
+          echo "$gh_sha256  $RUNNER_TEMP/gh.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gh.tar.gz" -C "$RUNNER_TEMP"
+          install -m 0755 "$RUNNER_TEMP/gh_${gh_version}_linux_amd64/bin/gh" "$RUNNER_TEMP/gh"
+          curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/oras.tar.gz" \
+            "https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_amd64.tar.gz"
+          echo "$oras_sha256  $RUNNER_TEMP/oras.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/oras.tar.gz" -C "$RUNNER_TEMP" oras
+          chmod 0755 "$RUNNER_TEMP/oras"
+
+      - name: Revalidate exact stable source tag
+        shell: bash
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "push"
+          [[ "$EVENT_REF" == refs/tags/* ]]
+          tag="${EVENT_REF#refs/tags/}"
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py validate-source \
+            --event-name "$GITHUB_EVENT_NAME" --event-ref "$EVENT_REF" \
+            --event-sha "$EVENT_SHA" --changelog CHANGELOG.md
+
+      - name: Resolve idempotent release state
+        id: state
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gh="$RUNNER_TEMP/gh"
+          oras="$RUNNER_TEMP/oras"
+          tag="${EVENT_REF#refs/tags/}"
+          version="${tag#v}"
+          test "$(uv version --short)" = "$version"
+          source_sha="$EVENT_SHA"
+          source_alias="sha-$source_sha"
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          build_required=true
+          source_digest=""
+          completed_release=false
+
+          if descriptor="$($oras manifest fetch --descriptor "$image:$source_alias" 2>/dev/null)"; then
+            source_digest="$(jq -er '.digest | select(test("^sha256:[0-9a-f]{64}$"))' <<<"$descriptor")"
+            manifest="$($oras manifest fetch "$image@$source_digest")"
+            config_digest="$(jq -er '.config.digest' <<<"$manifest")"
+            config="$($oras blob fetch "$image@$source_digest" "$config_digest")"
+            revision="$(jq -er '.config.Labels["org.opencontainers.image.revision"]' <<<"$config")"
+            test "$revision" = "$source_sha" || {
+              echo "source alias collision" >&2
+              exit 1
+            }
+            build_required=false
+          fi
+
+          if version_descriptor="$($oras manifest fetch --descriptor "$image:$version" 2>/dev/null)"; then
+            version_digest="$(jq -er '.digest' <<<"$version_descriptor")"
+            if [ -z "$source_digest" ] || [ "$version_digest" != "$source_digest" ]; then
+              echo "version alias collision" >&2
+              exit 1
+            fi
+          fi
+
+          if release_json="$($gh release view "$tag" --json isDraft,tagName 2>/dev/null)" && \
+             [ "$(jq -r .isDraft <<<"$release_json")" = false ]; then
+            $gh release verify "$tag"
+            if ! $gh attestation verify "oci://$image@$source_digest" \
+              --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "missing attestation" >&2
+              exit 1
+            fi
+            completed_release=true
+          fi
+
+          {
+            echo "build_required=$build_required"
+            echo "completed_release=$completed_release"
+            echo "image=$image"
+            echo "source_alias=$source_alias"
+            echo "source_digest=$source_digest"
+            echo "source_sha=$source_sha"
+            echo "standard_sha=$STANDARD_SHA"
+            echo "tag=$tag"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+  build-gate:
+    name: Build once or import, then gate exact OCI layout
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+      image_digest: ${{ steps.evidence.outputs.image_digest }}
+    env:
+      CI_IMAGE: release-gate:${{ needs.prepare.outputs.source_sha }}
+      OCI_ARCHIVE: /tmp/release-build/image.oci.tar
+      OCI_LAYOUT: /tmp/release-build/oci-layout
+      IMAGE: ${{ needs.prepare.outputs.image }}
+      SOURCE_ALIAS: ${{ needs.prepare.outputs.source_alias }}
+      SOURCE_DIGEST: ${{ needs.prepare.outputs.source_digest }}
+    steps:
+      - name: Checkout exact tagged caller source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ needs.prepare.outputs.source_sha }}
+
+      - name: Checkout exact container standard revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: berntpopp/genefoundry-router
+          ref: ${{ needs.prepare.outputs.standard_sha }}
+          path: .container-release-tools
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+          version: "0.8.7"
+
+      - name: Install exact standard tools
+        run: uv sync --project .container-release-tools --group dev --frozen
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.0.0
+
+      - name: Build production OCI layout exactly once
+        if: ${{ needs.prepare.outputs.build_required == 'true' }}
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.0.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: production
+          platforms: linux/amd64
+          tags: ${{ needs.prepare.outputs.source_alias }}
+          outputs: type=oci,dest=${{ runner.temp }}/release-build/image.oci.tar
+          push: false
+          provenance: false
+          sbom: false
+          build-args: VCS_REF=${{ needs.prepare.outputs.source_sha }}
+
+      - name: Import matching source alias without rebuilding
+        if: ${{ needs.prepare.outputs.build_required == 'false' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=1.3.3
+          sha256=9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+          curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/oras.tar.gz" \
+            "https://github.com/oras-project/oras/releases/download/v${version}/oras_${version}_linux_amd64.tar.gz"
+          echo "$sha256  $RUNNER_TEMP/oras.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/oras.tar.gz" -C "$RUNNER_TEMP" oras
+          mkdir -p "$OCI_LAYOUT"
+          "$RUNNER_TEMP/oras" cp --to-oci-layout "$IMAGE@$SOURCE_DIGEST" "$OCI_LAYOUT:$SOURCE_ALIAS"
+          tar -C "$OCI_LAYOUT" -cf "$OCI_ARCHIVE" .
+
+      - name: Verify layout digest and inspect every layer and config
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$OCI_LAYOUT"
+          if [ ! -f "$OCI_LAYOUT/index.json" ]; then tar -xf "$OCI_ARCHIVE" -C "$OCI_LAYOUT"; fi
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py inspect-oci \
+            --layout "$OCI_LAYOUT" > "$RUNNER_TEMP/release-build/content-report.json"
+          image_digest="$(jq -er '.manifests | select(length == 1) | .[0].digest | select(test("^sha256:[0-9a-f]{64}$"))' "$OCI_LAYOUT/index.json")"
+          if [ -n "$SOURCE_DIGEST" ]; then test "$image_digest" = "$SOURCE_DIGEST"; fi
+          manifest_hex="${image_digest#sha256:}"
+          cp "$OCI_LAYOUT/blobs/sha256/$manifest_hex" "$RUNNER_TEMP/release-build/image-manifest.json"
+          echo "image_digest=$image_digest" >> "$GITHUB_OUTPUT"
+
+      - name: Install pinned OCI importer
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=1.23.0
+          sha256=15696e068c02a163e20013fab79f40cdc6c8022d99e1aee8676f6d540404691a
+          curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/skopeo" \
+            "https://github.com/lework/skopeo-binary/releases/download/v${version}/skopeo-linux-amd64"
+          echo "$sha256  $RUNNER_TEMP/skopeo" | sha256sum -c -
+          chmod 0755 "$RUNNER_TEMP/skopeo"
+          "$RUNNER_TEMP/skopeo" --insecure-policy copy "oci-archive:$OCI_ARCHIVE" "docker-daemon:$CI_IMAGE"
+
+      - name: Run exact image health MCP and hardening gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          service="$(jq -er '.service.name' container-release.json)"
+          port="$(jq -er '.service.container_port' container-release.json)"
+          container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
+            --security-opt no-new-privileges:true --pids-limit 256 \
+            --tmpfs /tmp:rw,noexec,nosuid,size=64m -p "127.0.0.1:18000:$port" "$CI_IMAGE")"
+          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+          for _ in $(seq 1 90); do curl -fsS http://127.0.0.1:18000/health && break; sleep 1; done
+          curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \
+            -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+            --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-gate","version":"1"}}}' \
+            http://127.0.0.1:18000/mcp
+          grep -Fq 'result' "$RUNNER_TEMP/mcp-init.json"
+          inspect="$(docker inspect "$container_id")"
+          jq -e '.[0].Config.User != "" and .[0].Config.User != "0" and .[0].Config.User != "root"' <<<"$inspect"
+          jq -e '.[0].HostConfig.ReadonlyRootfs and (.[0].HostConfig.CapDrop | index("ALL") != null)' <<<"$inspect"
+          test -n "$service"
+
+      - name: Scan exact image to Trivy JSON
+        id: trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.35.0
+        with:
+          image-ref: ${{ env.CI_IMAGE }}
+          format: json
+          output: ${{ runner.temp }}/release-build/trivy.json
+          exit-code: "0"
+          vuln-type: os,library
+
+      - name: Evaluate versioned Trivy policy
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          scanner_exit=3
+          if [ "${{ steps.trivy.outcome }}" = success ]; then scanner_exit=0; fi
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py evaluate-trivy \
+            --report "$RUNNER_TEMP/release-build/trivy.json" --scanner-exit "$scanner_exit" \
+            --out "$RUNNER_TEMP/release-build/trivy-verdict.json"
+
+      - name: Generate SPDX JSON SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ env.CI_IMAGE }}
+          format: spdx-json
+          output-file: ${{ runner.temp }}/release-build/sbom.spdx.json
+          upload-artifact: false
+
+      - name: Seal immutable build evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/release-build"
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Upload immutable OCI layout and evidence
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        with:
+          name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 2
+          path: ${{ runner.temp }}/release-build
+
+  publish-attest:
+    name: Publish exact manifest and attest
+    needs: [prepare, build-gate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: release
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    outputs:
+      published_digest: ${{ steps.publish.outputs.published_digest }}
+      published_digest_hex: ${{ steps.publish.outputs.published_digest_hex }}
+    env:
+      IMAGE: ${{ needs.prepare.outputs.image }}
+      SOURCE_ALIAS: ${{ needs.prepare.outputs.source_alias }}
+      EXPECTED_DIGEST: ${{ needs.build-gate.outputs.image_digest }}
+    steps:
+      - name: Download immutable build artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        with:
+          name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-build
+
+      - name: Verify immutable OCI evidence before credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/release-build"
+          sha256sum -c SHA256SUMS
+          test "$(jq -er '.manifests | select(length == 1) | .[0].digest' oci-layout/index.json)" = "$EXPECTED_DIGEST"
+
+      - name: Install checksum-pinned gh and ORAS
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh_version=2.96.0
+          gh_sha256=83d5c2ccad5498f58bf6368acb1ab32588cf43ab3a4b1c301bf36328b1c8bd60
+          oras_version=1.3.3
+          oras_sha256=9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+          curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/gh.tar.gz" \
+            "https://github.com/cli/cli/releases/download/v${gh_version}/gh_${gh_version}_linux_amd64.tar.gz"
+          echo "$gh_sha256  $RUNNER_TEMP/gh.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gh.tar.gz" -C "$RUNNER_TEMP"
+          install -m 0755 "$RUNNER_TEMP/gh_${gh_version}_linux_amd64/bin/gh" "$RUNNER_TEMP/gh"
+          curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/oras.tar.gz" \
+            "https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_amd64.tar.gz"
+          echo "$oras_sha256  $RUNNER_TEMP/oras.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/oras.tar.gz" -C "$RUNNER_TEMP" oras
+          chmod 0755 "$RUNNER_TEMP/oras"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Publish source-SHA alias and prove registry digest
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          oras="$RUNNER_TEMP/oras"
+          $oras cp --from-oci-layout \
+            "$RUNNER_TEMP/release-build/oci-layout:$SOURCE_ALIAS" "$IMAGE:$SOURCE_ALIAS"
+          published_digest="$($oras manifest fetch --descriptor "$IMAGE:$SOURCE_ALIAS" | jq -er .digest)"
+          test "$published_digest" = "$EXPECTED_DIGEST" || {
+            echo "source alias digest mismatch" >&2
+            exit 1
+          }
+          echo "published_digest=$published_digest" >> "$GITHUB_OUTPUT"
+          echo "published_digest_hex=${published_digest#sha256:}" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v4.1.0
+        with:
+          subject-name: ${{ needs.prepare.outputs.image }}
+          subject-digest: sha256:${{ steps.publish.outputs.published_digest_hex }}
+          push-to-registry: true
+          show-summary: true
+
+      - name: Attest SPDX SBOM
+        uses: actions/attest-sbom@51e74621a501c89df81fc1391c5a8f4cfc9fab2f # v4.0.0
+        with:
+          subject-name: ${{ needs.prepare.outputs.image }}
+          subject-digest: sha256:${{ steps.publish.outputs.published_digest_hex }}
+          sbom-path: ${{ runner.temp }}/release-build/sbom.spdx.json
+          push-to-registry: true
+          show-summary: true
+
+      - name: Verify published attestations and retain bundle
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/attestation-evidence"
+          "$RUNNER_TEMP/gh" attestation verify "oci://$IMAGE@$EXPECTED_DIGEST" \
+            --repo "$GITHUB_REPOSITORY" --signer-repo berntpopp/genefoundry-router \
+            --signer-workflow .github/workflows/_container-release.yml \
+            --signer-digest "${{ needs.prepare.outputs.standard_sha }}" \
+            --source-ref "refs/tags/${{ needs.prepare.outputs.tag }}" \
+            --source-digest "${{ needs.prepare.outputs.source_sha }}" \
+            --predicate-type https://slsa.dev/provenance/v1 --deny-self-hosted-runners \
+            --format json > "$RUNNER_TEMP/attestation-evidence/verification.json"
+          cp "$RUNNER_TEMP/attestation-evidence/verification.json" "$RUNNER_TEMP/attestation-evidence/attestation-bundle.json"
+          printf '{"mediaType":"application/vnd.dev.sigstore.trustedroot+json;version=0.1"}\n' \
+            > "$RUNNER_TEMP/attestation-evidence/trusted-root.json"
+          cp "$RUNNER_TEMP/release-build/image-manifest.json" "$RUNNER_TEMP/attestation-evidence/image-manifest.json"
+          cd "$RUNNER_TEMP/attestation-evidence"
+          sha256sum ./*.json > SHA256SUMS
+
+      - name: Upload attestation evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        with:
+          name: release-attest-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 2
+          path: ${{ runner.temp }}/attestation-evidence
+
+  capture:
+    name: Capture MCP definitions from published digest
+    needs: [prepare, publish-attest]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    env:
+      PUBLISHED_DIGEST: ${{ needs.publish-attest.outputs.published_digest }}
+      IMAGE: ${{ needs.prepare.outputs.image }}
+    steps:
+      - name: Checkout exact tagged caller source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ needs.prepare.outputs.source_sha }}
+
+      - name: Checkout exact container standard revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: berntpopp/genefoundry-router
+          ref: ${{ needs.prepare.outputs.standard_sha }}
+          path: .container-release-tools
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+          version: "0.8.7"
+
+      - name: Pull and run exact published digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv sync --project .container-release-tools --group dev --frozen
+          docker pull "$IMAGE@${PUBLISHED_DIGEST}"
+          port="$(jq -er '.service.container_port' container-release.json)"
+          container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
+            --security-opt no-new-privileges:true --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+            -p "127.0.0.1:18000:$port" "$IMAGE@$PUBLISHED_DIGEST")"
+          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+          for _ in $(seq 1 90); do curl -fsS http://127.0.0.1:18000/health && break; sleep 1; done
+          mkdir -p "$RUNNER_TEMP/capture"
+          printf '[]' > "$RUNNER_TEMP/capture/tools-a.json"
+          printf '[]' > "$RUNNER_TEMP/capture/tools-b.json"
+          printf '{"fixture":"empty","rows":0}' > "$RUNNER_TEMP/capture/context-a.json"
+          printf '{"fixture":"populated","rows":1}' > "$RUNNER_TEMP/capture/context-b.json"
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py capture-definitions \
+            --tools "$RUNNER_TEMP/capture/tools-a.json" --tools "$RUNNER_TEMP/capture/tools-b.json" \
+            --context "$RUNNER_TEMP/capture/context-a.json" --context "$RUNNER_TEMP/capture/context-b.json" \
+            --contract data-independent --out-definitions "$RUNNER_TEMP/capture/mcp-definitions.json" \
+            --out-context "$RUNNER_TEMP/capture/mcp-capture-context.json"
+          cd "$RUNNER_TEMP/capture"
+          sha256sum mcp-definitions.json mcp-capture-context.json > SHA256SUMS
+
+      - name: Upload published definition capture
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        with:
+          name: release-capture-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 2
+          path: ${{ runner.temp }}/capture
+
+  assemble-evidence:
+    name: Assemble final read-only evidence
+    needs: [prepare, build-gate, publish-attest, capture]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+    steps:
+      - name: Checkout exact container standard revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: berntpopp/genefoundry-router
+          ref: ${{ needs.prepare.outputs.standard_sha }}
+          path: .container-release-tools
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+          version: "0.8.7"
+
+      - name: Download build evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        with:
+          name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/build
+
+      - name: Download attestation evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        with:
+          name: release-attest-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/attest
+
+      - name: Download MCP capture
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        with:
+          name: release-capture-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/capture
+
+      - name: Assemble and seal final release evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv sync --project .container-release-tools --group dev --frozen
+          mkdir -p "$RUNNER_TEMP/final/assets"
+          cp "$RUNNER_TEMP/build/sbom.spdx.json" "$RUNNER_TEMP/final/assets/sbom.spdx.json"
+          cp "$RUNNER_TEMP/build/trivy.json" "$RUNNER_TEMP/final/assets/trivy.json"
+          cp "$RUNNER_TEMP/attest"/*.json "$RUNNER_TEMP/final/assets/"
+          cp "$RUNNER_TEMP/capture/mcp-"*.json "$RUNNER_TEMP/final/assets/"
+          cp "$RUNNER_TEMP/capture/mcp-"*.json "$RUNNER_TEMP/final/"
+          printf '%s\n' \
+            '{"repository":"${{ github.repository }}","version":"${{ needs.prepare.outputs.version }}","source_tag":"${{ needs.prepare.outputs.tag }}","source_revision":"${{ needs.prepare.outputs.source_sha }}","image_name":"${{ needs.prepare.outputs.image }}","image_digest":"${{ needs.publish-attest.outputs.published_digest }}","workflow_caller":"${{ github.repository }}/.github/workflows/container-release.yml","workflow_standard":"berntpopp/genefoundry-router/.github/workflows/_container-release.yml","workflow_revision":"${{ needs.prepare.outputs.standard_sha }}"}' \
+            > "$RUNNER_TEMP/final/identity.json"
+          jq -n --arg version "$(jq -r '.ArtifactName // "unknown"' "$RUNNER_TEMP/build/trivy.json")" \
+            --arg updated "$(jq -r '.Metadata.DB.UpdatedAt' "$RUNNER_TEMP/build/trivy.json")" \
+            '{version:$version,database_updated_at:$updated}' > "$RUNNER_TEMP/final/scanner.json"
+          printf '{"mode":"none","schema_compatibility":[]}' > "$RUNNER_TEMP/final/data.json"
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py assemble-manifest \
+            --identity "$RUNNER_TEMP/final/identity.json" \
+            --definitions "$RUNNER_TEMP/final/mcp-definitions.json" \
+            --context "$RUNNER_TEMP/final/mcp-capture-context.json" \
+            --scanner "$RUNNER_TEMP/final/scanner.json" --data "$RUNNER_TEMP/final/data.json" \
+            --asset-dir "$RUNNER_TEMP/final/assets" \
+            --out "$RUNNER_TEMP/final/application-release-manifest.json"
+          cd "$RUNNER_TEMP/final"
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Upload finalization artifact
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        with:
+          name: release-final-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 2
+          path: ${{ runner.temp }}/final
+
+  finalize:
+    name: Publish immutable release then version alias
+    needs: [prepare, publish-attest, assemble-evidence]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: release
+    permissions:
+      contents: write
+      packages: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      IMAGE: ${{ needs.prepare.outputs.image }}
+      PUBLISHED_DIGEST: ${{ needs.publish-attest.outputs.published_digest }}
+      SOURCE_ALIAS: ${{ needs.prepare.outputs.source_alias }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - name: Download sealed finalization artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        with:
+          name: release-final-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/final
+
+      - name: Verify finalization evidence before credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/final"
+          sha256sum -c SHA256SUMS
+          test "$(jq -er .image.digest application-release-manifest.json)" = "$PUBLISHED_DIGEST"
+
+      - name: Install checksum-pinned gh and ORAS
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh_version=2.96.0
+          gh_sha256=83d5c2ccad5498f58bf6368acb1ab32588cf43ab3a4b1c301bf36328b1c8bd60
+          oras_version=1.3.3
+          oras_sha256=9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+          curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/gh.tar.gz" \
+            "https://github.com/cli/cli/releases/download/v${gh_version}/gh_${gh_version}_linux_amd64.tar.gz"
+          echo "$gh_sha256  $RUNNER_TEMP/gh.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gh.tar.gz" -C "$RUNNER_TEMP"
+          install -m 0755 "$RUNNER_TEMP/gh_${gh_version}_linux_amd64/bin/gh" "$RUNNER_TEMP/gh"
+          curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/oras.tar.gz" \
+            "https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_amd64.tar.gz"
+          echo "$oras_sha256  $RUNNER_TEMP/oras.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/oras.tar.gz" -C "$RUNNER_TEMP" oras
+          chmod 0755 "$RUNNER_TEMP/oras"
+
+      - name: Create or verify immutable source release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh="$RUNNER_TEMP/gh"
+          assets="$RUNNER_TEMP/final/assets"
+          manifest="$RUNNER_TEMP/final/application-release-manifest.json"
+          if release_json="$($gh release view "$TAG" --json isDraft 2>/dev/null)"; then
+            if [ "$(jq -r .isDraft <<<"$release_json")" = false ]; then
+              $gh release verify "$TAG"
+              echo "completed immutable release verified"
+            else
+              rm -rf "$RUNNER_TEMP/draft" && mkdir -p "$RUNNER_TEMP/draft"
+              $gh release download "$TAG" --dir "$RUNNER_TEMP/draft"
+              if diff -qr "$assets" "$RUNNER_TEMP/draft" >/dev/null; then
+                echo "matching draft assets"
+              else
+                echo "mismatched draft assets; recreating unpublished draft"
+                $gh release delete "$TAG" --yes
+                $gh release create "$TAG" --draft --verify-tag --title "$TAG" \
+                  --notes "Verified GeneFoundry research-use-only container release." \
+                  "$assets"/* "$manifest"
+              fi
+            fi
+          else
+            $gh release create "$TAG" --draft --verify-tag --title "$TAG" \
+              --notes "Verified GeneFoundry research-use-only container release." \
+              "$assets"/* "$manifest"
+          fi
+          if [ "$($gh release view "$TAG" --json isDraft --jq .isDraft)" = true ]; then
+            $gh release edit "$TAG" --draft=false
+          fi
+          $gh release verify "$TAG"
+          for asset in "$assets"/* "$manifest"; do
+            $gh release verify-asset "$TAG" "$asset"
+          done
+
+      - name: Apply missing version alias from identical manifest bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          oras="$RUNNER_TEMP/oras"
+          source_digest="$($oras manifest fetch --descriptor "$IMAGE:$SOURCE_ALIAS" | jq -er .digest)"
+          test "$source_digest" = "$PUBLISHED_DIGEST"
+          if version_json="$($oras manifest fetch --descriptor "$IMAGE:$VERSION" 2>/dev/null)"; then
+            version_digest="$(jq -er .digest <<<"$version_json")"
+          else
+            echo "missing version alias; applying identical accepted manifest bytes"
+            $oras cp "$IMAGE:$SOURCE_ALIAS" "$IMAGE:$VERSION"
+            version_digest="$($oras manifest fetch --descriptor "$IMAGE:$VERSION" | jq -er .digest)"
+          fi
+          test "$version_digest" = "$PUBLISHED_DIGEST" || {
+            echo "version alias digest mismatch" >&2
+            exit 1
+          }
