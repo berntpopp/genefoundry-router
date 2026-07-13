@@ -12,7 +12,6 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       target: production
-    container_name: genefoundry_router
     env_file:
       - path: ../.env
         required: false

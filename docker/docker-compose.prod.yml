@@ -1,5 +1,11 @@
 services:
   genefoundry-router:
+    build: !reset null
+    image: ${GENEFOUNDRY_IMAGE:?set a verified digest-addressed image}
+    pull_policy: missing
+    ports: !reset []
+    expose:
+      - "8000"
     environment:
       GF_DEPLOYMENT_MODE: production
       GF_LOG_LEVEL: INFO
