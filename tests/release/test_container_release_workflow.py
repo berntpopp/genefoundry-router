@@ -341,3 +341,17 @@ def test_gate_containers_receive_the_declared_smoke_environment() -> None:
         run_text = _run_text(workflow["jobs"][job_name])
         assert ".smoke_environment" in run_text, job_name
         assert "--env" in run_text, job_name
+
+
+def test_publish_addresses_the_oci_layout_by_digest_not_ref_name() -> None:
+    """Publication must copy the exact gated digest out of the layout.
+
+    A fresh buildx `type=oci` export normalizes a bare tag and annotates the manifest
+    `org.opencontainers.image.ref.name: latest`, so addressing the layout by the source
+    alias resolves only on the recovery path and fails on every real build. The digest
+    is identical on both paths and is already asserted against the layout index.
+    """
+    publish = _run_text(_load(REUSABLE)["jobs"]["publish-attest"])
+
+    assert 'oci-layout@$EXPECTED_DIGEST"' in publish
+    assert 'oci-layout:$SOURCE_ALIAS"' not in publish

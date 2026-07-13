@@ -488,8 +488,12 @@ jobs:
         run: |
           set -euo pipefail
           oras="$RUNNER_TEMP/oras"
+          # Address the layout by the exact digest already gated above, not by a ref name.
+          # A fresh buildx `type=oci` export normalizes a bare tag and annotates the manifest
+          # `org.opencontainers.image.ref.name: latest`, so the source alias never resolves;
+          # only the recovery path writes that ref. The digest is identical on both paths.
           $oras cp --from-oci-layout \
-            "$RUNNER_TEMP/release-build/oci-layout:$SOURCE_ALIAS" "$IMAGE:$SOURCE_ALIAS"
+            "$RUNNER_TEMP/release-build/oci-layout@$EXPECTED_DIGEST" "$IMAGE:$SOURCE_ALIAS"
           published_digest="$($oras manifest fetch --descriptor "$IMAGE:$SOURCE_ALIAS" | jq -er .digest)"
           test "$published_digest" = "$EXPECTED_DIGEST" || {
             echo "source alias digest mismatch" >&2
