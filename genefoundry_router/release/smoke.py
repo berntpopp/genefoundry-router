@@ -136,12 +136,19 @@ def _application(
     return service
 
 
-def _auxiliary(role: str, image: str, environment: Mapping[str, str]) -> dict[str, Any]:
+def _auxiliary(
+    role: str, image: str, environment: Mapping[str, str], user: str | None = None
+) -> dict[str, Any]:
     # An init sidecar runs the exact image built in this run; a database sidecar keeps
     # its own digest-pinned upstream image and must therefore stay pullable.
     service = _hardening(image if role == "init" else None)
     if role == "init":
         service["restart"] = "no"
+    # The declared non-root user must survive into the smoke stack. Without it the sidecar
+    # starts as root, its entrypoint tries to drop privileges, and that fails under the
+    # mandatory cap_drop: [ALL] -- so it never becomes healthy.
+    if user is not None:
+        service["user"] = user
     if environment:
         service["environment"] = dict(environment)
     return service
@@ -166,7 +173,7 @@ def render_smoke_override(
         config.service.name: _application(config, image, host_port, prepared, url_env_keys)
     }
     for auxiliary in config.service.auxiliary:
-        services[auxiliary.name] = _auxiliary(auxiliary.role, image, prepared)
+        services[auxiliary.name] = _auxiliary(auxiliary.role, image, prepared, auxiliary.user)
     document = yaml.dump(
         {"services": services},
         Dumper=_ComposeDumper,

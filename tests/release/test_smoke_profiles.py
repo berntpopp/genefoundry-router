@@ -260,3 +260,38 @@ def test_rendered_override_is_accepted_by_docker_compose(tmp_path: Path) -> None
     assert service["security_opt"] == ["no-new-privileges:true"]
     assert service["ports"][0]["published"] == "18000"
     assert service["ports"][0]["host_ip"] == "127.0.0.1"
+
+
+def test_smoke_override_emits_the_declared_sidecar_user() -> None:
+    """The rendered sidecar must carry the declared non-root user.
+
+    The smoke stack renders from base + this override. If the override omits `user`, a
+    database sidecar starts as root, its entrypoint tries to gosu-drop, and that fails
+    under the mandatory cap_drop: [ALL] -- so the sidecar never becomes healthy. Leaving
+    it out forces every repo to duplicate `user` into its base compose to compensate,
+    which is a silent trap for anyone who does not.
+    """
+    config = ReleaseConfig.model_validate(
+        {
+            "service": {
+                "name": "app",
+                "compose_files": ["docker/docker-compose.yml"],
+                "auxiliary": [
+                    {
+                        "name": "db",
+                        "role": "database",
+                        "egress": "approved-networks",
+                        "writable_targets": ["/var/lib/postgresql"],
+                        "healthcheck_test": ["CMD-SHELL", "pg_isready"],
+                        "user": "999:999",
+                    }
+                ],
+            },
+            "definitions": {"contract": "data-independent"},
+            "smoke": {"profile": "postgres-bundle"},
+        }
+    )
+
+    rendered = _render(config)
+
+    assert rendered["services"]["db"]["user"] == "999:999"
