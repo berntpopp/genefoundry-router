@@ -26,6 +26,14 @@ ACTION_PINS = {
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
 }
 
+ROUTER_IMAGE_ALLOWLIST = {
+    "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/__init__.py",
+    "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/application-release-manifest.schema.json",
+    "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/container-release.schema.json",
+    "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/fleet-baseline.json",
+    "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/image-content-policy-v1.json",
+}
+
 
 def _load(path: Path) -> dict[str, Any]:
     document = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -169,6 +177,12 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
     steps = _steps(workflow)
     run_text = _run_text(workflow)
     assert "inspect-oci" in run_text
+    inspect_step = next(step for step in steps if "inspect-oci" in str(step.get("run", "")))
+    inspect_command = inspect_step["run"]
+    assert "--config" not in inspect_command
+    assert "--out" not in inspect_command
+    assert "image_allowlist" in inspect_command
+    assert '"${allowlist_args[@]}"' in inspect_command
     assert "validate-compose" in run_text
     assert "--no-build" in run_text
     assert "/health" in run_text
@@ -182,6 +196,7 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
     assert trivy["with"]["output"] == "trivy.json"
     assert trivy["with"]["exit-code"] == "0"
     assert "evaluate-trivy" in run_text
+    assert '--scanner-exit "$(cat scanner.exit)"' in run_text
     sbom = next(
         step for step in steps if str(step.get("uses", "")).startswith("anchore/sbom-action@")
     )
@@ -198,7 +213,7 @@ def test_router_release_configuration_is_strict_and_data_independent() -> None:
     assert config.service.name == "genefoundry"
     assert config.service.container_port == 8000
     assert config.data.mode == "none"
-    assert config.data.image_allowlist == ()
+    assert set(config.data.image_allowlist) == ROUTER_IMAGE_ALLOWLIST
     assert config.definitions.contract == "data-independent"
 
 

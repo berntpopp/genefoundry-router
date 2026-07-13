@@ -124,10 +124,14 @@ jobs:
           set -euo pipefail
           mkdir -p "$OCI_LAYOUT"
           tar -xf "$OCI_ARCHIVE" -C "$OCI_LAYOUT"
+          allowlist_args=()
+          while IFS= read -r path; do
+            allowlist_args+=(--allowlist "$path")
+          done < <(jq -r '.data.image_allowlist[]' container-release.json)
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py inspect-oci \
-            --layout "$OCI_LAYOUT" --config container-release.json \
-            --out "$RUNNER_TEMP/content-report.json"
+            --layout "$OCI_LAYOUT" "${allowlist_args[@]}" \
+            > "$RUNNER_TEMP/content-report.json"
 
       - name: Install pinned OCI importer
         shell: bash
@@ -266,7 +270,7 @@ jobs:
         run: |
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py evaluate-trivy \
-            --report trivy.json --scanner-exit scanner.exit \
+            --report trivy.json --scanner-exit "$(cat scanner.exit)" \
             --out "$RUNNER_TEMP/trivy-verdict.json"
 
       - name: Generate non-attested SPDX JSON SBOM
