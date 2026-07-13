@@ -1,0 +1,62 @@
+name: GHCR bootstrap
+
+# Disposable, one-shot bootstrap for the GHCR control plane.
+#
+# The reusable release workflow refuses to publish until ci/container-controls.json
+# records a verified, public, repository-linked GHCR package. A package cannot be
+# recorded as verified until it exists, and it cannot be created by the release
+# workflow itself because that workflow is gated on the very control it would
+# create. This workflow breaks that cycle: it publishes a source-labelled
+# throwaway image with the repository GITHUB_TOKEN (packages: write), which
+# creates and links the package so its visibility and anonymous pull can be
+# verified. Delete this workflow once every fleet package is bootstrapped.
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ghcr-bootstrap-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    name: Publish disposable bootstrap image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish source-labelled bootstrap image
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          context="$(mktemp -d)"
+          printf 'bootstrap\n' > "$context/bootstrap.txt"
+          cat > "$context/Dockerfile" <<'DOCKERFILE'
+          FROM scratch
+          COPY bootstrap.txt /bootstrap.txt
+          DOCKERFILE
+          docker build \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${SOURCE_SHA}" \
+            --label "org.opencontainers.image.description=Disposable GHCR control-plane bootstrap image. Not a release artifact." \
+            --tag "${image}:control-bootstrap" \
+            "$context"
+          docker push "${image}:control-bootstrap"
+          echo "published ${image}:control-bootstrap"
