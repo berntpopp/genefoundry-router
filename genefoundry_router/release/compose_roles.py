@@ -58,6 +58,7 @@ def _validate_hardening(
     service: Mapping[str, object],
     prefix: str,
     policy: ComposePolicy,
+    rule: AuxiliaryServiceRule,
     violations: list[str],
 ) -> None:
     """Apply the invariants every container in the stack must satisfy."""
@@ -98,8 +99,14 @@ def _validate_hardening(
         violations.append(
             f"{prefix}.use_api_socket: engine API socket access must be absent or exactly false"
         )
+    declared_user = rule.user
     if "user" in service:
-        violations.append(f"{prefix}.user: user override must be absent")
+        if declared_user is None:
+            violations.append(f"{prefix}.user: user override must be absent unless declared")
+        elif service.get("user") != declared_user:
+            violations.append(f"{prefix}.user: must be the declared non-root {declared_user}")
+    elif declared_user is not None:
+        violations.append(f"{prefix}.user: declared non-root {declared_user} must be applied")
     if "runtime" in service:
         violations.append(f"{prefix}.runtime: runtime override must be absent")
     for name in _HOST_MODES:
@@ -226,7 +233,7 @@ def validate_auxiliary_service(
         return tuple(dict.fromkeys(violations))
 
     validate_allowed_fields(service, ROLE_SERVICE_KEYS[rule.role], prefix, violations)
-    _validate_hardening(service, prefix, policy, violations)
+    _validate_hardening(service, prefix, policy, rule, violations)
     _validate_process(service, prefix, violations, required=rule.role == "init")
     _validate_egress(rendered, service, prefix, rule, policy, violations)
     # A sidecar may itself wait on another sidecar (a restore init waits for its

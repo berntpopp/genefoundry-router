@@ -257,6 +257,9 @@ class AuxiliaryServiceConfig(StrictModel):
         tuple[Annotated[str, Field(min_length=1, max_length=1024)], ...],
         Field(max_length=64),
     ] = ()
+    # A root entrypoint that gosu-drops needs CAP_SETUID, impossible under cap_drop: [ALL].
+    # Declaring the image's own uid:gid skips it: non-root, all capabilities still dropped.
+    user: Annotated[str, Field(pattern=r"^[1-9][0-9]{0,6}:[1-9][0-9]{0,6}$")] | None = None
 
     @model_validator(mode="after")
     def _role_requirements_are_complete(self) -> AuxiliaryServiceConfig:

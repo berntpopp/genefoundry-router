@@ -255,6 +255,7 @@ def _compose_policy(config: Path | None) -> tuple[ComposePolicy | None, str | No
                 writable_targets=frozenset(auxiliary.writable_targets),
                 read_only_targets=frozenset(auxiliary.read_only_targets),
                 healthcheck_test=auxiliary.healthcheck_test,
+                user=auxiliary.user,
             )
             for auxiliary in parsed.service.auxiliary
         ),

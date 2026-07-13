@@ -58,6 +58,7 @@ ALLOWED_SERVICE_KEYS = frozenset(
 #: ``service_completed_successfully`` instead.
 ALLOWED_INIT_SERVICE_KEYS = frozenset(
     {
+        "user",
         "cap_drop",
         "command",
         "depends_on",
@@ -82,6 +83,7 @@ ALLOWED_INIT_SERVICE_KEYS = frozenset(
 #: network, and gated by its own healthcheck. It never declares ``network_mode``.
 ALLOWED_DATABASE_SERVICE_KEYS = frozenset(
     {
+        "user",
         "cap_drop",
         "command",
         "depends_on",
@@ -194,6 +196,8 @@ class AuxiliaryServiceRule:
     egress: EgressPolicy = "denied"
     #: Exact writable mount targets (named volumes and tmpfs) this sidecar may hold.
     writable_targets: frozenset[str] = frozenset()
+    #: The image's own non-root uid:gid, when the sidecar must skip a root entrypoint.
+    user: str | None = None
     #: Exact read-only mount targets, including reviewed pre-seeded artifact binds.
     read_only_targets: frozenset[str] = frozenset()
     #: Required healthcheck argv; the ``database`` role must declare one.

@@ -58,6 +58,19 @@
           "maxItems": 64,
           "title": "Healthcheck Test",
           "type": "array"
+        },
+        "user": {
+          "anyOf": [
+            {
+              "pattern": "^[1-9][0-9]{0,6}:[1-9][0-9]{0,6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "User"
         }
       },
       "required": [

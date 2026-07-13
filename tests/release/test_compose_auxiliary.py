@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from genefoundry_router.release.compose import validate_compose
 from genefoundry_router.release.compose_policy import AuxiliaryServiceRule, ComposePolicy
+from genefoundry_router.release.models import AuxiliaryServiceConfig
 
 _IMAGE = f"ghcr.io/acme/app@sha256:{'a' * 64}"
 _DATABASE_IMAGE = f"docker.io/library/postgres@sha256:{'b' * 64}"
@@ -588,3 +590,39 @@ def test_a_sidecar_may_not_wait_on_an_undeclared_service(rendered: dict[str, Any
     assert any(
         violation.startswith("services.app-init.depends_on.rogue") for violation in violations
     )
+
+
+def test_database_role_accepts_a_declared_non_root_user() -> None:
+    """A database sidecar must be able to declare a non-root user.
+
+    The official postgres/pgvector entrypoint starts as root and gosu-drops to `postgres`,
+    which needs CAP_SETUID/CAP_SETGID/CAP_CHOWN. Under the mandatory `cap_drop: [ALL]` that
+    drop fails with "operation not permitted", so forbidding `user` outright made the
+    database role unsatisfiable by every real postgres image. Declaring the image's own
+    uid:gid skips the root entrypoint path entirely and is strictly MORE hardened: the
+    container starts non-root and still keeps cap_drop ALL.
+    """
+    config = AuxiliaryServiceConfig(
+        name="pubtator-postgres",
+        role="database",
+        egress="approved-networks",
+        writable_targets=("/var/lib/postgresql", "/var/run/postgresql"),
+        healthcheck_test=("CMD-SHELL", "pg_isready -U postgres"),
+        user="999:999",
+    )
+
+    assert config.user == "999:999"
+
+
+@pytest.mark.parametrize("value", ["0:0", "root", "0:999", "999:0", "999", "999:999:999"])
+def test_declared_user_must_be_a_non_root_uid_gid(value: str) -> None:
+    """Never let a sidecar declare root, or a free-form name we cannot reason about."""
+    with pytest.raises(ValidationError):
+        AuxiliaryServiceConfig(
+            name="pubtator-postgres",
+            role="database",
+            egress="approved-networks",
+            writable_targets=("/var/lib/postgresql",),
+            healthcheck_test=("CMD-SHELL", "pg_isready"),
+            user=value,
+        )
