@@ -5,9 +5,10 @@
   "platform": "linux/amd64",
   "service": {
     "compose_files": [
-      "docker/docker-compose.yml"
+      "docker/docker-compose.yml",
+      "docker/docker-compose.prod.yml"
     ],
-    "name": "genefoundry",
+    "name": "genefoundry-router",
     "container_port": 8000,
     "health_path": "/health",
     "mcp_path": "/mcp",

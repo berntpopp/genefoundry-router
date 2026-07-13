@@ -18,8 +18,6 @@ jobs:
       OCI_LAYOUT: image-oci-layout
       COMPOSE_OVERRIDE: compose.container-ci.yml
       COMPOSE_PROJECT_NAME: genefoundry-container-ci-${{ github.run_id }}-${{ github.run_attempt }}
-      HEALTH_URL: http://127.0.0.1:18000/health
-      MCP_URL: http://127.0.0.1:18000/mcp
     steps:
       - name: Verify called-workflow identity
         id: workflow-identity
@@ -152,17 +150,51 @@ jobs:
           "$RUNNER_TEMP/skopeo" --insecure-policy copy \
             "oci-archive:$OCI_ARCHIVE" "docker-daemon:$CI_IMAGE"
 
-      - name: Generate and validate the no-build smoke stack
+      - name: Validate effective production Compose and generate no-build smoke stack
         run: |
           set -euo pipefail
+          service="$(jq -er '.service.name' container-release.json)"
+          compose_args=()
+          while IFS= read -r file; do
+            compose_args+=(-f "$file")
+          done < <(jq -r '.service.compose_files[]' container-release.json)
+          docker compose --project-name "$service" "${compose_args[@]}" \
+            config --no-interpolate --format json > "$RUNNER_TEMP/compose-production.raw.json"
+          image_template="$(jq -er --arg service "$service" '.services[$service].image' \
+            "$RUNNER_TEMP/compose-production.raw.json")"
+          [[ "$image_template" =~ ^\$\{([A-Z][A-Z0-9_]*):\?[^\}]+\}$ ]]
+          image_variable="${BASH_REMATCH[1]}"
+          production_image="ghcr.io/${GITHUB_REPOSITORY,,}@sha256:$(printf 'a%.0s' {1..64})"
+          environment_args=()
+          while read -r variable required _; do
+            if [ "$required" = true ]; then
+              value=example.test
+              if [ "$variable" = "$image_variable" ]; then value="$production_image"; fi
+              environment_args+=("$variable=$value")
+            fi
+          done < <(docker compose "${compose_args[@]}" config --variables | tail -n +2)
+          env "${environment_args[@]}" docker compose --project-name "$service" \
+            "${compose_args[@]}" config --format json > "$RUNNER_TEMP/compose-production.json"
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py validate-compose \
+            --rendered "$RUNNER_TEMP/compose-production.json" --service "$service"
           python - <<'PY'
+          import json
           import re
           from pathlib import Path
 
-          keys = sorted(set(re.findall(r"url_env:\s*([A-Z0-9_]+)", Path("servers.yaml").read_text())))
+          config = json.loads(Path("container-release.json").read_text())
+          service = config["service"]["name"]
+          port = config["service"]["container_port"]
+          servers = Path("servers.yaml")
+          keys = sorted(
+              set(re.findall(r"url_env:\s*([A-Z0-9_]+)", servers.read_text()))
+              if servers.is_file()
+              else set()
+          )
           environment = "\n".join(f"      {key}: http://127.0.0.1:9/mcp" for key in keys)
           override = f"""services:
-            genefoundry-router:
+            {service}:
               build: !reset null
               image: {__import__('os').environ['CI_IMAGE']}
               pull_policy: never
@@ -175,7 +207,7 @@ jobs:
                 GF_DRIFT_MODE: warn
           {environment}
               ports: !override
-                - 127.0.0.1:18000:8000
+                - 127.0.0.1:18000:{port}
               read_only: true
               tmpfs: !override
                 - /tmp:rw,noexec,nosuid,size=64m,mode=1777
@@ -198,29 +230,33 @@ jobs:
           """
           Path(__import__('os').environ["COMPOSE_OVERRIDE"]).write_text(override)
           PY
-          docker compose -f docker/docker-compose.yml -f "$COMPOSE_OVERRIDE" \
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
             config --format json > "$RUNNER_TEMP/compose.json"
-          uv run --project .container-release-tools \
-            python .container-release-tools/scripts/container_release.py validate-compose \
-            --rendered "$RUNNER_TEMP/compose.json" --service genefoundry-router
 
       - name: Start exact local image without rebuilding
         run: |
           set -euo pipefail
-          docker compose -f docker/docker-compose.yml -f "$COMPOSE_OVERRIDE" \
-            up --detach --no-build --wait --wait-timeout 90 genefoundry-router
+          service="$(jq -er '.service.name' container-release.json)"
+          timeout="$(jq -er '.service.startup_timeout_seconds' container-release.json)"
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+            up --detach --no-build --wait --wait-timeout "$timeout" "$service"
 
       - name: Probe health and MCP initialize/list-tools conformance
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsS -H 'Host: localhost' "$HEALTH_URL" > "$RUNNER_TEMP/health.json"
+          health_path="$(jq -er '.service.health_path' container-release.json)"
+          mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
+          curl -fsS -H 'Host: localhost' \
+            "http://127.0.0.1:18000$health_path" > "$RUNNER_TEMP/health.json"
           curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-initialize.out" \
             -H 'Host: localhost' -H 'Content-Type: application/json' \
             -H 'Accept: application/json, text/event-stream' \
             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"container-ci","version":"1"}}}' \
-            "$MCP_URL"
-          grep -Fq 'genefoundry' "$RUNNER_TEMP/mcp-initialize.out"
+            "http://127.0.0.1:18000$mcp_path"
+          grep -Fq '"serverInfo"' "$RUNNER_TEMP/mcp-initialize.out"
           session="$(awk 'tolower($1) == "mcp-session-id:" {gsub("\\r", "", $2); print $2}' "$RUNNER_TEMP/mcp.headers")"
           test -n "$session"
           curl -fsS -o "$RUNNER_TEMP/mcp-tools-list.out" \
@@ -228,14 +264,16 @@ jobs:
             -H 'Accept: application/json, text/event-stream' \
             -H "Mcp-Session-Id: $session" \
             --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-            "$MCP_URL"
+            "http://127.0.0.1:18000$mcp_path"
           grep -Fq '"tools"' "$RUNNER_TEMP/mcp-tools-list.out"
 
       - name: Assert runtime identity and hardening
         shell: bash
         run: |
           set -euo pipefail
-          container_id="$(docker compose -f docker/docker-compose.yml -f "$COMPOSE_OVERRIDE" ps -q genefoundry-router)"
+          service="$(jq -er '.service.name' container-release.json)"
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
+          container_id="$(docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" ps -q "$service")"
           test -n "$container_id"
           docker inspect "$container_id" > "$RUNNER_TEMP/docker-inspect.json"
           jq -e '.[0].Config.User != "" and .[0].Config.User != "0" and .[0].Config.User != "root"' "$RUNNER_TEMP/docker-inspect.json"
@@ -286,7 +324,11 @@ jobs:
         id: teardown
         if: ${{ always() }}
         run: |
-          docker compose -f docker/docker-compose.yml -f "$COMPOSE_OVERRIDE" down --volumes --remove-orphans || true
+          base_compose="$(jq -er '.service.compose_files[0]' container-release.json 2>/dev/null || true)"
+          if [ -n "$base_compose" ] && [ -f "$COMPOSE_OVERRIDE" ]; then
+            docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+              down --volumes --remove-orphans || true
+          fi
           docker image rm "$CI_IMAGE" || true
 
       - name: Upload short-retention CI evidence
@@ -299,6 +341,7 @@ jobs:
           path: |
             ${{ runner.temp }}/content-report.json
             ${{ runner.temp }}/compose.json
+            ${{ runner.temp }}/compose-production.json
             ${{ runner.temp }}/docker-inspect.json
             ${{ runner.temp }}/health.json
             ${{ runner.temp }}/mcp-initialize.out

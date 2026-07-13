@@ -184,12 +184,21 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
     assert "image_allowlist" in inspect_command
     assert '"${allowlist_args[@]}"' in inspect_command
     assert "validate-compose" in run_text
+    assert ".service.compose_files[]" in run_text
+    assert ".service.name" in run_text
+    assert "container_port" in run_text
+    assert "compose-production.json" in run_text
+    assert "image_template" in run_text
+    assert "--no-interpolate" in run_text
+    assert "config --variables" in run_text
     assert "tmpfs: !override" in run_text
     assert "cap_drop: !override" in run_text
     assert "security_opt: !override" in run_text
     assert "--no-build" in run_text
-    assert "/health" in run_text
-    assert "MCP" in run_text and "initialize" in run_text and "tools/list" in run_text
+    assert ".service.health_path" in run_text
+    assert ".service.mcp_path" in run_text
+    assert "initialize" in run_text and "tools/list" in run_text
+    assert "Mcp-Session-Id" in run_text
     assert "docker inspect" in run_text
     assert "no-new-privileges" in run_text
     trivy = next(
@@ -213,7 +222,11 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
 def test_router_release_configuration_is_strict_and_data_independent() -> None:
     raw = json.loads(CONFIG.read_text(encoding="utf-8"))
     config = ReleaseConfig.model_validate(raw)
-    assert config.service.name == "genefoundry"
+    assert config.service.name == "genefoundry-router"
+    assert config.service.compose_files == (
+        "docker/docker-compose.yml",
+        "docker/docker-compose.prod.yml",
+    )
     assert config.service.container_port == 8000
     assert config.data.mode == "none"
     assert set(config.data.image_allowlist) == ROUTER_IMAGE_ALLOWLIST
