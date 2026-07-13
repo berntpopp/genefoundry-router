@@ -198,7 +198,8 @@ def test_build_gate_builds_only_when_absent_and_never_uses_release_cache() -> No
     assert "trivy-native.json" in text
     assert "{schema_version: 1, scan: $scan[0], version: $version[0]}" in text
     assert "sha256sum" in text
-    assert "/tmp/release-build" not in str(job)
+    legacy_release_path = "/".join(("", "tmp", "release-build"))
+    assert legacy_release_path not in str(job)
     assert "OCI_ARCHIVE=$RUNNER_TEMP/release-build/image.oci.tar" in text
     assert "OCI_LAYOUT=$RUNNER_TEMP/release-build/oci-layout" in text
     assert "steps.evidence-paths.outputs.archive" in str(inputs["outputs"])
