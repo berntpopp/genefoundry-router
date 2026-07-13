@@ -11,6 +11,12 @@ All notable changes to genefoundry-router are documented here.
   The router now rejects candidate baseline drift, requires fleet adoption
   evidence, and documents the canonical outbound HTTP safeguards used by the
   affected backends.
+- Attest the fleet GitHub and GHCR release controls. `scripts/audit_container_controls.py`
+  probes every expected repository's tag ruleset, protected release environment,
+  immutable releases, and public anonymously-pullable GHCR package against the live
+  API and emits `ci/container-controls.json`. A control that cannot be proven emits an
+  `unavailable` row naming the exact repository and control, so the release gate stays
+  closed; absence of evidence is never a pass.
 
 ## [0.6.3] - 2026-07-12
 
