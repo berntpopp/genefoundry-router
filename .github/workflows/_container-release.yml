@@ -868,12 +868,25 @@ jobs:
             "$RUNNER_TEMP/capture/context-a.json"
           capture_tools b 18001 "$RUNNER_TEMP/capture/mcp-tools-b.json" \
             "$RUNNER_TEMP/capture/context-b.json"
+          # Prove the contract the repository actually declares. Hardcoding data-independent
+          # made _require_data_binding return early, so the strongest assertion in the evidence
+          # chain -- that the running server's data identity equals the pinned artifact -- was
+          # silently skipped for every data-bearing backend.
+          contract="$(jq -er '.definitions.contract' container-release.json)"
+          data_identity_args=()
+          if [ "$contract" = "data-bound" ]; then
+            data_identity_args=(
+              --data-release-tag "$(jq -er '.data.release_tag' container-release.json)"
+              --data-digest "$(jq -er '.data.digest' container-release.json)"
+            )
+          fi
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py capture-definitions \
             --tools "$RUNNER_TEMP/capture/mcp-tools-a.json" \
             --tools "$RUNNER_TEMP/capture/mcp-tools-b.json" \
             --context "$RUNNER_TEMP/capture/context-a.json" --context "$RUNNER_TEMP/capture/context-b.json" \
-            --contract data-independent --out-definitions "$RUNNER_TEMP/capture/mcp-definitions.json" \
+            --contract "$contract" "${data_identity_args[@]}" \
+            --out-definitions "$RUNNER_TEMP/capture/mcp-definitions.json" \
             --out-context "$RUNNER_TEMP/capture/mcp-capture-context.json"
           cd "$RUNNER_TEMP/capture"
           sha256sum mcp-definitions.json mcp-capture-context.json > SHA256SUMS
@@ -971,7 +984,15 @@ jobs:
           jq -n --arg version "$(jq -er '.Version' "$RUNNER_TEMP/build/trivy-version.json")" \
             --arg updated "$(jq -er '.VulnerabilityDB.UpdatedAt' "$RUNNER_TEMP/build/trivy-version.json")" \
             '{version:$version,database_updated_at:$updated}' > "$RUNNER_TEMP/final/scanner.json"
-          printf '{"mode":"none","schema_compatibility":[]}' > "$RUNNER_TEMP/final/data.json"
+          # The manifest's data_requirements must state what the release actually binds to.
+          # A fixed {"mode":"none"} understated every data-bearing backend in signed evidence.
+          jq -e '.data
+            | {mode}
+            + (if has("release_tag") then {release_tag, digest} else {} end)
+            + (if has("reproducible_rollback")
+               then {reproducible_rollback} else {} end)
+            + {schema_compatibility: (.schema_compatibility // [])}' \
+            container-release.json > "$RUNNER_TEMP/final/data.json"
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py assemble-manifest \
             --identity "$RUNNER_TEMP/final/identity.json" \

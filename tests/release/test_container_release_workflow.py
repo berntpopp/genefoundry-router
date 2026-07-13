@@ -571,3 +571,24 @@ def test_no_job_level_env_uses_the_runner_context() -> None:
         for name, job in workflow["jobs"].items():
             for key, value in (job.get("env") or {}).items():
                 assert "runner." not in str(value), f"{path.name}:{name}.env.{key} = {value}"
+
+
+def test_release_evidence_states_the_declared_data_contract() -> None:
+    """Signed evidence must state the data binding the repository actually declares.
+
+    The workflow hardcoded `--contract data-independent` and a fixed
+    {"mode":"none"} data_requirements. Because _require_data_binding returns early for a
+    data-independent contract, that silently skipped the strongest assertion in the whole
+    evidence chain -- that the running server's captured data identity equals the pinned
+    artifact -- for every data-bearing backend, and published a manifest claiming no data
+    binding for services pinned to an immutable bundle.
+    """
+    workflow = _load(REUSABLE)
+    capture = _run_text(workflow["jobs"]["capture"])
+    assemble = _run_text(workflow["jobs"]["assemble-evidence"])
+
+    assert "--contract data-independent" not in capture
+    assert ".definitions.contract" in capture
+    assert "--data-release-tag" in capture and "--data-digest" in capture
+    assert '{"mode":"none","schema_compatibility":[]}' not in assemble
+    assert ".data" in assemble
