@@ -241,6 +241,37 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+class AuxiliaryServiceConfig(StrictModel):
+    """One approved sidecar and the role policy the central gate validates it against.
+
+    The role, not the name, is what is authorized: every field the role permits is
+    checked, so declaring a service can never authorize an unhardened container.
+    """
+
+    name: SafeIdentifier
+    role: Literal["init", "database"]
+    egress: Literal["denied", "internal", "approved-networks"] = "denied"
+    writable_targets: Annotated[tuple[AbsoluteRuntimePath, ...], Field(max_length=8)] = ()
+    read_only_targets: Annotated[tuple[AbsoluteRuntimePath, ...], Field(max_length=8)] = ()
+    healthcheck_test: Annotated[
+        tuple[Annotated[str, Field(min_length=1, max_length=1024)], ...],
+        Field(max_length=64),
+    ] = ()
+
+    @model_validator(mode="after")
+    def _role_requirements_are_complete(self) -> AuxiliaryServiceConfig:
+        if self.role == "database":
+            if self.egress != "approved-networks":
+                raise ValueError("a database sidecar must reach an approved project network")
+            if not self.healthcheck_test:
+                raise ValueError("a database sidecar must declare its readiness probe")
+        if not self.writable_targets:
+            raise ValueError("an auxiliary sidecar must declare its writable volume targets")
+        if set(self.writable_targets) & set(self.read_only_targets):
+            raise ValueError("a mount target must be either writable or read-only, not both")
+        return self
+
+
 class ServiceConfig(StrictModel):
     """Runtime endpoint and Compose facts needed by standard smoke gates."""
 
@@ -252,6 +283,26 @@ class ServiceConfig(StrictModel):
     health_path: LocalHttpPath = "/health"
     mcp_path: LocalHttpPath = "/mcp"
     startup_timeout_seconds: Annotated[StrictInt, Field(ge=1, le=3600)] = 90
+    networks: Annotated[tuple[SafeIdentifier, ...], Field(min_length=1, max_length=8)] = (
+        "default",
+    )
+    internal_networks: Annotated[tuple[SafeIdentifier, ...], Field(max_length=8)] = ()
+    auxiliary: Annotated[tuple[AuxiliaryServiceConfig, ...], Field(max_length=4)] = ()
+
+    @model_validator(mode="after")
+    def _declared_services_and_networks_are_consistent(self) -> ServiceConfig:
+        names = [auxiliary.name for auxiliary in self.auxiliary]
+        if len(set(names)) != len(names):
+            raise ValueError("each auxiliary service may be declared only once")
+        if self.name in names:
+            raise ValueError("an auxiliary service must not name the application service")
+        if not set(self.internal_networks).issubset(self.networks):
+            raise ValueError("an internal network must also be an approved project network")
+        if any(auxiliary.egress == "internal" for auxiliary in self.auxiliary) and (
+            not self.internal_networks
+        ):
+            raise ValueError("an internal-egress sidecar requires a declared internal network")
+        return self
 
 
 class NoAuthoritativeData(StrictModel):

@@ -65,7 +65,9 @@ def test_approved_real_render_matches_exact_field_allowlists(
     service = approved_render["services"][_SERVICE]
 
     assert set(approved_render) == ALLOWED_TOP_LEVEL_KEYS
-    assert set(service) == ALLOWED_SERVICE_KEYS
+    # `depends_on` couples the application to a declared auxiliary sidecar. The router
+    # declares none, so the field must be absent; every other allowed field is used.
+    assert set(service) == ALLOWED_SERVICE_KEYS - {"depends_on"}
     assert validate_compose(approved_render, _SERVICE) == ()
 
 

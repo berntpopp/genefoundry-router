@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Callable
 from dataclasses import asdict
 from pathlib import Path
@@ -12,7 +13,11 @@ from typing import Any, Literal
 import typer
 from pydantic import ValidationError
 
-from genefoundry_router.release.compose import validate_compose
+from genefoundry_router.release.compose import (
+    AuxiliaryServiceRule,
+    ComposePolicy,
+    validate_compose,
+)
 from genefoundry_router.release.content import inspect_oci_layout
 from genefoundry_router.release.data import (
     DataReleaseManifest,
@@ -38,6 +43,7 @@ from genefoundry_router.release.evidence import (
     write_json_atomic,
 )
 from genefoundry_router.release.models import ApplicationReleaseManifest, ReleaseConfig
+from genefoundry_router.release.smoke import parse_smoke_env, render_smoke_override
 from genefoundry_router.release.source import validate_source_release
 from genefoundry_router.release.vulnerabilities import ReleaseExitCode, evaluate_trivy
 
@@ -233,19 +239,94 @@ def rollback_data_command(
     _execute("rollback-data", operation)
 
 
+def _compose_policy(config: Path | None) -> tuple[ComposePolicy | None, str | None]:
+    """Build the effective Compose policy, including any declared sidecar roles."""
+    if config is None:
+        return None, None
+    parsed = ReleaseConfig.model_validate(_object(config))
+    policy = ComposePolicy(
+        approved_networks=frozenset(parsed.service.networks),
+        internal_networks=frozenset(parsed.service.internal_networks),
+        auxiliary_services=tuple(
+            AuxiliaryServiceRule(
+                name=auxiliary.name,
+                role=auxiliary.role,
+                egress=auxiliary.egress,
+                writable_targets=frozenset(auxiliary.writable_targets),
+                read_only_targets=frozenset(auxiliary.read_only_targets),
+                healthcheck_test=auxiliary.healthcheck_test,
+            )
+            for auxiliary in parsed.service.auxiliary
+        ),
+    )
+    return policy, parsed.service.name
+
+
 @app.command("validate-compose")
 def validate_compose_command(
     rendered: Path = typer.Option(..., "--rendered", help="Rendered Compose JSON."),
     service: str = typer.Option(..., "--service", help="Application service name."),
+    config: Path | None = typer.Option(
+        None, "--config", help="Container release JSON declaring auxiliary service roles."
+    ),
 ) -> None:
     """Validate the effective production Compose configuration."""
 
     def operation() -> _CliResult:
-        violations = validate_compose(_object(rendered), service)
+        policy, declared = _compose_policy(config)
+        if declared is not None and declared != service:
+            raise ValueError("requested service does not match the declared application service")
+        violations = validate_compose(_object(rendered), service, policy)
         code = ReleaseExitCode.POLICY_VIOLATION if violations else ReleaseExitCode.SUCCESS
         return _CliResult({"verdict": _verdict(code), "violations": list(violations)}, code)
 
     _execute("validate-compose", operation)
+
+
+@app.command("render-smoke-override")
+def render_smoke_override_command(
+    config: Path = typer.Option(..., "--config", help="Container release JSON configuration."),
+    image: str = typer.Option(..., "--image", help="Exact local image built once in this run."),
+    host_port: int = typer.Option(..., "--host-port", help="Loopback port for the smoke probe."),
+    out: Path = typer.Option(..., "--out", help="Compose override to write."),
+    env_file: Path | None = typer.Option(
+        None, "--env-file", help="KEY=VALUE output of docker/ci-prepare-smoke.sh."
+    ),
+    servers: Path | None = typer.Option(None, "--servers", help="Router backend registry."),
+) -> None:
+    """Render the no-build smoke stack for the declared smoke profile."""
+
+    def operation() -> _CliResult:
+        parsed = ReleaseConfig.model_validate(_object(config))
+        environment: dict[str, str] = {}
+        if env_file is not None:
+            if env_file.is_symlink() or not env_file.is_file():
+                raise ValueError("smoke environment is not a regular file")
+            environment = parse_smoke_env(env_file.read_text(encoding="utf-8"))
+        url_env_keys: tuple[str, ...] = ()
+        if servers is not None and servers.is_file() and not servers.is_symlink():
+            url_env_keys = tuple(
+                sorted(set(re.findall(r"url_env:\s*([A-Z0-9_]+)", servers.read_text("utf-8"))))
+            )
+        override = render_smoke_override(
+            parsed,
+            image=image,
+            host_port=host_port,
+            environment=environment,
+            url_env_keys=url_env_keys,
+        )
+        out.write_text(override, encoding="utf-8")
+        return _CliResult(
+            {
+                "override": str(out),
+                "profile": parsed.smoke.profile,
+                "services": [parsed.service.name, *(a.name for a in parsed.service.auxiliary)],
+                "verdict": "pass",
+            },
+            ReleaseExitCode.SUCCESS,
+        )
+
+    _execute("render-smoke-override", operation)
 
 
 @app.command("inspect-oci")
