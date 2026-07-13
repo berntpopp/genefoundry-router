@@ -219,6 +219,9 @@ HIGH/CRITICAL findings, if present in the native JSON, remain evidence but do no
 - **Freshness is evidence, not an assumption.** `trivy version --format json` MUST contain the
   vulnerability database version and aware `UpdatedAt`, `NextUpdate`, and `DownloadedAt`
   timestamps. The evaluator rejects missing, misordered, future, or already-expired metadata.
+  Evaluation allows at most five minutes of clock skew and rejects scan reports older than one
+  hour plus that skew; reruns therefore rescan the immutable image digest instead of replaying old
+  vulnerability evidence.
 - **Fixability is evaluated from validated JSON.** Only HIGH/CRITICAL entries with a nonempty
   `FixedVersion` return `policy_violation`. Unfixable entries are retained without making routine
   releases permanently red on base-image CVEs with no upstream remediation.

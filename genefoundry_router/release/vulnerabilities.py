@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum, IntEnum
 from typing import Any
 
@@ -13,9 +13,12 @@ MAX_EVIDENCE_BYTES = 64 * 1024 * 1024
 MAX_RESULTS = 10_000
 MAX_FINDINGS = 100_000
 POLICY_VERSION = "fixable-high-critical-v1"
+_NANOSECONDS_PER_SECOND = 1_000_000_000
+_CLOCK_SKEW_SECONDS = 5 * 60
+_MAX_REPORT_AGE_SECONDS = 60 * 60
 _RFC3339 = re.compile(
-    r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
-    r"(?:\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})$"
+    r"^(?P<calendar>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})"
+    r"(?:\.(?P<fraction>[0-9]{1,9}))?(?P<timezone>Z|[+-][0-9]{2}:[0-9]{2})$"
 )
 _SEVERITIES = frozenset({"UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL"})
 _GATED_SEVERITIES = frozenset({"HIGH", "CRITICAL"})
@@ -105,6 +108,14 @@ class _InvalidEvidenceError(ValueError):
     """Internal parse failure converted into an invalid-evidence verdict."""
 
 
+@dataclass(frozen=True)
+class _Timestamp:
+    """One RFC3339 instant retained at Trivy's native nanosecond precision."""
+
+    raw: str
+    nanoseconds: int
+
+
 def _invalid(reason: str, scanner_exit: int | None = None) -> TrivyEvaluation:
     return TrivyEvaluation(
         verdict=VulnerabilityVerdict.INVALID_EVIDENCE,
@@ -152,9 +163,9 @@ def _decode(document: bytes | str) -> object:
             object_pairs_hook=_object_without_duplicate_keys,
             parse_constant=_reject_json_constant,
         )
-    except UnicodeDecodeError as exc:
-        raise _InvalidEvidenceError("Trivy evidence is not valid UTF-8") from exc
-    except json.JSONDecodeError as exc:
+    except _InvalidEvidenceError:
+        raise
+    except (RecursionError, ValueError) as exc:
         raise _InvalidEvidenceError("Trivy evidence is not valid JSON") from exc
 
 
@@ -177,36 +188,75 @@ def _string(value: object, label: str, *, allow_empty: bool = False) -> str:
     return value
 
 
-def _timestamp(value: object, label: str) -> tuple[str, datetime]:
+def _timestamp(value: object, label: str) -> _Timestamp:
     raw = _string(value, label)
-    if _RFC3339.fullmatch(raw) is None:
+    match = _RFC3339.fullmatch(raw)
+    if match is None:
         raise _InvalidEvidenceError(f"{label} must be an aware RFC3339 timestamp")
+    timezone = match.group("timezone").replace("Z", "+00:00")
     try:
-        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(match.group("calendar") + timezone)
     except ValueError as exc:
         raise _InvalidEvidenceError(f"{label} must be a valid RFC3339 timestamp") from exc
     if parsed.utcoffset() is None:
         raise _InvalidEvidenceError(f"{label} must include an explicit timezone")
-    return raw, parsed
+    utc = parsed.astimezone(UTC)
+    epoch = datetime(1970, 1, 1, tzinfo=UTC)
+    delta = utc - epoch
+    whole_seconds = delta.days * 86_400 + delta.seconds
+    fraction = (match.group("fraction") or "").ljust(9, "0")
+    fraction_nanoseconds = int(fraction) if fraction else 0
+    return _Timestamp(
+        raw=raw,
+        nanoseconds=whole_seconds * _NANOSECONDS_PER_SECOND + fraction_nanoseconds,
+    )
+
+
+def _evaluation_timestamp(evaluated_at: datetime | None) -> _Timestamp:
+    value = datetime.now(UTC) if evaluated_at is None else evaluated_at
+    if not isinstance(value, datetime) or value.utcoffset() is None:
+        raise _InvalidEvidenceError("evaluation time must be an aware datetime")
+    utc = value.astimezone(UTC)
+    epoch = datetime(1970, 1, 1, tzinfo=UTC)
+    delta = utc - epoch
+    whole_seconds = delta.days * 86_400 + delta.seconds
+    return _Timestamp(
+        raw=utc.isoformat().replace("+00:00", "Z"),
+        nanoseconds=(whole_seconds * _NANOSECONDS_PER_SECOND + utc.microsecond * 1_000),
+    )
+
+
+def _validate_scan_freshness(created: _Timestamp, evaluated: _Timestamp) -> None:
+    skew = _CLOCK_SKEW_SECONDS * _NANOSECONDS_PER_SECOND
+    maximum_age = _MAX_REPORT_AGE_SECONDS * _NANOSECONDS_PER_SECOND
+    if created.nanoseconds > evaluated.nanoseconds + skew:
+        raise _InvalidEvidenceError("Trivy scan report is future-dated")
+    if created.nanoseconds + maximum_age + skew < evaluated.nanoseconds:
+        raise _InvalidEvidenceError("Trivy scan report is stale")
 
 
 def _database_metadata(
-    version_document: dict[str, Any], scan_created: datetime
+    version_document: dict[str, Any], scan_created: _Timestamp, evaluated: _Timestamp
 ) -> tuple[str, str, str, str]:
     scanner_version = _string(version_document.get("Version"), "Trivy version")
     database = _mapping(version_document.get("VulnerabilityDB"), "VulnerabilityDB metadata")
     if type(database.get("Version")) is not int or database["Version"] < 1:
         raise _InvalidEvidenceError("VulnerabilityDB version must be a positive integer")
-    updated_raw, updated = _timestamp(database.get("UpdatedAt"), "database UpdatedAt")
-    next_raw, next_update = _timestamp(database.get("NextUpdate"), "database NextUpdate")
-    downloaded_raw, downloaded = _timestamp(database.get("DownloadedAt"), "database DownloadedAt")
-    if not updated <= downloaded <= scan_created:
+    updated = _timestamp(database.get("UpdatedAt"), "database UpdatedAt")
+    next_update = _timestamp(database.get("NextUpdate"), "database NextUpdate")
+    downloaded = _timestamp(database.get("DownloadedAt"), "database DownloadedAt")
+    if not updated.nanoseconds <= downloaded.nanoseconds <= scan_created.nanoseconds:
         raise _InvalidEvidenceError("database timestamps are not ordered before the scan")
-    if next_update <= updated:
+    if next_update.nanoseconds <= updated.nanoseconds:
         raise _InvalidEvidenceError("database NextUpdate must be later than UpdatedAt")
-    if next_update <= scan_created:
+    if next_update.nanoseconds <= scan_created.nanoseconds:
         raise _InvalidEvidenceError("vulnerability database was stale when the scan was created")
-    return scanner_version, updated_raw, next_raw, downloaded_raw
+    skew = _CLOCK_SKEW_SECONDS * _NANOSECONDS_PER_SECOND
+    if next_update.nanoseconds + skew < evaluated.nanoseconds:
+        raise _InvalidEvidenceError(
+            "vulnerability database was stale when the evidence was evaluated"
+        )
+    return scanner_version, updated.raw, next_update.raw, downloaded.raw
 
 
 def _finding(raw: object, target: str) -> VulnerabilityFinding:
@@ -231,13 +281,13 @@ def _finding(raw: object, target: str) -> VulnerabilityFinding:
 
 def _scan_findings(
     scan: dict[str, Any],
-) -> tuple[str, tuple[VulnerabilityFinding, ...], tuple[VulnerabilityFinding, ...], int]:
+) -> tuple[_Timestamp, tuple[VulnerabilityFinding, ...], tuple[VulnerabilityFinding, ...], int]:
     if type(scan.get("SchemaVersion")) is not int or scan["SchemaVersion"] != 2:
         raise _InvalidEvidenceError("Trivy scan SchemaVersion must be the integer 2")
     if scan.get("ArtifactType") != "container_image":
         raise _InvalidEvidenceError("Trivy scan must describe a container_image")
     _string(scan.get("ArtifactName"), "Trivy ArtifactName")
-    created_raw, _created = _timestamp(scan.get("CreatedAt"), "Trivy CreatedAt")
+    created = _timestamp(scan.get("CreatedAt"), "Trivy CreatedAt")
     results = scan.get("Results")
     if not isinstance(results, list) or not results or len(results) > MAX_RESULTS:
         raise _InvalidEvidenceError("Trivy Results must be a bounded nonempty array")
@@ -270,10 +320,15 @@ def _scan_findings(
         item for item in ordered if item.severity in _GATED_SEVERITIES and not item.fixed_version
     )
     other_count = len(ordered) - len(fixable) - len(unfixable)
-    return created_raw, fixable, unfixable, other_count
+    return created, fixable, unfixable, other_count
 
 
-def evaluate_trivy(document: bytes | str, scanner_exit: object) -> TrivyEvaluation:
+def evaluate_trivy(
+    document: bytes | str,
+    scanner_exit: object,
+    *,
+    evaluated_at: datetime | None = None,
+) -> TrivyEvaluation:
     """Evaluate a scan/version envelope and keep operational failure distinct.
 
     The envelope contains native JSON from ``trivy image --format json`` under
@@ -291,6 +346,7 @@ def evaluate_trivy(document: bytes | str, scanner_exit: object) -> TrivyEvaluati
             scanner_exit=scanner_exit,
         )
     try:
+        evaluated = _evaluation_timestamp(evaluated_at)
         envelope = _mapping(_decode(document), "Trivy evidence")
         if set(envelope) != {"schema_version", "scan", "version"}:
             if "sarif" in {str(key).lower() for key in envelope}:
@@ -300,9 +356,11 @@ def evaluate_trivy(document: bytes | str, scanner_exit: object) -> TrivyEvaluati
             raise _InvalidEvidenceError("Trivy evidence schema_version must be the integer 1")
         scan = _mapping(envelope["scan"], "Trivy scan")
         version = _mapping(envelope["version"], "Trivy version document")
-        created_raw, fixable, unfixable, other_count = _scan_findings(scan)
-        _, created = _timestamp(created_raw, "Trivy CreatedAt")
-        scanner_version, updated, next_update, downloaded = _database_metadata(version, created)
+        created, fixable, unfixable, other_count = _scan_findings(scan)
+        _validate_scan_freshness(created, evaluated)
+        scanner_version, updated, next_update, downloaded = _database_metadata(
+            version, created, evaluated
+        )
     except (KeyError, _InvalidEvidenceError) as exc:
         reason = str(exc) or "Trivy evidence is incomplete"
         return _invalid(reason, scanner_exit)
@@ -316,7 +374,7 @@ def evaluate_trivy(document: bytes | str, scanner_exit: object) -> TrivyEvaluati
         database_updated_at=updated,
         database_next_update=next_update,
         database_downloaded_at=downloaded,
-        scan_created_at=created_raw,
+        scan_created_at=created.raw,
         fixable_high_critical=fixable,
         unfixable_high_critical=unfixable,
         other_findings_count=other_count,
