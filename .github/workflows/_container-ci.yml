@@ -296,6 +296,7 @@ jobs:
           output: trivy-native.json
           exit-code: "0"
           vuln-type: os,library
+          cache-dir: ${{ github.workspace }}/.cache/trivy
 
       - name: Record scanner process result
         if: ${{ always() && steps.build.outcome == 'success' }}
@@ -308,6 +309,8 @@ jobs:
 
       - name: Evaluate versioned vulnerability policy
         if: ${{ always() && steps.build.outcome == 'success' }}
+        env:
+          TRIVY_CACHE_DIR: ${{ github.workspace }}/.cache/trivy
         run: |
           set -euo pipefail
           scanner_exit="$(cat scanner.exit)"

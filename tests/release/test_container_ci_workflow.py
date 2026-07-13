@@ -16,6 +16,7 @@ REUSABLE = ROOT / ".github/workflows/_container-ci.yml"
 CALLER = ROOT / ".github/workflows/container-ci.yml"
 CONFIG = ROOT / "container-release.json"
 OLD_WORKFLOW = ROOT / ".github/workflows/container-security.yml"
+TRIVY_CACHE_DIR = "${{ github.workspace }}/.cache/trivy"
 
 ACTION_PINS = {
     "actions/checkout": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
@@ -210,6 +211,11 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
     assert trivy["with"]["format"] == "json"
     assert trivy["with"]["output"] == "trivy-native.json"
     assert trivy["with"]["exit-code"] == "0"
+    assert trivy["with"]["cache-dir"] == TRIVY_CACHE_DIR
+    evaluate_trivy = next(
+        step for step in steps if step.get("name") == "Evaluate versioned vulnerability policy"
+    )
+    assert evaluate_trivy["env"]["TRIVY_CACHE_DIR"] == TRIVY_CACHE_DIR
     assert "trivy version --format json" in run_text
     assert "--slurpfile scan trivy-native.json" in run_text
     assert "--slurpfile version trivy-version.json" in run_text

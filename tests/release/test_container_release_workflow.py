@@ -11,6 +11,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 REUSABLE = ROOT / ".github/workflows/_container-release.yml"
 CALLER = ROOT / ".github/workflows/container-release.yml"
+TRIVY_CACHE_DIR = "${{ github.workspace }}/.cache/trivy"
 
 ACTION_PINS = {
     "actions/checkout": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
@@ -190,6 +191,14 @@ def test_build_gate_builds_only_when_absent_and_never_uses_release_cache() -> No
     assert str(inputs["outputs"]).startswith("type=oci,")
     assert not any(key.startswith("cache-") for key in inputs)
     text = _run_text(job)
+    trivy = next(
+        step for step in _steps(job) if str(step.get("uses", "")).startswith("aquasecurity/trivy-action@")
+    )
+    assert trivy["with"]["cache-dir"] == TRIVY_CACHE_DIR
+    evaluate_trivy = next(
+        step for step in _steps(job) if step.get("name") == "Evaluate versioned Trivy policy"
+    )
+    assert evaluate_trivy["env"]["TRIVY_CACHE_DIR"] == TRIVY_CACHE_DIR
     assert "build_required == 'false'" in str(job)
     assert "--to-oci-layout" in text
     assert "inspect-oci" in text

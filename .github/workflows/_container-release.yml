@@ -327,10 +327,13 @@ jobs:
           output: ${{ runner.temp }}/release-build/trivy-native.json
           exit-code: "0"
           vuln-type: os,library
+          cache-dir: ${{ github.workspace }}/.cache/trivy
 
       - name: Evaluate versioned Trivy policy
         if: ${{ always() }}
         shell: bash
+        env:
+          TRIVY_CACHE_DIR: ${{ github.workspace }}/.cache/trivy
         run: |
           set -euo pipefail
           scanner_exit=3
