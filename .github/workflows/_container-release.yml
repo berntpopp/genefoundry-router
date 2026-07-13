@@ -181,7 +181,11 @@ jobs:
 
           if release_json="$($gh release view "$tag" --json isDraft,tagName 2>/dev/null)" && \
              [ "$(jq -r .isDraft <<<"$release_json")" = false ]; then
-            $gh release verify "$tag"
+            for attempt in $(seq 1 30); do
+              $gh release verify "$tag" && break
+              echo "release attestation not yet published; retry $attempt"
+              sleep 10
+            done
             if ! $gh attestation verify "oci://$image@$source_digest" \
               --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               echo "missing attestation" >&2
@@ -872,7 +876,18 @@ jobs:
           if [ "$($gh release view "$TAG" --json isDraft --jq .isDraft)" = true ]; then
             $gh release edit "$TAG" --draft=false
           fi
-          $gh release verify "$TAG"
+          # GitHub mints the immutable-release attestation asynchronously after publication,
+          # so verifying immediately races it and fails with "no attestations for tag".
+          verify_release() {
+            for attempt in $(seq 1 30); do
+              if $gh release verify "$TAG"; then return 0; fi
+              echo "release attestation not yet published; retry $attempt"
+              sleep 10
+            done
+            echo "release attestation never became available" >&2
+            return 1
+          }
+          verify_release
           for asset in "$expected"/*; do
             $gh release verify-asset "$TAG" "$asset"
           done

@@ -399,3 +399,17 @@ def test_finalize_names_the_repository_without_a_working_tree() -> None:
 
     assert finalize["env"]["GH_REPO"] == "${{ github.repository }}"
     assert not any("checkout" in str(step.get("uses", "")) for step in _steps(finalize))
+
+
+def test_release_verification_tolerates_asynchronous_attestation() -> None:
+    """GitHub mints the immutable-release attestation asynchronously after publication.
+
+    Verifying immediately races it and fails with "no attestations for tag", after the
+    image is already published and the evidence sealed. Both the recovery probe and the
+    finalize gate must retry rather than fail on the first miss.
+    """
+    workflow = _load(REUSABLE)
+
+    for job_name in ("prepare", "finalize"):
+        run_text = _run_text(workflow["jobs"][job_name])
+        assert "release attestation not yet published; retry" in run_text, job_name
