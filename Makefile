@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
 
 .DEFAULT_GOAL := help
 
@@ -116,6 +116,17 @@ docker-prod-config: ## Render production Compose configuration
 
 docker-npm-config: ## Render NPM Compose configuration
 	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
+
+container-validate: ## Validate container release configuration (CONFIG=path)
+	uv run python scripts/container_release.py validate-config --config "$(or $(CONFIG),container-release.json)"
+
+container-content: ## Inspect an OCI layout (OCI_LAYOUT=path)
+	@test -n "$(OCI_LAYOUT)" || (echo "OCI_LAYOUT=<OCI image-layout path> is required"; exit 2)
+	uv run python scripts/container_release.py inspect-oci --layout "$(OCI_LAYOUT)"
+
+container-deploy-verify: ## Verify a reviewed deployment manifest (MANIFEST=path)
+	@test -n "$(MANIFEST)" || (echo "MANIFEST=<application release manifest> is required"; exit 2)
+	uv run python scripts/container_release.py verify-deployment --manifest "$(MANIFEST)"
 
 dev-fleet: ## Run the offline fake MCP fleet (port 9100)
 	uv run python -m genefoundry_router.devtools.fake_fleet
