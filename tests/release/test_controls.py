@@ -149,14 +149,13 @@ def test_manual_evidence_requires_named_reviewer() -> None:
         load_control_ledger(payload)
 
 
-def test_checked_in_ledger_has_every_repository_and_explicit_blockers() -> None:
+def test_checked_in_ledger_covers_every_repository_and_is_release_ready() -> None:
     repositories = expected_fleet_repositories(Path("servers.yaml"))
     payload = json.loads(Path("ci/container-controls.json").read_text(encoding="utf-8"))
     ledger = load_control_ledger(payload)
 
     assert set(ledger.repositories) == repositories
-    with pytest.raises(ControlLedgerError, match="unavailable"):
-        require_compliant_controls(ledger, repositories)
+    require_compliant_controls(ledger, repositories)
 
 
 def test_release_candidate_make_target_requires_release_manifests() -> None:

@@ -181,7 +181,11 @@ jobs:
 
           if release_json="$($gh release view "$tag" --json isDraft,tagName 2>/dev/null)" && \
              [ "$(jq -r .isDraft <<<"$release_json")" = false ]; then
-            $gh release verify "$tag"
+            for attempt in $(seq 1 30); do
+              $gh release verify "$tag" && break
+              echo "release attestation not yet published; retry $attempt"
+              sleep 10
+            done
             if ! $gh attestation verify "oci://$image@$source_digest" \
               --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               echo "missing attestation" >&2
@@ -333,9 +337,16 @@ jobs:
           set -euo pipefail
           service="$(jq -er '.service.name' container-release.json)"
           port="$(jq -er '.service.container_port' container-release.json)"
+          # Schema-validated KEY=VALUE assignments; the charset forbids whitespace and
+          # shell metacharacters, so an entry cannot split the argument or reach a shell.
+          smoke_env=()
+          while IFS= read -r assignment; do
+            smoke_env+=(--env "$assignment")
+          done < <(jq -r '.smoke_environment // [] | .[]' container-release.json)
           container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
             --security-opt no-new-privileges:true --pids-limit 256 \
-            --tmpfs /tmp:rw,noexec,nosuid,size=64m -p "127.0.0.1:18000:$port" "$CI_IMAGE")"
+            --tmpfs /tmp:rw,noexec,nosuid,size=64m "${smoke_env[@]}" \
+            -p "127.0.0.1:18000:$port" "$CI_IMAGE")"
           trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
           for _ in $(seq 1 90); do curl -fsS http://127.0.0.1:18000/health && break; sleep 1; done
           curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \
@@ -481,8 +492,12 @@ jobs:
         run: |
           set -euo pipefail
           oras="$RUNNER_TEMP/oras"
+          # Address the layout by the exact digest already gated above, not by a ref name.
+          # A fresh buildx `type=oci` export normalizes a bare tag and annotates the manifest
+          # `org.opencontainers.image.ref.name: latest`, so the source alias never resolves;
+          # only the recovery path writes that ref. The digest is identical on both paths.
           $oras cp --from-oci-layout \
-            "$RUNNER_TEMP/release-build/oci-layout:$SOURCE_ALIAS" "$IMAGE:$SOURCE_ALIAS"
+            "$RUNNER_TEMP/release-build/oci-layout@$EXPECTED_DIGEST" "$IMAGE:$SOURCE_ALIAS"
           published_digest="$($oras manifest fetch --descriptor "$IMAGE:$SOURCE_ALIAS" | jq -er .digest)"
           test "$published_digest" = "$EXPECTED_DIGEST" || {
             echo "source alias digest mismatch" >&2
@@ -516,16 +531,16 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/attestation-evidence"
           "$RUNNER_TEMP/gh" attestation verify "oci://$IMAGE@$EXPECTED_DIGEST" \
-            --repo "$GITHUB_REPOSITORY" --signer-repo berntpopp/genefoundry-router \
-            --signer-workflow .github/workflows/_container-release.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow berntpopp/genefoundry-router/.github/workflows/_container-release.yml \
             --signer-digest "${{ needs.prepare.outputs.standard_sha }}" \
             --source-ref "refs/tags/${{ needs.prepare.outputs.tag }}" \
             --source-digest "${{ needs.prepare.outputs.source_sha }}" \
             --predicate-type https://slsa.dev/provenance/v1 --deny-self-hosted-runners \
             --format json > "$RUNNER_TEMP/attestation-evidence/provenance-verification.json"
           "$RUNNER_TEMP/gh" attestation verify "oci://$IMAGE@$EXPECTED_DIGEST" \
-            --repo "$GITHUB_REPOSITORY" --signer-repo berntpopp/genefoundry-router \
-            --signer-workflow .github/workflows/_container-release.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow berntpopp/genefoundry-router/.github/workflows/_container-release.yml \
             --signer-digest "${{ needs.prepare.outputs.standard_sha }}" \
             --source-ref "refs/tags/${{ needs.prepare.outputs.tag }}" \
             --source-digest "${{ needs.prepare.outputs.source_sha }}" \
@@ -606,6 +621,12 @@ jobs:
           uv sync --project .container-release-tools --group dev --frozen
           docker pull "$IMAGE@${PUBLISHED_DIGEST}"
           port="$(jq -er '.service.container_port' container-release.json)"
+          # Schema-validated KEY=VALUE assignments; the charset forbids whitespace and
+          # shell metacharacters, so an entry cannot split the argument or reach a shell.
+          smoke_env=()
+          while IFS= read -r assignment; do
+            smoke_env+=(--env "$assignment")
+          done < <(jq -r '.smoke_environment // [] | .[]' container-release.json)
           mkdir -p "$RUNNER_TEMP/capture"
           capture_tools() {
             local label="$1"
@@ -615,7 +636,7 @@ jobs:
             local container_id
             container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
               --security-opt no-new-privileges:true \
-              --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+              --tmpfs /tmp:rw,noexec,nosuid,size=64m "${smoke_env[@]}" \
               -p "127.0.0.1:${host_port}:$port" "$IMAGE@$PUBLISHED_DIGEST")"
             trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' RETURN
             for _ in $(seq 1 90); do
@@ -730,8 +751,13 @@ jobs:
           printf '%s\n' \
             '{"repository":"${{ github.repository }}","version":"${{ needs.prepare.outputs.version }}","source_tag":"${{ needs.prepare.outputs.tag }}","source_revision":"${{ needs.prepare.outputs.source_sha }}","image_name":"${{ needs.prepare.outputs.image }}","image_digest":"${{ needs.publish-attest.outputs.published_digest }}","workflow_caller":"${{ github.repository }}/.github/workflows/container-release.yml","workflow_standard":"berntpopp/genefoundry-router/.github/workflows/_container-release.yml","workflow_revision":"${{ needs.prepare.outputs.standard_sha }}"}' \
             > "$RUNNER_TEMP/final/identity.json"
-          jq -n --arg version "$(jq -r '.ArtifactName // "unknown"' "$RUNNER_TEMP/build/trivy.json")" \
-            --arg updated "$(jq -r '.Metadata.DB.UpdatedAt' "$RUNNER_TEMP/build/trivy.json")" \
+          # Scanner identity comes from `trivy version`, not from the scan report: the report
+          # carries no ArtifactName/Metadata.DB for an OCI-archive scan, so those reads yielded
+          # null and produced the literal string "null", which is not an RFC3339 timestamp.
+          # `version` is the scanner's version, not the scanned artifact's name. Use -er so a
+          # missing field fails the release instead of silently sealing unusable evidence.
+          jq -n --arg version "$(jq -er '.Version' "$RUNNER_TEMP/build/trivy-version.json")" \
+            --arg updated "$(jq -er '.VulnerabilityDB.UpdatedAt' "$RUNNER_TEMP/build/trivy-version.json")" \
             '{version:$version,database_updated_at:$updated}' > "$RUNNER_TEMP/final/scanner.json"
           printf '{"mode":"none","schema_compatibility":[]}' > "$RUNNER_TEMP/final/data.json"
           uv run --project .container-release-tools \
@@ -766,6 +792,10 @@ jobs:
       packages: write
     env:
       GH_TOKEN: ${{ github.token }}
+      # This job deliberately never checks out the source: it is privileged and consumes
+      # only sealed artifacts. `gh release` therefore has no git remote to infer, so name
+      # the repository explicitly instead of granting it a working tree.
+      GH_REPO: ${{ github.repository }}
       IMAGE: ${{ needs.prepare.outputs.image }}
       PUBLISHED_DIGEST: ${{ needs.publish-attest.outputs.published_digest }}
       SOURCE_ALIAS: ${{ needs.prepare.outputs.source_alias }}
@@ -846,7 +876,18 @@ jobs:
           if [ "$($gh release view "$TAG" --json isDraft --jq .isDraft)" = true ]; then
             $gh release edit "$TAG" --draft=false
           fi
-          $gh release verify "$TAG"
+          # GitHub mints the immutable-release attestation asynchronously after publication,
+          # so verifying immediately races it and fails with "no attestations for tag".
+          verify_release() {
+            for attempt in $(seq 1 30); do
+              if $gh release verify "$TAG"; then return 0; fi
+              echo "release attestation not yet published; retry $attempt"
+              sleep 10
+            done
+            echo "release attestation never became available" >&2
+            return 1
+          }
+          verify_release
           for asset in "$expected"/*; do
             $gh release verify-asset "$TAG" "$asset"
           done

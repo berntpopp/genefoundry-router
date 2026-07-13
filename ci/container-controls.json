@@ -1,116 +1,1612 @@
 {
-  "schema_version": 1,
-  "reviewed_at": "2026-07-13T12:00:00Z",
   "repositories": {
     "berntpopp/autopvs1-link": {
-      "status": "unavailable", "repository": "berntpopp/autopvs1-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/autopvs1-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/autopvs1-link/settings",
+          "verified_at": "2026-07-13T17:29:57Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/autopvs1-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:29:57Z"
+        },
+        "linked_repository": "berntpopp/autopvs1-link",
+        "name": "ghcr.io/berntpopp/autopvs1-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/autopvs1-link/settings/environments",
+          "verified_at": "2026-07-13T17:29:57Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/autopvs1-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/autopvs1-link/settings",
+          "verified_at": "2026-07-13T17:29:57Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/autopvs1-link/settings/rules/18884678",
+          "verified_at": "2026-07-13T17:29:56Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/clingen-link": {
-      "status": "unavailable", "repository": "berntpopp/clingen-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/clingen-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clingen-link/settings",
+          "verified_at": "2026-07-13T17:29:59Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/clingen-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:00Z"
+        },
+        "linked_repository": "berntpopp/clingen-link",
+        "name": "ghcr.io/berntpopp/clingen-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clingen-link/settings/environments",
+          "verified_at": "2026-07-13T17:29:59Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/clingen-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clingen-link/settings",
+          "verified_at": "2026-07-13T17:30:00Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clingen-link/settings/rules/18884670",
+          "verified_at": "2026-07-13T17:29:58Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/clinvar-link": {
-      "status": "unavailable", "repository": "berntpopp/clinvar-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/clinvar-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clinvar-link/settings",
+          "verified_at": "2026-07-13T17:30:02Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/clinvar-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:03Z"
+        },
+        "linked_repository": "berntpopp/clinvar-link",
+        "name": "ghcr.io/berntpopp/clinvar-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clinvar-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:02Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/clinvar-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clinvar-link/settings",
+          "verified_at": "2026-07-13T17:30:03Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clinvar-link/settings/rules/18884688",
+          "verified_at": "2026-07-13T17:30:01Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/gencc-link": {
-      "status": "unavailable", "repository": "berntpopp/gencc-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/gencc-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gencc-link/settings",
+          "verified_at": "2026-07-13T17:30:05Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/gencc-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:05Z"
+        },
+        "linked_repository": "berntpopp/gencc-link",
+        "name": "ghcr.io/berntpopp/gencc-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gencc-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:04Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/gencc-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gencc-link/settings",
+          "verified_at": "2026-07-13T17:30:05Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gencc-link/settings/rules/18884673",
+          "verified_at": "2026-07-13T17:30:03Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/genefoundry-router": {
-      "status": "unavailable", "repository": "berntpopp/genefoundry-router",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/genefoundry-router/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/genefoundry-router/settings",
+          "verified_at": "2026-07-13T17:30:07Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/genefoundry-router/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:08Z"
+        },
+        "linked_repository": "berntpopp/genefoundry-router",
+        "name": "ghcr.io/berntpopp/genefoundry-router",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/genefoundry-router/settings/environments",
+          "verified_at": "2026-07-13T17:30:07Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/genefoundry-router",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/genefoundry-router/settings",
+          "verified_at": "2026-07-13T17:30:08Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/genefoundry-router/settings/rules/18883963",
+          "verified_at": "2026-07-13T17:30:06Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/genereviews-link": {
-      "status": "unavailable", "repository": "berntpopp/genereviews-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/genereviews-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/genereviews-link/settings",
+          "verified_at": "2026-07-13T17:30:10Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/genereviews-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:11Z"
+        },
+        "linked_repository": "berntpopp/genereviews-link",
+        "name": "ghcr.io/berntpopp/genereviews-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/genereviews-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:10Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/genereviews-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/genereviews-link/settings",
+          "verified_at": "2026-07-13T17:30:11Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/genereviews-link/settings/rules/18884683",
+          "verified_at": "2026-07-13T17:30:09Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/gnomad-link": {
-      "status": "unavailable", "repository": "berntpopp/gnomad-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/gnomad-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gnomad-link/settings",
+          "verified_at": "2026-07-13T17:30:12Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/gnomad-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:13Z"
+        },
+        "linked_repository": "berntpopp/gnomad-link",
+        "name": "ghcr.io/berntpopp/gnomad-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gnomad-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:12Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/gnomad-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gnomad-link/settings",
+          "verified_at": "2026-07-13T17:30:13Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gnomad-link/settings/rules/18884662",
+          "verified_at": "2026-07-13T17:30:11Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/gtex-link": {
-      "status": "unavailable", "repository": "berntpopp/gtex-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/gtex-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gtex-link/settings",
+          "verified_at": "2026-07-13T17:30:15Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/gtex-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:16Z"
+        },
+        "linked_repository": "berntpopp/gtex-link",
+        "name": "ghcr.io/berntpopp/gtex-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gtex-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:15Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/gtex-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gtex-link/settings",
+          "verified_at": "2026-07-13T17:30:16Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/gtex-link/settings/rules/18884663",
+          "verified_at": "2026-07-13T17:30:14Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/hgnc-link": {
-      "status": "unavailable", "repository": "berntpopp/hgnc-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/hgnc-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/hgnc-link/settings",
+          "verified_at": "2026-07-13T17:30:18Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/hgnc-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:18Z"
+        },
+        "linked_repository": "berntpopp/hgnc-link",
+        "name": "ghcr.io/berntpopp/hgnc-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/hgnc-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:17Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/hgnc-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/hgnc-link/settings",
+          "verified_at": "2026-07-13T17:30:18Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/hgnc-link/settings/rules/18884665",
+          "verified_at": "2026-07-13T17:30:17Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/hpo-link": {
-      "status": "unavailable", "repository": "berntpopp/hpo-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/hpo-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/hpo-link/settings",
+          "verified_at": "2026-07-13T17:30:21Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/hpo-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:21Z"
+        },
+        "linked_repository": "berntpopp/hpo-link",
+        "name": "ghcr.io/berntpopp/hpo-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/hpo-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:20Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/hpo-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/hpo-link/settings",
+          "verified_at": "2026-07-13T17:30:21Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/hpo-link/settings/rules/18884699",
+          "verified_at": "2026-07-13T17:30:20Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/litvar-link": {
-      "status": "unavailable", "repository": "berntpopp/litvar-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/litvar-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/litvar-link/settings",
+          "verified_at": "2026-07-13T17:30:23Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/litvar-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:24Z"
+        },
+        "linked_repository": "berntpopp/litvar-link",
+        "name": "ghcr.io/berntpopp/litvar-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/litvar-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:23Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/litvar-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/litvar-link/settings",
+          "verified_at": "2026-07-13T17:30:24Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/litvar-link/settings/rules/18884675",
+          "verified_at": "2026-07-13T17:30:22Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/mavedb-link": {
-      "status": "unavailable", "repository": "berntpopp/mavedb-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/mavedb-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mavedb-link/settings",
+          "verified_at": "2026-07-13T17:30:26Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/mavedb-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:26Z"
+        },
+        "linked_repository": "berntpopp/mavedb-link",
+        "name": "ghcr.io/berntpopp/mavedb-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mavedb-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:26Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/mavedb-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mavedb-link/settings",
+          "verified_at": "2026-07-13T17:30:26Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mavedb-link/settings/rules/18884696",
+          "verified_at": "2026-07-13T17:30:25Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/metadome-link": {
-      "status": "unavailable", "repository": "berntpopp/metadome-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/metadome-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/metadome-link/settings",
+          "verified_at": "2026-07-13T17:30:28Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/metadome-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:28Z"
+        },
+        "linked_repository": "berntpopp/metadome-link",
+        "name": "ghcr.io/berntpopp/metadome-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/metadome-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:28Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/metadome-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/metadome-link/settings",
+          "verified_at": "2026-07-13T17:30:28Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/metadome-link/settings/rules/18884701",
+          "verified_at": "2026-07-13T17:30:27Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/mgi-link": {
-      "status": "unavailable", "repository": "berntpopp/mgi-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/mgi-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mgi-link/settings",
+          "verified_at": "2026-07-13T17:30:30Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/mgi-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:31Z"
+        },
+        "linked_repository": "berntpopp/mgi-link",
+        "name": "ghcr.io/berntpopp/mgi-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mgi-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:30Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/mgi-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mgi-link/settings",
+          "verified_at": "2026-07-13T17:30:31Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mgi-link/settings/rules/18884666",
+          "verified_at": "2026-07-13T17:30:29Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/mondo-link": {
-      "status": "unavailable", "repository": "berntpopp/mondo-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/mondo-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mondo-link/settings",
+          "verified_at": "2026-07-13T17:30:33Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/mondo-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:34Z"
+        },
+        "linked_repository": "berntpopp/mondo-link",
+        "name": "ghcr.io/berntpopp/mondo-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mondo-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:33Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/mondo-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mondo-link/settings",
+          "verified_at": "2026-07-13T17:30:34Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/mondo-link/settings/rules/18884695",
+          "verified_at": "2026-07-13T17:30:32Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/orphanet-link": {
-      "status": "unavailable", "repository": "berntpopp/orphanet-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/orphanet-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/orphanet-link/settings",
+          "verified_at": "2026-07-13T17:30:36Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/orphanet-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:36Z"
+        },
+        "linked_repository": "berntpopp/orphanet-link",
+        "name": "ghcr.io/berntpopp/orphanet-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/orphanet-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:35Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/orphanet-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/orphanet-link/settings",
+          "verified_at": "2026-07-13T17:30:36Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/orphanet-link/settings/rules/18884703",
+          "verified_at": "2026-07-13T17:30:35Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/panelapp-link": {
-      "status": "unavailable", "repository": "berntpopp/panelapp-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/panelapp-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/panelapp-link/settings",
+          "verified_at": "2026-07-13T17:30:38Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/panelapp-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:39Z"
+        },
+        "linked_repository": "berntpopp/panelapp-link",
+        "name": "ghcr.io/berntpopp/panelapp-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/panelapp-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:38Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/panelapp-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/panelapp-link/settings",
+          "verified_at": "2026-07-13T17:30:39Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/panelapp-link/settings/rules/18884694",
+          "verified_at": "2026-07-13T17:30:37Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/pubtator-link": {
-      "status": "unavailable", "repository": "berntpopp/pubtator-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/pubtator-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/pubtator-link/settings",
+          "verified_at": "2026-07-13T17:30:41Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/pubtator-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:42Z"
+        },
+        "linked_repository": "berntpopp/pubtator-link",
+        "name": "ghcr.io/berntpopp/pubtator-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/pubtator-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:41Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/pubtator-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/pubtator-link/settings",
+          "verified_at": "2026-07-13T17:30:42Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/pubtator-link/settings/rules/18884684",
+          "verified_at": "2026-07-13T17:30:40Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/spliceailookup-link": {
-      "status": "unavailable", "repository": "berntpopp/spliceailookup-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/spliceailookup-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/spliceailookup-link/settings",
+          "verified_at": "2026-07-13T17:30:44Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/spliceailookup-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:44Z"
+        },
+        "linked_repository": "berntpopp/spliceailookup-link",
+        "name": "ghcr.io/berntpopp/spliceailookup-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/spliceailookup-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:43Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/spliceailookup-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/spliceailookup-link/settings",
+          "verified_at": "2026-07-13T17:30:44Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/spliceailookup-link/settings/rules/18884681",
+          "verified_at": "2026-07-13T17:30:42Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/stringdb-link": {
-      "status": "unavailable", "repository": "berntpopp/stringdb-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/stringdb-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/stringdb-link/settings",
+          "verified_at": "2026-07-13T17:30:46Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/stringdb-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:46Z"
+        },
+        "linked_repository": "berntpopp/stringdb-link",
+        "name": "ghcr.io/berntpopp/stringdb-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/stringdb-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:46Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/stringdb-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/stringdb-link/settings",
+          "verified_at": "2026-07-13T17:30:46Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/stringdb-link/settings/rules/18884677",
+          "verified_at": "2026-07-13T17:30:45Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/uniprot-link": {
-      "status": "unavailable", "repository": "berntpopp/uniprot-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/uniprot-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/uniprot-link/settings",
+          "verified_at": "2026-07-13T17:30:48Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/uniprot-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:49Z"
+        },
+        "linked_repository": "berntpopp/uniprot-link",
+        "name": "ghcr.io/berntpopp/uniprot-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/uniprot-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:48Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/uniprot-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/uniprot-link/settings",
+          "verified_at": "2026-07-13T17:30:49Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/uniprot-link/settings/rules/18884668",
+          "verified_at": "2026-07-13T17:30:47Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     },
     "berntpopp/vep-link": {
-      "status": "unavailable", "repository": "berntpopp/vep-link",
-      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
-      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/vep-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/vep-link/settings",
+          "verified_at": "2026-07-13T17:30:51Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/vep-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-13T17:30:52Z"
+        },
+        "linked_repository": "berntpopp/vep-link",
+        "name": "ghcr.io/berntpopp/vep-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/vep-link/settings/environments",
+          "verified_at": "2026-07-13T17:30:50Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/vep-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/vep-link/settings",
+          "verified_at": "2026-07-13T17:30:52Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/vep-link/settings/rules/18884692",
+          "verified_at": "2026-07-13T17:30:50Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
     }
-  }
+  },
+  "reviewed_at": "2026-07-13T17:29:55Z",
+  "schema_version": 1
 }

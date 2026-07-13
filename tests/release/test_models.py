@@ -427,3 +427,53 @@ def test_checked_in_json_schema_matches_model(model: type[BaseModel], filename: 
     checked_in = json.loads((DATA_DIR / filename).read_text(encoding="utf-8"))
 
     assert checked_in == model.model_json_schema()
+
+
+@pytest.mark.parametrize(
+    "assignments",
+    [
+        ["GF_ALLOW_INSECURE=true"],
+        ["GF_ALLOWED_HOSTS=localhost,127.0.0.1,::1", "GF_HEALTHCHECK_HOST=localhost"],
+    ],
+)
+def test_release_config_accepts_bounded_smoke_environment(
+    valid_config: dict[str, object], assignments: list[str]
+) -> None:
+    valid_config["smoke_environment"] = assignments
+
+    config = ReleaseConfig.model_validate(valid_config)
+
+    assert list(config.smoke_environment) == assignments
+
+
+def test_release_config_defaults_to_no_smoke_environment(valid_config: dict[str, object]) -> None:
+    assert ReleaseConfig.model_validate(valid_config).smoke_environment == ()
+
+
+@pytest.mark.parametrize(
+    "assignment",
+    [
+        "GF_ALLOW_INSECURE",  # no value separator
+        "gf_allow_insecure=true",  # lowercase key
+        "GF_X=$(id)",  # command substitution
+        "GF_X=a b",  # whitespace splits the docker argument
+        "GF_X=v';touch /tmp/pwn;'",  # shell metacharacters
+        "GF_X=" + "v" * 300,  # unbounded value
+    ],
+)
+def test_release_config_rejects_unsafe_smoke_environment(
+    valid_config: dict[str, object], assignment: str
+) -> None:
+    valid_config["smoke_environment"] = [assignment]
+
+    with pytest.raises(ValidationError):
+        ReleaseConfig.model_validate(valid_config)
+
+
+def test_release_config_rejects_duplicate_smoke_environment_keys(
+    valid_config: dict[str, object],
+) -> None:
+    valid_config["smoke_environment"] = ["GF_X=1", "GF_X=2"]
+
+    with pytest.raises(ValidationError):
+        ReleaseConfig.model_validate(valid_config)

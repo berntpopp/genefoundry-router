@@ -11,6 +11,23 @@ All notable changes to genefoundry-router are documented here.
   The router now rejects candidate baseline drift, requires fleet adoption
   evidence, and documents the canonical outbound HTTP safeguards used by the
   affected backends.
+- Attest the fleet GitHub and GHCR release controls. `scripts/audit_container_controls.py`
+  probes every expected repository's tag ruleset, protected release environment,
+  immutable releases, and public anonymously-pullable GHCR package against the live
+  API and emits `ci/container-controls.json`. A control that cannot be proven emits an
+  `unavailable` row naming the exact repository and control, so the release gate stays
+  closed; absence of evidence is never a pass.
+
+### Fixed
+
+- Apply a repository's declared `smoke_environment` to the release gate containers. The
+  gate ran the built image with `docker run` and no environment, so the router's
+  secure-by-default guards refused to start it (`GF_AUTH_MODE=none` on a non-loopback
+  bind, then an empty `GF_ALLOWED_HOSTS`) and the health/MCP gate could never pass.
+  Backends declare no smoke environment and are unaffected. Assignments are schema-bound
+  to `KEY=VALUE` over a charset that excludes whitespace, quotes, and shell
+  metacharacters, so an entry cannot split the `docker run` argument or reach a shell;
+  the field is public checked-in configuration and must never carry a secret.
 
 ## [0.6.3] - 2026-07-12
 

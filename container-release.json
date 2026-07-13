@@ -30,5 +30,11 @@
   },
   "smoke": {
     "profile": "compose-two-context"
-  }
+  },
+  "smoke_environment": [
+    "GF_AUTH_MODE=none",
+    "GF_ALLOW_INSECURE=true",
+    "GF_ALLOWED_HOSTS=localhost,127.0.0.1",
+    "GF_HEALTHCHECK_HOST=localhost"
+  ]
 }

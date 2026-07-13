@@ -90,11 +90,11 @@ class RecordingRunner:
 
 
 def _required_policy(manifest: ApplicationReleaseManifest, predicate_type: str) -> tuple[str, ...]:
+    # --signer-repo is deliberately absent: `gh attestation verify` rejects it alongside
+    # --signer-workflow, which already binds the signing repository.
     return (
         "--repo",
         manifest.repository,
-        "--signer-repo",
-        "berntpopp/genefoundry-router",
         "--signer-workflow",
         manifest.workflow.standard,
         "--signer-digest",

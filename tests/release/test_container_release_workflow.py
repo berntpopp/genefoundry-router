@@ -325,3 +325,91 @@ def test_finalize_handles_draft_recovery_then_aliases_identical_manifest() -> No
     assert "docker manifest" not in all_text
     assert "docker save" not in all_text
     assert "docker load" not in all_text
+
+
+def test_gate_containers_receive_the_declared_smoke_environment() -> None:
+    """Both gate containers must apply the repo's declared smoke environment.
+
+    The router refuses to bind a non-loopback address without an explicit auth and
+    allowed-hosts configuration, so a gate that runs the image bare can never reach
+    /health or /mcp. The environment is read from the caller's container-release.json
+    rather than hardcoded, because backends declare none.
+    """
+    workflow = _load(REUSABLE)
+
+    for job_name in ("build-gate", "capture"):
+        run_text = _run_text(workflow["jobs"][job_name])
+        assert ".smoke_environment" in run_text, job_name
+        assert "--env" in run_text, job_name
+
+
+def test_publish_addresses_the_oci_layout_by_digest_not_ref_name() -> None:
+    """Publication must copy the exact gated digest out of the layout.
+
+    A fresh buildx `type=oci` export normalizes a bare tag and annotates the manifest
+    `org.opencontainers.image.ref.name: latest`, so addressing the layout by the source
+    alias resolves only on the recovery path and fails on every real build. The digest
+    is identical on both paths and is already asserted against the layout index.
+    """
+    publish = _run_text(_load(REUSABLE)["jobs"]["publish-attest"])
+
+    assert 'oci-layout@$EXPECTED_DIGEST"' in publish
+    assert 'oci-layout:$SOURCE_ALIAS"' not in publish
+
+
+def test_attestation_verify_never_pairs_mutually_exclusive_signer_flags() -> None:
+    """`gh attestation verify` rejects --signer-repo together with --signer-workflow.
+
+    They belong to one mutually exclusive identity group. --signer-workflow is the
+    stronger binding and already names the repository, so it is the one we keep; it
+    must be fully qualified as [host/]<owner>/<repo>/<path>/<to>/<workflow>.
+    """
+    workflow = _load(REUSABLE)
+    text = "\n".join(_run_text(job) for job in workflow["jobs"].values())
+
+    assert "--signer-repo" not in text
+    assert (
+        "--signer-workflow berntpopp/genefoundry-router/.github/workflows/"
+        "_container-release.yml" in text
+    )
+
+
+def test_scanner_identity_is_read_from_trivy_version_not_the_scan_report() -> None:
+    """Scanner evidence must come from `trivy version`, not the scan report.
+
+    The scan report of an OCI archive carries no ArtifactName or Metadata.DB, so reading
+    them yielded null and sealed the literal string "null" as the database timestamp,
+    which is not RFC3339 and failed manifest validation after the image was already
+    published. `version` is the scanner's version, not the scanned artifact's name.
+    """
+    assemble = _run_text(_load(REUSABLE)["jobs"]["assemble-evidence"])
+
+    assert "trivy-version.json" in assemble
+    assert ".ArtifactName" not in assemble
+    assert ".Metadata.DB.UpdatedAt" not in assemble
+
+
+def test_finalize_names_the_repository_without_a_working_tree() -> None:
+    """finalize is privileged and never checks out source, so `gh` cannot infer the repo.
+
+    Without GH_REPO every `gh release` call fails with "not a git repository". The fix is
+    to name the repository, not to hand a privileged job a working tree.
+    """
+    finalize = _load(REUSABLE)["jobs"]["finalize"]
+
+    assert finalize["env"]["GH_REPO"] == "${{ github.repository }}"
+    assert not any("checkout" in str(step.get("uses", "")) for step in _steps(finalize))
+
+
+def test_release_verification_tolerates_asynchronous_attestation() -> None:
+    """GitHub mints the immutable-release attestation asynchronously after publication.
+
+    Verifying immediately races it and fails with "no attestations for tag", after the
+    image is already published and the evidence sealed. Both the recovery probe and the
+    finalize gate must retry rather than fail on the first miss.
+    """
+    workflow = _load(REUSABLE)
+
+    for job_name in ("prepare", "finalize"):
+        run_text = _run_text(workflow["jobs"][job_name])
+        assert "release attestation not yet published; retry" in run_text, job_name
