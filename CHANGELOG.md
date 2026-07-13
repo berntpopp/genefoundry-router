@@ -2,6 +2,28 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.5] - 2026-07-13
+
+### Fixed
+
+- Complete the container release pipeline end to end. The first real release exercised
+  jobs that had never run and exposed six defects, each fixed with a regression test:
+  the gate ran the image with no environment so the router's secure-by-default guards
+  refused to boot it; publication addressed the OCI layout by a ref name that a fresh
+  buildx export never writes; `--signer-repo` and `--signer-workflow` were passed
+  together though `gh` rejects them as mutually exclusive (also in the deploy-time
+  verifier); scanner evidence was read from fields the scan report does not carry,
+  sealing the string `"null"` as a timestamp; the privileged finalize job had no git
+  context for `gh`; and release verification raced GitHub's asynchronous
+  immutable-release attestation.
+
+### Added
+
+- Validate auxiliary sidecar roles and implement the smoke profiles. The compose policy
+  previously permitted exactly one service, which blocked every data-bearing backend
+  that needs an init or database sidecar. Sidecars are now authorized by role, never by
+  name, with the container-hardening invariants enforced on the sidecar too.
+
 ## [0.6.4] - 2026-07-12
 
 ### Security
