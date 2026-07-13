@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
+import subprocess
+import sys
 import tarfile
 from collections.abc import Callable, Iterator
 from pathlib import Path
@@ -21,6 +24,8 @@ from genefoundry_router.release.data import (
     DataRequirement,
     DataVerificationError,
     DownloadPolicy,
+)
+from genefoundry_router.release.data_materialization import (
     download_artifact,
     expanded_tree_identity,
     materialize_data,
@@ -341,6 +346,19 @@ def _write_tar(path: Path, entries: list[tuple[str, bytes, int, bytes | None]]) 
                 archive.addfile(member)
 
 
+def _write_tree_tar(path: Path, root_name: str, files: dict[str, bytes]) -> None:
+    with tarfile.open(path, "w:gz") as archive:
+        directory = tarfile.TarInfo(root_name)
+        directory.type = tarfile.DIRTYPE
+        directory.mode = 0o555
+        archive.addfile(directory)
+        for name, content in files.items():
+            member = tarfile.TarInfo(f"{root_name}/{name}")
+            member.mode = 0o444
+            member.size = len(content)
+            archive.addfile(member, io.BytesIO(content))
+
+
 def _tree_digest(files: dict[str, tuple[bytes, int]]) -> str:
     digest = hashlib.sha256()
     for name, (content, mode) in sorted(files.items()):
@@ -409,6 +427,28 @@ def test_materialize_selects_verified_version_atomically(tmp_path: Path) -> None
     assert (selected / "nested/data.sqlite").read_bytes() == b"sqlite fixture"
     assert (selected / "nested/data.sqlite").stat().st_mode & 0o777 == 0o440
     assert (data_root / "current").resolve() == selected.resolve()
+
+
+def test_materialize_accepts_archive_with_directory_members(tmp_path: Path) -> None:
+    artifact = tmp_path / "bundle.tar.gz"
+    files = {"data/schema.json": (b'{"schema_version":"2.1.0"}', 0o444)}
+    _write_tree_tar(artifact, "data", {"schema.json": b'{"schema_version":"2.1.0"}'})
+    requirement = _archive_requirement(
+        artifact,
+        files,
+        member_count=2,
+    )
+
+    selected = materialize_data(
+        artifact,
+        requirement,
+        tmp_path / "data-root",
+        schema_probe=lambda root: json.loads((root / "data/schema.json").read_text())[
+            "schema_version"
+        ],
+    )
+
+    assert (selected / "data/schema.json").stat().st_mode & 0o777 == 0o444
 
 
 @pytest.mark.parametrize(
@@ -510,12 +550,30 @@ def test_materialize_rejects_missing_previous_known_good(tmp_path: Path) -> None
 def test_materialize_rejects_group_writable_data_root(tmp_path: Path) -> None:
     data_root = tmp_path / "data"
     data_root.mkdir(mode=0o770)
+    data_root.chmod(0o770)
     artifact = tmp_path / "bundle.tar.gz"
     _write_tar(artifact, [("data.txt", b"data", 0o600, None)])
     requirement = _archive_requirement(artifact, {"data.txt": (b"data", 0o600)})
 
     with pytest.raises(DataVerificationError, match="data root"):
         materialize_data(artifact, requirement, data_root, schema_probe=lambda _root: "2.1.0")
+
+
+def test_materialize_bootstrap_self_previous_known_good_only_when_empty(
+    tmp_path: Path,
+) -> None:
+    data_root = tmp_path / "data"
+    first = tmp_path / "first.tar.gz"
+    _write_tar(first, [("data.txt", b"first", 0o600, None)])
+    first_requirement = _archive_requirement(first, {"data.txt": (b"first", 0o600)})
+    materialize_data(first, first_requirement, data_root, schema_probe=lambda _root: "2.1.0")
+
+    second = tmp_path / "second.tar.gz"
+    _write_tar(second, [("data.txt", b"second", 0o600, None)])
+    second_requirement = _archive_requirement(second, {"data.txt": (b"second", 0o600)})
+
+    with pytest.raises(DataVerificationError, match="previous-known-good"):
+        materialize_data(second, second_requirement, data_root, schema_probe=lambda _root: "2.1.0")
 
 
 def test_rollback_selects_retained_previous_known_good(tmp_path: Path) -> None:
@@ -559,6 +617,30 @@ def test_rollback_rejects_mutated_retained_tree(tmp_path: Path) -> None:
         rollback_data(data_root, f"sha256:{requirement.sha256}", "2.0.0", "2.9.9")
 
 
+def test_rollback_rejects_group_writable_data_root(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    artifact = tmp_path / "bundle.tar.gz"
+    _write_tar(artifact, [("data.txt", b"data", 0o600, None)])
+    requirement = _archive_requirement(artifact, {"data.txt": (b"data", 0o600)})
+    materialize_data(artifact, requirement, data_root, schema_probe=lambda _root: "2.1.0")
+    data_root.chmod(0o770)
+
+    with pytest.raises(DataVerificationError, match="data root"):
+        rollback_data(data_root, f"sha256:{requirement.sha256}", "2.0.0", "2.9.9")
+
+
+def test_rollback_rejects_public_identity_sidecar(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    artifact = tmp_path / "bundle.tar.gz"
+    _write_tar(artifact, [("data.txt", b"data", 0o600, None)])
+    requirement = _archive_requirement(artifact, {"data.txt": (b"data", 0o600)})
+    materialize_data(artifact, requirement, data_root, schema_probe=lambda _root: "2.1.0")
+    (data_root / f"{requirement.sha256}.identity.json").chmod(0o644)
+
+    with pytest.raises(DataVerificationError, match="identity"):
+        rollback_data(data_root, f"sha256:{requirement.sha256}", "2.0.0", "2.9.9")
+
+
 def test_rollback_rejects_non_hex_digest(tmp_path: Path) -> None:
     with pytest.raises(DataVerificationError, match="digest"):
         rollback_data(tmp_path, f"sha256:{'z' * 64}", "2.0.0", "2.9.9")
@@ -582,6 +664,31 @@ def test_data_manifest_json_schema_rejects_unknown_fields() -> None:
     document = manifest_fixture(unreviewed_override=True)
 
     assert list(Draft202012Validator(schema).iter_errors(document))
+
+
+def test_data_release_tag_schema_rejects_mutable_and_malformed_tags() -> None:
+    schema = DataReleaseManifest.model_json_schema()
+    validator = Draft202012Validator(schema)
+
+    for release in ("latest", "", "bad/tag", "x" * 129):
+        document = manifest_fixture()
+        dataset = document["dataset"]
+        assert isinstance(dataset, dict)
+        dataset["release"] = release
+        assert list(validator.iter_errors(document)), release
+
+
+def test_data_materialization_imports_without_data_reexport_cycle() -> None:
+    code = "import genefoundry_router.release.data_materialization"
+    result = subprocess.run(  # noqa: S603
+        [sys.executable, "-c", code],
+        check=False,
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).parents[2])},
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def _write_manifest(path: Path, requirement: DataRequirement) -> None:

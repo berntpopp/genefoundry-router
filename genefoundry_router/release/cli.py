@@ -17,6 +17,8 @@ from genefoundry_router.release.content import inspect_oci_layout
 from genefoundry_router.release.data import (
     DataReleaseManifest,
     DataVerificationError,
+)
+from genefoundry_router.release.data_materialization import (
     materialize_data,
     probe_schema_file,
     rollback_data,

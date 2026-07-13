@@ -243,15 +243,6 @@ class DownloadPolicy(StrictModel):
     connect_timeout_seconds: Annotated[StrictInt, Field(ge=1, le=300)] = 30
 
 
-from genefoundry_router.release.data_materialization import (  # noqa: E402
-    download_artifact,
-    expanded_tree_identity,
-    materialize_data,
-    probe_schema_file,
-    rollback_data,
-    verify_compressed_artifact,
-)
-
 __all__ = [
     "ArtifactIdentity",
     "CompatibilityRange",
@@ -264,10 +255,4 @@ __all__ = [
     "SchemaIdentity",
     "TransformationIdentity",
     "UpstreamSource",
-    "download_artifact",
-    "expanded_tree_identity",
-    "materialize_data",
-    "probe_schema_file",
-    "rollback_data",
-    "verify_compressed_artifact",
 ]

@@ -240,11 +240,27 @@ def _tar_stream(path: Path):  # type: ignore[no-untyped-def]
 
 
 def _regular_mode(mode: int) -> int:
-    return mode & 0o444 or 0o400
+    return (mode & 0o444) | 0o400
 
 
 def _directory_mode(mode: int) -> int:
-    return mode & 0o555 or 0o500
+    return (mode & 0o555) | 0o500
+
+
+def _remove_materialization_tree(path: Path) -> None:
+    def make_writable(function, target, exc_info):  # type: ignore[no-untyped-def]
+        del exc_info
+        candidate = Path(target)
+        try:
+            if candidate.is_dir():
+                os.chmod(candidate, 0o700)
+            else:
+                os.chmod(candidate.parent, 0o700)
+        except OSError:
+            pass
+        function(target)
+
+    shutil.rmtree(path, onexc=make_writable)
 
 
 def _extract_archive(archive_path: Path, destination: Path, requirement: DataRequirement) -> None:
@@ -253,6 +269,7 @@ def _extract_archive(archive_path: Path, destination: Path, requirement: DataReq
     count = 0
     expanded = 0
     seen: set[str] = set()
+    directory_modes: dict[Path, int] = {destination: 0o700}
     try:
         with _tar_stream(archive_path) as archive:
             for member in archive:
@@ -267,8 +284,8 @@ def _extract_archive(archive_path: Path, destination: Path, requirement: DataReq
                     raise DataVerificationError("archive member has a set-id mode")
                 target = destination.joinpath(*relative.parts)
                 if member.isdir():
-                    target.mkdir(parents=True, exist_ok=True, mode=_directory_mode(member.mode))
-                    os.chmod(target, _directory_mode(member.mode))
+                    target.mkdir(parents=True, exist_ok=True, mode=0o700)
+                    directory_modes[target] = _directory_mode(member.mode)
                     continue
                 if member.issym() or member.islnk():
                     raise DataVerificationError("archive contains a link")
@@ -277,7 +294,7 @@ def _extract_archive(archive_path: Path, destination: Path, requirement: DataReq
                 source = archive.extractfile(member)
                 if source is None:
                     raise DataVerificationError("archive regular member is unreadable")
-                target.parent.mkdir(parents=True, exist_ok=True)
+                target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
                 with target.open("xb") as output:
                     while chunk := source.read(1024 * 1024):
                         expanded += len(chunk)
@@ -294,6 +311,8 @@ def _extract_archive(archive_path: Path, destination: Path, requirement: DataReq
         key=lambda path: len(path.parts),
         reverse=True,
     )
+    for directory in directories:
+        os.chmod(directory, directory_modes.get(directory, 0o700))
     for directory in (*directories, destination):
         _fsync_directory(directory)
     if count != requirement.member_count:
@@ -394,7 +413,13 @@ def _read_identity(data_root: Path, digest_hex: str) -> dict[str, object]:
     path = _identity_path(data_root, digest_hex)
     try:
         info = path.lstat()
-        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_size > 64 * 1024:
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_nlink != 1
+            or info.st_uid != os.geteuid()
+            or stat.S_IMODE(info.st_mode) & 0o077
+            or info.st_size > 64 * 1024
+        ):
             raise DataVerificationError("retained data identity is invalid")
         loaded = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(loaded, dict):
@@ -442,10 +467,25 @@ def _verify_requirement_identity(data_root: Path, requirement: DataRequirement) 
         requirement.schema_maximum,
     )
     identity = _read_identity(data_root, requirement.sha256)
-    expected = _identity_payload(requirement, expanded_tree_identity(target))
+    observed = expanded_tree_identity(target)
+    if observed[0] != requirement.expanded_tree_sha256:
+        raise DataVerificationError("retained data identity does not match reviewed evidence")
+    expected = _identity_payload(requirement, observed)
     if any(identity.get(key) != value for key, value in expected.items()):
         raise DataVerificationError("retained data identity does not match reviewed evidence")
     return target
+
+
+def _has_other_retained_versions(data_root: Path, digest_hex: str) -> bool:
+    for candidate in data_root.iterdir():
+        if (
+            candidate.name != digest_hex
+            and len(candidate.name) == 64
+            and all(character in "0123456789abcdef" for character in candidate.name)
+            and candidate.is_dir()
+        ):
+            return True
+    return False
 
 
 def _require_previous_known_good(data_root: Path, requirement: DataRequirement) -> None:
@@ -454,7 +494,9 @@ def _require_previous_known_good(data_root: Path, requirement: DataRequirement) 
     assert requirement.schema_minimum is not None
     assert requirement.schema_maximum is not None
     if requirement.previous_known_good_digest == f"sha256:{requirement.sha256}":
-        return
+        if not _has_other_retained_versions(data_root, requirement.sha256):
+            return
+        raise DataVerificationError("previous-known-good target is not retained")
     try:
         _verify_retained_identity(
             data_root,
@@ -498,7 +540,7 @@ def materialize_data(
                 _write_identity(data_root, requirement, observed)
             finally:
                 if staging.exists():
-                    shutil.rmtree(staging)
+                    _remove_materialization_tree(staging)
         _verify_requirement_identity(data_root, requirement)
         if schema_probe(target) != requirement.schema_version:
             raise DataVerificationError("schema probe does not match reviewed schema")
@@ -514,6 +556,7 @@ def rollback_data(data_root: Path, digest: str, schema_minimum: str, schema_maxi
         or any(character not in "0123456789abcdef" for character in digest[7:])
     ):
         raise DataVerificationError("rollback digest is invalid")
+    _ensure_private_data_root(data_root)
     with _exclusive_lock(data_root):
         target = _verify_retained_identity(data_root, digest, schema_minimum, schema_maximum)
         _select(data_root, target)
