@@ -49,6 +49,8 @@ _BEGIN_TO_END = {
     b"-----BEGIN DSA PRIVATE KEY-----": b"-----END DSA PRIVATE KEY-----",
 }
 _BASE64_LINE = re.compile(rb"[A-Za-z0-9+/]+={0,2}\Z")
+_DEK_INFO = re.compile(rb"DEK-Info: [A-Z0-9-]{3,32},[0-9A-F]{16,64}\Z")
+_PKCS7_OID_PREFIX = bytes.fromhex("2a864886f70d0107")
 
 
 def looks_compressed(prefix: bytes) -> bool:
@@ -168,6 +170,15 @@ def never_allow_by_name(path: str) -> bool:
 
 
 def _tlv(data: bytes, offset: int) -> tuple[int, bytes, int] | None:
+    header = _tlv_header(data, offset)
+    if header is None:
+        return None
+    tag, start, length = header
+    end = start + length
+    return (tag, data[start:end], end) if end <= len(data) else None
+
+
+def _tlv_header(data: bytes, offset: int) -> tuple[int, int, int] | None:
     if offset + 2 > len(data):
         return None
     tag, first = data[offset], data[offset + 1]
@@ -183,8 +194,7 @@ def _tlv(data: bytes, offset: int) -> tuple[int, bytes, int] | None:
         length, start = int.from_bytes(raw_length, "big"), offset + 2 + count
         if length < 128:
             return None
-    end = start + length
-    return (tag, data[start:end], end) if end <= len(data) else None
+    return tag, start, length
 
 
 def _children(payload: bytes) -> list[tuple[int, bytes]] | None:
@@ -221,6 +231,44 @@ def der_private_key(data: bytes) -> bool:
     return False
 
 
+def _pkcs12_container(data: bytes) -> bool:
+    """Recognize a PFX header without buffering the complete key store."""
+    outer = _tlv_header(data, 0)
+    if outer is None or outer[0] != 0x30:
+        return False
+    outer_end = outer[1] + outer[2]
+    version = _tlv(data, outer[1])
+    if version is None or version[0] != 0x02 or version[1] != b"\x03":
+        return False
+    content_info = _tlv_header(data, version[2])
+    if content_info is None or content_info[0] != 0x30:
+        return False
+    content_end = content_info[1] + content_info[2]
+    if content_end > outer_end:
+        return False
+    content_type = _tlv(data, content_info[1])
+    return bool(
+        content_type
+        and content_type[0] == 0x06
+        and content_type[2] <= content_end
+        and content_type[1].startswith(_PKCS7_OID_PREFIX)
+    )
+
+
+def _key_store_magic(data: bytes) -> bool:
+    return (
+        len(data) >= 12
+        and data.startswith(b"\xfe\xed\xfe\xed")
+        and int.from_bytes(data[4:8], "big") in {1, 2}
+    ) or _pkcs12_container(data)
+
+
+def _archive_magic(data: bytes) -> bool:
+    return data.startswith((b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")) or (
+        len(data) >= 263 and data[257:263] in {b"ustar\0", b"ustar "}
+    )
+
+
 def _raw_forbidden(prefix: bytes) -> bool:
     stripped = prefix.lstrip(b"\xef\xbb\xbf \t\r\n")
     return (
@@ -229,6 +277,8 @@ def _raw_forbidden(prefix: bytes) -> bool:
         or prefix.startswith(b"BCF\x02")
         or stripped.startswith(b"##fileformat=VCF")
         or der_private_key(prefix)
+        or _key_store_magic(prefix)
+        or _archive_magic(prefix)
     )
 
 
@@ -282,6 +332,9 @@ class PrivatePemScanner:
         self._body_lines = 0
         self._body_invalid = False
         self._padded = False
+        self._pem_header = False
+        self._proc_type = False
+        self._dek_info = False
         self.found = False
 
     def _reset(self) -> None:
@@ -290,6 +343,9 @@ class PrivatePemScanner:
         self._body_lines = 0
         self._body_invalid = False
         self._padded = False
+        self._pem_header = False
+        self._proc_type = False
+        self._dek_info = False
 
     def _line(self, raw: bytes) -> None:
         line = raw.removesuffix(b"\r")
@@ -305,6 +361,18 @@ class PrivatePemScanner:
             self._reset()
             self._end = _BEGIN_TO_END[line]
             return
+        if self._body_lines == 0 and not self._body_invalid:
+            if line == b"Proc-Type: 4,ENCRYPTED" and not self._proc_type:
+                self._pem_header = True
+                self._proc_type = True
+                return
+            if _DEK_INFO.fullmatch(line) and self._proc_type and not self._dek_info:
+                self._dek_info = True
+                return
+            if not line and self._pem_header:
+                self._body_invalid = not (self._proc_type and self._dek_info)
+                self._pem_header = False
+                return
         valid = bool(line and _BASE64_LINE.fullmatch(line) and not self._padded)
         self._body_invalid |= not valid
         if valid:

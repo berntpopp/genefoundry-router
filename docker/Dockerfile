@@ -28,7 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
     # /build/.venv (which contains no pip), so the interpreter-level pip is pure
     # attack surface. Removing it drops pip-only CVEs (e.g. CVE-2026-6357) that
     # the container-scan gate flags on a package the runtime never uses.
-    && rm -rf /usr/local/lib/python3.14/site-packages/pip \
+    && rm -rf /usr/local/lib/python3.14/ensurepip \
+              /usr/local/lib/python3.14/site-packages/pip \
               /usr/local/lib/python3.14/site-packages/pip-*.dist-info \
               /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.14 \
     # Persistent-store mount point for FASTMCP_HOME (OAuthProxy client/token store).

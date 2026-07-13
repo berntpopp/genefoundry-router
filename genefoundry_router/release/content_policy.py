@@ -5,6 +5,8 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import os
+import stat
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
@@ -58,11 +60,36 @@ def reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 def json_bytes(path: Path, *, limit: int = 16 * 1024 * 1024) -> tuple[object, bytes]:
     try:
-        if path.is_symlink() or not path.is_file():
-            raise ContentPolicyError(f"missing regular file: {path.name}")
-        if path.stat().st_size > limit:
+        descriptor = os.open(
+            path,
+            os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+        )
+        with os.fdopen(descriptor, "rb") as handle:
+            before = os.fstat(handle.fileno())
+            if not stat.S_ISREG(before.st_mode):
+                raise ContentPolicyError(f"missing regular file: {path.name}")
+            if before.st_nlink != 1:
+                raise ContentPolicyError("JSON evidence hardlink is prohibited")
+            if before.st_size > limit:
+                raise ContentPolicyError(f"JSON document exceeds {limit} bytes")
+            raw = handle.read(limit + 1)
+            after = os.fstat(handle.fileno())
+        if len(raw) > limit:
             raise ContentPolicyError(f"JSON document exceeds {limit} bytes")
-        raw = path.read_bytes()
+        if len(raw) != before.st_size or (
+            before.st_dev,
+            before.st_ino,
+            before.st_size,
+            before.st_mtime_ns,
+            before.st_ctime_ns,
+        ) != (
+            after.st_dev,
+            after.st_ino,
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        ):
+            raise ContentPolicyError("JSON evidence changed while being read")
         value = json.loads(raw, object_pairs_hook=reject_duplicates)
     except ContentPolicyError:
         raise
@@ -79,11 +106,13 @@ def canonical_digest(value: object) -> str:
 @dataclass(frozen=True)
 class ContentPolicy:
     _NUMERIC_FIELDS: ClassVar[tuple[str, ...]] = (
+        "max_layers",
         "max_entries",
         "max_file_bytes",
         "max_total_bytes",
         "max_blob_bytes",
         "max_uncompressed_layer_bytes",
+        "max_uncompressed_image_bytes",
         "magic_scan_bytes",
         "max_path_bytes",
         "max_diagnostic_bytes",
@@ -93,11 +122,13 @@ class ContentPolicy:
         "max_diagnostics",
     )
     _HARD_MAXIMA: ClassVar[dict[str, int]] = {
+        "max_layers": 256,
         "max_entries": 200_000,
         "max_file_bytes": 64 * 1024 * 1024,
         "max_total_bytes": 1024 * 1024 * 1024,
         "max_blob_bytes": 1024 * 1024 * 1024,
         "max_uncompressed_layer_bytes": 1024 * 1024 * 1024,
+        "max_uncompressed_image_bytes": 2 * 1024 * 1024 * 1024,
         "magic_scan_bytes": 64 * 1024,
         "max_path_bytes": 4096,
         "max_diagnostic_bytes": 64 * 1024,
@@ -107,11 +138,13 @@ class ContentPolicy:
         "max_diagnostics": 256,
     }
     version: int
+    max_layers: int
     max_entries: int
     max_file_bytes: int
     max_total_bytes: int
     max_blob_bytes: int
     max_uncompressed_layer_bytes: int
+    max_uncompressed_image_bytes: int
     magic_scan_bytes: int
     max_path_bytes: int
     max_diagnostic_bytes: int
@@ -136,6 +169,7 @@ class ContentPolicy:
         if not (
             self.max_file_bytes <= self.max_total_bytes
             and self.magic_scan_bytes <= self.max_file_bytes
+            and self.max_uncompressed_layer_bytes <= self.max_uncompressed_image_bytes
             and self.max_diagnostic_bytes >= 4096
             and self.max_allowlist_entries <= self.max_entries
             and self.max_allowlist_file_bytes <= self.max_file_bytes
@@ -231,7 +265,13 @@ class ContentPolicy:
             raise ContentPolicyError("invalid content policy") from exc
 
     def with_limits(self, **limits: int) -> ContentPolicy:
-        permitted = {"max_entries", "max_file_bytes", "max_total_bytes"}
+        permitted = {
+            "max_layers",
+            "max_entries",
+            "max_file_bytes",
+            "max_total_bytes",
+            "max_uncompressed_image_bytes",
+        }
         if not limits.keys() <= permitted or any(
             type(value) is not int or value <= 0 for value in limits.values()
         ):
@@ -241,11 +281,15 @@ class ContentPolicy:
         entries = limits.get("max_entries", self.max_entries)
         total_bytes = limits.get("max_total_bytes", self.max_total_bytes)
         file_bytes = min(limits.get("max_file_bytes", self.max_file_bytes), total_bytes)
+        image_bytes = limits.get("max_uncompressed_image_bytes", self.max_uncompressed_image_bytes)
         return dataclasses.replace(
             self,
+            max_layers=limits.get("max_layers", self.max_layers),
             max_entries=entries,
             max_file_bytes=file_bytes,
             max_total_bytes=total_bytes,
+            max_uncompressed_layer_bytes=min(self.max_uncompressed_layer_bytes, image_bytes),
+            max_uncompressed_image_bytes=image_bytes,
             magic_scan_bytes=min(self.magic_scan_bytes, file_bytes),
             max_allowlist_entries=min(self.max_allowlist_entries, entries),
             max_allowlist_file_bytes=min(self.max_allowlist_file_bytes, file_bytes),

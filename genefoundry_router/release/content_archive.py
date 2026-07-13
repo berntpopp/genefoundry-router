@@ -328,6 +328,19 @@ def uncompressed_layer_digest(
     path: Path, compression: str, limit: int, metadata_limit: int = 8192
 ) -> str:
     """Hash the complete uncompressed layer stream under a hard byte ceiling."""
+    digest, _ = uncompressed_layer_evidence(path, compression, limit, metadata_limit)
+    return digest
+
+
+def uncompressed_layer_evidence(
+    path: Path,
+    compression: str,
+    limit: int,
+    metadata_limit: int = 8192,
+    *,
+    limit_error: str = "uncompressed layer byte limit exceeded",
+) -> tuple[str, int]:
+    """Hash and count the complete structurally valid uncompressed layer stream."""
     if path.is_symlink() or not path.is_file():
         raise _error("layer blob must be a regular file")
     try:
@@ -351,7 +364,7 @@ def uncompressed_layer_digest(
             while chunk := stream.read(64 * 1024):
                 total += len(chunk)
                 if total > limit:
-                    raise _error("uncompressed layer byte limit exceeded")
+                    raise _error(limit_error)
                 hasher.update(chunk)
                 structure.feed(chunk)
         structure.finish()
@@ -363,4 +376,4 @@ def uncompressed_layer_digest(
         if isinstance(exc, (OSError, EOFError, gzip.BadGzipFile, zlib.error)):
             raise _error("invalid compressed layer stream") from exc
         raise
-    return f"sha256:{hasher.hexdigest()}"
+    return f"sha256:{hasher.hexdigest()}", total

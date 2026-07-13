@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import fnmatch
-import hashlib
 import json
 import os
 import re
@@ -13,14 +12,17 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from genefoundry_router.release.content_archive import (
+    LayerResult,
     inspect_layer,
     uncompressed_layer_digest,
+    uncompressed_layer_evidence,
 )
 from genefoundry_router.release.content_config import (
     add_annotation_findings,
     inspect_config,
 )
 from genefoundry_router.release.content_diagnostics import FindingBuffer
+from genefoundry_router.release.content_evidence import BlobSnapshotStore
 from genefoundry_router.release.content_policy import (
     ContentPolicy,
     ContentPolicyError,
@@ -158,6 +160,7 @@ def _descriptor_blob(
     layout: Path,
     descriptor: object,
     media_types: set[str],
+    snapshots: BlobSnapshotStore,
     *,
     platform: bool = False,
     max_size: int,
@@ -190,25 +193,7 @@ def _descriptor_blob(
     match = _SHA256.fullmatch(digest)
     if match is None:
         raise ContentPolicyError("only sha256 OCI descriptors are supported")
-    blob = layout / "blobs" / "sha256" / match.group(1)
-    root = layout.resolve()
-    if any(parent.is_symlink() for parent in (layout / "blobs", layout / "blobs" / "sha256")):
-        raise ContentPolicyError("OCI blob directory may not be symlinked")
-    if not blob.resolve().is_relative_to(root):
-        raise ContentPolicyError("OCI blob escapes layout root")
-    if blob.is_symlink() or not blob.is_file():
-        raise ContentPolicyError("missing OCI blob")
-    actual_size = blob.stat().st_size
-    if actual_size != size:
-        raise ContentPolicyError("OCI blob size mismatch")
-    if actual_size > max_size:
-        raise ContentPolicyError("OCI blob byte limit exceeded")
-    hasher = hashlib.sha256()
-    with blob.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            hasher.update(chunk)
-    if hasher.hexdigest() != match.group(1):
-        raise ContentPolicyError("OCI blob digest mismatch")
+    blob = snapshots.snapshot(layout, match.group(1), size, max_size)
     return descriptor, blob
 
 
@@ -243,13 +228,32 @@ def inspect_oci_layout(
         != "application/vnd.oci.image.index.v1+json"
     ):
         raise ContentPolicyError("invalid OCI index")
+    with BlobSnapshotStore() as snapshots:
+        return _inspect_verified_index(
+            layout, index, selected, allowed, allowlist_digest, snapshots
+        )
+
+
+def _inspect_verified_index(
+    layout: Path,
+    index: dict[str, Any],
+    selected: ContentPolicy,
+    allowed: frozenset[str],
+    allowlist_digest: str,
+    snapshots: BlobSnapshotStore,
+) -> ContentReport:
     manifests = index.get("manifests")
     if not isinstance(manifests, list) or len(manifests) != 1:
         raise ContentPolicyError("OCI index must contain exactly one manifest")
     config_findings = FindingBuffer(selected.max_diagnostics, selected.max_diagnostic_bytes)
     add_annotation_findings(index.get("annotations"), "index", config_findings)
     manifest_desc, manifest_path = _descriptor_blob(
-        layout, manifests[0], {_OCI_MANIFEST}, platform=True, max_size=16 * 1024 * 1024
+        layout,
+        manifests[0],
+        {_OCI_MANIFEST},
+        snapshots,
+        platform=True,
+        max_size=16 * 1024 * 1024,
     )
     add_annotation_findings(manifest_desc.get("annotations"), "index.manifests[0]", config_findings)
     if manifest_desc.get("platform") != {"architecture": "amd64", "os": "linux"}:
@@ -264,7 +268,11 @@ def inspect_oci_layout(
         raise ContentPolicyError("invalid OCI manifest")
     add_annotation_findings(manifest.get("annotations"), "manifest", config_findings)
     config_desc, config_path = _descriptor_blob(
-        layout, manifest.get("config"), {_OCI_CONFIG}, max_size=16 * 1024 * 1024
+        layout,
+        manifest.get("config"),
+        {_OCI_CONFIG},
+        snapshots,
+        max_size=16 * 1024 * 1024,
     )
     add_annotation_findings(config_desc.get("annotations"), "manifest.config", config_findings)
     del config_desc
@@ -282,6 +290,8 @@ def inspect_oci_layout(
     layers = manifest.get("layers")
     if not isinstance(layers, list) or not layers:
         raise ContentPolicyError("OCI manifest must contain layers")
+    if len(layers) > selected.max_layers:
+        raise ContentPolicyError("OCI layer count limit exceeded")
     rootfs = config.get("rootfs")
     if (
         not isinstance(rootfs, dict)
@@ -301,26 +311,50 @@ def inspect_oci_layout(
     total_bytes = 0
     allowlisted_entries = 0
     allowlisted_bytes = 0
+    uncompressed_image_bytes = 0
+    layer_cache: dict[tuple[str, str], tuple[str, int, LayerResult]] = {}
     diagnostics_truncated = config_truncated
-    for index, descriptor in enumerate(layers):
+    for layer_index, descriptor in enumerate(layers):
         layer_desc, layer_path = _descriptor_blob(
             layout,
             descriptor,
             set(selected.layer_media_types),
+            snapshots,
             max_size=selected.max_blob_bytes,
         )
         add_annotation_findings(layer_desc.get("annotations"), "manifest.layers", config_findings)
         _validate_layer_encoding(layer_desc, layer_path)
         compression = "gzip" if layer_desc["mediaType"].endswith("+gzip") else "plain"
-        actual_diff_id = uncompressed_layer_digest(
-            layer_path,
-            compression,
-            selected.max_uncompressed_layer_bytes,
-            selected.max_path_bytes + 1024,
-        )
-        if actual_diff_id != rootfs["diff_ids"][index]:
-            raise ContentPolicyError(f"layer {index} diff_id does not match config rootfs")
-        layer = inspect_layer(layer_path, selected, allowed, compression)
+        cache_key = (layer_desc["digest"], compression)
+        cached = layer_cache.get(cache_key)
+        if cached is None:
+            remaining = selected.max_uncompressed_image_bytes - uncompressed_image_bytes
+            if remaining <= 0:
+                raise ContentPolicyError("uncompressed image byte limit exceeded")
+            actual_diff_id, stream_bytes = uncompressed_layer_evidence(
+                layer_path,
+                compression,
+                min(selected.max_uncompressed_layer_bytes, remaining),
+                selected.max_path_bytes + 1024,
+                limit_error=(
+                    "uncompressed image byte limit exceeded"
+                    if remaining < selected.max_uncompressed_layer_bytes
+                    else "uncompressed layer byte limit exceeded"
+                ),
+            )
+            if actual_diff_id != rootfs["diff_ids"][layer_index]:
+                raise ContentPolicyError(
+                    f"layer {layer_index} diff_id does not match config rootfs"
+                )
+            layer = inspect_layer(layer_path, selected, allowed, compression)
+            layer_cache[cache_key] = (actual_diff_id, stream_bytes, layer)
+        else:
+            actual_diff_id, stream_bytes, layer = cached
+        if actual_diff_id != rootfs["diff_ids"][layer_index]:
+            raise ContentPolicyError(f"layer {layer_index} diff_id does not match config rootfs")
+        uncompressed_image_bytes += stream_bytes
+        if uncompressed_image_bytes > selected.max_uncompressed_image_bytes:
+            raise ContentPolicyError("uncompressed image byte limit exceeded")
         diagnostics_truncated |= layer.diagnostics_truncated
         total_entries += layer.entries
         total_bytes += layer.total_bytes

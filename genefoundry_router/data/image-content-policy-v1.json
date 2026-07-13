@@ -1,10 +1,12 @@
 {
   "version": 1,
+  "max_layers": 256,
   "max_entries": 200000,
   "max_file_bytes": 67108864,
   "max_total_bytes": 1073741824,
   "max_blob_bytes": 1073741824,
   "max_uncompressed_layer_bytes": 1073741824,
+  "max_uncompressed_image_bytes": 2147483648,
   "magic_scan_bytes": 65536,
   "max_path_bytes": 4096,
   "max_diagnostic_bytes": 65536,
