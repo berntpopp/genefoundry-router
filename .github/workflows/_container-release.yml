@@ -333,9 +333,16 @@ jobs:
           set -euo pipefail
           service="$(jq -er '.service.name' container-release.json)"
           port="$(jq -er '.service.container_port' container-release.json)"
+          # Schema-validated KEY=VALUE assignments; the charset forbids whitespace and
+          # shell metacharacters, so an entry cannot split the argument or reach a shell.
+          smoke_env=()
+          while IFS= read -r assignment; do
+            smoke_env+=(--env "$assignment")
+          done < <(jq -r '.smoke_environment // [] | .[]' container-release.json)
           container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
             --security-opt no-new-privileges:true --pids-limit 256 \
-            --tmpfs /tmp:rw,noexec,nosuid,size=64m -p "127.0.0.1:18000:$port" "$CI_IMAGE")"
+            --tmpfs /tmp:rw,noexec,nosuid,size=64m "${smoke_env[@]}" \
+            -p "127.0.0.1:18000:$port" "$CI_IMAGE")"
           trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
           for _ in $(seq 1 90); do curl -fsS http://127.0.0.1:18000/health && break; sleep 1; done
           curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \
@@ -606,6 +613,12 @@ jobs:
           uv sync --project .container-release-tools --group dev --frozen
           docker pull "$IMAGE@${PUBLISHED_DIGEST}"
           port="$(jq -er '.service.container_port' container-release.json)"
+          # Schema-validated KEY=VALUE assignments; the charset forbids whitespace and
+          # shell metacharacters, so an entry cannot split the argument or reach a shell.
+          smoke_env=()
+          while IFS= read -r assignment; do
+            smoke_env+=(--env "$assignment")
+          done < <(jq -r '.smoke_environment // [] | .[]' container-release.json)
           mkdir -p "$RUNNER_TEMP/capture"
           capture_tools() {
             local label="$1"
@@ -615,7 +628,7 @@ jobs:
             local container_id
             container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
               --security-opt no-new-privileges:true \
-              --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+              --tmpfs /tmp:rw,noexec,nosuid,size=64m "${smoke_env[@]}" \
               -p "127.0.0.1:${host_port}:$port" "$IMAGE@$PUBLISHED_DIGEST")"
             trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' RETURN
             for _ in $(seq 1 90); do

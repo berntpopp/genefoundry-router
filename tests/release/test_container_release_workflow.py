@@ -325,3 +325,19 @@ def test_finalize_handles_draft_recovery_then_aliases_identical_manifest() -> No
     assert "docker manifest" not in all_text
     assert "docker save" not in all_text
     assert "docker load" not in all_text
+
+
+def test_gate_containers_receive_the_declared_smoke_environment() -> None:
+    """Both gate containers must apply the repo's declared smoke environment.
+
+    The router refuses to bind a non-loopback address without an explicit auth and
+    allowed-hosts configuration, so a gate that runs the image bare can never reach
+    /health or /mcp. The environment is read from the caller's container-release.json
+    rather than hardcoded, because backends declare none.
+    """
+    workflow = _load(REUSABLE)
+
+    for job_name in ("build-gate", "capture"):
+        run_text = _run_text(workflow["jobs"][job_name])
+        assert ".smoke_environment" in run_text, job_name
+        assert "--env" in run_text, job_name

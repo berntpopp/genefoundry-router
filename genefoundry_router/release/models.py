@@ -333,6 +333,16 @@ class SmokeConfig(StrictModel):
     ] = "compose"
 
 
+# Each assignment becomes one `docker run --env KEY=VALUE` argument on the gate
+# container. The value charset excludes whitespace, quotes, and shell metacharacters
+# so an assignment can never split the argument or reach a shell. This is checked-in
+# public configuration and must never carry a secret.
+EnvAssignment = Annotated[
+    str,
+    Field(pattern=r"^[A-Z][A-Z0-9_]{0,63}=[A-Za-z0-9_.,:/@+-]{1,255}$"),
+]
+
+
 class ReleaseConfig(StrictModel):
     """Per-repository facts consumed by the central container release workflow."""
 
@@ -347,7 +357,15 @@ class ReleaseConfig(StrictModel):
     runtime_cache: RuntimeCacheConfig | None = None
     definitions: DefinitionsConfig
     smoke: SmokeConfig = Field(default_factory=SmokeConfig)
+    smoke_environment: tuple[EnvAssignment, ...] = ()
     preparation: Literal["docker/ci-prepare-smoke.sh"] | None = None
+
+    @model_validator(mode="after")
+    def _smoke_environment_keys_are_unique(self) -> ReleaseConfig:
+        keys = [assignment.split("=", 1)[0] for assignment in self.smoke_environment]
+        if len(keys) != len(set(keys)):
+            raise ValueError("smoke_environment must not assign the same key twice")
+        return self
 
     @model_validator(mode="after")
     def _data_bound_has_exact_identity(self) -> ReleaseConfig:

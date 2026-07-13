@@ -18,6 +18,17 @@ All notable changes to genefoundry-router are documented here.
   `unavailable` row naming the exact repository and control, so the release gate stays
   closed; absence of evidence is never a pass.
 
+### Fixed
+
+- Apply a repository's declared `smoke_environment` to the release gate containers. The
+  gate ran the built image with `docker run` and no environment, so the router's
+  secure-by-default guards refused to start it (`GF_AUTH_MODE=none` on a non-loopback
+  bind, then an empty `GF_ALLOWED_HOSTS`) and the health/MCP gate could never pass.
+  Backends declare no smoke environment and are unaffected. Assignments are schema-bound
+  to `KEY=VALUE` over a charset that excludes whitespace, quotes, and shell
+  metacharacters, so an entry cannot split the `docker run` argument or reach a shell;
+  the field is public checked-in configuration and must never carry a secret.
+
 ## [0.6.3] - 2026-07-12
 
 ### Build
