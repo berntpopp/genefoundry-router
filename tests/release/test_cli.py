@@ -191,8 +191,8 @@ def test_validate_compose_success_wires_render_and_service(
     rendered.write_text('{"services":{"application":{}}}', encoding="utf-8")
     captured: list[object] = []
 
-    def fake_validate_compose(value: object, service: str) -> tuple[()]:
-        captured.extend((value, service))
+    def fake_validate_compose(value: object, service: str, policy: object = None) -> tuple[()]:
+        captured.extend((value, service, policy))
         return ()
 
     monkeypatch.setattr(release_cli, "validate_compose", fake_validate_compose)
@@ -202,7 +202,7 @@ def test_validate_compose_success_wires_render_and_service(
     )
 
     assert result.exit_code == ReleaseExitCode.SUCCESS
-    assert captured == [{"services": {"application": {}}}, "application"]
+    assert captured == [{"services": {"application": {}}}, "application", None]
     assert json.loads(result.stdout)["violations"] == []
 
 

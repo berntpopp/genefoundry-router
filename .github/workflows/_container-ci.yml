@@ -18,6 +18,7 @@ jobs:
       OCI_LAYOUT: image-oci-layout
       COMPOSE_OVERRIDE: compose.container-ci.yml
       COMPOSE_PROJECT_NAME: genefoundry-container-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      SMOKE_EFFECTIVE_ENV: ${{ runner.temp }}/smoke-effective.env
     steps:
       - name: Verify called-workflow identity
         id: workflow-identity
@@ -153,7 +154,38 @@ jobs:
           "$RUNNER_TEMP/skopeo" --insecure-policy copy \
             "oci-archive:$OCI_ARCHIVE" "docker-daemon:$CI_IMAGE"
 
+      - name: Prepare declared smoke fixtures
+        id: prepare
+        shell: bash
+        env:
+          SMOKE_FIXTURE_DIR: ${{ runner.temp }}/smoke-fixtures
+          SMOKE_ENV_FILE: ${{ runner.temp }}/smoke.env
+        run: |
+          set -euo pipefail
+          : > "$SMOKE_ENV_FILE"
+          mkdir -p "$SMOKE_FIXTURE_DIR"
+          preparation="$(jq -r '.preparation // empty' container-release.json)"
+          if [ -z "$preparation" ]; then
+            echo "no preparation hook declared"
+            exit 0
+          fi
+          # The model already constrains `preparation` to this one reviewable path; assert
+          # it here too so a config schema regression can never widen it to arbitrary shell.
+          test "$preparation" = "docker/ci-prepare-smoke.sh"
+          test -f "$preparation" && test ! -L "$preparation"
+          # Runs with `contents: read` only: no secrets, no OIDC, no package write.
+          env -i PATH="$PATH" HOME="$HOME" \
+            GF_SMOKE_FIXTURE_DIR="$SMOKE_FIXTURE_DIR" \
+            GF_SMOKE_ENV_FILE="$SMOKE_ENV_FILE" \
+            bash "$preparation"
+          # Later steps consume the fixtures but never re-execute the script.
+          find "$SMOKE_FIXTURE_DIR" -type f -print0 | sort -z \
+            | xargs -0 -r sha256sum > "$RUNNER_TEMP/fixture-manifest.sha256"
+          cat "$RUNNER_TEMP/fixture-manifest.sha256"
+
       - name: Validate effective production Compose and generate no-build smoke stack
+        env:
+          SMOKE_ENV_FILE: ${{ runner.temp }}/smoke.env
         run: |
           set -euo pipefail
           service="$(jq -er '.service.name' container-release.json)"
@@ -168,6 +200,8 @@ jobs:
           [[ "$image_template" =~ ^\$\{([A-Z][A-Z0-9_]*):\?[^\}]+\}$ ]]
           image_variable="${BASH_REMATCH[1]}"
           production_image="ghcr.io/${GITHUB_REPOSITORY,,}@sha256:$(printf 'a%.0s' {1..64})"
+          # The production render proves the deployed contract, including every declared
+          # auxiliary service; the prepared fixture values belong only to the smoke stack.
           environment_args=()
           while read -r variable required _; do
             if [ "$required" = true ]; then
@@ -180,61 +214,29 @@ jobs:
             "${compose_args[@]}" config --format json > "$RUNNER_TEMP/compose-production.json"
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py validate-compose \
-            --rendered "$RUNNER_TEMP/compose-production.json" --service "$service"
-          python - <<'PY'
-          import json
-          import re
-          from pathlib import Path
-
-          config = json.loads(Path("container-release.json").read_text())
-          service = config["service"]["name"]
-          port = config["service"]["container_port"]
-          servers = Path("servers.yaml")
-          keys = sorted(
-              set(re.findall(r"url_env:\s*([A-Z0-9_]+)", servers.read_text()))
-              if servers.is_file()
-              else set()
-          )
-          environment = "\n".join(f"      {key}: http://127.0.0.1:9/mcp" for key in keys)
-          override = f"""services:
-            {service}:
-              build: !reset null
-              image: {__import__('os').environ['CI_IMAGE']}
-              pull_policy: never
-              env_file: !reset []
-              environment:
-                GF_AUTH_MODE: none
-                GF_ALLOW_INSECURE: "true"
-                GF_ALLOWED_HOSTS: localhost,127.0.0.1
-                GF_HEALTHCHECK_HOST: localhost
-                GF_DRIFT_MODE: warn
-          {environment}
-              ports: !override
-                - 127.0.0.1:18000:{port}
-              read_only: true
-              tmpfs: !override
-                - /tmp:rw,noexec,nosuid,size=64m,mode=1777
-              cap_drop: !override
-                - ALL
-              security_opt: !override
-                - no-new-privileges:true
-              init: true
-              deploy:
-                resources:
-                  limits:
-                    cpus: "1.0"
-                    memory: 1G
-                    pids: 256
-              logging:
-                driver: json-file
-                options:
-                  max-size: 10m
-                  max-file: "2"
-          """
-          Path(__import__('os').environ["COMPOSE_OVERRIDE"]).write_text(override)
-          PY
+            --rendered "$RUNNER_TEMP/compose-production.json" \
+            --service "$service" --config container-release.json
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py render-smoke-override \
+            --config container-release.json --image "$CI_IMAGE" --host-port 18000 \
+            --env-file "$SMOKE_ENV_FILE" --servers servers.yaml --out "$COMPOSE_OVERRIDE"
+          # The smoke stack resolves required base-compose variables from the prepared
+          # fixture first, then from an inert placeholder.
+          smoke_env_args=()
+          while IFS='=' read -r key value; do
+            [ -n "$key" ] && smoke_env_args+=("$key=$value")
+          done < "$SMOKE_ENV_FILE"
+          while read -r variable required _; do
+            if [ "$required" = true ] && ! grep -q "^$variable=" "$SMOKE_ENV_FILE"; then
+              value=example.test
+              if [ "$variable" = "$image_variable" ]; then value="$CI_IMAGE"; fi
+              smoke_env_args+=("$variable=$value")
+            fi
+          done < <(docker compose "${compose_args[@]}" config --variables | tail -n +2)
+          printf '%s\n' "${smoke_env_args[@]}" > "$SMOKE_EFFECTIVE_ENV"
           base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
-          docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+          docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+            -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
             config --format json > "$RUNNER_TEMP/compose.json"
 
       - name: Start exact local image without rebuilding
@@ -243,7 +245,14 @@ jobs:
           service="$(jq -er '.service.name' container-release.json)"
           timeout="$(jq -er '.service.startup_timeout_seconds' container-release.json)"
           base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
-          docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+          # Re-verify every prepared fixture immediately before it is mounted.
+          if [ -s "$RUNNER_TEMP/fixture-manifest.sha256" ]; then
+            sha256sum -c "$RUNNER_TEMP/fixture-manifest.sha256"
+          fi
+          # Compose starts every declared sidecar through the application's depends_on graph
+          # and honours service_completed_successfully / service_healthy before the app runs.
+          docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+            -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
             up --detach --no-build --wait --wait-timeout "$timeout" "$service"
 
       - name: Probe health and MCP initialize/list-tools conformance
@@ -279,7 +288,8 @@ jobs:
           set -euo pipefail
           service="$(jq -er '.service.name' container-release.json)"
           base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
-          container_id="$(docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" ps -q "$service")"
+          container_id="$(docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+            -f "$base_compose" -f "$COMPOSE_OVERRIDE" ps -q "$service")"
           test -n "$container_id"
           docker inspect "$container_id" > "$RUNNER_TEMP/docker-inspect.json"
           jq -e '.[0].Config.User != "" and .[0].Config.User != "0" and .[0].Config.User != "root"' "$RUNNER_TEMP/docker-inspect.json"
@@ -344,8 +354,9 @@ jobs:
         if: ${{ always() }}
         run: |
           base_compose="$(jq -er '.service.compose_files[0]' container-release.json 2>/dev/null || true)"
-          if [ -n "$base_compose" ] && [ -f "$COMPOSE_OVERRIDE" ]; then
-            docker compose -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
+          if [ -n "$base_compose" ] && [ -f "$COMPOSE_OVERRIDE" ] && [ -f "$SMOKE_EFFECTIVE_ENV" ]; then
+            docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
+              -f "$base_compose" -f "$COMPOSE_OVERRIDE" \
               down --volumes --remove-orphans || true
           fi
           docker image rm "$CI_IMAGE" || true
@@ -361,6 +372,7 @@ jobs:
             ${{ runner.temp }}/content-report.json
             ${{ runner.temp }}/compose.json
             ${{ runner.temp }}/compose-production.json
+            ${{ runner.temp }}/fixture-manifest.sha256
             ${{ runner.temp }}/docker-inspect.json
             ${{ runner.temp }}/health.json
             ${{ runner.temp }}/mcp-initialize.out

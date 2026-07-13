@@ -198,14 +198,15 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
     assert "validate-compose" in run_text
     assert ".service.compose_files[]" in run_text
     assert ".service.name" in run_text
-    assert "container_port" in run_text
     assert "compose-production.json" in run_text
     assert "image_template" in run_text
     assert "--no-interpolate" in run_text
     assert "config --variables" in run_text
-    assert "tmpfs: !override" in run_text
-    assert "cap_drop: !override" in run_text
-    assert "security_opt: !override" in run_text
+    # The smoke override (loopback port pin, tmpfs/cap_drop/security_opt !override, and the
+    # declared sidecars) is rendered by `render-smoke-override`, whose output is asserted
+    # against a real `docker compose config` in tests/release/test_smoke_profiles.py.
+    assert "render-smoke-override" in run_text
+    assert "--host-port 18000" in run_text
     assert "--no-build" in run_text
     assert ".service.health_path" in run_text
     assert ".service.mcp_path" in run_text
@@ -241,6 +242,41 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
     teardown = next(step for step in steps if step.get("id") == "teardown")
     assert teardown["if"] == "${{ always() }}"
     assert "docker compose" in teardown["run"] and " down " in teardown["run"]
+
+
+def test_smoke_profile_and_declared_sidecars_drive_the_stack() -> None:
+    """The declared profile must actually be read, not merely named in a step title."""
+    workflow = _load(REUSABLE)
+    run_text = _run_text(workflow)
+
+    # The smoke stack is rendered from the validated configuration, which is what
+    # carries `.smoke.profile` and `.service.auxiliary`.
+    assert "render-smoke-override" in run_text
+    # The Compose policy must receive the declared auxiliary roles, or a sidecar-bearing
+    # stack is rejected as an unvalidated service.
+    validate_step = next(
+        step for step in _steps(workflow) if "validate-compose" in str(step.get("run", ""))
+    )
+    assert "--config container-release.json" in validate_step["run"]
+
+
+def test_preparation_hook_is_the_one_reviewable_path_and_is_digest_verified() -> None:
+    workflow = _load(REUSABLE)
+    steps = _steps(workflow)
+    prepare = next(step for step in steps if step.get("id") == "prepare")
+    run = str(prepare["run"])
+
+    assert ".preparation" in run
+    assert 'test "$preparation" = "docker/ci-prepare-smoke.sh"' in run
+    # No secrets, no OIDC, no inherited environment.
+    assert "env -i" in run
+    assert "GF_SMOKE_FIXTURE_DIR" in run
+    assert "GF_SMOKE_ENV_FILE" in run
+    # Fixtures are hashed once and re-verified immediately before they are mounted.
+    assert "fixture-manifest.sha256" in run
+    start = next(step for step in steps if "up --detach --no-build" in str(step.get("run", "")))
+    assert "sha256sum -c" in str(start["run"])
+    assert workflow["jobs"]["container-ci"]["permissions"] == {"contents": "read"}
 
 
 def test_router_release_configuration_is_strict_and_data_independent() -> None:

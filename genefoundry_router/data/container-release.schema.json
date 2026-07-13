@@ -1,6 +1,72 @@
 {
   "$comment": "This checked-in schema enforces structural constraints. Acceptance additionally requires semantic validation through ReleaseConfig or ApplicationReleaseManifest; cross-field equality is enforced by Pydantic validators.",
   "$defs": {
+    "AuxiliaryServiceConfig": {
+      "additionalProperties": false,
+      "description": "One approved sidecar and the role policy the central gate validates it against.\n\nThe role, not the name, is what is authorized: every field the role permits is\nchecked, so declaring a service can never authorize an unhardened container.",
+      "properties": {
+        "name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "init",
+            "database"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "egress": {
+          "default": "denied",
+          "enum": [
+            "denied",
+            "internal",
+            "approved-networks"
+          ],
+          "title": "Egress",
+          "type": "string"
+        },
+        "writable_targets": {
+          "default": [],
+          "items": {
+            "pattern": "^/(?!/)(?!$)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Writable Targets",
+          "type": "array"
+        },
+        "read_only_targets": {
+          "default": [],
+          "items": {
+            "pattern": "^/(?!/)(?!$)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Read Only Targets",
+          "type": "array"
+        },
+        "healthcheck_test": {
+          "default": [],
+          "items": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Healthcheck Test",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "role"
+      ],
+      "title": "AuxiliaryServiceConfig",
+      "type": "object"
+    },
     "DefinitionsConfig": {
       "additionalProperties": false,
       "description": "How MCP definition identity relates to authoritative data.",
@@ -258,6 +324,38 @@
           "minimum": 1,
           "title": "Startup Timeout Seconds",
           "type": "integer"
+        },
+        "networks": {
+          "default": [
+            "default"
+          ],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Networks",
+          "type": "array"
+        },
+        "internal_networks": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Internal Networks",
+          "type": "array"
+        },
+        "auxiliary": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AuxiliaryServiceConfig"
+          },
+          "maxItems": 4,
+          "title": "Auxiliary",
+          "type": "array"
         }
       },
       "required": [
