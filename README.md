@@ -256,6 +256,38 @@ The `drift` CLI is independently runnable for your own cron/CI:
 (reads `GF_*_URL` from the environment — `set -a; . ./.env; set +a` locally, or load
 `ci/fleet-urls.env`).
 
+## Container release and deployment
+
+The public application image is code-only and AMD64-only in release standard v1. A protected exact
+`vX.Y.Z` source tag authorizes publication; pull requests build and gate but never publish. Release
+evidence binds the full source revision, `linux/amd64` image digest, SBOM, provenance,
+vulnerability report, and MCP-definition digest. Production accepts only
+`ghcr.io/berntpopp/genefoundry-router@sha256:<64 lowercase hex>` and its effective Compose model
+has neither an inherited `build:` nor a backend host port.
+
+Before the first real release, an owner performs the one-time GHCR bootstrap: publish a disposable
+source-labelled image, link the package to this repository, make the public package visible, verify
+an anonymous pull, and remove only the disposable tag. Record the protected tag ruleset, immutable
+GitHub Releases, protected `release` environment, read-only default token permissions, public
+linkage, and retention of deployed and rollback digests. No standing package PAT is retained.
+
+To release, merge the reviewed version/changelog/lockfile change, create the protected tag, and let
+`container-release.yml` publish and attest the exact gated manifest. Before deployment, use
+`make container-deploy-verify MANIFEST=<application-release-manifest.json>`; then render with
+`GENEFOUNDRY_IMAGE=<name>@sha256:<digest> make docker-prod-config`. Never deploy from a tag.
+
+The rollback tuple is application image digest, application version and revision, exact data
+identity or explicit `none`, compatible schema version, and MCP-definition digest. Preserve the
+previous-known-good tuple and OAuth state volume. A partial push, alias collision, attestation
+failure, anonymous-pull failure, mutable-release result, or definition mismatch is a release
+incident: do not select the version alias, retain evidence, and rerun the original tag event only
+after the cause is understood. Roll back by the complete previous tuple, not an image tag alone.
+
+**Research use only. Not clinical decision support.** Provenance proves origin and integrity, not
+clinical validity or biomedical correctness. ARM64 is not a v1 target; enable it only after native
+dependency resolution plus platform-specific build, content, vulnerability, runtime, MCP, and data
+tests pass and the release manifest records the multi-platform identities.
+
 ## Develop & test
 
 ```bash

@@ -19,7 +19,7 @@ PUBLIC_PROFILE = Path(".env.example")
 
 
 class _ComposeLoader(yaml.SafeLoader):
-    """Safe YAML loader that understands Compose's value-reset tag."""
+    """Safe YAML loader that understands Compose's merge-control tags."""
 
 
 def _construct_reset(loader: _ComposeLoader, node: yaml.Node) -> object:
@@ -33,6 +33,7 @@ def _construct_reset(loader: _ComposeLoader, node: yaml.Node) -> object:
 
 
 _ComposeLoader.add_constructor("!reset", _construct_reset)
+_ComposeLoader.add_constructor("!override", _construct_reset)
 
 
 def _assignments(text: str) -> dict[str, str]:
@@ -68,7 +69,7 @@ def test_patient_profile_is_authenticated_and_locked_down() -> None:
 def test_production_compose_declares_production_reachability_mode() -> None:
     compose = yaml.load(
         Path("docker/docker-compose.prod.yml").read_text(encoding="utf-8"),
-        Loader=_ComposeLoader,  # noqa: S506 -- subclass of SafeLoader with !reset only
+        Loader=_ComposeLoader,  # noqa: S506 -- SafeLoader with fixed Compose tags only
     )
     environment = compose["services"]["genefoundry-router"]["environment"]
     assert environment["GF_DEPLOYMENT_MODE"] == "production"

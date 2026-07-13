@@ -64,11 +64,24 @@ RUN actual="$(find / -xdev -type f -links +1 -printf '%i %p\n' | sort -k2,2)" \
 FROM scratch AS production
 COPY --from=prepared / /
 
-# Runtime identity. VCS_REF is unprefixed on purpose: a <SERVICE>_-prefixed name
-# would land in the pydantic settings namespace.
-ARG VCS_REF=unknown
-LABEL org.opencontainers.image.source="https://github.com/berntpopp/genefoundry-router" \
-      org.opencontainers.image.revision="${VCS_REF}"
+# Public release identity. Release automation supplies all three values from the
+# validated source tag/commit and build record; the defaults identify an explicitly
+# non-release local build. None of these arguments may contain secrets.
+ARG APP_VERSION=0.0.0
+ARG VCS_REF=0000000000000000000000000000000000000000
+ARG BUILD_DATE=1970-01-01T00:00:00Z
+LABEL org.opencontainers.image.title="GeneFoundry Router" \
+      org.opencontainers.image.description="FastMCP gateway for the GeneFoundry research MCP fleet" \
+      org.opencontainers.image.source="https://github.com/berntpopp/genefoundry-router" \
+      org.opencontainers.image.url="https://github.com/berntpopp/genefoundry-router" \
+      org.opencontainers.image.documentation="https://github.com/berntpopp/genefoundry-router#container-release-and-deployment" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="GeneFoundry" \
+      org.genefoundry.research-use-only="true" \
+      org.genefoundry.data-policy="code-only"
 ENV VCS_REF="${VCS_REF}" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

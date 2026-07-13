@@ -110,12 +110,14 @@ docker-restart: ## Recreate the container to re-read ../.env (no image rebuild)
 	$(DOCKER_COMPOSE) -f docker/docker-compose.yml up -d --force-recreate
 
 docker-prod-config: ## Render production Compose configuration
-	GF_ALLOWED_HOSTS=$${GF_ALLOWED_HOSTS:-genefoundry.org} \
+	GENEFOUNDRY_IMAGE=$${GENEFOUNDRY_IMAGE:-ghcr.io/berntpopp/genefoundry-router@sha256:0000000000000000000000000000000000000000000000000000000000000000} \
+		GF_ALLOWED_HOSTS=$${GF_ALLOWED_HOSTS:-genefoundry.org} \
 		GF_HEALTHCHECK_HOST=$${GF_HEALTHCHECK_HOST:-genefoundry.org} \
 		$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
 
 docker-npm-config: ## Render NPM Compose configuration
-	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
+	GENEFOUNDRY_IMAGE=$${GENEFOUNDRY_IMAGE:-ghcr.io/berntpopp/genefoundry-router@sha256:0000000000000000000000000000000000000000000000000000000000000000} \
+		$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
 
 container-validate: ## Validate container release configuration (CONFIG=path)
 	uv run python scripts/container_release.py validate-config --config "$(or $(CONFIG),container-release.json)"

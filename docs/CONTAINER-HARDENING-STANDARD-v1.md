@@ -44,7 +44,9 @@ A consistent, audited hardening baseline across the fleet is exactly such a meas
    only in the builder stage. The production stage installs **no** toolchain — at most `curl`
    for the healthcheck. (Router: `docker/Dockerfile`, `builder` → `production`.)
 2. **Pin the base image by digest, not just tag.** `FROM python:3.12-slim@sha256:…` so a rebuild
-   is byte-reproducible and not silently re-pointed. Tag-only pinning (`python:3.12-slim`) is the
+   remains traceable to its selected base and is not silently re-pointed. Digest pins and a frozen
+   lockfile do not make Debian repositories, wheels, timestamps, or compression byte-reproducible.
+   Tag-only pinning (`python:3.12-slim`) is the
    v1 floor; **digest pinning is required for a medical-grade deployment** and is tracked by
    Renovate/Dependabot for patch bumps.
 3. **Install dependencies from a frozen lockfile.** `uv sync --frozen --no-dev --no-editable`
@@ -66,9 +68,10 @@ A consistent, audited hardening baseline across the fleet is exactly such a meas
      (router: `/tmp` `rw,noexec,nosuid,size=64m,mode=1777`);
    - persistent state (e.g. a backend's built SQLite/index that must survive restart) → a
      **named volume mounted read-write only at that path**, everything else read-only.
-9. **Bundled reference data is read-only.** SQLite/OBO/parquet artifacts baked at build time are
-   served read-only; their dataset version is recorded (ties to the Response-Envelope
-   `data_version`/`snapshot_version`). No runtime mutation of reference data.
+9. **Application images are code-only.** Authoritative SQLite/OBO/parquet/corpus content is an
+   independently released, digest-verified artifact mounted read-only after hardened
+   materialization. Only exact, bounded code/schema/baseline resources may be allowlisted in an
+   application image. Runtime state and mutable caches use separate explicit writable mounts.
 
 ### 3. Kernel & privilege surface — drop everything
 
@@ -234,6 +237,34 @@ HIGH/CRITICAL findings, if present in the native JSON, remain evidence but do no
   refresh a deduplicated remediation issue. Scanner/database/registry infrastructure errors are
   tracked separately and never described as application vulnerability findings.
 
+### Application image publication and deployment (ratified 2026-07-13)
+
+- A protected exact stable `vX.Y.Z` tag is the only publication authority. Pull requests and
+  branch workflows are read-only and cannot publish.
+- Release jobs build one `linux/amd64` OCI manifest, inspect every layer and image configuration,
+  run the hardened container plus MCP conformance, scan it, and preserve SBOM/provenance evidence.
+  AMD64 is the sole v1 platform. ARM64 requires native platform-specific build, content, scan,
+  runtime, MCP, and data tests before a multi-platform index is permitted.
+- Images carry complete OCI title, description, source, URL, documentation, version, full
+  revision, creation time, license, and vendor labels plus
+  `org.genefoundry.research-use-only=true` and `org.genefoundry.data-policy=code-only`.
+- Production accepts a reviewed digest only, clears every inherited `build:`, and publishes no
+  backend host port. The deployment verifier checks the immutable release, exact signer workflow
+  and revision, provenance and SPDX SBOM attestations, labels, data identity, and Compose model.
+- New GHCR packages require a one-time bootstrap before a real release: link the package to its
+  source repository, set public package visibility, verify an anonymous pull, delete only the
+  disposable bootstrap tag, and retain no standing package PAT. The controls ledger also proves
+  protected tags, immutable releases, protected release environment, linkage, public visibility,
+  anonymous access, and rollback-digest retention.
+- The rollback tuple is image digest + application version/revision + data release/digest/schema
+  (or explicit `none`) + MCP-definition digest. Preserve and test the previous-known-good tuple;
+  an older image tag alone is not a rollback.
+- A digest collision, partial publication, attestation/SBOM failure, anonymous-pull regression,
+  mutable GitHub Release, or definition mismatch is an incident. Do not overwrite aliases or
+  assets. Retain evidence and resume only the original protected-tag event after remediation.
+- **Research use only. Not clinical decision support.** Origin and integrity evidence does not
+  establish clinical validity, regulatory approval, or correctness of biomedical data.
+
 ## References
 
 - **CIS Docker Benchmark** — Docker host & daemon/container hardening (user namespaces, caps,
@@ -274,12 +305,10 @@ HIGH/CRITICAL findings, if present in the native JSON, remain evidence but do no
 
 ## Open: Standard v1.1 (pending decision)
 
-1. **Image signing / provenance** — adopt `cosign`/Sigstore signatures + build provenance
-   attestations so the host (and an auditor) can verify image authenticity, not just integrity.
-2. **Distroless or `chainguard`-style base** — drop `curl`/shell from the runtime entirely
+1. **Distroless or `chainguard`-style base** — drop `curl`/shell from the runtime entirely
    (healthcheck via a static binary or the orchestrator's HTTP probe). Smaller CVE surface,
    at some debuggability cost.
-3. **Rootless runtime** — Podman/rootless Docker on the host as defense-in-depth beyond
+2. **Rootless runtime** — Podman/rootless Docker on the host as defense-in-depth beyond
    in-container non-root.
-4. **Runtime security monitoring** — Falco/eBPF anomaly detection on the fleet host (egress,
+3. **Runtime security monitoring** — Falco/eBPF anomaly detection on the fleet host (egress,
    unexpected exec). Pairs with the router's tool-definition drift detection.
