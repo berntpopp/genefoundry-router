@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Callable
 from dataclasses import asdict
@@ -13,6 +14,15 @@ from pydantic import ValidationError
 
 from genefoundry_router.release.compose import validate_compose
 from genefoundry_router.release.content import inspect_oci_layout
+from genefoundry_router.release.data import (
+    DataReleaseManifest,
+    DataVerificationError,
+)
+from genefoundry_router.release.data_materialization import (
+    materialize_data,
+    probe_schema_file,
+    rollback_data,
+)
 from genefoundry_router.release.definitions import (
     canonical_json_bytes,
     capture_definitions,
@@ -84,6 +94,14 @@ def _array(path: Path) -> list[Any]:
     return value
 
 
+def _verify_file_sha256(path: Path, expected: str) -> None:
+    if len(expected) != 64 or any(character not in "0123456789abcdef" for character in expected):
+        raise ValueError("expected SHA-256 must be a full lowercase hex digest")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest != expected:
+        raise ValueError("input digest does not match trusted identity")
+
+
 def _emit(command: str, result: _CliResult) -> None:
     payload = {"command": command, **result.payload, "exit_code": int(result.exit_code)}
     typer.echo(canonical_json_bytes(payload).decode("utf-8"))
@@ -96,6 +114,11 @@ def _execute(command: str, operation: Callable[[], _CliResult]) -> None:
         result = operation()
     except DeploymentVerificationError as exc:
         result = _CliResult({"reason": str(exc), "verdict": _verdict(exc.exit_code)}, exc.exit_code)
+    except DataVerificationError as exc:
+        result = _CliResult(
+            {"reason": str(exc), "verdict": "policy_violation"},
+            ReleaseExitCode.POLICY_VIOLATION,
+        )
     except (OSError, TypeError, ValueError, ValidationError):
         result = _CliResult(
             {"reason": "input validation failed", "verdict": "invalid_evidence"},
@@ -147,6 +170,67 @@ def validate_source_command(
         return _CliResult({"source": asdict(source), "verdict": "pass"}, ReleaseExitCode.SUCCESS)
 
     _execute("validate-source", operation)
+
+
+@app.command("validate-data-manifest")
+def validate_data_manifest_command(
+    manifest: Path = typer.Option(..., "--manifest", help="Immutable data release manifest."),
+    manifest_sha256: str = typer.Option(..., "--manifest-sha256"),
+    public: bool = typer.Option(True, "--public/--private"),
+) -> None:
+    """Validate strict data evidence and gate public redistribution."""
+
+    def operation() -> _CliResult:
+        _verify_file_sha256(manifest, manifest_sha256)
+        parsed = DataReleaseManifest.model_validate(_object(manifest))
+        if public:
+            parsed.validate_publication()
+        return _CliResult({"manifest": str(manifest), "verdict": "pass"}, ReleaseExitCode.SUCCESS)
+
+    _execute("validate-data-manifest", operation)
+
+
+@app.command("materialize-data")
+def materialize_data_command(
+    manifest: Path = typer.Option(..., "--manifest"),
+    manifest_sha256: str = typer.Option(..., "--manifest-sha256"),
+    artifact: Path = typer.Option(..., "--artifact"),
+    data_root: Path = typer.Option(..., "--data-root"),
+    schema_version: str = typer.Option(..., "--schema-version"),
+    schema_file: str = typer.Option(..., "--schema-file"),
+) -> None:
+    """Materialize and select one exact verified reference artifact."""
+
+    def operation() -> _CliResult:
+        _verify_file_sha256(manifest, manifest_sha256)
+        parsed = DataReleaseManifest.model_validate(_object(manifest))
+        if schema_version != parsed.schema_identity.actual:
+            raise DataVerificationError("expected schema does not match reviewed manifest")
+        selected = materialize_data(
+            artifact,
+            parsed.requirement(),
+            data_root,
+            schema_probe=lambda root: probe_schema_file(root, schema_file),
+        )
+        return _CliResult({"selected": str(selected), "verdict": "pass"}, ReleaseExitCode.SUCCESS)
+
+    _execute("materialize-data", operation)
+
+
+@app.command("rollback-data")
+def rollback_data_command(
+    data_root: Path = typer.Option(..., "--data-root"),
+    digest: str = typer.Option(..., "--digest"),
+    schema_minimum: str = typer.Option(..., "--schema-minimum"),
+    schema_maximum: str = typer.Option(..., "--schema-maximum"),
+) -> None:
+    """Atomically select a retained previous-known-good data version."""
+
+    def operation() -> _CliResult:
+        selected = rollback_data(data_root, digest, schema_minimum, schema_maximum)
+        return _CliResult({"selected": str(selected), "verdict": "pass"}, ReleaseExitCode.SUCCESS)
+
+    _execute("rollback-data", operation)
 
 
 @app.command("validate-compose")

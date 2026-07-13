@@ -110,6 +110,12 @@ def _require_dns_endpoint(value: str) -> str:
     return value
 
 
+def _require_immutable_data_release_tag(value: str) -> str:
+    if value.lower() in {"latest", "main", "master", "head", "stable", "current"}:
+        raise ValueError("data release tag must be immutable")
+    return value
+
+
 RELATIVE_PATH_PATTERN = (
     r"^(?!/)(?!\.{1,2}(?:/|$))(?!.*\/\.{1,2}(?:/|$))(?!.*//)(?!.*\\)"
     r"(?!.*[\u0000-\u001f\u007f])[^/]+(?:/[^/]+)*$"
@@ -186,7 +192,20 @@ StableReleaseTag = Annotated[
     str,
     Field(pattern=r"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$"),
 ]
-DataReleaseTag = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")]
+DATA_RELEASE_TAG_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+MUTABLE_DATA_RELEASE_TAGS = ("latest", "main", "master", "head", "stable", "current")
+DataReleaseTag = Annotated[
+    str,
+    Field(pattern=DATA_RELEASE_TAG_PATTERN),
+    AfterValidator(_require_immutable_data_release_tag),
+    WithJsonSchema(
+        {
+            "type": "string",
+            "pattern": DATA_RELEASE_TAG_PATTERN,
+            "not": {"enum": list(MUTABLE_DATA_RELEASE_TAGS)},
+        }
+    ),
+]
 GitRevision = Annotated[str, Field(pattern=r"^[0-9a-f]{40}$")]
 Sha256Hex = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
 Sha256Digest = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
