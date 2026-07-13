@@ -15,7 +15,7 @@
 - `genefoundry_router/release/models.py`: strict configuration and evidence models.
 - `genefoundry_router/release/source.py`: SemVer, tag, version, ancestry, and collision validation.
 - `genefoundry_router/release/compose.py`: rendered Compose policy validation.
-- `genefoundry_router/release/content.py`: exported-rootfs and build-context content policy.
+- `genefoundry_router/release/content.py`: OCI-layer/config and build-context content policy.
 - `genefoundry_router/release/vulnerabilities.py`: Trivy JSON operational/policy separation.
 - `genefoundry_router/release/definitions.py`: canonical MCP capture and definition contracts.
 - `genefoundry_router/release/evidence.py`: SHA-256 manifests and release-manifest assembly.
@@ -26,7 +26,7 @@
 - `.github/workflows/_container-ci.yml`: read-only reusable image CI.
 - `.github/workflows/_container-release.yml`: isolated multi-job release state machine.
 - `.github/workflows/container-ci.yml`: router CI caller.
-- `.github/workflows/container-release.yml`: router tag/backfill caller.
+- `.github/workflows/container-release.yml`: router stable-tag-push caller.
 - `container-release.json`: router release configuration.
 - `ci/container-controls.json`: generated repository/package control ledger.
 - `tests/release/`: unit, workflow-static, integration, and synthetic-image tests.
@@ -43,7 +43,7 @@
 
 - [ ] **Step 1: Write failing model tests**
 
-Add table-driven tests that load the router example, reject unknown keys, reject shell-valued preparation, require `linux/amd64`, distinguish the four data modes, and require `definitions.contract` to be `data-independent` or `data-bound`.
+Add table-driven tests that load the router example, reject unknown keys, reject shell-valued preparation, require `linux/amd64`, distinguish `none`, `external-reference`, `restored-database`, and `upstream-live`, model runtime cache separately, and require `definitions.contract` to be `data-independent` or `data-bound`.
 
 ```python
 def test_release_config_rejects_unknown_key(valid_config: dict[str, object]) -> None:
@@ -86,9 +86,9 @@ git commit -m "feat(release): add strict container release contracts"
 - Create: `genefoundry_router/release/source.py`
 - Create: `tests/release/test_source.py`
 
-- [ ] **Step 1: Write failing tests for tag-push and backfill identity**
+- [ ] **Step 1: Write failing tests for tag-push-only identity**
 
-Test stable SemVer only, tag/package mismatch, changelog absence, non-ancestor tags, remote tag movement, version downgrade, and convergence of tag-push and `workflow_dispatch` input on one `resolved_source_sha`.
+Test stable SemVer only, tag/package mismatch, changelog absence, non-ancestor tags, remote tag movement, version downgrade, branch dispatch rejection, and rejection of pre-adoption tags whose tree lacks the release configuration/caller.
 
 ```python
 @pytest.mark.parametrize("tag", ["v1", "v1.2", "1.2.3", "v1.2.3-rc.1", "v1.2.3+local"])
@@ -97,8 +97,9 @@ def test_parse_release_tag_rejects_non_stable_semver(tag: str) -> None:
         parse_release_tag(tag)
 
 
-def test_resolve_event_tag_uses_dispatch_input() -> None:
-    assert resolve_event_tag("workflow_dispatch", "refs/heads/main", "v2.3.4") == "v2.3.4"
+def test_release_source_requires_tag_push() -> None:
+    with pytest.raises(SourceReleaseError, match="tag push"):
+        resolve_event_tag("workflow_dispatch", "refs/heads/main")
 ```
 
 - [ ] **Step 2: Prove failure, implement, and verify**
@@ -166,9 +167,9 @@ git commit -m "feat(release): enforce digest-only production compose"
 - Create: `tests/release/test_content.py`
 - Modify: `.dockerignore`
 
-- [ ] **Step 1: Write failing tar/rootfs policy tests**
+- [ ] **Step 1: Write failing OCI-layer/config policy tests**
 
-Build synthetic tar files and assert denial of `.env`, private keys, `.git`, SQLite, compressed datasets, VCF/BCF, parquet, corpus paths, and oversized unexpected files. Assert exact-path allowlisting permits a small SQL schema but does not permit its parent `data/` tree.
+Build synthetic OCI layouts and assert denial of `.env`, private keys, `.git`, SQLite, compressed datasets, VCF/BCF, parquet, corpus paths, and oversized unexpected files in every layer, including files later removed by whiteout. Reject secret-shaped config environment/history/commands and root users. Assert exact-path allowlisting permits a small SQL schema but does not permit its parent `data/` tree; centrally cap allowlist extensions, media types, entry count, and aggregate bytes.
 
 ```python
 def test_database_hidden_under_package_is_denied(tmp_path: Path) -> None:
@@ -177,9 +178,9 @@ def test_database_hidden_under_package_is_denied(tmp_path: Path) -> None:
     assert result.denied_paths == ("opt/app/pkg/data/reference.sqlite",)
 ```
 
-- [ ] **Step 2: Implement streaming tar inspection**
+- [ ] **Step 2: Implement streaming OCI inspection**
 
-Normalize POSIX paths, reject absolute/traversal/hardlink escapes, inspect names plus magic bytes, enforce per-file and aggregate limits without extracting untrusted archives, and return a deterministic JSON report with policy version, denied paths, allowlisted paths, and context size.
+Verify `index.json` and descriptor/blob digests, iterate every referenced layer tar without flattening, normalize POSIX paths, reject absolute/traversal/hardlink/device/FIFO/set-id escapes, treat whiteout-deleted denied paths as violations, inspect names plus magic bytes, and parse the image-config blob. Enforce per-file and aggregate limits without extracting untrusted archives, and return a deterministic JSON report with policy/allowlist digests, denied paths, allowlisted paths, and context size.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -201,7 +202,7 @@ git commit -m "feat(release): gate public images with positive content policy"
 
 - [ ] **Step 1: Write fixture tests**
 
-Cover valid-clean JSON, valid fixable HIGH/CRITICAL findings, unfixable findings, malformed JSON, missing metadata, and a non-zero scanner process result. The evaluator must return exit 1 only for a valid policy violation and exit 2 for invalid/incomplete scanner evidence.
+Cover valid-clean JSON, valid fixable HIGH/CRITICAL findings, unfixable findings, stale database metadata, malformed JSON, missing metadata, and a non-zero scanner process result. Define one shared exit enum: 0 success, 1 policy violation, 2 invalid/incomplete evidence, and 3 infrastructure failure; every CLI subcommand and workflow consumes the JSON `verdict` rather than inferring meaning from a raw scanner exit.
 
 - [ ] **Step 2: Implement the evaluator and update the standard**
 
@@ -257,11 +258,11 @@ git commit -m "feat(release): bind MCP definitions and release evidence"
 
 - [ ] **Step 1: Write CLI and verifier tests**
 
-Test every subcommand with `CliRunner`: `validate-config`, `validate-source`, `validate-compose`, `inspect-rootfs`, `evaluate-trivy`, `capture-definitions`, `assemble-manifest`, and `verify-deployment`. Mock command execution and require `gh attestation verify --signer-repo`, `--signer-workflow`, `--signer-digest`, `--source-ref`, and `--source-digest`; test the offline bundle/trusted-root path separately.
+Test every subcommand with `CliRunner`: `validate-config`, `validate-source`, `validate-compose`, `inspect-oci`, `evaluate-trivy`, `capture-definitions`, `assemble-manifest`, and `verify-deployment`. Mock command execution and require `gh attestation verify --signer-repo`, `--signer-workflow`, `--signer-digest`, `--source-ref`, `--source-digest`, `--predicate-type https://slsa.dev/provenance/v1`, and `--deny-self-hosted-runners`; use distinct source/signer repositories in the fixture. Test offline verification of local manifest bytes whose SHA-256 equals the OCI digest with a saved bundle/trusted root and pin/check the minimum GitHub CLI version supporting these flags plus `gh release verify`.
 
 - [ ] **Step 2: Implement narrow CLI adapters**
 
-CLI functions parse paths/arguments, call the pure modules, emit one JSON result, and map validation, policy, and infrastructure failures to exit codes 1, 2, and 3. Add `make container-validate`, `container-content`, and `container-deploy-verify` targets.
+CLI functions parse paths/arguments, call the pure modules, emit one JSON result, and use the shared exit enum from Task 5. Add `make container-validate`, `container-content`, and `container-deploy-verify` targets.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -285,11 +286,11 @@ git commit -m "feat(release): add release tooling CLI and deploy verifier"
 
 - [ ] **Step 1: Write static workflow tests**
 
-Parse YAML and assert `workflow_call`, caller path filters, `contents: read`, full action SHAs, called-workflow identity checks, one `docker/build-push-action` invocation with `load: true`, `push: false`, `provenance: false`, `sbom: false`, `platforms: linux/amd64`, Compose `--no-build`, JSON Trivy, non-gating SARIF, SBOM, rootfs policy, hardening, MCP conformance, and unconditional teardown.
+Parse YAML and assert `workflow_call`, caller path filters, workflow-level `permissions: {}`, full action SHAs, called-workflow identity checks, one `docker/build-push-action` invocation exporting an OCI layout with `push: false`, `provenance: false`, `sbom: false`, `platforms: linux/amd64`, Compose `--no-build`, JSON Trivy, SBOM, per-layer/config policy, hardening, MCP conformance, and unconditional teardown. Leaf-code jobs have only `contents: read`. If SARIF upload is retained, a separate no-checkout/non-executing report job alone has `security-events: write`.
 
 - [ ] **Step 2: Implement the workflow with pinned actions**
 
-Pin checkout `9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0`, Buildx `bb05f3f5519dd87d3ba754cc423b652a5edd6d2c`, build-push `53b7df96c91f9c12dcc8a07bcb9ccacbed38856a`, Trivy `a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8`, SBOM `e22c389904149dbc22b58101806040fa8d37a610`, CodeQL/SARIF `1ad29ea4a422cce9a242a9fae469541dcd08addc`, and upload-artifact `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a`. Derive cache scope from repository, Dockerfile, platform, Buildx version, and lockfile hash. Configure the router as service `genefoundry`, port `8000`, data mode `none`, definition contract `data-independent`.
+Pin checkout `9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0`, Buildx `bb05f3f5519dd87d3ba754cc423b652a5edd6d2c`, build-push `53b7df96c91f9c12dcc8a07bcb9ccacbed38856a`, Trivy `a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8`, SBOM `e22c389904149dbc22b58101806040fa8d37a610`, CodeQL/SARIF `1ad29ea4a422cce9a242a9fae469541dcd08addc`, and upload-artifact `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a`. Pin/checksum the daemonless OCI import tool used to run the layout locally. Derive CI cache scope from repository, Dockerfile, platform, Buildx version, and lockfile hash. Configure the router as service `genefoundry`, port `8000`, data mode `none`, definition contract `data-independent`.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -311,11 +312,11 @@ git commit -m "ci(release): consolidate container CI into one gated build"
 
 - [ ] **Step 1: Write state-machine and permission tests**
 
-Assert exact `v*.*.*` plus guarded dispatch, `cancel-in-progress: false`, read-only `prepare`, `build-gate`, and `capture`; non-executing `publish-attest` with package/OIDC/attestation permissions; non-executing `finalize` with contents/package write but no OIDC; one build; save/upload/download/load digest verification; SHA alias before attest; published-digest capture; immutable draft release before version alias; and no `--clobber`, checkout, Compose, shell from the leaf, or container run in write jobs. Cover no prior image, matching partial publication, mismatched SHA alias, completed immutable release, missing attestation, matching/mismatched draft assets, and safe recreation of a missing version alias.
+Assert stable exact tag pushes only, runtime SemVer revalidation, `cancel-in-progress: false`, caller permission ceiling, workflow-level `permissions: {}`, and a six-job permission graph. `prepare`, `build-gate`, `capture`, and `assemble-evidence` are read-only; `publish-attest` and `finalize` are protected-environment, non-executing jobs with no checkout/leaf script/Compose/container run. Assert one build only when the source alias is absent, OCI-layout artifact/digest verification, tamper rejection before registry write, no release cache, SHA alias before attest, published-digest capture, draft publication before a manifest-identical version alias, and no `--clobber` or wrapper-index alias. Cover no prior image, existing matching source digest with re-gating/no rebuild, mismatched SHA alias, completed immutable release, missing attestation, matching/mismatched draft assets, and safe recreation of a missing version alias.
 
-- [ ] **Step 2: Implement the five-job workflow**
+- [ ] **Step 2: Implement the six-job workflow**
 
-Use the CI pins plus download-artifact `3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c`, login `af1e73f918a031802d376d3c8bbc3fe56130a9b0`, attest-build-provenance `43d14bc2b83dec42d39ecae14e916627a18bb661`, and attest-sbom `51e74621a501c89df81fc1391c5a8f4cfc9fab2f`. Use an artifact-id output and digest manifest, minimum retention, `docker save`/`docker load`, `sha-<40hex>` push first, `gh attestation verify --signer-digest`, published-digest capture, draft asset digest checks, `gh release verify`, then a registry-side exact version alias copy.
+Use the CI pins plus download-artifact `3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c`, login `af1e73f918a031802d376d3c8bbc3fe56130a9b0`, attest-build-provenance `43d14bc2b83dec42d39ecae14e916627a18bb661`, and attest-sbom `51e74621a501c89df81fc1391c5a8f4cfc9fab2f`. Pin/checksum the current `gh` and `crane` (or `oras`) binaries. `prepare` selects new-build versus existing-digest recovery. `build-gate` exports/imports one exact OCI layout, calculates its manifest digest before credentials, runs the complete CI gate with no PR-writable cache, and uploads an immutable artifact. `publish-attest` performs a byte-preserving source-SHA push and proves digest equality before attestation. `capture` runs the published digest. `assemble-evidence` builds the final asset set read-only. `finalize` re-downloads/hashes draft assets, publishes, uses current `gh release verify`/`verify-asset`, then applies identical manifest bytes to the version tag and proves both aliases equal the attested digest.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -340,7 +341,7 @@ git commit -m "ci(release): add isolated protected-tag publication workflow"
 
 - [ ] **Step 1: Write control-ledger and candidate tests**
 
-Require a row for the router plus all 21 `servers.yaml` repositories. Require tag create/update/delete protection, immutable release setting, linked public package, anonymous pull, retention status, review timestamp, and evidence URL. Extend each candidate backend with image name/digest, source tag/revision, workflow digest, SBOM/attestation identities, data mode/release/digest, and definition contract/context/digest; reject partial coverage atomically.
+Require a row for the router plus all 21 `servers.yaml` repositories. Require active tag ruleset semantics/bypass actors, protected release environment, immutable release setting, linked public package, anonymous pull, no standing package PAT, retention status, review timestamp, and evidence URL. Distinguish API-verified controls from named manual evidence but fail when any hard prerequisite is unavailable. Extend each candidate backend with image name/digest, source tag/revision, workflow digest, SBOM/attestation identities, data mode/release/digest, and definition contract/context/digest; reject partial coverage atomically.
 
 - [ ] **Step 2: Implement fail-closed parsers and capture**
 
@@ -370,7 +371,7 @@ git commit -m "feat(release): bind fleet candidates to verified image provenance
 
 - [ ] **Step 1: Add failing Docker/Compose integration assertions**
 
-Assert required OCI labels, full revision, code-only label, non-root/read-only execution, no denied rootfs paths, `/health`, MCP initialize/list-tools, production effective config with no build/host port, and a digest-only deployment verifier fixture.
+Assert required OCI labels, full revision, code-only label, non-root/read-only execution, no denied path in any OCI layer and no secret-shaped image config/history, `/health`, MCP initialize/list-tools, production effective config with no build/host port, and a digest-only deployment verifier fixture.
 
 - [ ] **Step 2: Make the router the reference implementation**
 
@@ -400,7 +401,7 @@ Expected: format, lint, 600-LOC, mypy, unit/integration, coverage at least 70%, 
 
 - [ ] **Step 2: Run static release invariants**
 
-Run: `uv run pytest tests/release -q && rg -n --hidden 'push:\s*true|--clobber|image:.*:latest|pull_policy:\s*always' .github docker container-release.json`
+Run: `uv run pytest tests/release -q && rg -n --hidden 'push:\s*true|--clobber|image:.*:latest|pull_policy:\s*always|docker save|docker load|imagetools create' .github docker container-release.json`
 
 Expected: release tests pass; the search has no policy-violating application publication or production references.
 

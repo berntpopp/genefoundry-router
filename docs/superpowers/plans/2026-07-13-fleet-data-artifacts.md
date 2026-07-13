@@ -16,14 +16,22 @@
 |---|---|---|---|
 | router, autopvs1, gnomad, gtex, litvar, panelapp, spliceailookup, stringdb, uniprot, vep | `none` | in-memory cache only | `data-independent` |
 | clingen, clinvar, hpo, mavedb, orphanet | `external-reference` | separate cache where present | `data-bound` |
-| genereviews | `external-reference` | PostgreSQL volume | `data-bound` |
-| pubtator | `external-reference` | PostgreSQL volume | `data-bound` |
+| genereviews | `restored-database` | PostgreSQL volume | `data-bound` |
+| pubtator | `restored-database` | PostgreSQL volume | `data-bound` |
 | gencc, hgnc, mgi, mondo | `upstream-live` | authoritative SQLite volume | `data-bound` |
-| metadome | `upstream-live` | derived SQLite cache volume | `data-bound` |
+| metadome | `none` | derived SQLite cache volume | `data-independent` |
 
+The four closed authoritative-data modes are `none`, `external-reference`,
+`restored-database`, and `upstream-live`; runtime cache is a separate property.
 `upstream-live` rows must record the resolved upstream URL/ETag/digest after every
 materialization and explicitly report `reproducible_rollback: false`. They are
 not relabelled `external-reference` until a reviewed immutable artifact exists.
+
+This plan depends on the control-plane plan Tasks 1, 4, 6, and 7 being merged.
+Those tasks create the authoritative schemas, OCI content policy, definition
+artifact, and workflow CLI. Leaf repositories vendor the generated data schema
+plus `CONTRACT_SHA256` from that protected router commit; `make vendor-check`
+proves byte equality. They do not add a runtime dependency from backend to router.
 
 ### Task 1: Shared immutable data-release contract
 
@@ -37,8 +45,11 @@ not relabelled `external-reference` until a reviewed immutable artifact exists.
 - [ ] **Step 1: Write failing manifest and materialization tests**
 
 Require dataset/source identity, retrieval time, transformation repository/commit,
-schema version, record counts, compressed/expanded hashes and size ceilings,
-license/redistribution decision, application compatibility, and disclaimer.
+compatible schema range and actual schema version, record counts,
+compressed/canonical-expanded-tree hashes and size/member ceilings,
+license/redistribution decision, previous-known-good digest, application
+compatibility, and disclaimer. `redistribution_allowed: false` must make public
+publication invalid rather than merely recording the decision.
 Test redirects outside the allowlist, oversize compressed files, expansion bombs,
 checksum mismatch, symlink/path traversal, incompatible schema, and interrupted
 replacement.
@@ -57,12 +68,16 @@ def test_upstream_live_cannot_claim_reproducible_rollback() -> None:
         DataRequirement(mode="upstream-live", reproducible_rollback=True)
 ```
 
-- [ ] **Step 2: Implement streaming verification and atomic replacement**
+- [ ] **Step 2: Implement streaming verification and atomic version selection**
 
-Download to a same-filesystem temporary path with redirect/host/time/byte limits,
-hash while streaming, validate archive members before expansion, enforce expanded
-byte/member ceilings, run the repository schema probe, `fsync`, then rename.
-Expose `validate-data-manifest` and `materialize-data` CLI commands.
+Download to the target volume with redirect/host/stall/throughput/byte limits,
+hash while streaming, reject links/devices/FIFOs/set-id/path escapes, enforce
+streamed decompression and expanded byte/member ceilings, and define expanded
+identity as a sorted `path\0mode\0size\0sha256` listing. Materialize into
+`data/<digest-prefix>/`, run the repository schema probe, fsync files and parent,
+then atomically replace a temporary `data/current` symlink under an exclusive
+lock. Expose `validate-data-manifest`, `materialize-data`, and `rollback-data` CLI
+commands; retain current and previous-known-good directories.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -86,6 +101,8 @@ git commit -m "feat(data): add immutable reference artifact contract"
 - Modify: `docker/docker-compose.yml`
 - Modify: `docker/docker-compose.prod.yml`
 - Modify: `.github/workflows/data-refresh.yml`
+- Create: `vendor/genefoundry/data-release-manifest.schema.json`
+- Create: `vendor/genefoundry/CONTRACT_SHA256`
 - Modify: `tests/unit/store/test_bundle_verification.py`
 - Modify: `tests/unit/test_data_refresh_workflow.py`
 - Create: `tests/unit/test_code_only_image.py`
@@ -94,33 +111,41 @@ git commit -m "feat(data): add immutable reference artifact contract"
 
 - [ ] **Step 1: Add failing external-snapshot tests**
 
-Require `CLINGEN_LINK_DATA_BUNDLE_PATH`, exact compressed SHA-256, expanded
-SHA-256, maximum sizes, and read-only materialization. Assert production cannot
-fall back to a packaged database and wheel/image file lists contain no SQLite or
-compressed snapshot.
+Require `CLINGEN_LINK_DATA_BUNDLE_PATH`, exact compressed SHA-256, canonical
+expanded-tree SHA-256, compatible schema range, maximum sizes, and expected versus
+actual readiness identity. Assert production cannot fall back to a packaged
+database and wheel/every OCI layer contain no SQLite or compressed snapshot.
 
 - [ ] **Step 2: Implement external bundle loading**
 
 Keep `clingen_link/data/svi_guidance.json` as the only exact-path code resource.
-Load the verified external snapshot path, materialize into the named data volume,
-and keep any mutable cache outside the reference mount. Remove database package
-artifacts and Docker COPY reachability.
+A hardened init service materializes the verified external snapshot into a
+versioned writable volume directory; the application mounts the selected snapshot
+read-only, opens SQLite as `mode=ro&immutable=1`, and exposes matching data identity
+before readiness succeeds. Keep mutable cache outside the reference mount. Remove
+database package artifacts and Docker COPY reachability; support reviewed
+pre-seeded local artifacts for offline deployment.
 
 - [ ] **Step 3: Make `data-refresh.yml` draft-first and immutable**
 
-Use `data-clingen-YYYY-MM-DD` tags, generate the shared manifest, create/reuse a
-matching draft, upload without `--clobber`, verify asset digests, publish once,
-and run `gh release verify`. A mismatched unpublished draft is deleted and
-recreated; a published release collision fails.
+Split transformation from publication. The credential-free build job creates
+`data-clingen-YYYY-MM-DD` assets/manifests and uploads a workflow artifact. A
+non-executing publisher with scoped contents/OIDC/attestation permissions uses
+only pinned runner tools, creates/reuses a matching draft, uploads without
+`--clobber`, attests exact bytes with the pinned data-workflow SHA, verifies asset
+digests, publishes once, and runs current `gh release verify`/`verify-asset`. It
+hard-fails when redistribution review is not affirmative. A mismatched unpublished
+draft is deleted/recreated; a published collision fails.
 
 - [ ] **Step 4: Verify and commit in `clingen-link`**
 
 Run: `make ci-local && uv run pytest tests/unit/store/test_bundle_verification.py tests/unit/test_data_refresh_workflow.py tests/unit/test_code_only_image.py -q && docker build --target production -f docker/Dockerfile .`
 
-Expected: tests pass and exported rootfs contains no ClinGen SQLite/bundle.
+Expected: tests pass and every final-image OCI layer contains no ClinGen
+SQLite/bundle, including files hidden by later whiteouts.
 
 ```bash
-git add -A
+git add clingen_link/config.py clingen_link/store/db.py clingen_link/data/svi_guidance.json pyproject.toml .dockerignore docker .github/workflows/data-refresh.yml vendor tests/unit/store/test_bundle_verification.py tests/unit/test_data_refresh_workflow.py tests/unit/test_code_only_image.py
 git commit -m "feat(data): externalize immutable ClinGen snapshots"
 ```
 
@@ -155,14 +180,18 @@ opt into an explicit `development_latest=true`; it is never the default.
 
 - [ ] **Step 2: Implement exact immutable requirements**
 
-Entrypoints accept exact release URL/tag/digests, use hardened streaming download,
-materialize atomically, mount the reference database read-only, and place MaveDB's
-mapped-variant cache in a separate writable volume/path.
+Init services accept exact release URL/tag/digests or a reviewed pre-seeded local
+artifact, use hardened streaming download, atomically select a versioned reference
+directory under a lock, and expose expected/actual identity. Applications mount
+the reference database read-only and place MaveDB's mapped-variant cache in a
+separate writable volume/path. Production rejects `development_latest=true`.
 
 - [ ] **Step 3: Harden both publishers**
 
-Publish draft-first shared manifests and verify release immutability. Remove
-MaveDB `gh release upload --clobber`; ensure reruns compare assets by digest and
+Split both workflows into credential-free build and non-executing publish jobs,
+pin every action, attest exact data assets, publish draft-first shared manifests,
+and verify release immutability/assets. Remove MaveDB
+`gh release upload --clobber`; ensure per-tag concurrency and digest-aware reruns
 never replace a published asset.
 
 - [ ] **Step 4: Verify and commit each repository independently**
@@ -176,9 +205,12 @@ Expected: all tests pass; `rg -n 'latest|--clobber' docker .github/workflows` fi
 Commit in each repository:
 
 ```bash
-git add -A
+git add clinvar_link/config.py clinvar_link/ingest/bundle.py docker/entrypoint.sh docker/docker-compose.yml docker/docker-compose.prod.yml .github/workflows/data-bundle.yml tests/test_bundle.py tests/test_config.py
 git commit -m "feat(data): require immutable digest-pinned data bundles"
 ```
+
+Use the corresponding listed MaveDB paths for its separate commit; never use
+`git add -A` after a local data build.
 
 ### Task 4: HPO and Orphanet publisher normalization
 
@@ -211,8 +243,11 @@ trust decision.
 - [ ] **Step 2: Implement normalized manifests/materializers**
 
 Keep existing secure download logic but make the reviewed deployment digest the
-trust root. Mount verified databases read-only and confine lock/temp files to an
-explicit tmpfs or writable state volume.
+trust root. Split each publisher into credential-free build and non-executing,
+SHA-pinned, attesting publish jobs with per-tag concurrency. Use a writable init
+service to select a versioned directory under a lock; mount the resulting SQLite
+database read-only/immutable in the application and confine metadata/temp files
+to the data volume. Expected/actual data identity gates readiness.
 
 - [ ] **Step 3: Verify and commit each repository**
 
@@ -223,9 +258,11 @@ Run in `orphanet-link`: `make ci-local && uv run pytest tests/unit/test_config.p
 Expected: all tests pass and both workflow manifests validate against the router schema.
 
 ```bash
-git add -A
+git add hpo_link/config.py hpo_link/ingest/release.py docker/entrypoint.sh docker/docker-compose.yml docker/docker-compose.prod.yml .github/workflows/build-data.yml tests/unit/test_build_data_workflow.py
 git commit -m "feat(data): normalize immutable data release evidence"
 ```
+
+Use the corresponding listed Orphanet paths for its separate commit.
 
 ### Task 5: GeneReviews PostgreSQL corpus artifact
 
@@ -244,17 +281,24 @@ git commit -m "feat(data): normalize immutable data release evidence"
 
 - [ ] **Step 1: Add failing exact-corpus and restore tests**
 
-Require exact corpus release/digest, manifest/schema/embedding-model compatibility,
-compressed/expanded ceilings, and a restored database provenance row that equals
-the deployment tuple. Reject an asset URL whose tag, repository, digest, or
-manifest differs from configuration.
+Require exact corpus release/digest, manifest/schema-range/embedding-model
+compatibility, data-only custom-format archive TOC, compressed/expanded ceilings,
+and a restored database provenance row that equals the deployment tuple. Reject
+an asset URL whose tag, repository, digest, redistribution authorization, or
+manifest differs from configuration; test current-image/prior-compatible-data
+rollback.
 
 - [ ] **Step 2: Implement an immutable corpus release line**
 
-Keep the heavy corpus build manual/offline where licensing and compute require it,
-but make verification and publication automated: validate locally produced bundle,
-create draft, attach shared manifest/evidence, verify asset hashes, publish/lock,
-then restore only exact reviewed bundles into the PostgreSQL volume.
+Keep the heavy corpus build manual/offline where licensing and compute require it.
+Public publication is permitted only after a dated affirmative redistribution
+review; otherwise use an operator-supplied pre-seeded private artifact. When
+permitted, a credential-free build/validation job transfers the bundle to a
+non-executing attesting publisher. Schema comes only from in-repo migrations; the
+artifact is `pg_dump -Fc --data-only --no-owner --no-privileges`. A no-egress init
+container validates the archive TOC, rejects schema/code entries and downloaded
+plain SQL, then restores as a non-superuser with
+`pg_restore --no-owner --no-privileges --single-transaction --exit-on-error`.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -263,7 +307,7 @@ Run: `make ci-local && uv run pytest tests/unit/test_bundle_download_authenticit
 Expected: miniature corpus round-trip passes with exact provenance.
 
 ```bash
-git add -A
+git add genereview_link/ingest/github_release.py genereview_link/corpus/bundle.py genereview_link/corpus/bundle_validation.py genereview_link/config.py docker/docker-compose.yml docker/docker-compose.prod.yml .github/workflows/build-corpus.yml .github/workflows/verify-corpus-bundle.yml tests/unit/test_bundle_download_authenticity.py tests/unit/test_corpus_bundle_validation.py tests/integration/test_bundle_round_trip.py
 git commit -m "feat(data): make GeneReviews corpus releases immutable"
 ```
 
@@ -274,6 +318,7 @@ git commit -m "feat(data): make GeneReviews corpus releases immutable"
 - Modify: each package `ingest/downloader.py`
 - Modify: each `docker/entrypoint.sh`
 - Modify: each `docker/docker-compose.yml`
+- Modify: each `docker/docker-compose.prod.yml` (create it for MGI if absent)
 - Modify/create: configuration and lifecycle tests in each repository
 
 **Files (`metadome-link`):**
@@ -285,32 +330,40 @@ git commit -m "feat(data): make GeneReviews corpus releases immutable"
 
 - [ ] **Step 1: Add a common behavior test to each repository**
 
-Assert a strict HTTPS egress host allowlist, redirect/size/time limits, observed
+Assert a strict HTTPS egress host allowlist, redirect/size/stall/throughput limits, observed
 upstream URL/ETag/last-modified/content SHA-256, transformation revision/schema,
 atomic materialization, and a persisted provenance JSON next to the database.
-Assert the release configuration says `upstream-live` and
+Assert the four authoritative-data repositories say `upstream-live` and
 `reproducible_rollback: false`.
 
 - [ ] **Step 2: Implement observed provenance and state separation**
 
-Write authoritative data and provenance to the named data volume; write transient
-download files to tmpfs; keep Metadome's derived cache explicitly separate. Do
-not claim a reviewed immutable data digest in the application release manifest.
+Write authoritative data and provenance into a versioned directory in the named
+data volume under a materialization lock; do not place multi-gigabyte downloads in
+tmpfs. A write-only init service materializes, while the app mounts the selection
+read-only and readiness reports observed identity. Do not claim a reviewed
+immutable data digest or reproducible data rollback in the release manifest.
+Classify Metadome separately as `none` plus a deletable runtime cache; record its
+cache path/eviction semantics and prove MCP definitions are data-independent.
 
 - [ ] **Step 3: Verify and commit each repository**
 
 Run `make ci-local` plus the repository's focused config/ingest/lifecycle tests in
 `gencc-link`, `hgnc-link`, `mgi-link`, `mondo-link`, and `metadome-link`.
 
-Expected: every repository records the resolved upstream identity and fails closed
-on unapproved egress or incomplete materialization.
+Expected: the four authoritative-data repositories record resolved upstream
+identity and fail closed on unapproved egress/incomplete materialization;
+Metadome truthfully reports only cache state.
 
 Commit once per repository:
 
 ```bash
-git add -A
+git add gencc_link docker tests
 git commit -m "feat(data): attest live-upstream materialization"
 ```
+
+Use the corresponding package directory plus `docker` and focused tests for each
+separate HGNC, MGI, MONDO, and Metadome commit.
 
 ### Task 7: PubTator database identity
 
@@ -327,7 +380,9 @@ git commit -m "feat(data): attest live-upstream materialization"
 Require an exact database snapshot/migration-set identity before the MCP service
 becomes ready. Assert the application image contains only migrations/schema code,
 the PostgreSQL volume is external state, and definitions capture records the
-database identity as `data-bound`.
+database identity as `restored-database`/`data-bound`. If a downloaded snapshot is
+supported, apply the same data-only custom-format TOC and non-superuser/no-egress
+restore policy as GeneReviews; reject downloaded plain SQL.
 
 - [ ] **Step 2: Implement readiness and provenance checks**
 
@@ -342,7 +397,7 @@ Run: `make ci-local && uv run pytest tests/unit/test_data_identity.py tests/unit
 Expected: mismatched or absent database identity blocks readiness; exact identity passes.
 
 ```bash
-git add -A
+git add pubtator_link/config.py pubtator_link/db/migrate.py docker/docker-compose.yml docker/docker-compose.prod.yml tests/unit/test_data_identity.py tests/unit/test_db_migrations.py
 git commit -m "feat(data): bind PubTator readiness to database provenance"
 ```
 
@@ -358,13 +413,18 @@ git commit -m "feat(data): bind PubTator readiness to database provenance"
 Each of 22 rows records mode, application path exclusions, reference release and
 digests when applicable, live-upstream egress/provenance when applicable, cache
 path, schema compatibility, redistribution decision, rollback property, and last
-verification evidence. Test exact equality with the router registry plus router.
+verification evidence. Restored databases are distinct from read-only external
+references; runtime cache is independent. Test exact equality with the router
+registry plus router and the `spliceai` namespace/server-name alias.
 
 - [ ] **Step 2: Run every modified repository gate**
 
-Run `make ci-local` in the router and every modified data repository. Build and
-export every data-bearing application image, apply image-content-policy-v1, and
-verify zero authoritative database/archive paths.
+Run `make ci-local` in the router and every modified data repository. Build all
+22 application images, apply the control-plane plan's
+`image-content-policy-v1.json` to every OCI layer/config, and verify zero denied
+database/archive/secret paths. Exercise exact and previous-known-good data
+materialization, current-image/prior-data compatibility, readiness identity,
+concurrent-init locking, offline pre-seeding, retention, and bounded disk cleanup.
 
 Expected: all local gates pass and content reports have zero denied paths.
 
