@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
 
 .DEFAULT_GOAL := help
 
@@ -59,6 +59,9 @@ test-unit: test-fast ## Alias for parallel unit tests
 test-integration: ## Run in-process integration, conformance, and discoverability-benchmark tests
 	uv run pytest tests/integration tests/conformance tests/discoverability -q || [ $$? -eq 5 ]  # exit 5 = none collected
 
+test-release: ## Run release control-plane tests
+	uv run pytest tests/release -q
+
 test-cov: ## Run tests with coverage
 	uv run pytest tests/unit tests/integration tests/conformance tests/discoverability tests/release --cov=$(PKG) --cov-report=term-missing --cov-report=html --cov-report=xml
 
@@ -69,7 +72,7 @@ http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption 
 
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-actions typecheck http-policy-adoption test-fast test-integration ## Fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
 
 precommit: ci-local ## Run checks expected before commit
 
