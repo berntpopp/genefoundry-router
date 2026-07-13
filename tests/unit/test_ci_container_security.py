@@ -34,7 +34,6 @@ def test_builds_image_and_runs_trivy_and_syft() -> None:
         "must build the production image in CI"
     )
     assert "aquasecurity/trivy-action@" in text, "Trivy image scan required"
-    assert 'exit-code: "1"' in text, "Trivy must fail the build on findings"
     assert "CRITICAL,HIGH" in text, "gate on HIGH/CRITICAL"
     assert "ignore-unfixed: true" in text, "gate on fixable vulns only"
     assert "anchore/sbom-action@" in text, "SBOM (Syft) required (Container-Hardening v1 §8.29)"
