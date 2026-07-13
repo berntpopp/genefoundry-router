@@ -98,54 +98,91 @@ def _require_docker() -> None:
         pytest.skip("a reachable Docker daemon is required")
 
 
-@pytest.fixture(scope="module")
-def built_image(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, dict[str, object]]:
-    """Build one image once, exporting both OCI evidence and a daemon-loadable archive."""
-    _require_docker()
-    output = tmp_path_factory.mktemp("router-image")
-    oci_archive = output / "image.oci.tar"
-    docker_archive = output / "image.docker.tar"
-    _run(
-        (
-            str(DOCKER),
-            "buildx",
-            "build",
-            "--file",
-            "docker/Dockerfile",
-            "--target",
-            "production",
-            "--platform",
-            "linux/amd64",
-            "--build-arg",
-            f"APP_VERSION={VERSION}",
-            "--build-arg",
-            f"VCS_REF={REVISION}",
-            "--build-arg",
-            f"BUILD_DATE={CREATED}",
-            "--tag",
-            IMAGE,
-            "--output",
-            f"type=oci,dest={oci_archive}",
-            "--output",
-            f"type=docker,dest={docker_archive}",
-            ".",
-        ),
-        timeout=900,
-    )
-    _run((str(DOCKER), "load", "--input", str(docker_archive)), timeout=180)
-    layout = output / "oci"
-    layout.mkdir()
-    with tarfile.open(oci_archive, "r") as archive:
-        archive.extractall(layout, filter="data")
-    image_config = json.loads(_run((str(DOCKER), "image", "inspect", IMAGE)).stdout)[0]
-    yield layout, image_config
+def _create_oci_builder() -> str:
+    name = f"genefoundry-router-image-test-{os.getpid()}"
     subprocess.run(  # noqa: S603
-        [str(DOCKER), "image", "rm", "--force", IMAGE],
+        [str(DOCKER), "buildx", "rm", "--force", name],
         cwd=ROOT,
         check=False,
         capture_output=True,
         timeout=60,
     )
+    _run(
+        (
+            str(DOCKER),
+            "buildx",
+            "create",
+            "--driver",
+            "docker-container",
+            "--name",
+            name,
+        ),
+        timeout=120,
+    )
+    _run((str(DOCKER), "buildx", "inspect", name, "--bootstrap"), timeout=300)
+    return name
+
+
+@pytest.fixture(scope="module")
+def built_image(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, dict[str, object]]:
+    """Build one image once, exporting both OCI evidence and a daemon-loadable archive."""
+    _require_docker()
+    builder = _create_oci_builder()
+    output = tmp_path_factory.mktemp("router-image")
+    oci_archive = output / "image.oci.tar"
+    docker_archive = output / "image.docker.tar"
+    try:
+        _run(
+            (
+                str(DOCKER),
+                "buildx",
+                "build",
+                "--builder",
+                builder,
+                "--file",
+                "docker/Dockerfile",
+                "--target",
+                "production",
+                "--platform",
+                "linux/amd64",
+                "--build-arg",
+                f"APP_VERSION={VERSION}",
+                "--build-arg",
+                f"VCS_REF={REVISION}",
+                "--build-arg",
+                f"BUILD_DATE={CREATED}",
+                "--tag",
+                IMAGE,
+                "--output",
+                f"type=oci,dest={oci_archive}",
+                "--output",
+                f"type=docker,dest={docker_archive}",
+                ".",
+            ),
+            timeout=900,
+        )
+        _run((str(DOCKER), "load", "--input", str(docker_archive)), timeout=180)
+        layout = output / "oci"
+        layout.mkdir()
+        with tarfile.open(oci_archive, "r") as archive:
+            archive.extractall(layout, filter="data")
+        image_config = json.loads(_run((str(DOCKER), "image", "inspect", IMAGE)).stdout)[0]
+        yield layout, image_config
+    finally:
+        subprocess.run(  # noqa: S603
+            [str(DOCKER), "image", "rm", "--force", IMAGE],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            timeout=60,
+        )
+        subprocess.run(  # noqa: S603
+            [str(DOCKER), "buildx", "rm", "--force", builder],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            timeout=60,
+        )
 
 
 def test_dockerfile_declares_complete_code_only_oci_identity() -> None:
