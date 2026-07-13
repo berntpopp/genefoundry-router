@@ -576,19 +576,46 @@ def test_no_job_level_env_uses_the_runner_context() -> None:
 def test_release_evidence_states_the_declared_data_contract() -> None:
     """Signed evidence must state the data binding the repository actually declares.
 
-    The workflow hardcoded `--contract data-independent` and a fixed
-    {"mode":"none"} data_requirements. Because _require_data_binding returns early for a
-    data-independent contract, that silently skipped the strongest assertion in the whole
-    evidence chain -- that the running server's captured data identity equals the pinned
-    artifact -- for every data-bearing backend, and published a manifest claiming no data
-    binding for services pinned to an immutable bundle.
+    The workflow hardcoded `--contract data-independent` and a fixed {"mode":"none"}
+    data_requirements, so every data-bearing backend published a manifest claiming it binds
+    to no data at all while pinned to an immutable bundle.
     """
-    workflow = _load(REUSABLE)
-    capture = _run_text(workflow["jobs"]["capture"])
-    assemble = _run_text(workflow["jobs"]["assemble-evidence"])
+    capture = _run_text(_load(REUSABLE)["jobs"]["capture"])
 
     assert "--contract data-independent" not in capture
     assert ".definitions.contract" in capture
     assert "--data-release-tag" in capture and "--data-digest" in capture
-    assert '{"mode":"none","schema_compatibility":[]}' not in assemble
-    assert ".data" in assemble
+
+
+def test_capture_takes_the_context_count_its_contract_requires() -> None:
+    """data-independent needs exactly two capture contexts; data-bound exactly one.
+
+    The library enforces both counts. The workflow captured two unconditionally, so a
+    data-bound release died in `capture` -- which runs AFTER publish-attest, meaning the
+    image and attestation were already pushed and the immutable version tag burned.
+    """
+    capture = _run_text(_load(REUSABLE)["jobs"]["capture"])
+
+    assert 'if [ "$contract" = "data-bound" ]' in capture
+    assert "capture_args=(" in capture
+    # The second context is captured only on the data-independent branch.
+    body = capture.split('if [ "$contract" = "data-bound" ]', 1)[1]
+    assert "capture_tools b" in body.split("else", 1)[1]
+
+
+def test_assemble_evidence_consumes_only_sealed_artifacts() -> None:
+    """assemble-evidence checks out no caller source, so it must read no caller file.
+
+    Reading container-release.json there made `jq` exit 2 under `set -euo pipefail` and
+    killed every release -- after publish-attest had pushed the image and burned the tag.
+    The data contract must reach this job as sealed evidence from `capture`, which is the
+    last job that still holds the caller source.
+    """
+    job = _load(REUSABLE)["jobs"]["assemble-evidence"]
+    caller_checkout = any(
+        "actions/checkout" in str(step.get("uses", "")) and not (step.get("with") or {}).get("path")
+        for step in _steps(job)
+    )
+
+    assert not caller_checkout, "assemble-evidence must not check out the caller source"
+    assert "container-release.json" not in _run_text(job)

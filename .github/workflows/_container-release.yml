@@ -864,32 +864,51 @@ jobs:
               '{runtime:"published-ghcr-digest", capture:$label, image:$image, digest:$digest, port:$port}' \
               > "$context_json"
           }
+          # Prove the contract the repository actually declares, and capture the number of
+          # runtime contexts that contract requires. data-independent must show the
+          # definitions are identical across TWO distinct contexts; data-bound must bind
+          # exactly ONE capture to the declared data identity. The library enforces both
+          # counts, so the shell has to branch -- passing two captures with a data-bound
+          # contract fails, and it fails after publish-attest has already pushed the image.
+          contract="$(jq -er '.definitions.contract' container-release.json)"
           capture_tools a 18000 "$RUNNER_TEMP/capture/mcp-tools-a.json" \
             "$RUNNER_TEMP/capture/context-a.json"
-          capture_tools b 18001 "$RUNNER_TEMP/capture/mcp-tools-b.json" \
-            "$RUNNER_TEMP/capture/context-b.json"
-          # Prove the contract the repository actually declares. Hardcoding data-independent
-          # made _require_data_binding return early, so the strongest assertion in the evidence
-          # chain -- that the running server's data identity equals the pinned artifact -- was
-          # silently skipped for every data-bearing backend.
-          contract="$(jq -er '.definitions.contract' container-release.json)"
+          capture_args=(
+            --tools "$RUNNER_TEMP/capture/mcp-tools-a.json"
+            --context "$RUNNER_TEMP/capture/context-a.json"
+          )
           data_identity_args=()
           if [ "$contract" = "data-bound" ]; then
             data_identity_args=(
               --data-release-tag "$(jq -er '.data.release_tag' container-release.json)"
               --data-digest "$(jq -er '.data.digest' container-release.json)"
             )
+          else
+            capture_tools b 18001 "$RUNNER_TEMP/capture/mcp-tools-b.json" \
+              "$RUNNER_TEMP/capture/context-b.json"
+            capture_args+=(
+              --tools "$RUNNER_TEMP/capture/mcp-tools-b.json"
+              --context "$RUNNER_TEMP/capture/context-b.json"
+            )
           fi
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py capture-definitions \
-            --tools "$RUNNER_TEMP/capture/mcp-tools-a.json" \
-            --tools "$RUNNER_TEMP/capture/mcp-tools-b.json" \
-            --context "$RUNNER_TEMP/capture/context-a.json" --context "$RUNNER_TEMP/capture/context-b.json" \
+            "${capture_args[@]}" \
             --contract "$contract" "${data_identity_args[@]}" \
             --out-definitions "$RUNNER_TEMP/capture/mcp-definitions.json" \
             --out-context "$RUNNER_TEMP/capture/mcp-capture-context.json"
+          # Project the declared data requirements here, where the caller source exists.
+          # assemble-evidence deliberately checks out no caller source -- it consumes only
+          # sealed artifacts -- so the contract must reach it as sealed evidence, never by
+          # reading container-release.json from a workspace it does not have.
+          jq -e '.data
+            | {mode}
+            + (if has("release_tag") then {release_tag, digest} else {} end)
+            + (if has("reproducible_rollback") then {reproducible_rollback} else {} end)
+            + {schema_compatibility: (.schema_compatibility // [])}' \
+            container-release.json > "$RUNNER_TEMP/capture/data-requirements.json"
           cd "$RUNNER_TEMP/capture"
-          sha256sum mcp-definitions.json mcp-capture-context.json > SHA256SUMS
+          sha256sum mcp-definitions.json mcp-capture-context.json data-requirements.json > SHA256SUMS
 
       - name: Tear down smoke stack
         id: teardown
@@ -984,15 +1003,8 @@ jobs:
           jq -n --arg version "$(jq -er '.Version' "$RUNNER_TEMP/build/trivy-version.json")" \
             --arg updated "$(jq -er '.VulnerabilityDB.UpdatedAt' "$RUNNER_TEMP/build/trivy-version.json")" \
             '{version:$version,database_updated_at:$updated}' > "$RUNNER_TEMP/final/scanner.json"
-          # The manifest's data_requirements must state what the release actually binds to.
-          # A fixed {"mode":"none"} understated every data-bearing backend in signed evidence.
-          jq -e '.data
-            | {mode}
-            + (if has("release_tag") then {release_tag, digest} else {} end)
-            + (if has("reproducible_rollback")
-               then {reproducible_rollback} else {} end)
-            + {schema_compatibility: (.schema_compatibility // [])}' \
-            container-release.json > "$RUNNER_TEMP/final/data.json"
+          # Sealed in the capture job, which is the last job holding the caller source.
+          cp "$RUNNER_TEMP/capture/data-requirements.json" "$RUNNER_TEMP/final/data.json"
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py assemble-manifest \
             --identity "$RUNNER_TEMP/final/identity.json" \
