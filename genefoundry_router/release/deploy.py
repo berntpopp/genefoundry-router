@@ -191,12 +191,12 @@ def _verify_file_digest(path: Path, expected: str, label: str) -> None:
 def _attestation_policy(
     manifest: ApplicationReleaseManifest, predicate_type: str
 ) -> tuple[str, ...]:
-    signer_repo = manifest.workflow.standard.split("/.github/workflows/", maxsplit=1)[0]
+    # `gh attestation verify` rejects --signer-repo and --signer-workflow together: they
+    # are mutually exclusive identity flags. --signer-workflow is the stronger binding and
+    # already names the repository, so passing both pins nothing extra and fails outright.
     return (
         "--repo",
         manifest.repository,
-        "--signer-repo",
-        signer_repo,
         "--signer-workflow",
         manifest.workflow.standard,
         "--signer-digest",

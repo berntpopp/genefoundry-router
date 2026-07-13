@@ -527,16 +527,16 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/attestation-evidence"
           "$RUNNER_TEMP/gh" attestation verify "oci://$IMAGE@$EXPECTED_DIGEST" \
-            --repo "$GITHUB_REPOSITORY" --signer-repo berntpopp/genefoundry-router \
-            --signer-workflow .github/workflows/_container-release.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow berntpopp/genefoundry-router/.github/workflows/_container-release.yml \
             --signer-digest "${{ needs.prepare.outputs.standard_sha }}" \
             --source-ref "refs/tags/${{ needs.prepare.outputs.tag }}" \
             --source-digest "${{ needs.prepare.outputs.source_sha }}" \
             --predicate-type https://slsa.dev/provenance/v1 --deny-self-hosted-runners \
             --format json > "$RUNNER_TEMP/attestation-evidence/provenance-verification.json"
           "$RUNNER_TEMP/gh" attestation verify "oci://$IMAGE@$EXPECTED_DIGEST" \
-            --repo "$GITHUB_REPOSITORY" --signer-repo berntpopp/genefoundry-router \
-            --signer-workflow .github/workflows/_container-release.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow berntpopp/genefoundry-router/.github/workflows/_container-release.yml \
             --signer-digest "${{ needs.prepare.outputs.standard_sha }}" \
             --source-ref "refs/tags/${{ needs.prepare.outputs.tag }}" \
             --source-digest "${{ needs.prepare.outputs.source_sha }}" \

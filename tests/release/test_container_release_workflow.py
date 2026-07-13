@@ -355,3 +355,20 @@ def test_publish_addresses_the_oci_layout_by_digest_not_ref_name() -> None:
 
     assert 'oci-layout@$EXPECTED_DIGEST"' in publish
     assert 'oci-layout:$SOURCE_ALIAS"' not in publish
+
+
+def test_attestation_verify_never_pairs_mutually_exclusive_signer_flags() -> None:
+    """`gh attestation verify` rejects --signer-repo together with --signer-workflow.
+
+    They belong to one mutually exclusive identity group. --signer-workflow is the
+    stronger binding and already names the repository, so it is the one we keep; it
+    must be fully qualified as [host/]<owner>/<repo>/<path>/<to>/<workflow>.
+    """
+    workflow = _load(REUSABLE)
+    text = "\n".join(_run_text(job) for job in workflow["jobs"].values())
+
+    assert "--signer-repo" not in text
+    assert (
+        "--signer-workflow berntpopp/genefoundry-router/.github/workflows/"
+        "_container-release.yml" in text
+    )
