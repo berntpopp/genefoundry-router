@@ -6,7 +6,6 @@
       "description": "Exact external reference artifact required by the application.",
       "properties": {
         "release_tag": {
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
           "title": "Release Tag",
           "type": "string"
         },
@@ -209,7 +208,6 @@
       "description": "Exact restored database artifact required by the application.",
       "properties": {
         "release_tag": {
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
           "title": "Release Tag",
           "type": "string"
         },
@@ -327,7 +325,6 @@
       "description": "Observed upstream identity with explicitly degraded rollback.",
       "properties": {
         "release_tag": {
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
           "title": "Release Tag",
           "type": "string"
         },

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repository-local entry point for container release tooling."""
+"""Repository-local entry point for container and data release tooling."""
 
 from genefoundry_router.release.cli import app
 

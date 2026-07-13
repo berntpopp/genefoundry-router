@@ -53,6 +53,7 @@ PACKAGED_CODE_ASSETS = tuple(
         "__init__.py",
         "application-release-manifest.schema.json",
         "container-release.schema.json",
+        "data-release-manifest.schema.json",
         "fleet-baseline.json",
         "image-content-policy-v1.json",
     )
