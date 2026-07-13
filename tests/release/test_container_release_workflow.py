@@ -387,3 +387,15 @@ def test_scanner_identity_is_read_from_trivy_version_not_the_scan_report() -> No
     assert "trivy-version.json" in assemble
     assert ".ArtifactName" not in assemble
     assert ".Metadata.DB.UpdatedAt" not in assemble
+
+
+def test_finalize_names_the_repository_without_a_working_tree() -> None:
+    """finalize is privileged and never checks out source, so `gh` cannot infer the repo.
+
+    Without GH_REPO every `gh release` call fails with "not a git repository". The fix is
+    to name the repository, not to hand a privileged job a working tree.
+    """
+    finalize = _load(REUSABLE)["jobs"]["finalize"]
+
+    assert finalize["env"]["GH_REPO"] == "${{ github.repository }}"
+    assert not any("checkout" in str(step.get("uses", "")) for step in _steps(finalize))

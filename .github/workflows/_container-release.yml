@@ -788,6 +788,10 @@ jobs:
       packages: write
     env:
       GH_TOKEN: ${{ github.token }}
+      # This job deliberately never checks out the source: it is privileged and consumes
+      # only sealed artifacts. `gh release` therefore has no git remote to infer, so name
+      # the repository explicitly instead of granting it a working tree.
+      GH_REPO: ${{ github.repository }}
       IMAGE: ${{ needs.prepare.outputs.image }}
       PUBLISHED_DIGEST: ${{ needs.publish-attest.outputs.published_digest }}
       SOURCE_ALIAS: ${{ needs.prepare.outputs.source_alias }}
