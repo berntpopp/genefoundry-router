@@ -177,11 +177,11 @@ jobs:
               ports: !override
                 - 127.0.0.1:18000:8000
               read_only: true
-              tmpfs:
+              tmpfs: !override
                 - /tmp:rw,noexec,nosuid,size=64m,mode=1777
-              cap_drop:
+              cap_drop: !override
                 - ALL
-              security_opt:
+              security_opt: !override
                 - no-new-privileges:true
               init: true
               deploy:

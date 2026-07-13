@@ -184,6 +184,9 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
     assert "image_allowlist" in inspect_command
     assert '"${allowlist_args[@]}"' in inspect_command
     assert "validate-compose" in run_text
+    assert "tmpfs: !override" in run_text
+    assert "cap_drop: !override" in run_text
+    assert "security_opt: !override" in run_text
     assert "--no-build" in run_text
     assert "/health" in run_text
     assert "MCP" in run_text and "initialize" in run_text and "tools/list" in run_text
