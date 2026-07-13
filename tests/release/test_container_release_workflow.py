@@ -413,3 +413,21 @@ def test_release_verification_tolerates_asynchronous_attestation() -> None:
     for job_name in ("prepare", "finalize"):
         run_text = _run_text(workflow["jobs"][job_name])
         assert "release attestation not yet published; retry" in run_text, job_name
+
+
+def test_every_job_that_pushes_to_ghcr_authenticates_first() -> None:
+    """A job with packages: write that pushes must log in to GHCR.
+
+    finalize held packages: write and pushed the version alias with `oras cp`, but never
+    authenticated, so the final step of the final job failed with "denied" after the image,
+    release, and attestations had all published. Credentials are acquired only after the
+    sealed evidence is verified, which is why the login sits immediately before the push.
+    """
+    workflow = _load(REUSABLE)
+
+    for name, job in workflow["jobs"].items():
+        pushes = "oras cp" in _run_text(job) or "docker push" in _run_text(job)
+        if not pushes:
+            continue
+        logs_in = any("docker/login-action" in str(step.get("uses", "")) for step in _steps(job))
+        assert logs_in, f"{name} pushes to GHCR without authenticating"

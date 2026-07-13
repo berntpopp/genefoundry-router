@@ -2,6 +2,18 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.6] - 2026-07-13
+
+### Fixed
+
+- Authenticate to GHCR in the finalize job. It held `packages: write` and pushed the
+  version alias with `oras cp`, but never logged in, so the final step of the final job
+  failed with `denied` after the image, the release, and every attestation had already
+  published. `publish-attest` was the only job that authenticated. The login is placed
+  immediately before the push, after the sealed evidence is verified, preserving the
+  "verify before credentials" ordering. A guard test now fails any job that pushes to
+  GHCR without authenticating.
+
 ## [0.6.5] - 2026-07-13
 
 ### Fixed

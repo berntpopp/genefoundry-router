@@ -892,6 +892,13 @@ jobs:
             $gh release verify-asset "$TAG" "$asset"
           done
 
+      - name: Log in to GHCR
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Apply missing version alias from identical manifest bytes
         shell: bash
         run: |

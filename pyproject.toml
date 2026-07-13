@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genefoundry-router"
-version = "0.6.5"
+version = "0.6.6"
 description = "A thin FastMCP 3.x aggregator federating the GeneFoundry -link MCP fleet behind one endpoint."
 readme = "README.md"
 authors = [{ name = "Bernt Popp" }]
