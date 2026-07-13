@@ -145,10 +145,10 @@ snapshot-catalog: ## Regenerate the discoverability benchmark catalog from the l
 	uv run --env-file ci/fleet-urls.env python scripts/snapshot_catalog.py
 
 release-candidate: ## Author ci/release-candidate-inventory.json from the live fleet (online)
-	@test -n "$(REVISIONS)" || (echo "REVISIONS=<path to namespace->commit JSON> is required (strato: manage.py attest --json)"; exit 2)
+	@test -n "$(RELEASE_MANIFESTS)" || (echo "RELEASE_MANIFESTS=<verified application release manifest set> is required"; exit 2)
 	@test -n "$(IDENTITY)" || (echo "IDENTITY=<reviewed release identity> is required"; exit 2)
 	uv run --env-file ci/fleet-urls.env python scripts/make_release_candidate.py \
-		--identity "$(IDENTITY)" --revisions "$(REVISIONS)"
+		--identity "$(IDENTITY)" --release-manifests "$(RELEASE_MANIFESTS)"
 
 .PHONY: snapshot-baseline
 snapshot-baseline: ## Re-pin the packaged drift baseline from the live fleet (online)

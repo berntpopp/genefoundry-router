@@ -13,11 +13,11 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 from typing import Any
 
+from pydantic import ValidationError
+
 from genefoundry_router.config import load_registry
-from genefoundry_router.drift import canonical_json_schema
 from genefoundry_router.devtools.fakes import (
     BackendSpec,
     Manifest,
@@ -25,14 +25,12 @@ from genefoundry_router.devtools.fakes import (
     ToolSpec,
     load_manifest,
 )
+from genefoundry_router.drift import canonical_json_schema
+from genefoundry_router.release.models import ApplicationReleaseManifest
 
 
 class ReleaseCandidateCaptureError(RuntimeError):
     """A required backend could not be included in a reviewed release capture."""
-
-
-_COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
-_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 def backend_definitions_digest(spec: BackendSpec) -> str:
@@ -43,36 +41,62 @@ def backend_definitions_digest(spec: BackendSpec) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
-def load_release_candidate_inventory(path: Path) -> dict[str, Any]:
-    """Load immutable endpoint/revision provenance for a reviewed candidate fleet."""
+def _validated_release_manifest(value: object, *, label: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ReleaseCandidateCaptureError(f"{label} requires an application release manifest")
     try:
-        inventory = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ReleaseCandidateCaptureError(f"invalid release-candidate inventory: {path}") from exc
+        manifest = ApplicationReleaseManifest.model_validate(value)
+    except ValidationError as exc:
+        raise ReleaseCandidateCaptureError(
+            f"invalid application release manifest for {label}"
+        ) from exc
+    return manifest.model_dump(mode="json")
+
+
+def validate_release_candidate_inventory(inventory: object) -> dict[str, Any]:
+    """Validate one atomic router/backend inventory bound to release manifests."""
     if not isinstance(inventory, dict) or not isinstance(inventory.get("identity"), str):
         raise ReleaseCandidateCaptureError("release-candidate inventory requires an identity")
+    identity = inventory["identity"]
+    if not identity.strip():
+        raise ReleaseCandidateCaptureError("release-candidate inventory requires an identity")
+    router = _validated_release_manifest(
+        inventory.get("router"), label="router application release"
+    )
+    if router["repository"] != "berntpopp/genefoundry-router":
+        raise ReleaseCandidateCaptureError("router application release has a repository mismatch")
     backends = inventory.get("backends")
     if not isinstance(backends, dict) or not backends:
         raise ReleaseCandidateCaptureError("release-candidate inventory requires backends")
+    normalized: dict[str, dict[str, Any]] = {}
     for namespace, entry in backends.items():
         if not isinstance(namespace, str) or not isinstance(entry, dict):
             raise ReleaseCandidateCaptureError(
                 "release-candidate inventory has invalid backend entry"
             )
-        endpoint = entry.get("endpoint")
-        revision = entry.get("revision")
-        definitions_sha256 = entry.get("definitions_sha256")
+        if set(entry) != {"endpoint", "application_release"}:
+            raise ReleaseCandidateCaptureError(
+                f"release-candidate backend {namespace} requires endpoint and application release"
+            )
+        endpoint = entry["endpoint"]
         if not isinstance(endpoint, str) or not endpoint.startswith("https://"):
             raise ReleaseCandidateCaptureError("release-candidate endpoint must be an HTTPS URL")
-        if not isinstance(revision, str) or not _COMMIT_SHA_RE.fullmatch(revision):
-            raise ReleaseCandidateCaptureError(
-                "release-candidate revision must be a 40-character commit SHA"
-            )
-        if not isinstance(definitions_sha256, str) or not _SHA256_RE.fullmatch(definitions_sha256):
-            raise ReleaseCandidateCaptureError(
-                "release-candidate definitions_sha256 must be a SHA-256 digest"
-            )
-    return inventory
+        normalized[namespace] = {
+            "endpoint": endpoint,
+            "application_release": _validated_release_manifest(
+                entry["application_release"], label=namespace
+            ),
+        }
+    return {"identity": identity, "router": router, "backends": normalized}
+
+
+def load_release_candidate_inventory(path: Path) -> dict[str, Any]:
+    """Load immutable image/source/data/definition provenance for a candidate fleet."""
+    try:
+        inventory = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ReleaseCandidateCaptureError(f"invalid release-candidate inventory: {path}") from exc
+    return validate_release_candidate_inventory(inventory)
 
 
 def merge_backend(
@@ -137,6 +161,10 @@ async def _run(
     release_candidate_inventory: dict[str, Any] | None = None,
     normalized: bool = False,
 ) -> None:
+    if release_candidate_inventory is not None:
+        release_candidate_inventory = validate_release_candidate_inventory(
+            release_candidate_inventory
+        )
     prior = load_manifest(out) if out.exists() else None
     registry = [b for b in load_registry(servers_file, os.environ) if b.enabled]
     if release_candidate_inventory is not None:
@@ -146,6 +174,18 @@ async def _run(
             raise ReleaseCandidateCaptureError(
                 "release-candidate inventory must cover exactly the enabled registry backends"
             )
+        for backend in registry:
+            expected_repository = backend.repo
+            actual_repository = candidate_backends[backend.namespace]["application_release"][
+                "repository"
+            ]
+            if (
+                expected_repository is None
+                or actual_repository.lower() != expected_repository.lower()
+            ):
+                raise ReleaseCandidateCaptureError(
+                    f"application release repository mismatch for {backend.namespace}"
+                )
     backends: dict[str, BackendSpec] = {}
     for b in registry:
         endpoint = (
@@ -155,12 +195,15 @@ async def _run(
         )
         fresh = await _snapshot_backend(endpoint, b.service_token) if endpoint else None
         if release_candidate_inventory is not None and fresh is not None:
-            expected_digest = release_candidate_inventory["backends"][b.namespace][
-                "definitions_sha256"
-            ]
+            release = release_candidate_inventory["backends"][b.namespace]["application_release"]
+            expected_digest = release["mcp"]["definitions_sha256"]
             if backend_definitions_digest(fresh) != expected_digest:
                 raise ReleaseCandidateCaptureError(
                     f"definition attestation mismatch for required release-candidate backend {b.namespace}"
+                )
+            if fresh.version != release["version"]:
+                raise ReleaseCandidateCaptureError(
+                    f"version mismatch for required release-candidate backend {b.namespace}"
                 )
         prior_spec = prior.backends.get(b.namespace) if prior else None
         merged = merge_backend(

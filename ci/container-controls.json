@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-07-13T12:00:00Z",
+  "repositories": {
+    "berntpopp/autopvs1-link": {
+      "status": "unavailable", "repository": "berntpopp/autopvs1-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/autopvs1-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/clingen-link": {
+      "status": "unavailable", "repository": "berntpopp/clingen-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/clingen-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/clinvar-link": {
+      "status": "unavailable", "repository": "berntpopp/clinvar-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/clinvar-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/gencc-link": {
+      "status": "unavailable", "repository": "berntpopp/gencc-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/gencc-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/genefoundry-router": {
+      "status": "unavailable", "repository": "berntpopp/genefoundry-router",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/genefoundry-router/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/genereviews-link": {
+      "status": "unavailable", "repository": "berntpopp/genereviews-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/genereviews-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/gnomad-link": {
+      "status": "unavailable", "repository": "berntpopp/gnomad-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/gnomad-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/gtex-link": {
+      "status": "unavailable", "repository": "berntpopp/gtex-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/gtex-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/hgnc-link": {
+      "status": "unavailable", "repository": "berntpopp/hgnc-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/hgnc-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/hpo-link": {
+      "status": "unavailable", "repository": "berntpopp/hpo-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/hpo-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/litvar-link": {
+      "status": "unavailable", "repository": "berntpopp/litvar-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/litvar-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/mavedb-link": {
+      "status": "unavailable", "repository": "berntpopp/mavedb-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/mavedb-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/metadome-link": {
+      "status": "unavailable", "repository": "berntpopp/metadome-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/metadome-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/mgi-link": {
+      "status": "unavailable", "repository": "berntpopp/mgi-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/mgi-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/mondo-link": {
+      "status": "unavailable", "repository": "berntpopp/mondo-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/mondo-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/orphanet-link": {
+      "status": "unavailable", "repository": "berntpopp/orphanet-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/orphanet-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/panelapp-link": {
+      "status": "unavailable", "repository": "berntpopp/panelapp-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/panelapp-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/pubtator-link": {
+      "status": "unavailable", "repository": "berntpopp/pubtator-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/pubtator-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/spliceailookup-link": {
+      "status": "unavailable", "repository": "berntpopp/spliceailookup-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/spliceailookup-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/stringdb-link": {
+      "status": "unavailable", "repository": "berntpopp/stringdb-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/stringdb-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/uniprot-link": {
+      "status": "unavailable", "repository": "berntpopp/uniprot-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/uniprot-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    },
+    "berntpopp/vep-link": {
+      "status": "unavailable", "repository": "berntpopp/vep-link",
+      "reason": "Fleet control configuration and GHCR bootstrap are pending.",
+      "evidence": {"status": "unavailable", "source": "manual", "url": "https://github.com/berntpopp/vep-link/settings", "verified_at": "2026-07-13T12:00:00Z", "reviewer": "bernt-popp", "reason": "No passing control audit exists yet."}
+    }
+  }
+}
