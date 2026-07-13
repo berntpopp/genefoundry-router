@@ -60,18 +60,33 @@ PACKAGED_CODE_ASSETS = tuple(
 TMPFS = "/tmp:rw,noexec,nosuid,size=64m,mode=1777"  # noqa: S108 - container mount
 
 
+class DockerCommandError(subprocess.CalledProcessError):
+    """Expose captured Docker stdout and stderr in pytest tracebacks."""
+
+    def __str__(self) -> str:
+        return f"{super().__str__()}\nstdout:\n{self.output or ''}\nstderr:\n{self.stderr or ''}"
+
+
 def _run(
     args: Sequence[str], *, timeout: int = 120, env: dict[str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(  # noqa: S603
+    completed = subprocess.run(  # noqa: S603
         list(args),
         cwd=ROOT,
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
         timeout=timeout,
         env=env,
     )
+    if completed.returncode != 0:
+        raise DockerCommandError(
+            completed.returncode,
+            list(args),
+            output=completed.stdout,
+            stderr=completed.stderr,
+        )
+    return completed
 
 
 def _require_docker() -> None:

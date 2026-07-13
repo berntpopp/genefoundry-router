@@ -113,7 +113,10 @@ jobs:
           push: false
           provenance: false
           sbom: false
-          build-args: VCS_REF=${{ github.sha }}
+          build-args: |
+            APP_VERSION=0.0.0
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=1970-01-01T00:00:00Z
           cache-from: type=gha,scope=${{ steps.cache-scope.outputs.scope }}
           cache-to: type=gha,mode=min,ignore-error=true,scope=${{ steps.cache-scope.outputs.scope }}
 

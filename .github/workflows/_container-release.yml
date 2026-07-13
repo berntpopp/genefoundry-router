@@ -14,6 +14,7 @@ jobs:
       contents: read
       packages: read
     outputs:
+      build_date: ${{ steps.state.outputs.build_date }}
       build_required: ${{ steps.state.outputs.build_required }}
       completed_release: ${{ steps.state.outputs.completed_release }}
       image: ${{ steps.state.outputs.image }}
@@ -87,6 +88,11 @@ jobs:
           echo "$gh_sha256  $RUNNER_TEMP/gh.tar.gz" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/gh.tar.gz" -C "$RUNNER_TEMP"
           install -m 0755 "$RUNNER_TEMP/gh_${gh_version}_linux_amd64/bin/gh" "$RUNNER_TEMP/gh"
+          "$RUNNER_TEMP/gh" release verify --help >/dev/null
+          "$RUNNER_TEMP/gh" release verify-asset --help >/dev/null
+          "$RUNNER_TEMP/gh" attestation verify --help >/dev/null
+          "$RUNNER_TEMP/gh" attestation download --help >/dev/null
+          "$RUNNER_TEMP/gh" attestation trusted-root --help >/dev/null
           curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/oras.tar.gz" \
             "https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_amd64.tar.gz"
           echo "$oras_sha256  $RUNNER_TEMP/oras.tar.gz" | sha256sum -c -
@@ -110,6 +116,26 @@ jobs:
             --event-name "$GITHUB_EVENT_NAME" --event-ref "$EVENT_REF" \
             --event-sha "$EVENT_SHA" --changelog CHANGELOG.md
 
+      - name: Enforce fleet release controls before publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run --project .container-release-tools python - <<'PY'
+          from pathlib import Path
+
+          from genefoundry_router.release.controls import (
+              expected_fleet_repositories,
+              load_control_ledger,
+              require_compliant_controls,
+          )
+
+          standard = Path(".container-release-tools")
+          require_compliant_controls(
+              load_control_ledger(standard / "ci/container-controls.json"),
+              expected_fleet_repositories(standard / "servers.yaml"),
+          )
+          PY
+
       - name: Resolve idempotent release state
         id: state
         shell: bash
@@ -125,6 +151,7 @@ jobs:
           version="${tag#v}"
           test "$(uv version --short)" = "$version"
           source_sha="$EVENT_SHA"
+          build_date="$(git show -s --format=%cI "$source_sha")"
           source_alias="sha-$source_sha"
           image="ghcr.io/${GITHUB_REPOSITORY,,}"
           build_required=true
@@ -165,6 +192,7 @@ jobs:
 
           {
             echo "build_required=$build_required"
+            echo "build_date=$build_date"
             echo "completed_release=$completed_release"
             echo "image=$image"
             echo "source_alias=$source_alias"
@@ -245,7 +273,10 @@ jobs:
           push: false
           provenance: false
           sbom: false
-          build-args: VCS_REF=${{ needs.prepare.outputs.source_sha }}
+          build-args: |
+            APP_VERSION=${{ needs.prepare.outputs.version }}
+            VCS_REF=${{ needs.prepare.outputs.source_sha }}
+            BUILD_DATE=${{ needs.prepare.outputs.build_date }}
 
       - name: Import matching source alias without rebuilding
         if: ${{ needs.prepare.outputs.build_required == 'false' }}
@@ -426,6 +457,11 @@ jobs:
           echo "$gh_sha256  $RUNNER_TEMP/gh.tar.gz" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/gh.tar.gz" -C "$RUNNER_TEMP"
           install -m 0755 "$RUNNER_TEMP/gh_${gh_version}_linux_amd64/bin/gh" "$RUNNER_TEMP/gh"
+          "$RUNNER_TEMP/gh" release verify --help >/dev/null
+          "$RUNNER_TEMP/gh" release verify-asset --help >/dev/null
+          "$RUNNER_TEMP/gh" attestation verify --help >/dev/null
+          "$RUNNER_TEMP/gh" attestation download --help >/dev/null
+          "$RUNNER_TEMP/gh" attestation trusted-root --help >/dev/null
           curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/oras.tar.gz" \
             "https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_amd64.tar.gz"
           echo "$oras_sha256  $RUNNER_TEMP/oras.tar.gz" | sha256sum -c -
@@ -486,11 +522,35 @@ jobs:
             --source-ref "refs/tags/${{ needs.prepare.outputs.tag }}" \
             --source-digest "${{ needs.prepare.outputs.source_sha }}" \
             --predicate-type https://slsa.dev/provenance/v1 --deny-self-hosted-runners \
-            --format json > "$RUNNER_TEMP/attestation-evidence/verification.json"
-          cp "$RUNNER_TEMP/attestation-evidence/verification.json" "$RUNNER_TEMP/attestation-evidence/attestation-bundle.json"
-          printf '{"mediaType":"application/vnd.dev.sigstore.trustedroot+json;version=0.1"}\n' \
+            --format json > "$RUNNER_TEMP/attestation-evidence/provenance-verification.json"
+          "$RUNNER_TEMP/gh" attestation verify "oci://$IMAGE@$EXPECTED_DIGEST" \
+            --repo "$GITHUB_REPOSITORY" --signer-repo berntpopp/genefoundry-router \
+            --signer-workflow .github/workflows/_container-release.yml \
+            --signer-digest "${{ needs.prepare.outputs.standard_sha }}" \
+            --source-ref "refs/tags/${{ needs.prepare.outputs.tag }}" \
+            --source-digest "${{ needs.prepare.outputs.source_sha }}" \
+            --predicate-type https://spdx.dev/Document/v2.3 --deny-self-hosted-runners \
+            --format json > "$RUNNER_TEMP/attestation-evidence/spdx-verification.json"
+          jq -n \
+            --slurpfile provenance "$RUNNER_TEMP/attestation-evidence/provenance-verification.json" \
+            --slurpfile spdx "$RUNNER_TEMP/attestation-evidence/spdx-verification.json" \
+            '{provenance:$provenance[0], spdx:$spdx[0]}' \
+            > "$RUNNER_TEMP/attestation-evidence/verification.json"
+          (
+            cd "$RUNNER_TEMP/attestation-evidence"
+            "$RUNNER_TEMP/gh" attestation download "oci://$IMAGE@$EXPECTED_DIGEST" \
+              --repo "$GITHUB_REPOSITORY" --limit 30
+            bundle_file="$(find . -maxdepth 1 -type f \( -name 'sha256:*.jsonl' -o -name 'sha256-*.jsonl' \) -print -quit)"
+            test -n "$bundle_file"
+            mv "$bundle_file" attestation-bundle.json
+          )
+          "$RUNNER_TEMP/gh" attestation trusted-root \
             > "$RUNNER_TEMP/attestation-evidence/trusted-root.json"
+          test -s "$RUNNER_TEMP/attestation-evidence/attestation-bundle.json"
+          test -s "$RUNNER_TEMP/attestation-evidence/trusted-root.json"
           cp "$RUNNER_TEMP/release-build/image-manifest.json" "$RUNNER_TEMP/attestation-evidence/image-manifest.json"
+          rm -f "$RUNNER_TEMP/attestation-evidence/provenance-verification.json" \
+            "$RUNNER_TEMP/attestation-evidence/spdx-verification.json"
           cd "$RUNNER_TEMP/attestation-evidence"
           sha256sum ./*.json > SHA256SUMS
 
@@ -546,19 +606,55 @@ jobs:
           uv sync --project .container-release-tools --group dev --frozen
           docker pull "$IMAGE@${PUBLISHED_DIGEST}"
           port="$(jq -er '.service.container_port' container-release.json)"
-          container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
-            --security-opt no-new-privileges:true --tmpfs /tmp:rw,noexec,nosuid,size=64m \
-            -p "127.0.0.1:18000:$port" "$IMAGE@$PUBLISHED_DIGEST")"
-          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
-          for _ in $(seq 1 90); do curl -fsS http://127.0.0.1:18000/health && break; sleep 1; done
           mkdir -p "$RUNNER_TEMP/capture"
-          printf '[]' > "$RUNNER_TEMP/capture/tools-a.json"
-          printf '[]' > "$RUNNER_TEMP/capture/tools-b.json"
-          printf '{"fixture":"empty","rows":0}' > "$RUNNER_TEMP/capture/context-a.json"
-          printf '{"fixture":"populated","rows":1}' > "$RUNNER_TEMP/capture/context-b.json"
+          capture_tools() {
+            local label="$1"
+            local host_port="$2"
+            local tools_json="$3"
+            local context_json="$4"
+            local container_id
+            container_id="$(docker run --detach --rm --read-only --cap-drop ALL \
+              --security-opt no-new-privileges:true \
+              --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+              -p "127.0.0.1:${host_port}:$port" "$IMAGE@$PUBLISHED_DIGEST")"
+            trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' RETURN
+            for _ in $(seq 1 90); do
+              curl -fsS "http://127.0.0.1:${host_port}/health" && break
+              sleep 1
+            done
+            curl -fsS -D "$RUNNER_TEMP/capture/${label}.headers" \
+              -o "$RUNNER_TEMP/capture/${label}-initialize.json" \
+              -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+              --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-capture","version":"1"}}}' \
+              "http://127.0.0.1:${host_port}/mcp"
+            grep -Fq '"serverInfo"' "$RUNNER_TEMP/capture/${label}-initialize.json"
+            session="$(awk 'tolower($1) == "mcp-session-id:" {gsub("\\r", "", $2); print $2}' "$RUNNER_TEMP/capture/${label}.headers")"
+            session_args=()
+            if [ -n "$session" ]; then
+              session_args=(-H "Mcp-Session-Id: $session")
+            fi
+            curl -fsS -o "$RUNNER_TEMP/capture/${label}-tools-response.json" \
+              -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+              "${session_args[@]}" \
+              --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+              "http://127.0.0.1:${host_port}/mcp"
+            jq -er '.result.tools | type == "array" and length > 0' \
+              "$RUNNER_TEMP/capture/${label}-tools-response.json" >/dev/null
+            jq -c '.result.tools' "$RUNNER_TEMP/capture/${label}-tools-response.json" \
+              > "$tools_json"
+            jq -n --arg label "$label" --arg image "$IMAGE" --arg digest "$PUBLISHED_DIGEST" \
+              --argjson port "$host_port" \
+              '{runtime:"published-ghcr-digest", capture:$label, image:$image, digest:$digest, port:$port}' \
+              > "$context_json"
+          }
+          capture_tools a 18000 "$RUNNER_TEMP/capture/mcp-tools-a.json" \
+            "$RUNNER_TEMP/capture/context-a.json"
+          capture_tools b 18001 "$RUNNER_TEMP/capture/mcp-tools-b.json" \
+            "$RUNNER_TEMP/capture/context-b.json"
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py capture-definitions \
-            --tools "$RUNNER_TEMP/capture/tools-a.json" --tools "$RUNNER_TEMP/capture/tools-b.json" \
+            --tools "$RUNNER_TEMP/capture/mcp-tools-a.json" \
+            --tools "$RUNNER_TEMP/capture/mcp-tools-b.json" \
             --context "$RUNNER_TEMP/capture/context-a.json" --context "$RUNNER_TEMP/capture/context-b.json" \
             --contract data-independent --out-definitions "$RUNNER_TEMP/capture/mcp-definitions.json" \
             --out-context "$RUNNER_TEMP/capture/mcp-capture-context.json"
@@ -703,6 +799,11 @@ jobs:
           echo "$gh_sha256  $RUNNER_TEMP/gh.tar.gz" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/gh.tar.gz" -C "$RUNNER_TEMP"
           install -m 0755 "$RUNNER_TEMP/gh_${gh_version}_linux_amd64/bin/gh" "$RUNNER_TEMP/gh"
+          "$RUNNER_TEMP/gh" release verify --help >/dev/null
+          "$RUNNER_TEMP/gh" release verify-asset --help >/dev/null
+          "$RUNNER_TEMP/gh" attestation verify --help >/dev/null
+          "$RUNNER_TEMP/gh" attestation download --help >/dev/null
+          "$RUNNER_TEMP/gh" attestation trusted-root --help >/dev/null
           curl -fsSL --proto '=https' --tlsv1.2 -o "$RUNNER_TEMP/oras.tar.gz" \
             "https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_amd64.tar.gz"
           echo "$oras_sha256  $RUNNER_TEMP/oras.tar.gz" | sha256sum -c -
@@ -716,6 +817,10 @@ jobs:
           gh="$RUNNER_TEMP/gh"
           assets="$RUNNER_TEMP/final/assets"
           manifest="$RUNNER_TEMP/final/application-release-manifest.json"
+          expected="$RUNNER_TEMP/final/release-assets"
+          rm -rf "$expected" && mkdir -p "$expected"
+          cp "$assets"/* "$expected"/
+          cp "$manifest" "$expected"/
           if release_json="$($gh release view "$TAG" --json isDraft 2>/dev/null)"; then
             if [ "$(jq -r .isDraft <<<"$release_json")" = false ]; then
               $gh release verify "$TAG"
@@ -723,26 +828,26 @@ jobs:
             else
               rm -rf "$RUNNER_TEMP/draft" && mkdir -p "$RUNNER_TEMP/draft"
               $gh release download "$TAG" --dir "$RUNNER_TEMP/draft"
-              if diff -qr "$assets" "$RUNNER_TEMP/draft" >/dev/null; then
+              if diff -qr "$expected" "$RUNNER_TEMP/draft" >/dev/null; then
                 echo "matching draft assets"
               else
                 echo "mismatched draft assets; recreating unpublished draft"
                 $gh release delete "$TAG" --yes
                 $gh release create "$TAG" --draft --verify-tag --title "$TAG" \
                   --notes "Verified GeneFoundry research-use-only container release." \
-                  "$assets"/* "$manifest"
+                  "$expected"/*
               fi
             fi
           else
             $gh release create "$TAG" --draft --verify-tag --title "$TAG" \
               --notes "Verified GeneFoundry research-use-only container release." \
-              "$assets"/* "$manifest"
+              "$expected"/*
           fi
           if [ "$($gh release view "$TAG" --json isDraft --jq .isDraft)" = true ]; then
             $gh release edit "$TAG" --draft=false
           fi
           $gh release verify "$TAG"
-          for asset in "$assets"/* "$manifest"; do
+          for asset in "$expected"/*; do
             $gh release verify-asset "$TAG" "$asset"
           done
 

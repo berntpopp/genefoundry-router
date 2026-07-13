@@ -158,10 +158,16 @@ def test_privileged_jobs_never_checkout_or_execute_leaf_code_or_containers() -> 
 
 def test_prepare_covers_new_recovery_collision_and_completed_states() -> None:
     prepare = _load(REUSABLE)["jobs"]["prepare"]
+    assert "build_date" in prepare["outputs"]
+    step_names = {str(step.get("name", "")) for step in _steps(prepare)}
+    assert "Enforce fleet release controls before publication" in step_names
     text = _run_text(prepare)
     for token in (
         "build_required=true",
         "build_required=false",
+        'git show -s --format=%cI "$source_sha"',
+        "require_compliant_controls",
+        "ci/container-controls.json",
         "source alias collision",
         "completed_release=true",
         "version alias collision",
@@ -188,6 +194,13 @@ def test_build_gate_builds_only_when_absent_and_never_uses_release_cache() -> No
     assert inputs["push"] is False
     assert inputs["provenance"] is False
     assert inputs["sbom"] is False
+    assert inputs["build-args"].rstrip("\n") == "\n".join(
+        [
+            "APP_VERSION=${{ needs.prepare.outputs.version }}",
+            "VCS_REF=${{ needs.prepare.outputs.source_sha }}",
+            "BUILD_DATE=${{ needs.prepare.outputs.build_date }}",
+        ]
+    )
     assert str(inputs["outputs"]).startswith("type=oci,")
     assert not any(key.startswith("cache-") for key in inputs)
     text = _run_text(job)
@@ -216,6 +229,21 @@ def test_build_gate_builds_only_when_absent_and_never_uses_release_cache() -> No
     assert "steps.evidence-paths.outputs.archive" in str(inputs["outputs"])
 
 
+def test_pinned_gh_binary_is_checked_for_required_release_and_attestation_commands() -> None:
+    workflow = _load(REUSABLE)
+    text = "\n".join(
+        _run_text(workflow["jobs"][name]) for name in ("prepare", "publish-attest", "finalize")
+    )
+    for token in (
+        "release verify --help",
+        "release verify-asset --help",
+        "attestation verify --help",
+        "attestation download --help",
+        "attestation trusted-root --help",
+    ):
+        assert text.count(token) == 3
+
+
 def test_publish_verifies_artifact_before_registry_login_or_write() -> None:
     job = _load(REUSABLE)["jobs"]["publish-attest"]
     assert _step_index(job, "Verify immutable OCI evidence") < _step_index(job, "Log in to GHCR")
@@ -240,6 +268,14 @@ def test_source_alias_precedes_provenance_and_spdx_attestations() -> None:
     assert provenance_step["with"]["push-to-registry"] is True
     assert sbom_step["with"]["sbom-path"].endswith("sbom.spdx.json")
     assert sbom_step["with"]["push-to-registry"] is True
+    text = _run_text(job)
+    assert "--predicate-type https://slsa.dev/provenance/v1" in text
+    assert "--predicate-type https://spdx.dev/Document/v2.3" in text
+    assert "attestation download" in text
+    assert "attestation trusted-root" in text
+    assert "attestation-bundle.json" in text
+    assert "trusted-root.json" in text
+    assert "application/vnd.dev.sigstore.trustedroot" not in text
 
 
 def test_capture_uses_published_digest_and_assemble_is_read_only() -> None:
@@ -247,6 +283,11 @@ def test_capture_uses_published_digest_and_assemble_is_read_only() -> None:
     capture = _run_text(workflow["jobs"]["capture"])
     assert "needs.publish-attest.outputs.published_digest" in str(workflow["jobs"]["capture"])
     assert "docker pull" in capture and "@${PUBLISHED_DIGEST}" in capture
+    assert 'method":"tools/list"' in capture
+    assert "mcp-tools-a.json" in capture
+    assert "mcp-tools-b.json" in capture
+    assert "jq -er '.result.tools | type == \"array\" and length > 0'" in capture
+    assert "printf '[]'" not in capture
     assert "capture-definitions" in capture
     assemble = _run_text(workflow["jobs"]["assemble-evidence"])
     assert "assemble-manifest" in assemble
@@ -263,6 +304,7 @@ def test_finalize_handles_draft_recovery_then_aliases_identical_manifest() -> No
         "--draft",
         "gh release edit",
         "--draft=false",
+        "release-assets",
         "gh release verify",
         "gh release verify-asset",
         "oras cp",
@@ -270,6 +312,10 @@ def test_finalize_handles_draft_recovery_then_aliases_identical_manifest() -> No
         "missing version alias",
     ):
         assert token in text
+    assert 'cp "$manifest" "$expected"/' in text
+    assert 'diff -qr "$expected" "$RUNNER_TEMP/draft"' in text
+    assert '"$expected"/*' in text
+    assert '"$assets" "$RUNNER_TEMP/draft"' not in text
     assert text.index("gh release edit") < text.index("oras cp")
     all_text = REUSABLE.read_text(encoding="utf-8")
     assert "--clobber" not in all_text

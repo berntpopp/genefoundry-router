@@ -178,6 +178,16 @@ def test_gate_covers_layout_runtime_scanner_sbom_and_always_tears_down() -> None
     steps = _steps(workflow)
     run_text = _run_text(workflow)
     assert "inspect-oci" in run_text
+    build = next(
+        step for step in steps if str(step.get("uses", "")).startswith("docker/build-push-action@")
+    )
+    assert build["with"]["build-args"].rstrip("\n") == "\n".join(
+        [
+            "APP_VERSION=0.0.0",
+            "VCS_REF=${{ github.sha }}",
+            "BUILD_DATE=1970-01-01T00:00:00Z",
+        ]
+    )
     inspect_step = next(step for step in steps if "inspect-oci" in str(step.get("run", "")))
     inspect_command = inspect_step["run"]
     assert "--config" not in inspect_command
