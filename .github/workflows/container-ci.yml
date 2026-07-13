@@ -1,0 +1,36 @@
+name: Container CI
+
+on:
+  pull_request:
+    paths:
+      - genefoundry_router/**
+      - scripts/container_release.py
+      - docker/**
+      - pyproject.toml
+      - uv.lock
+      - container-release.json
+      - .github/workflows/_container-ci.yml
+      - .github/workflows/container-ci.yml
+  push:
+    branches:
+      - main
+    paths:
+      - genefoundry_router/**
+      - scripts/container_release.py
+      - docker/**
+      - pyproject.toml
+      - uv.lock
+      - container-release.json
+      - .github/workflows/_container-ci.yml
+      - .github/workflows/container-ci.yml
+
+concurrency:
+  group: container-ci-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  container-ci:
+    uses: ./.github/workflows/_container-ci.yml
