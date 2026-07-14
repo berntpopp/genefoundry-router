@@ -2,6 +2,34 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.7] - 2026-07-14
+
+### Fixed
+
+- Stop advertising a doubled protected-resource URI (`https://host/mcp/mcp`) in OAuth
+  mode. FastMCP appends the MCP mount path itself — `set_mcp_path("/mcp")` sets
+  `_resource_url = resource_base_url + "/mcp"` — so `resource_base_url` must be the ROOT
+  origin. The router passed `GF_JWT_AUDIENCE`, which already ends in `/mcp`, baking the
+  segment in twice. Consequences, all now gone: the RFC 9728 metadata advertised a
+  resource that is not the endpoint; `OAuthProxy` minted tokens with an audience
+  (`…/mcp/mcp`) that the router's own `JWTVerifier` — configured with `GF_JWT_AUDIENCE`
+  (`…/mcp`) — would reject; and spec-compliant clients, reading that metadata, echoed the
+  doubled URI back in their RFC 8707 `resource` parameter.
+
+  `jwt` mode was always correct (it passed `GF_PUBLIC_BASE_URL`); only the deployed
+  `oauth` mode regressed. The two modes now agree, and
+  `tests/unit/test_auth_resource_url.py` pins the resource URI in both — nothing in the
+  suite covered it, which is how this shipped.
+
+- Remove the `_install_resource_tolerance()` monkeypatch. It rewrote FastMCP's resource
+  normalizer to collapse `/mcp/mcp` → `/mcp`, attributing the doubled URI to "some MCP
+  clients (e.g. ChatGPT)". The clients were behaving correctly: they read the router's own
+  metadata and echoed it back. With the root cause fixed, the compensation is unnecessary,
+  and the router no longer patches a dependency's internals at import time.
+
+**Operator note:** this changes the minted token audience, so live OAuth sessions
+re-authenticate after the redeploy (clients re-run dynamic client registration).
+
 ## [0.6.6] - 2026-07-13
 
 ### Fixed
