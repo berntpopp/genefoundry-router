@@ -1,37 +1,231 @@
 # servers.yaml — committed backend registry (no secrets; URLs come from .env)
+#
+# `description` / `source_name` / `source_url` are the single source of truth for the
+# README's federated-backend table, which is GENERATED (scripts/gen_readme_inventory.py)
+# and guarded by tests/test_readme_inventory.py. Tool counts come from the reviewed
+# fleet-baseline.json — never typed by hand. See docs/README-STANDARD-v1.md.
 defaults:
   transport: http
   enabled: true
   cache_ttl: 300          # proxy metadata cache TTL (seconds)
   tags: []
 servers:
-  - { name: gnomad,      repo: berntpopp/gnomad-link,        url_env: GF_GNOMAD_URL,      namespace: gnomad,      tags: [variant, gene, frequency, population], entrypoints: [resolve_variant_id, search_genes, get_variant_frequencies, get_gene_variants] }
-  - { name: gtex,        repo: berntpopp/gtex-link,          url_env: GF_GTEX_URL,        namespace: gtex,        tags: [expression, tissue], entrypoints: [get_median_expression_levels] }
-  - { name: hgnc,        repo: berntpopp/hgnc-link,          url_env: GF_HGNC_URL,        namespace: hgnc,        tags: [gene, nomenclature], entrypoints: [resolve_symbol] }  # deployed 2026-06-16 (hgnc-link.genefoundry.org)
-  - { name: mgi,         repo: berntpopp/mgi-link,           url_env: GF_MGI_URL,         namespace: mgi,         tags: [mouse, phenotype, model], entrypoints: [get_marker_phenotypes] }
-  - { name: uniprot,     repo: berntpopp/uniprot-link,       url_env: GF_UNIPROT_URL,     namespace: uniprot,     tags: [protein, function], entrypoints: [find_proteins] }
-  - { name: clingen,     repo: berntpopp/clingen-link,       url_env: GF_CLINGEN_URL,     namespace: clingen,     tags: [gene-disease, curation], entrypoints: [get_gene_validity] }
-  - { name: gencc,       repo: berntpopp/gencc-link,         url_env: GF_GENCC_URL,       namespace: gencc,       tags: [gene-disease, curation], entrypoints: [resolve_identifier] }
-  - { name: litvar,      repo: berntpopp/litvar-link,        url_env: GF_LITVAR_URL,      namespace: litvar,      tags: [variant, literature], entrypoints: [get_variant_literature] }
-  - { name: stringdb,    repo: berntpopp/stringdb-link,      url_env: GF_STRINGDB_URL,    namespace: stringdb,    tags: [ppi, network], entrypoints: [get_interaction_partners] }
-  - { name: autopvs1,    repo: berntpopp/autopvs1-link,      url_env: GF_AUTOPVS1_URL,    namespace: autopvs1,    tags: [variant, acmg, pvs1], entrypoints: [get_variant_pvs1_data] }
-  - { name: spliceai,    repo: berntpopp/spliceailookup-link, url_env: GF_SPLICEAI_URL,   namespace: spliceai,    tags: [variant, splicing, prediction], entrypoints: [predict_splicing], server_name: spliceailookup-link }  # namespace aliased to 'spliceai'; backend's ratified serverInfo.name is 'spliceailookup-link' (its own conformance CI: CONFORMANCE_NAME)
-  - { name: genereviews, repo: berntpopp/genereviews-link,   url_env: GF_GENEREVIEWS_URL, namespace: genereviews, tags: [literature, gene-disease], entrypoints: [search_genereviews, search_passages] }  # two front doors: gene->chapter resolver + ranked passage/text search
+  - name: gnomad
+    repo: berntpopp/gnomad-link
+    url_env: GF_GNOMAD_URL
+    namespace: gnomad
+    description: Variant / gene / population frequency
+    source_name: gnomAD
+    source_url: https://gnomad.broadinstitute.org/
+    tags: [variant, gene, frequency, population]
+    entrypoints: [resolve_variant_id, search_genes, get_variant_frequencies, get_gene_variants]
+
+  - name: gtex
+    repo: berntpopp/gtex-link
+    url_env: GF_GTEX_URL
+    namespace: gtex
+    description: Tissue expression
+    source_name: GTEx Portal
+    source_url: https://gtexportal.org/
+    tags: [expression, tissue]
+    entrypoints: [get_median_expression_levels]
+
+  - name: hgnc                                  # deployed 2026-06-16 (hgnc-link.genefoundry.org)
+    repo: berntpopp/hgnc-link
+    url_env: GF_HGNC_URL
+    namespace: hgnc
+    description: Gene nomenclature
+    source_name: HGNC
+    source_url: https://www.genenames.org/
+    tags: [gene, nomenclature]
+    entrypoints: [resolve_symbol]
+
+  - name: mgi
+    repo: berntpopp/mgi-link
+    url_env: GF_MGI_URL
+    namespace: mgi
+    description: Mouse phenotype & models
+    source_name: MGI
+    source_url: https://www.informatics.jax.org/
+    tags: [mouse, phenotype, model]
+    entrypoints: [get_marker_phenotypes]
+
+  - name: uniprot
+    repo: berntpopp/uniprot-link
+    url_env: GF_UNIPROT_URL
+    namespace: uniprot
+    description: Protein function
+    source_name: UniProt
+    source_url: https://www.uniprot.org/
+    tags: [protein, function]
+    entrypoints: [find_proteins]
+
+  - name: clingen
+    repo: berntpopp/clingen-link
+    url_env: GF_CLINGEN_URL
+    namespace: clingen
+    description: Gene–disease curation
+    source_name: ClinGen
+    source_url: https://clinicalgenome.org/
+    tags: [gene-disease, curation]
+    entrypoints: [get_gene_validity]
+
+  - name: gencc
+    repo: berntpopp/gencc-link
+    url_env: GF_GENCC_URL
+    namespace: gencc
+    description: Gene–disease curation
+    source_name: GenCC
+    source_url: https://thegencc.org/
+    tags: [gene-disease, curation]
+    entrypoints: [resolve_identifier]
+
+  - name: litvar
+    repo: berntpopp/litvar-link
+    url_env: GF_LITVAR_URL
+    namespace: litvar
+    description: Variant literature
+    source_name: LitVar2
+    source_url: https://www.ncbi.nlm.nih.gov/research/litvar2/
+    tags: [variant, literature]
+    entrypoints: [get_variant_literature]
+
+  - name: stringdb
+    repo: berntpopp/stringdb-link
+    url_env: GF_STRINGDB_URL
+    namespace: stringdb
+    description: Protein–protein interaction networks
+    source_name: STRING
+    source_url: https://string-db.org/
+    tags: [ppi, network]
+    entrypoints: [get_interaction_partners]
+
+  - name: autopvs1
+    repo: berntpopp/autopvs1-link
+    url_env: GF_AUTOPVS1_URL
+    namespace: autopvs1
+    description: Variant ACMG PVS1
+    source_name: AutoPVS1
+    source_url: https://autopvs1.bgi.com/
+    tags: [variant, acmg, pvs1]
+    entrypoints: [get_variant_pvs1_data]
+
+  # namespace aliased to 'spliceai'; the backend's ratified serverInfo.name is
+  # 'spliceailookup-link' (asserted by its own conformance CI: CONFORMANCE_NAME).
+  - name: spliceai
+    repo: berntpopp/spliceailookup-link
+    url_env: GF_SPLICEAI_URL
+    namespace: spliceai
+    server_name: spliceailookup-link
+    description: Splicing prediction
+    source_name: SpliceAI Lookup
+    source_url: https://spliceailookup.broadinstitute.org/
+    tags: [variant, splicing, prediction]
+    entrypoints: [predict_splicing]
+
+  # two front doors: gene->chapter resolver + ranked passage/text search
+  - name: genereviews
+    repo: berntpopp/genereviews-link
+    url_env: GF_GENEREVIEWS_URL
+    namespace: genereviews
+    description: Gene–disease literature
+    source_name: GeneReviews
+    source_url: https://www.ncbi.nlm.nih.gov/books/NBK1116/
+    tags: [literature, gene-disease]
+    entrypoints: [search_genereviews, search_passages]
+
   # Adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64); no transform needed.
   - name: pubtator
     repo: berntpopp/pubtator-link
     url_env: GF_PUBTATOR_URL
     service_token_env: GF_PUBTATOR_TOKEN
     namespace: pubtator
+    description: Literature & entity annotation
+    source_name: PubTator3
+    source_url: https://www.ncbi.nlm.nih.gov/research/pubtator3/
     tags: [literature, entity]
     entrypoints: [search_literature]
+
   # --- Deployed 2026-06-17 at <name>-link.genefoundry.org (DNS + container + NPM live). ---
-  - { name: clinvar,     repo: berntpopp/clinvar-link,       url_env: GF_CLINVAR_URL,     namespace: clinvar,     tags: [variant, clinical-significance, classification], entrypoints: [get_variant] }
-  - { name: vep,         repo: berntpopp/vep-link,           url_env: GF_VEP_URL,         namespace: vep,         tags: [variant, annotation, consequence], entrypoints: [annotate_variant] }  # action server: annotate/recode/liftover verbs (Standard v1.1-pending), still unprefixed
-  - { name: panelapp,    repo: berntpopp/panelapp-link,      url_env: GF_PANELAPP_URL,    namespace: panelapp,    tags: [gene-panel, gene-disease, curation], entrypoints: [search_panels] }
-  - { name: mondo,       repo: berntpopp/mondo-link,         url_env: GF_MONDO_URL,       namespace: mondo,       tags: [disease, ontology], entrypoints: [resolve_disease] }
+  - name: clinvar
+    repo: berntpopp/clinvar-link
+    url_env: GF_CLINVAR_URL
+    namespace: clinvar
+    description: Variant clinical significance
+    source_name: ClinVar
+    source_url: https://www.ncbi.nlm.nih.gov/clinvar/
+    tags: [variant, clinical-significance, classification]
+    entrypoints: [get_variant]
+
+  # action server: annotate/recode/liftover verbs (Standard v1.1-pending), still unprefixed
+  - name: vep
+    repo: berntpopp/vep-link
+    url_env: GF_VEP_URL
+    namespace: vep
+    description: Variant annotation / consequence
+    source_name: Ensembl VEP
+    source_url: https://rest.ensembl.org/
+    tags: [variant, annotation, consequence]
+    entrypoints: [annotate_variant]
+
+  - name: panelapp
+    repo: berntpopp/panelapp-link
+    url_env: GF_PANELAPP_URL
+    namespace: panelapp
+    description: Diagnostic gene panels & curation
+    source_name: PanelApp
+    source_url: https://panelapp.genomicsengland.co.uk/
+    tags: [gene-panel, gene-disease, curation]
+    entrypoints: [search_panels]
+
+  - name: mondo
+    repo: berntpopp/mondo-link
+    url_env: GF_MONDO_URL
+    namespace: mondo
+    description: Disease ontology / cross-references
+    source_name: Mondo
+    source_url: https://mondo.monarchinitiative.org/
+    tags: [disease, ontology]
+    entrypoints: [resolve_disease]
+
   # --- Staged/ready 2026-06-20 (new GeneFoundry fleet backends; URL vars below). ---
-  - { name: mavedb,      repo: berntpopp/mavedb-link,        url_env: GF_MAVEDB_URL,      namespace: mavedb,      tags: [variant, mave, functional-assay, variant-effect, score-set], entrypoints: [search_score_sets] }
-  - { name: hpo,         repo: berntpopp/hpo-link,           url_env: GF_HPO_URL,         namespace: hpo,         tags: [phenotype, ontology, gene, disease], entrypoints: [resolve_term, get_phenotypes_for_gene, get_genes_for_phenotype] }  # deployed (hpo-link.genefoundry.org); DB artifact db-v2026-06-06, baselined in ci/fleet-baseline.json
-  - { name: metadome,    repo: berntpopp/metadome-link,      url_env: GF_METADOME_URL,    namespace: metadome,    tags: [protein, tolerance, domain, variant], entrypoints: [resolve_transcript, get_tolerance_landscape] }
-  - { name: orphanet,    repo: berntpopp/orphanet-link,      url_env: GF_ORPHANET_URL,    namespace: orphanet,    tags: [disease, ontology, rare-disease, epidemiology, gene, phenotype], entrypoints: [resolve_disease] }
+  - name: mavedb
+    repo: berntpopp/mavedb-link
+    url_env: GF_MAVEDB_URL
+    namespace: mavedb
+    description: Variant-effect assay scores
+    source_name: MaveDB
+    source_url: https://www.mavedb.org/
+    tags: [variant, mave, functional-assay, variant-effect, score-set]
+    entrypoints: [search_score_sets]
+
+  # deployed (hpo-link.genefoundry.org); DB artifact db-v2026-06-06, baselined in ci/fleet-baseline.json
+  - name: hpo
+    repo: berntpopp/hpo-link
+    url_env: GF_HPO_URL
+    namespace: hpo
+    description: Phenotype ontology & associations
+    source_name: Human Phenotype Ontology
+    source_url: https://hpo.jax.org/
+    tags: [phenotype, ontology, gene, disease]
+    entrypoints: [resolve_term, get_phenotypes_for_gene, get_genes_for_phenotype]
+
+  - name: metadome
+    repo: berntpopp/metadome-link
+    url_env: GF_METADOME_URL
+    namespace: metadome
+    description: Protein tolerance landscapes
+    source_name: MetaDome
+    source_url: https://stuart.radboudumc.nl/metadome/
+    tags: [protein, tolerance, domain, variant]
+    entrypoints: [resolve_transcript, get_tolerance_landscape]
+
+  - name: orphanet
+    repo: berntpopp/orphanet-link
+    url_env: GF_ORPHANET_URL
+    namespace: orphanet
+    description: Rare disease ontology & associations
+    source_name: Orphadata
+    source_url: https://www.orphadata.com/
+    tags: [disease, ontology, rare-disease, epidemiology, gene, phenotype]
+    entrypoints: [resolve_disease]

@@ -32,6 +32,13 @@ class BackendDef(BaseModel):
     service_token_env: str | None = None
     repo: str | None = None
     tags: list[str] = Field(default_factory=list)
+    # Human-facing inventory copy. The README's federated-backend table is GENERATED from
+    # these (scripts/gen_readme_inventory.py) rather than typed, because the hand-maintained
+    # version drifted: it advertised 280 tools and pubtator=43 when the reviewed baseline
+    # said 272 and 35. servers.yaml is the single source of truth for the fleet inventory.
+    description: str | None = None  # short domain, e.g. "Tissue expression"
+    source_name: str | None = None  # upstream data source, e.g. "GTEx Portal"
+    source_url: str | None = None  # upstream homepage
     # Canonical entry-point leaf tools for this backend — the first tool an agent reaches
     # for in this domain (a free-text->ID resolver and/or the primary query). They are
     # pinned (always_visible) AND named in the server instructions so they stay reliably
