@@ -58,9 +58,7 @@ def repo_slugs() -> list[tuple[str, dict[str, Any]]]:
     reg = yaml.safe_load((ROOT / "servers.yaml").read_text(encoding="utf-8"))
     by_ns = {s["namespace"]: s for s in reg["servers"]}
 
-    out: list[tuple[str, dict[str, Any]]] = [
-        (data["router"]["repo"].split("/")[1], data["router"])
-    ]
+    out: list[tuple[str, dict[str, Any]]] = [(data["router"]["repo"].split("/")[1], data["router"])]
     for b in data["backends"]:
         out.append((by_ns[b["namespace"]]["repo"].split("/")[1], b))
     return out
@@ -83,9 +81,7 @@ def released_at(slug: str) -> str | None:
 
 def render(slug: str, entry: dict[str, Any], data: dict[str, Any], date: str | None) -> str:
     uni = data["universal"]
-    n = len(
-        [b for b in data["backends"]]
-    )  # only used by the router's templated description
+    n = len([b for b in data["backends"]])  # only used by the router's templated description
     abstract = " ".join(entry["description"].split()).format(n=n)
 
     cff: dict[str, Any] = {
@@ -140,9 +136,9 @@ def main() -> int:
         current = yaml.safe_load(target.read_text(encoding="utf-8"))
         want = yaml.safe_load(render(slug, entry, data, current.get("date-released")))
         if current != want:
-            diffs = [
-                k for k in want if current.get(k) != want[k]
-            ] + [k for k in current if k not in want]
+            diffs = [k for k in want if current.get(k) != want[k]] + [
+                k for k in current if k not in want
+            ]
             stale.append(f"{slug}: CITATION.cff is stale ({', '.join(sorted(set(diffs)))})")
 
     if missing_checkout:

@@ -56,9 +56,7 @@ FORBIDDEN_WORDS = re.compile(
 # derived, not typed (README Standard v1, Rule 9).
 #
 # The leading \b matters: without it this fires on the "25 tool" in "BM25 tool search".
-FORBIDDEN_FACTS = re.compile(
-    r"\b\d+\s+(?:\w+\s+){0,2}(tools?|tests?|backends?|servers?)\b", re.I
-)
+FORBIDDEN_FACTS = re.compile(r"\b\d+\s+(?:\w+\s+){0,2}(tools?|tests?|backends?|servers?)\b", re.I)
 # The research-use disclaimer is the README's [!IMPORTANT] callout. It is not a search
 # keyword, and in a 350-char budget it is pure waste.
 FORBIDDEN_DISCLAIMER = re.compile(r"research use only|clinical decision support", re.I)

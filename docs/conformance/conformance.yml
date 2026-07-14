@@ -37,6 +37,14 @@ jobs:
         env:
           CONFORMANCE_MCP_URL: http://127.0.0.1:${{ env.MCP_PORT }}
         run: uv run pytest tests/conformance/test_transport_v1.py -v
+
+      - name: Run behaviour probe
+        # Behaviour Conformance v1 — the three recurring contract bugs (silent-empty filter,
+        # lying total/truncated, error an LLM cannot act on). Every probe is derived from this
+        # server's own advertised schema; there is no per-repo probe list to maintain.
+        env:
+          CONFORMANCE_MCP_URL: http://127.0.0.1:${{ env.MCP_PORT }}
+        run: uv run pytest tests/conformance/test_behaviour_v1.py -v
       - name: Logs on failure
         # NB: NON-following logs. `make docker-logs` typically follows (docker compose logs -f)
         # and would hang this step until the job timeout on a real failure.
