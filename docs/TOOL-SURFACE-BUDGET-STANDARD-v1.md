@@ -79,6 +79,14 @@ number this standard adopts as a hard per-server ceiling.
    > Standard, which mandates a dict envelope. Fix the envelope first; do not reach for
    > `output_schema=None` on a tool that returns a bare list.
 
+   > **Interaction with untrusted-text fencing (resolved 2026-07-15).** Response-Envelope v1.1
+   > originally required the `untrusted_text` literal to be *declared in the tool's output schema*,
+   > which a tool publishing no `outputSchema` cannot do. The two standards contradicted each
+   > other. [v1.1a](RESPONSE-ENVELOPE-STANDARD-v1.1.md) resolves it: the fenced object MUST appear
+   > **on the wire**, and the schema MUST declare it only *if* a schema is published. That is the
+   > stronger requirement, not a relaxation — a server can publish a perfect schema and still emit
+   > unfenced prose. Suppressing `outputSchema` does not weaken fencing.
+
 4. **Servers SHOULD construct `FastMCP(dereference_schemas=False)`.**
    The constructor defaults it to `True` (`fastmcp/server/server.py:337`) and appends
    `DereferenceRefsMiddleware` (`:450-456`), which inlines every `$defs`/`$ref` at every use

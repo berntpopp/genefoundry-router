@@ -135,6 +135,7 @@ class Probe:
         self.url = base_url.rstrip("/") + "/mcp"
         self.client = httpx.Client(timeout=timeout, follow_redirects=False)
         self.session: str | None = None
+        self.server_info: dict[str, Any] = {}
         self._id = 0
 
     def _rpc(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -157,8 +158,8 @@ class Probe:
             raise ProtocolError(message["error"])
         return dict(message.get("result") or {})
 
-    def initialize(self) -> None:
-        self._rpc(
+    def initialize(self) -> dict[str, Any]:
+        result = self._rpc(
             "initialize",
             {
                 "protocolVersion": PROTOCOL,
@@ -166,6 +167,8 @@ class Probe:
                 "clientInfo": {"name": "gf-behaviour-probe", "version": "1.0.0"},
             },
         )
+        self.server_info = dict(result.get("serverInfo") or {})
+        return result
 
     def list_tools(self) -> list[dict[str, Any]]:
         tools: list[dict[str, Any]] = []
@@ -187,6 +190,10 @@ class ProtocolError(RuntimeError):
     def __init__(self, error: dict[str, Any]) -> None:
         self.error = error
         super().__init__(json.dumps(error)[:200])
+
+
+class WrongServerError(RuntimeError):
+    """The server at this URL is not the one we were asked to gate. Never report; always abort."""
 
 
 # --------------------------------------------------------------------------- envelope reading
@@ -211,18 +218,67 @@ def envelope(result: dict[str, Any]) -> dict[str, Any]:
 def rows(env: dict[str, Any]) -> list[Any] | None:
     """The result collection, whatever the backend calls it (`results`, `genes`, `variants`…).
 
-    The longest list of objects in the envelope. Backends name this field differently and the
-    gate must not care; the Response-Envelope Standard fixes the frame, not the payload key.
+    The longest collection of objects in the envelope. Backends name this field differently and
+    the gate must not care; the Response-Envelope Standard fixes the frame, not the payload key.
+
+    GROUPED payloads count too. An adversarial review found the first version of this blind to
+    them: orphanet's `map_cross_ontology` returns `mappings` as a dict-of-lists
+    (`{"OMIM": [...], "ICD10": [...]}`), not a list. The row-finder saw no list, returned None,
+    and EVERY filter probe on that tool silently skipped — so a live silently-empty filter
+    (`prefixes=["__BOGUS__"]` -> `success:true, count:0`) sailed through a gate reporting
+    "0 failures, 0 UNGATED". A detector that cannot see a payload shape cannot gate it.
     """
+    # A COLLECTION declares how many things it holds; a RECORD does not. Response-Envelope v1:
+    # "Always populate _meta.pagination: total_count, has_more". That count is the only reliable
+    # signal separating "a list of results" from "a field of one record that happens to be a list".
+    #
+    # Without this gate the probe reads hpo-link's `get_term` — a flat single record whose
+    # `children` field holds 23 sub-terms — as a 23-row collection. `fields=[...]` is then a
+    # PROJECTION parameter doing exactly its job (dropping `children`), and `response_mode=minimal`
+    # is correctly omitting optional detail from one record — and the gate calls both of them
+    # payload destruction. Two false accusations against a server doing nothing wrong. Measured:
+    # this guard removes them while keeping every real finding.
+    if count_of(env) is None:
+        return None
+
     best: list[Any] | None = None
-    for key, value in env.items():
-        if key.startswith("_") or not isinstance(value, list):
-            continue
+
+    def consider(value: list[Any]) -> None:
+        nonlocal best
         if value and not isinstance(value[0], dict):
-            continue
+            return
         if best is None or len(value) > len(best):
             best = value
+
+    for key, value in env.items():
+        if key.startswith("_"):
+            continue
+        if isinstance(value, list):
+            consider(value)
+        elif isinstance(value, dict) and value and all(isinstance(b, list) for b in value.values()):
+            # A GROUPED COLLECTION — every branch is a list, e.g.
+            #   mappings: {"OMIM": [...], "ICD10": [...]}
+            # Flatten it into one row set.
+            #
+            # The `all(...)` is load-bearing, not tidiness. Without it this also swallows a single
+            # RECORD that merely contains lists — `term: {"id": ..., "name": ..., "xrefs": [23]}` —
+            # and then `response_mode=minimal` correctly stripping that record's optional detail
+            # reads as payload destruction. That is a false accusation, and I generated exactly it
+            # on hpo-link before adding this guard. A record has scalars; a grouped collection is
+            # lists all the way across.
+            consider([item for branch in value.values() for item in branch])
     return best
+
+
+def count_of(env: dict[str, Any]) -> int | None:
+    """How many records this response says it is carrying. Absent on a single-record tool."""
+    pagination = (env.get("_meta") or {}).get("pagination") or {}
+    for source in (pagination, env):
+        for key in ("total_count", "total", "count", "returned", "found_count"):
+            value = source.get(key)
+            if isinstance(value, int):
+                return value
+    return None
 
 
 def total_of(env: dict[str, Any]) -> int | None:
@@ -253,19 +309,55 @@ def properties(tool: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return dict((tool.get("inputSchema") or {}).get("properties") or {})
 
 
+def _branches(prop: dict[str, Any]) -> list[dict[str, Any]]:
+    """The property itself plus every `anyOf` branch — pydantic renders `X | None` as anyOf."""
+    out = [prop]
+    out.extend(b for b in prop.get("anyOf") or [] if isinstance(b, dict))
+    return out
+
+
 def enum_of(prop: dict[str, Any]) -> list[Any] | None:
-    if isinstance(prop.get("enum"), list):
-        return list(prop["enum"])
-    for branch in prop.get("anyOf") or []:
-        if isinstance(branch, dict) and isinstance(branch.get("enum"), list):
+    """The closed vocabulary this property constrains its value to, scalar OR per-item.
+
+    `items.enum` matters as much as `enum`: a `list[Literal[...]]` parameter is a closed
+    vocabulary too, and the first version of this gate looked only at the scalar case.
+    """
+    for branch in _branches(prop):
+        if isinstance(branch.get("enum"), list):
             return list(branch["enum"])
+        items = branch.get("items")
+        if isinstance(items, dict) and isinstance(items.get("enum"), list):
+            return list(items["enum"])
     return None
 
 
 def is_stringy(prop: dict[str, Any]) -> bool:
-    types = {prop.get("type")}
-    types |= {b.get("type") for b in prop.get("anyOf") or [] if isinstance(b, dict)}
-    return "string" in types
+    """True if the property takes a string, or an ARRAY of strings.
+
+    The array case is not a nicety. orphanet's `map_cross_ontology.prefixes` is a `list[str]`
+    over a closed vocabulary, and `prefixes=["__BOGUS__"]` returns `success:true, count:0` on the
+    live server — the primary bug, shipping today, invisible to a gate that only probed scalars.
+    """
+    for branch in _branches(prop):
+        if branch.get("type") == "string":
+            return True
+        items = branch.get("items")
+        if (
+            branch.get("type") == "array"
+            and isinstance(items, dict)
+            and items.get("type") == "string"
+        ):
+            return True
+    return False
+
+
+def takes_array(prop: dict[str, Any]) -> bool:
+    return any(b.get("type") == "array" for b in _branches(prop))
+
+
+def perturbed(prop: dict[str, Any]) -> Any:
+    """The sentinel, wrapped to match the property's shape."""
+    return [SENTINEL] if takes_array(prop) else SENTINEL
 
 
 def valid_args(tool: dict[str, Any]) -> dict[str, Any] | None:
@@ -346,12 +438,24 @@ def check_argument_error(rep: Report, probe: Probe, tool: dict[str, Any]) -> Non
     )
 
     # "message MUST be specific and actionable — tell the model how to fix the call."
-    message = str(env.get("message") or "") + " " + str(env.get("recovery_action") or "")
-    names_something = BOGUS_ARG in message or any(p in message for p in properties(tool))
+    #
+    # The parameter may be named in the PROSE, or carried in the envelope's structured error
+    # fields. Both are actionable, and the Response-Envelope error frame explicitly provides
+    # `field` / `allowed_values` / `hint` for exactly this. hpo-link answers with
+    # "Valid argument names are listed in allowed_values" plus a populated `allowed_values` — a
+    # model can act on that perfectly well, and an earlier version of this check called it a
+    # failure purely because it only read the prose. Judging a server by the surface you happen
+    # to look at is the same mistake as the audit's tautological $ref check.
+    prose = " ".join(str(env.get(k) or "") for k in ("message", "recovery_action", "hint"))
+    structured = env.get("allowed_values") or env.get("field") or env.get("field_errors")
+    names_something = (
+        BOGUS_ARG in prose or any(p in prose for p in properties(tool)) or bool(structured)
+    )
     rep.check(
         f"{label} names the offending or the valid parameters",
         names_something,
-        f"{str(env.get('message'))[:90]!r} names no parameter — the model has nothing to act on",
+        f"{str(env.get('message'))[:90]!r} names no parameter, and the envelope carries no "
+        "`field`/`allowed_values` — the model has nothing to act on",
     )
 
 
@@ -366,7 +470,7 @@ def check_declared_enums(
             continue
         label = f"{name}.{prop_name}: out-of-enum value"
         try:
-            result = probe.call(name, {**base, prop_name: SENTINEL})
+            result = probe.call(name, {**base, prop_name: perturbed(prop)})
         except ProtocolError as exc:
             rep.check(
                 f"{label} is a tool error, not a protocol error",
@@ -421,7 +525,7 @@ def check_silent_empty_filter(
             continue
         label = f"{name}.{prop_name}: unrecognised filter value"
         try:
-            result = probe.call(name, {**base, prop_name: SENTINEL})
+            result = probe.call(name, {**base, prop_name: perturbed(prop)})
         except ProtocolError:
             continue
 
@@ -432,9 +536,16 @@ def check_silent_empty_filter(
             continue
 
         found = rows(env)
-        if found is None or found:
+        if found:
             rep.passed.append(f"{label} → did not zero the result set")
             continue
+
+        # `found` is now [] OR None. Both are the bug, and conflating None with "fine" is how the
+        # first version of this probe passed orphanet's `map_cross_ontology.prefixes`: the bogus
+        # value emptied the grouped `mappings` object entirely, so the row-finder saw no collection
+        # at all and returned None — which the check then read as "did not zero the result set".
+        # The CONTROL call already proved this tool returns rows. If the perturbed call has no rows
+        # — whether an empty collection or no collection at all — the filter destroyed them.
 
         rep.check(
             label + " silently matched nothing",
@@ -550,6 +661,19 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
     rep = Report(base_url.rstrip("/"), expected_name)
     probe = Probe(base_url, timeout)
     probe.initialize()
+
+    # Identity FIRST, and fatally. A developer gating a local build will sooner or later point
+    # this at a port some sibling container is squatting on, and every finding below would then
+    # describe a DIFFERENT SERVER while looking entirely plausible. That happened for real during
+    # the litvar-link fix: a stray clinvar-link on :8011 produced a confident, well-formed, wrong
+    # litvar report. A probe that cannot prove what it is talking to is worse than no probe.
+    served = probe.server_info.get("name")
+    if served != expected_name:
+        raise WrongServerError(
+            f"expected serverInfo.name {expected_name!r} at {base_url}, but the server there "
+            f"says it is {served!r}. Refusing to report findings against the wrong server."
+        )
+
     tools = probe.list_tools()
     rep.check("tools/list returns at least one tool", bool(tools), "no tools")
 
@@ -620,6 +744,9 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         rep = run_probe(args.base_url, expected_name=args.name, timeout=args.timeout)
+    except WrongServerError as exc:
+        print(f"WRONG SERVER: {exc}", file=sys.stderr)
+        return 2
     except (httpx.HTTPError, ProtocolError) as exc:
         print(f"TRANSPORT ERROR: {exc}", file=sys.stderr)
         return 2

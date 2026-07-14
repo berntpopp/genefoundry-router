@@ -34,8 +34,24 @@ Every externally sourced free-text value MUST use this structural shape in
 
 The object is structural, not a display convention:
 
-- `kind` MUST be the literal `untrusted_text` and MUST be declared as a literal in the tool's
-  output schema.
+- `kind` MUST be the literal `untrusted_text`, and MUST appear as that literal in the tool's
+  **response on the wire** (in `structuredContent` and its `TextContent` mirror). **Where the tool
+  publishes an `outputSchema`, that schema MUST also declare the literal.**
+
+  > **Amendment, 2026-07-15 (v1.1a).** The original wording required the literal to be declared
+  > *in the tool's output schema*, full stop. That is unsatisfiable for a tool which, under
+  > [TOOL-SURFACE-BUDGET-STANDARD-v1](TOOL-SURFACE-BUDGET-STANDARD-v1.md) rule 3, publishes **no**
+  > `outputSchema` at all — the two standards contradicted each other, and litvar-link hit the
+  > contradiction head-on while satisfying both in spirit.
+  >
+  > The resolution keeps the stronger guarantee and drops the weaker one. A schema *declaration*
+  > is a promise about what the server intends to emit; the **wire** is what it actually emits, and
+  > only the wire can be verified. Conformance therefore asserts the fenced object **on the
+  > response**, which is strictly stronger than asserting it in a schema — a server can publish a
+  > correct schema and still emit unfenced prose, and nothing about that would be caught.
+  >
+  > Backends that previously tested "the output schema advertises the literal" MUST convert those
+  > tests into runtime wire assertions. Fencing itself is unchanged and remains mandatory.
 - `text` MUST contain the sanitized Unicode NFC representation described below.
 - `provenance.source` MUST identify the upstream source or corpus.
 - `provenance.record_id` MUST identify the upstream record precisely enough to retrieve or audit
