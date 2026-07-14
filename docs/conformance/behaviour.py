@@ -71,6 +71,26 @@ INCONCLUSIVE = {"upstream_unavailable", "rate_limited", "internal"}
 # Tools that orient a client rather than query data (Tool-Naming Standard ops/meta carve-out).
 META_TOOLS = ("capabilit", "health", "diagnost", "warmup", "help", "quickstart")
 
+# Free-text inputs, where a nonsense value returning zero rows is HONEST, not a defect. The
+# silent-empty probe below cannot distinguish "a filter over a closed vocabulary" from "a search
+# box" by type — both are optional strings — so it declines to judge these by name.
+#
+# This deliberately trades coverage for precision. A false accusation is far more costly than a
+# missed one here: it sends a maintainer chasing a phantom and teaches them to distrust the gate.
+# The failure mode of this list is a LOUD one (a free-text param not listed here produces a visible
+# FAIL that a human can dismiss), never a silent pass.
+FREE_TEXT = (
+    "query",
+    "text",
+    "search",
+    "keyword",
+    "question",
+    "topic",
+    "contains",
+    "term",
+    "filters",
+)
+
 
 @dataclass
 class Report:
@@ -374,14 +394,17 @@ def check_silent_empty_filter(
     published wording 'Likely pathogenic' returns 0 with success:true.
 
     A free-text query parameter legitimately returns nothing for a nonsense value — which is why
-    this only probes OPTIONAL parameters, against a control call already proven to return rows.
+    this probes only OPTIONAL parameters, against a control call already proven to return rows, and
+    skips anything named like a search box (see FREE_TEXT).
     """
     name = tool["name"]
     required = set((tool.get("inputSchema") or {}).get("required") or [])
     for prop_name, prop in properties(tool).items():
         if prop_name in required or prop_name in base or enum_of(prop) or not is_stringy(prop):
             continue
-        if prop_name in ("cursor", "request_id", "next_cursor"):
+        if prop_name in ("cursor", "request_id", "next_cursor", "correlation_id", "session_id"):
+            continue
+        if any(marker in prop_name for marker in FREE_TEXT):
             continue
         label = f"{name}.{prop_name}: unrecognised filter value"
         try:
@@ -404,8 +427,11 @@ def check_silent_empty_filter(
             label + " silently matched nothing",
             False,
             f"the control call returned {len(control)} rows; this returned 0 with "
-            f"success={env.get('success')!r} and no error. An undeclared closed vocabulary: "
-            "declare it as an enum and reject the value (TOOL-SCHEMA-DOCUMENTATION-STANDARD S4).",
+            f"success={env.get('success')!r} and no error — indistinguishable from 'the data "
+            "genuinely has none'. Either declare the closed vocabulary as an `enum` "
+            "(TOOL-SCHEMA-DOCUMENTATION-STANDARD S4), or reject the unrecognised value with "
+            "invalid_input/not_found naming it. A zero-row success is not an acceptable answer to "
+            "a value the server did not understand.",
         )
 
 
