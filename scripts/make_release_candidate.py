@@ -27,8 +27,8 @@ from genefoundry_router.config import load_registry
 from genefoundry_router.release.models import ApplicationReleaseManifest
 from scripts.snapshot_fleet import (
     ReleaseCandidateCaptureError,
-    _snapshot_backend,
-    backend_definitions_digest,
+    _capture_backend,
+    release_definitions_digest,
     validate_release_candidate_inventory,
 )
 
@@ -92,14 +92,17 @@ async def _run(
             problems.append(f"{namespace}: no URL configured ({backend.url_env})")
             continue
 
-        spec = await _snapshot_backend(backend.url, backend.service_token)
-        if spec is None:
+        captured = await _capture_backend(backend.url, backend.service_token)
+        if captured is None:
             problems.append(f"{namespace}: unreachable at {backend.url}")
             continue
+        spec, raw_tools = captured
         if spec.version != release["version"]:
             problems.append(f"{namespace}: live version disagrees with application release")
             continue
-        definitions_sha256 = backend_definitions_digest(spec)
+        # Compare like with like: the manifest's digest is the release canonicalization of the
+        # payload the backend put on the wire, not the drift baseline's ToolSpec projection.
+        definitions_sha256 = release_definitions_digest(raw_tools)
         release_mcp = release["mcp"]
         assert isinstance(release_mcp, dict)
         if definitions_sha256 != release_mcp["definitions_sha256"]:

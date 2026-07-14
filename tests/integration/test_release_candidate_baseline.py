@@ -3,34 +3,47 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from genefoundry_router.devtools.fakes import load_manifest
-from scripts.snapshot_fleet import ReleaseCandidateCaptureError, load_release_candidate_inventory
+from scripts.snapshot_fleet import load_release_candidate_inventory
 
 BASELINE = Path("genefoundry_router/data/fleet-baseline.json")
 RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 
 
-def test_pre_oci_baseline_is_preserved_but_blocked_from_new_candidate_use() -> None:
+def test_baseline_is_bound_to_an_oci_release_candidate_inventory() -> None:
+    """The packaged baseline is bound to an inventory that names an application release.
+
+    This previously asserted the *inverse*: the pre-OCI inventory carried no router
+    application release, so loading it raised. The fleet now ships attested GHCR images and
+    every entry is bound to a signed release manifest, so the inventory must load cleanly --
+    a baseline that cannot name what produced it is exactly what the drift pin exists to stop.
+    """
     baseline = load_manifest(BASELINE)
     candidate = load_manifest(RELEASE_CANDIDATE)
     inventory = json.loads(RELEASE_INVENTORY.read_text(encoding="utf-8"))
 
-    with pytest.raises(ReleaseCandidateCaptureError, match="router application release"):
-        load_release_candidate_inventory(RELEASE_INVENTORY)
+    loaded = load_release_candidate_inventory(RELEASE_INVENTORY)
+    assert loaded["identity"] == inventory["identity"]
+    assert inventory["router"]["image"]["digest"].startswith("sha256:")
+    assert all(
+        entry["application_release"]["image"]["digest"].startswith("sha256:")
+        for entry in inventory["backends"].values()
+    )
 
     assert candidate.snapshot_meta.source == "release-candidate"
     assert candidate.snapshot_meta.release_candidate == inventory
     assert set(inventory["backends"]) == set(candidate.backends)
     assert all(entry["endpoint"].startswith("https://") for entry in inventory["backends"].values())
-    assert all(len(entry["revision"]) == 40 for entry in inventory["backends"].values())
+    assert all(
+        len(entry["application_release"]["source"]["revision"]) == 40
+        for entry in inventory["backends"].values()
+    )
     # The inventory attests the canonical raw wire catalog. The candidate and baseline
     # intentionally store the post-proxy catalog RuntimeDriftGuard hashes instead, so
     # compare only the provenance that is shared across those representations here.
     assert all(
-        entry["version"] == candidate.backends[namespace].version
+        entry["application_release"]["version"] == candidate.backends[namespace].version
         for namespace, entry in inventory["backends"].items()
     )
     assert baseline.backends == candidate.backends
