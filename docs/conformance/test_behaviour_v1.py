@@ -23,4 +23,7 @@ EXPECTED_NAME = os.environ.get("CONFORMANCE_NAME", "REPLACE-ME-link")
 @pytest.mark.skipif(not MCP_URL, reason="set CONFORMANCE_MCP_URL to run the live probe")
 def test_mcp_behaviour_standard_v1() -> None:
     report = run_probe(MCP_URL, expected_name=EXPECTED_NAME)
-    assert report.conformant, "non-conformant:\n  " + "\n  ".join(report.failed)
+    # UNGATED counts against conformance (B7): a tool whose required parameters carry no
+    # `examples` cannot be probed at all, and an unverifiable tool must never be certified.
+    problems = report.failed + report.ungated
+    assert report.conformant, "non-conformant:\n  " + "\n  ".join(problems)

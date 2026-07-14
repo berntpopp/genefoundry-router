@@ -5,8 +5,9 @@
 > against a **live** server. It is **not yet in `ci-local`** — it currently fails on most of the
 > fleet, which is the point of it. It joins `ci-local` in the change that drives it to zero.
 >
-> Rules **B4**, **B5** and **B7** below are **not yet implemented** by the probe. They are stated
-> here first, deliberately: the standard leads, the gate follows. See "Gaps in the current gate".
+> **All rules are now implemented and proven.** B4 and B7 were the two holes an adversarial review
+> found in the first cut of the probe; both are closed. B5's premise was factually wrong and is
+> corrected in place. See "Gaps in the current gate".
 
 A tool that errors is honest. A tool that returns a **confident, well-formed, wrong answer** is not,
 and an agent cannot tell the difference. This standard governs the second case.
@@ -81,11 +82,28 @@ second returns more rows than the first declared as `total`, `total` lied. A sin
 provably cannot catch the fleet's actual defect — `total == returned` with `truncated: false` is
 internally consistent and only a second call exposes it.
 
-### B5 — A missing or wrong-typed *required* argument MUST be an actionable `invalid_input` *(not yet implemented)*
+### B5 — A missing or wrong-typed *required* argument MUST be an actionable `invalid_input`
 
-The probe **MUST** exercise **required** parameters, not only optional ones. A required parameter
-carrying an undeclared closed vocabulary is exactly the `clinvar` case, and it is currently
-unprobed.
+A missing or unusable required argument **MUST** produce `invalid_input` naming the parameter.
+*(Implemented: `check_argument_error` runs against every tool, including tools with no arguments,
+and needs no `examples` to do it.)*
+
+> **Correction, 2026-07-14.** An earlier draft of this rule claimed *"a required parameter carrying
+> an undeclared closed vocabulary is exactly the `clinvar` case, and it is currently unprobed."*
+> **That is factually wrong and the rule it motivated is unnecessary.** `clinvar-link/
+> get_variants_by_gene` declares `required: ["gene_symbol"]` — `classification` is **optional**, with
+> `default: null`. It therefore falls squarely inside the B2 optional-filter probe.
+>
+> The reason it is unprobed today is **B7, not B5**: `clinvar-link` publishes no `examples` on any
+> required parameter, so no valid call can be constructed and the *entire tool* is UNGATED. Fix the
+> examples and the `classification` probe fires by itself.
+>
+> Required parameters that *declare* an `enum` are already probed — `check_declared_enums` iterates
+> every property, required or not. The only residual gap is a required parameter with an *undeclared*
+> closed vocabulary, and the remedy for that is S4 (declare it), after which **B1** applies. No new
+> probe is warranted, and one would be actively harmful: a required parameter is usually the tool's
+> primary lookup key, where a nonsense value returning nothing is the honest answer, so a sentinel
+> probe there would manufacture false accusations across the fleet.
 
 ### B6 — An error MUST be actionable, and MUST be flagged as an error
 
@@ -136,23 +154,43 @@ A probe that cannot reach the server **skips or errors — it never passes**. A 
 because it could not run is the failure mode this entire standard exists to prevent.
 (`scripts/mcp_survey.py` currently exits `0` when every host fails to resolve. That is a bug.)
 
-## Gaps in the current gate — stated, not hidden
+## Gaps in the current gate — closed, and how
 
-The probe today implements **B1, B2, B3, B6, B8**. It does **not** implement **B4, B5, B7**, and it
-is important to say so plainly rather than let a green tick imply coverage:
+The first cut of the probe implemented **B1, B2, B3, B6, B8** and silently missed **B4** and **B7**.
+An adversarial review found both, and demonstrated the consequence: a purpose-built server exhibiting
+all three target bugs on those unexercised paths **passed the gate** — `conformant=True, 6 passed,
+0 failed`. That is the defect class this whole effort exists to kill, reproduced inside our own
+enforcement. Both are now closed, and each was **proven by breaking it**, not by being written.
 
-- **B4** — `check_pagination_honesty` cannot detect the fleet's actual `total` defect. It fails only
-  when `len(rows) < total`, or when `total == len(rows)` **and** the server *claims more exist*.
-  litvar's bug — `total == returned` with `truncated: false` — satisfies neither branch. **Verified
-  live: the suite reports zero pagination failures for litvar.**
-- **B5** — only *optional* parameters are probed for B2.
-- **B7** — `conformant = not failed`; skips do not fail.
+**B4 — `total` MUST be invariant under `limit`.** The original check failed only when
+`len(rows) < total`. litvar's bug satisfies neither branch: `returned == total` with
+`truncated: false` is a perfectly self-consistent page, and **no single response can expose it**.
+Only a second call can. Verified live on the real server:
 
-An adversarial review demonstrated the consequence: a purpose-built server exhibiting **all three**
-target bugs on those unexercised paths passes the gate — `conformant=True, 6 passed, 0 failed`.
+    limit=5   -> returned=5,   total=5,   truncated=false
+    limit=25  -> returned=25,  total=25,  truncated=false
+    limit=100 -> returned=100, total=100, truncated=false
 
-**Closing B4, B5 and B7 is the condition for this standard to be enforceable, and for the gate to
-join `ci-local`.**
+`total` is echoing `limit`. The same server's sibling tool reports the true BRCA1 count: **13,264**.
+`check_total_is_not_the_page_size` now calls each paginated tool twice and requires `total` to be
+invariant. Driven directly at the lying tool it FAILS, as it must; run against `orphanet-link` and
+`hpo-link`, whose totals are honest, it raises nothing. Caught the bug; did not cry wolf.
+
+**B7 — UNGATED MUST fail, not skip.** `conformant = not failed` meant a server whose tools could not
+be probed *at all* was certified CONFORMANT. `gtex-link`, with 8 of 9 tools unprobed for want of
+`examples`, would have passed while both of its confirmed HIGH defects went untested. The report now
+carries a separate `ungated` list and `conformant = not failed and not ungated`. litvar-link, which
+publishes no `examples` anywhere, now reports **5 UNGATED** and fails — where before it would have
+been certified once its error contract was fixed, with its fabricated `total` never once exercised.
+
+This makes `TOOL-SCHEMA-DOCUMENTATION-STANDARD` a hard prerequisite for behaviour conformance, which
+is the honest sequencing: **a server that does not document its inputs cannot be verified, and must
+not be told it passed.**
+
+**B5** rested on a false premise and needed no new probe; see the correction under B5 above.
+
+With B4 and B7 closed, this standard is enforceable and the gate is the thing that enforces it. It
+joins `ci-local` in the change that drives the fleet to zero.
 
 ## Definition of Done (per repo)
 

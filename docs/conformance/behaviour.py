@@ -98,6 +98,7 @@ class Report:
     name: str
     passed: list[str] = field(default_factory=list)
     failed: list[str] = field(default_factory=list)
+    ungated: list[str] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)
 
     def check(self, label: str, ok: bool, detail: str = "") -> bool:
@@ -107,12 +108,24 @@ class Report:
             self.failed.append(f"{label} — {detail}")
         return ok
 
+    def ungate(self, label: str, why: str) -> None:
+        """A tool this gate could not verify. Counts AGAINST conformance (B7).
+
+        The earlier version of this probe recorded these as skips and still certified the server
+        CONFORMANT. That made its central promise a lie: `gtex-link`, with 8 of its 9 tools
+        unprobed for want of `examples`, would have passed while both of its confirmed HIGH
+        defects went untested. A server that does not document its inputs cannot be verified, and
+        must not be told it passed.
+        """
+        self.ungated.append(f"{label} — {why}")
+
     def skip(self, label: str, why: str) -> None:
+        """Genuinely inconclusive — an unreachable upstream. Does not count against conformance."""
         self.skipped.append(f"{label} — {why}")
 
     @property
     def conformant(self) -> bool:
-        return not self.failed
+        return not self.failed and not self.ungated
 
 
 class Probe:
@@ -436,7 +449,7 @@ def check_silent_empty_filter(
 
 
 def check_pagination_honesty(rep: Report, tool: str, env: dict[str, Any], found: list[Any]) -> None:
-    """`total` must not lie, and a truncated page must say so."""
+    """A partial page must say so."""
     total = total_of(env)
     if total is None:
         return
@@ -448,10 +461,54 @@ def check_pagination_honesty(rep: Report, tool: str, env: dict[str, Any], found:
             f"returned {len(found)} of total {total} but has_more/truncated is {more!r} — the "
             "model will conclude it has seen everything",
         )
+
+
+def check_total_is_not_the_page_size(
+    rep: Report, probe: Probe, tool: dict[str, Any], base: dict[str, Any]
+) -> None:
+    """`total` MUST be invariant under `limit`. (B4)
+
+    THIS CANNOT BE DECIDED FROM ONE RESPONSE, which is why the first version of this gate missed
+    it. litvar's `search_genetic_variants` returns `returned=25, total=25, truncated=false` — a
+    perfectly self-consistent page. Nothing in it is detectably wrong. Only a second call exposes
+    the lie:
+
+        limit=5   -> returned=5,   total=5,   truncated=false
+        limit=25  -> returned=25,  total=25,  truncated=false
+        limit=100 -> returned=100, total=100, truncated=false
+
+    `total` is echoing `limit`. The true BRCA1 count, which the SAME SERVER reports from a sibling
+    tool, is 13,264. An agent reads `total=25, truncated=false` and concludes it has seen every
+    BRCA1 variant LitVar knows. It has seen 0.2% of them.
+
+    `total` is a property of the result set, not of the page. If it moves when `limit` moves, it
+    is fabricated.
+    """
+    name = tool["name"]
+    limit_prop = properties(tool).get("limit") or {}
+    if not limit_prop:
+        return
+
+    totals: dict[int, int | None] = {}
+    for limit in (2, 4):
+        try:
+            result = probe.call(name, {**base, "limit": limit})
+        except ProtocolError:
+            return
+        env = envelope(result)
+        if is_error_envelope(env):
+            return
+        totals[limit] = total_of(env)
+
+    small, large = totals.get(2), totals.get(4)
+    if small is None or large is None:
+        return
     rep.check(
-        f"{tool}: total is not merely the page size",
-        not (total == len(found) and more is True),
-        f"total == returned == {total} while also claiming more exist",
+        f"{name}: total is invariant under limit",
+        small == large,
+        f"limit=2 reported total={small}, limit=4 reported total={large}. `total` is tracking the "
+        "page size, not the result set — so it is fabricated, and an agent reading it concludes it "
+        "has seen everything.",
     )
 
 
@@ -507,10 +564,11 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
 
         base = valid_args(tool)
         if base is None:
-            rep.skip(
+            rep.ungate(
                 f"{name}: dynamic probes",
                 "UNGATED — a required parameter carries no `examples`, so no valid call can be "
-                "constructed (TOOL-SCHEMA-DOCUMENTATION-STANDARD S2)",
+                "constructed and NOTHING about this tool's behaviour is verified "
+                "(TOOL-SCHEMA-DOCUMENTATION-STANDARD S2)",
             )
             continue
 
@@ -540,6 +598,7 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
         control = rows(control_env)
         if control:
             check_pagination_honesty(rep, name, control_env, control)
+            check_total_is_not_the_page_size(rep, probe, tool, base)
             check_silent_empty_filter(rep, probe, tool, base, control)
             check_response_modes(rep, probe, tool, base, control)
         else:
@@ -570,18 +629,22 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  PASS  {line}")
     for line in rep.skipped:
         print(f"  SKIP  {line}")
+    for line in rep.ungated:
+        print(f"  UNGATED  {line}")
     for line in rep.failed:
         print(f"  FAIL  {line}")
 
     verdict = "CONFORMANT" if rep.conformant else "NON-CONFORMANT"
     print(
         f"\n{verdict}: {rep.name} @ {rep.base_url} "
-        f"({len(rep.passed)} pass, {len(rep.failed)} fail, {len(rep.skipped)} skipped)"
+        f"({len(rep.passed)} pass, {len(rep.failed)} fail, {len(rep.ungated)} UNGATED, "
+        f"{len(rep.skipped)} inconclusive)"
     )
-    if rep.skipped:
+    if rep.ungated:
         print(
-            "Skips are NOT passes. A tool skipped for want of `examples` is a tool nobody is "
-            "gating."
+            f"{len(rep.ungated)} tool(s) could not be verified at all and therefore FAIL. Document "
+            "their required parameters with `examples` so they can be probed. An unverifiable tool "
+            "must never be certified."
         )
     return 0 if rep.conformant else 1
 
