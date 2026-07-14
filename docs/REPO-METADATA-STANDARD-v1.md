@@ -145,17 +145,58 @@ disclaimer, an uppercase topic, an underscore topic, and an out-of-vocabulary to
 first draft of the aggregate-fact rule accepted `"10 MCP tools"` — the exact live defect it
 existed to catch. The negative test found it.
 
-## Out of scope for v1
+### 5. `CITATION.cff` — generated, and the author is declared once
 
-Tracked, not forgotten. None of these block the acquisition surface, and the first is worth
-more than everything in this standard combined:
+GitHub renders a **"Cite this repository"** button (APA + BibTeX) from a valid
+`CITATION.cff` in the repo root of the default branch. The fleet shipped **0/22** — the
+largest gap relative to an audience whose output is papers.
+
+Every repo's `CITATION.cff` is **generated** (`make citation-write`) from
+`fleet-metadata.yaml` (title, abstract, keywords) plus that repo's `pyproject.toml`
+(version) and its latest GitHub release (`date-released`).
+
+**The author is declared once, in `fleet-metadata.yaml` — and is deliberately NOT scraped
+from the 21 `pyproject.toml` files.** They disagree, and some are fabricated:
+`pubtator-link`'s author is literally **"AI Assistant"**, and `gtex-link`, `litvar-link`
+and `stringdb-link` list e-mail addresses at domains that do not exist
+(`dev@gtex-link.org`, …). A `CITATION.cff` exists to attribute a human; generating one
+from that data would put "AI Assistant" in somebody's bibliography.
+
+> **ORCID is intentionally unset, not forgotten.** It is the highest-value field in a
+> `CITATION.cff` for an academic audience. It is left blank rather than guessed, because
+> an ORCID is a persistent identifier bound to a real person and inventing one
+> misattributes the work. Set `citation.authors[].orcid` and re-run `make citation-write`.
+
+### 6. `server.json` — the MCP Registry, router only
+
+The official registry (registry.modelcontextprotocol.io) is the hub MCP directories poll —
+its own docs tell aggregators to scrape `GET /v0.1/servers` hourly. Glama, Smithery and
+awesome-mcp-servers are otherwise **submission-driven**. Topics make the fleet
+*searchable*; the registry is how it gets *listed*.
+
+`server.json` is generated (`make server-json`) from `fleet-metadata.yaml` + `pyproject`,
+gated by `make lint-server-json` in `ci-local`, and republished on every `v*` tag by
+`.github/workflows/mcp-registry.yml` (GitHub OIDC — no secrets).
+
+> **Only the router is published, and that is a security boundary, not an oversight.**
+> A `remotes` entry MUST be publicly reachable. The 21 backends are **unauthenticated by
+> design** and reachable only behind the router (AGENTS.md) — publishing one as a remote
+> would expose an unauthenticated server to the internet. `test_registry_and_citation.py`
+> asserts this invariant. Listing backends individually would require `packages`
+> (PyPI/OCI) entries instead.
+
+The registry schema caps `description` at **100 characters** — under half the About-box
+budget — so the registry gets **its own, shorter copy**. It is not a reuse.
+
+## Out of scope for v1
 
 | Follow-up | Note |
 |---|---|
-| **Publish the router to the official MCP Registry** (`remotes` entry, `mcp-publisher`) | **The highest-leverage action available.** Aggregators scrape the registry hourly; directories are otherwise submission-driven. Note the registry caps `description` at **100 chars** — shorter than this standard's — and that **only the router is publishable**: a `remotes` entry must be publicly reachable, and the backends are unauthenticated-by-design behind the router. |
-| `CITATION.cff` × 22 → "Cite this repository" + Zenodo DOI | 0/22 today. The highest-value follow-up for an academic audience. |
+| Zenodo DOI | `CITATION.cff` now ships, so this is one toggle away — but Zenodo mints the DOI **on release**, not on push. Enable per repo, cut a release, then feed the DOI back into `citation:` and re-run `make citation-write`. |
 | Social-preview cards (1280×640) from the existing logo | Branding, not discoverability — GitHub's auto-card is adequate. |
-| PyPI publish; fix the **4 dead `pyproject` homepage URLs** and the `genereview-link` name typo | Real defects, separate concern. |
+| PyPI publish | Nothing is on PyPI yet; `genereviews-link`'s release workflow targets TestPyPI only. |
+| Normalising `pyproject` `authors` across the fleet | The fabricated ones (`AI Assistant`, dead `dev@*-link.org` domains) are real defects. `CITATION.cff` no longer depends on them, so this is now cosmetic rather than load-bearing. |
+| Tool annotations (`title`, `readOnlyHint`) | Prerequisite for the Anthropic Connectors Directory (which also needs a Team/Enterprise plan). |
 
 ## Boundary
 

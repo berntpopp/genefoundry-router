@@ -14,6 +14,26 @@
 # Do not hand-edit repo metadata in the GitHub UI — it will be reported as drift
 # and overwritten. Edit here.
 
+# Who gets cited. Declared ONCE, here — deliberately NOT scraped from the 21
+# pyproject.toml files, which disagree and are partly fabricated: pubtator-link's
+# author is "AI Assistant", and gtex/litvar/stringdb list emails at domains that do
+# not exist (dev@gtex-link.org, ...). A CITATION.cff exists to attribute a human;
+# generating one from that data would put "AI Assistant" in someone's bibliography.
+citation:
+  message: "If you use this software, please cite it as below."
+  authors:
+    - family-names: Popp
+      given-names: Bernt
+      email: bernt.popp@charite.de
+      affiliation: Charité – Universitätsmedizin Berlin
+      # orcid: https://orcid.org/XXXX-XXXX-XXXX-XXXX
+      #
+      # OPERATOR: set this. An ORCID is the single highest-value field in a CITATION.cff
+      # for an academic audience — it disambiguates you across every indexer. It is
+      # intentionally left unset rather than guessed: an ORCID is a persistent identifier
+      # bound to a real person, and inventing one would misattribute your work. Uncomment
+      # with your real iD and re-run `make citation-write`.
+
 # Applied to every repo in the fleet.
 universal:
   homepage: https://genefoundry.org
@@ -109,6 +129,32 @@ vocabulary:
     - human-phenotype-ontology
     - metadome
     - orphanet
+
+# Official MCP Registry (registry.modelcontextprotocol.io) — ROUTER ONLY.
+#
+# The registry is the hub that MCP directories poll (its own docs tell aggregators to
+# scrape GET /v0.1/servers hourly). Glama, Smithery and awesome-mcp-servers are otherwise
+# submission-driven and do NOT crawl GitHub by topic — so this, not the About box, is how
+# the fleet gets *listed*.
+#
+# ONLY the router is publishable, and this is a security boundary, not an oversight:
+# a `remotes` entry MUST be publicly reachable, and the 21 backends are unauthenticated
+# by design and reachable only behind the router (AGENTS.md). Publishing a backend as a
+# reachable remote would expose an unauthenticated server to the internet. Do not.
+# Listing backends individually would require `packages` (PyPI/OCI) entries instead.
+#
+# The router's endpoint is OAuth-protected (RFC 9728 discovery + dynamic client
+# registration), which the registry supports — clients perform the OAuth flow.
+registry:
+  # Namespace is bound to the auth method: `io.github.<owner>/*` authenticates via GitHub
+  # OIDC. Chosen once — renaming fragments identity across every downstream directory.
+  name: io.github.berntpopp/genefoundry
+  schema: https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json
+  endpoint: https://genefoundry.org/mcp
+  # The registry schema caps `description` at 100 chars — under half the GitHub About-box
+  # budget — so this is its OWN copy, not a reuse. {n} is substituted from servers.yaml.
+  description: >-
+    MCP gateway federating {n} biomedical MCP servers behind one endpoint: gnomAD, ClinVar, HPO, VEP.
 
 # The router. `description` is a template: {n} is substituted with the count of
 # enabled backends in servers.yaml, so the fleet's headline number can never drift
