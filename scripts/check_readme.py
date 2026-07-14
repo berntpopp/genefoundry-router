@@ -127,7 +127,8 @@ def check_badges(text: str, lines: list[str], errors: list[str]) -> None:
         )
         return
 
-    for i, ((label, expected), got) in enumerate(zip(want, badge_lines), start=1):
+    # strict=True is safe: the length check above already guarantees they match.
+    for i, ((label, expected), got) in enumerate(zip(want, badge_lines, strict=True), start=1):
         if got != expected:
             errors.append(
                 f"badge {i} ({label}) does not match the canonical line.\n"
@@ -177,8 +178,11 @@ def check_facts(text: str, errors: list[str]) -> None:
 
 
 def main() -> int:
+    # This file is vendored verbatim into all 22 fleet repos, whose ruff configs differ.
+    # Write to the streams directly rather than print() so it needs no per-file lint
+    # exemption anywhere (T201), and keep zip(strict=...) explicit (B905).
     if not README.exists():
-        print("error: README.md not found", file=sys.stderr)
+        sys.stderr.write("error: README.md not found\n")
         return 1
 
     text = README.read_text(encoding="utf-8")
@@ -195,19 +199,13 @@ def main() -> int:
 
     if errors:
         klass = "router" if is_router() else "backend"
-        print(
-            f"README Standard v1 violations in {repo_slug()} ({klass}):\n",
-            file=sys.stderr,
-        )
+        sys.stderr.write(f"README Standard v1 violations in {repo_slug()} ({klass}):\n\n")
         for err in errors:
-            print(f"  - {err}", file=sys.stderr)
-        print(
-            "\nSee docs/README-STANDARD-v1.md in genefoundry-router.",
-            file=sys.stderr,
-        )
+            sys.stderr.write(f"  - {err}\n")
+        sys.stderr.write("\nSee docs/README-STANDARD-v1.md in genefoundry-router.\n")
         return 1
 
-    print(f"README Standard v1: OK ({len(lines)} lines, ceiling {LINE_CEILING})")
+    sys.stdout.write(f"README Standard v1: OK ({len(lines)} lines, ceiling {LINE_CEILING})\n")
     return 0
 
 
