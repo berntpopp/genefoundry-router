@@ -1,6 +1,7 @@
 import asyncio
 import json
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -9,9 +10,9 @@ from scripts.make_release_candidate import _load_application_releases
 from scripts.snapshot_fleet import (
     ReleaseCandidateCaptureError,
     _run,
-    backend_definitions_digest,
     load_release_candidate_inventory,
     merge_backend,
+    release_definitions_digest,
 )
 
 
@@ -66,6 +67,23 @@ def _application_release(
     }
 
 
+def _raw_tools() -> list[Any]:
+    """The tools as the backend puts them on the wire.
+
+    The release manifest attests the canonicalization of *this* payload, not of the drift
+    baseline's ToolSpec projection -- so the capture must compare against this.
+    """
+    from mcp.types import Tool
+
+    return [
+        Tool(
+            name="get_one",
+            description="",
+            inputSchema={"type": "object", "properties": {}},
+        )
+    ]
+
+
 def _inventory(spec: BackendSpec) -> dict[str, object]:
     return {
         "identity": "release-1",
@@ -74,7 +92,7 @@ def _inventory(spec: BackendSpec) -> dict[str, object]:
             "one": {
                 "endpoint": "https://candidate.example/mcp",
                 "application_release": _application_release(
-                    definitions_sha256=backend_definitions_digest(spec)
+                    definitions_sha256=release_definitions_digest(_raw_tools())
                 ),
             }
         },
@@ -128,10 +146,10 @@ def test_candidate_snapshot_uses_inventory_endpoint_and_records_full_provenance(
     seen: list[str] = []
     seen_tokens: list[str | None] = []
 
-    async def snapshot(url: str, service_token: str | None = None) -> BackendSpec:
+    async def snapshot(url: str, service_token: str | None = None) -> tuple[BackendSpec, list[Any]]:
         seen.append(url)
         seen_tokens.append(service_token)
-        return spec
+        return spec, _raw_tools()
 
     monkeypatch.setattr(
         "scripts.snapshot_fleet.load_registry",
@@ -145,7 +163,7 @@ def test_candidate_snapshot_uses_inventory_endpoint_and_records_full_provenance(
             )
         ],
     )
-    monkeypatch.setattr("scripts.snapshot_fleet._snapshot_backend", snapshot)
+    monkeypatch.setattr("scripts.snapshot_fleet._capture_backend", snapshot)
     output = tmp_path / "baseline.json"
 
     asyncio.run(_run("servers.yaml", output, "2026-07-12T00:00:00Z", inventory))
@@ -172,8 +190,10 @@ def test_candidate_snapshot_refuses_definition_digest_mismatch(monkeypatch, tmp_
     release["mcp"]["definitions_sha256"] = "0" * 64
     release["release_assets"]["mcp-definitions.json"] = f"sha256:{'0' * 64}"
 
-    async def snapshot(_url: str, _service_token: str | None = None) -> BackendSpec:
-        return spec
+    async def snapshot(
+        _url: str, _service_token: str | None = None
+    ) -> tuple[BackendSpec, list[Any]]:
+        return spec, _raw_tools()
 
     monkeypatch.setattr(
         "scripts.snapshot_fleet.load_registry",
@@ -187,7 +207,7 @@ def test_candidate_snapshot_refuses_definition_digest_mismatch(monkeypatch, tmp_
             )
         ],
     )
-    monkeypatch.setattr("scripts.snapshot_fleet._snapshot_backend", snapshot)
+    monkeypatch.setattr("scripts.snapshot_fleet._capture_backend", snapshot)
 
     with pytest.raises(ReleaseCandidateCaptureError, match="definition attestation mismatch"):
         asyncio.run(

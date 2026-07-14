@@ -12,6 +12,7 @@ import asyncio
 import hashlib
 import json
 import os
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,24 @@ from genefoundry_router.release.models import ApplicationReleaseManifest
 
 class ReleaseCandidateCaptureError(RuntimeError):
     """A required backend could not be included in a reviewed release capture."""
+
+
+def release_definitions_digest(tools: Sequence[Any]) -> str:
+    """The definitions digest in the SAME canonical form the release evidence uses.
+
+    A release manifest's ``mcp.definitions_sha256`` is produced by ``release/definitions.py``,
+    which canonicalizes the tool payload the server actually sent. ``backend_definitions_digest``
+    hashes a different model (``BackendSpec``/``ToolSpec``) for the drift baseline, and a *parsed*
+    ``ToolAnnotations`` materializes optional keys the server omitted -- notably ``title: null``.
+
+    Hashing those two and comparing them can never agree, whatever the fleet does. A release
+    candidate must compare like with like, so dump the tools with ``exclude_none=True``: that is
+    the payload the backend put on the wire, and the payload its release attested.
+    """
+    from genefoundry_router.release.definitions import capture_definitions
+
+    raw = [tool.model_dump(mode="json", by_alias=True, exclude_none=True) for tool in tools]
+    return capture_definitions(raw, context={"capture": "live"}).definitions_sha256
 
 
 def backend_definitions_digest(spec: BackendSpec) -> str:
@@ -109,6 +128,18 @@ def merge_backend(
 
 
 async def _snapshot_backend(url: str, service_token: str | None = None) -> BackendSpec | None:
+    captured = await _capture_backend(url, service_token)
+    return captured[0] if captured else None
+
+
+async def _capture_backend(
+    url: str, service_token: str | None = None
+) -> tuple[BackendSpec, list[Any]] | None:
+    """The normalized spec *and* the raw tools the backend put on the wire.
+
+    A release candidate needs both: the spec feeds the drift baseline, and the raw tools feed
+    the release-canonical digest that the backend's own release attested.
+    """
     from fastmcp import Client
     from fastmcp.client.transports import StreamableHttpTransport
 
@@ -148,7 +179,7 @@ async def _snapshot_backend(url: str, service_token: str | None = None) -> Backe
             )
             for t in tools
         ]
-        return BackendSpec(version=version, tools=specs)
+        return BackendSpec(version=version, tools=specs), list(tools)
     except Exception as exc:  # report + keep prior
         print(f"  WARN unreachable: {url} ({exc})")
         return None
@@ -193,11 +224,15 @@ async def _run(
             if release_candidate_inventory is not None
             else b.url
         )
-        fresh = await _snapshot_backend(endpoint, b.service_token) if endpoint else None
-        if release_candidate_inventory is not None and fresh is not None:
+        captured = await _capture_backend(endpoint, b.service_token) if endpoint else None
+        fresh = captured[0] if captured else None
+        if release_candidate_inventory is not None and captured is not None:
             release = release_candidate_inventory["backends"][b.namespace]["application_release"]
             expected_digest = release["mcp"]["definitions_sha256"]
-            if backend_definitions_digest(fresh) != expected_digest:
+            # The attested digest is the release canonicalization of the payload the backend put
+            # on the wire. Hashing the drift baseline's ToolSpec projection instead compares two
+            # different canonical forms and can never agree -- see release_definitions_digest.
+            if release_definitions_digest(captured[1]) != expected_digest:
                 raise ReleaseCandidateCaptureError(
                     f"definition attestation mismatch for required release-candidate backend {b.namespace}"
                 )
