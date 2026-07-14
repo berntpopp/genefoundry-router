@@ -1,0 +1,35 @@
+# CITATION.cff — GENERATED. Do not edit.
+# Source: genefoundry-router/fleet-metadata.yaml + this repo's pyproject.toml.
+# Regenerate: `make citation-write` in genefoundry-router.
+# See genefoundry-router/docs/REPO-METADATA-STANDARD-v1.md.
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: genefoundry-router
+abstract: MCP gateway federating 21 biomedical MCP servers — gnomAD, ClinVar, HPO, UniProt, Ensembl VEP,
+  PanelApp and more — behind one Streamable-HTTP endpoint, with collision-free namespaced tools and BM25
+  tool search.
+type: software
+authors:
+- family-names: Popp
+  given-names: Bernt
+  email: bernt.popp@charite.de
+  affiliation: Charité – Universitätsmedizin Berlin
+version: 0.6.6
+license: MIT
+repository-code: https://github.com/berntpopp/genefoundry-router
+url: https://genefoundry.org
+keywords:
+- api-gateway
+- bioinformatics
+- claude
+- clinical-genetics
+- fastmcp
+- gateway
+- genefoundry
+- genomics
+- llm-tools
+- mcp
+- mcp-server
+- model-context-protocol
+- variant-interpretation
+date-released: '2026-07-13'

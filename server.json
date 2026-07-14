@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.berntpopp/genefoundry",
+  "description": "MCP gateway federating 21 biomedical MCP servers behind one endpoint: gnomAD, ClinVar, HPO, VEP.",
+  "version": "0.6.6",
+  "websiteUrl": "https://genefoundry.org",
+  "repository": {
+    "url": "https://github.com/berntpopp/genefoundry-router",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://genefoundry.org/mcp"
+    }
+  ]
+}

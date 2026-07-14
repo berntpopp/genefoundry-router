@@ -40,6 +40,27 @@ lint-loc: ## Enforce per-file line budget
 lint-readme: ## Enforce the GeneFoundry README Standard v1
 	uv run python scripts/check_readme.py
 
+lint-metadata: ## Enforce the GeneFoundry Repository Metadata Standard v1 (offline)
+	uv run python scripts/check_fleet_metadata.py
+
+metadata-check: ## Report drift between fleet-metadata.yaml and live GitHub (needs gh)
+	uv run python scripts/sync_fleet_metadata.py --check
+
+metadata-apply: ## Push fleet-metadata.yaml to the fleet's GitHub About boxes (needs gh)
+	uv run python scripts/sync_fleet_metadata.py --apply
+
+server-json: ## Regenerate the MCP Registry manifest from fleet-metadata.yaml + pyproject
+	uv run python scripts/gen_server_json.py
+
+lint-server-json: ## Fail if server.json is stale
+	uv run python scripts/gen_server_json.py --check
+
+citation-check: ## Fail if any fleet repo's CITATION.cff is stale (needs sibling checkouts)
+	uv run python scripts/gen_citation_cff.py --check
+
+citation-write: ## (Re)generate every fleet repo's CITATION.cff (needs sibling checkouts + gh)
+	uv run python scripts/gen_citation_cff.py --write
+
 readme-inventory: ## Regenerate the README's federated-backend table from servers.yaml + the pin
 	uv run python scripts/gen_readme_inventory.py
 
@@ -78,7 +99,7 @@ http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption 
 
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-readme lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-readme lint-metadata lint-server-json lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
 
 precommit: ci-local ## Run checks expected before commit
 

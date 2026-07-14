@@ -1,0 +1,318 @@
+# fleet-metadata.yaml — the fleet's GitHub "About" box, as code.
+#
+# Single source of truth for every fleet repo's DESCRIPTION, TOPICS and WEBSITE —
+# the only three fields GitHub search actually indexes (README content is NOT
+# searched by default; `in:readme` is opt-in). The description is also served as
+# the repo page's <title> and <meta name="description">, i.e. it IS the Google
+# blue link and snippet.
+#
+# Governed by docs/REPO-METADATA-STANDARD-v1.md. Two gates:
+#   make lint-metadata     # offline: validates THIS FILE against the standard  (in ci-local)
+#   make metadata-check    # online:  reports drift between this file and live GitHub
+#   make metadata-apply    # online:  pushes this file to GitHub
+#
+# Do not hand-edit repo metadata in the GitHub UI — it will be reported as drift
+# and overwritten. Edit here.
+
+# Who gets cited. Declared ONCE, here — deliberately NOT scraped from the 21
+# pyproject.toml files, which disagree and are partly fabricated: pubtator-link's
+# author is "AI Assistant", and gtex/litvar/stringdb list emails at domains that do
+# not exist (dev@gtex-link.org, ...). A CITATION.cff exists to attribute a human;
+# generating one from that data would put "AI Assistant" in someone's bibliography.
+citation:
+  message: "If you use this software, please cite it as below."
+  authors:
+    - family-names: Popp
+      given-names: Bernt
+      email: bernt.popp@charite.de
+      affiliation: Charité – Universitätsmedizin Berlin
+      # orcid: https://orcid.org/XXXX-XXXX-XXXX-XXXX
+      #
+      # OPERATOR: set this. An ORCID is the single highest-value field in a CITATION.cff
+      # for an academic audience — it disambiguates you across every indexer. It is
+      # intentionally left unset rather than guessed: an ORCID is a persistent identifier
+      # bound to a real person, and inventing one would misattribute your work. Uncomment
+      # with your real iD and re-run `make citation-write`.
+
+# Applied to every repo in the fleet.
+universal:
+  homepage: https://genefoundry.org
+  topics:
+    # Protocol / ecosystem tier — how MCP users and aggregators find anything.
+    - mcp                      # 49.7k repos: the pool everyone browses
+    - mcp-server               # 20.7k repos: the canonical server token
+    - model-context-protocol   # 17.2k repos: canonical long form
+    - claude                   # 37.3k repos: primary client ecosystem
+    - llm-tools                #  3.0k repos
+    - fastmcp                  #  1.5k repos: the framework
+    # Domain tier — the field's front door.
+    - bioinformatics           # 14.6k repos
+    # Brand tier — 0 other repos hold this. Makes all 22 enumerable from one page:
+    # https://github.com/topics/genefoundry
+    - genefoundry
+
+# Closed vocabulary. Every non-universal topic MUST appear here, so extending the
+# taxonomy is a deliberate, reviewed edit. Without this the fleet drifts back into
+# 22 private taxonomies — which is exactly how it got here.
+vocabulary:
+  # Domain tier — the field a reader browses.
+  domain:
+    - genomics
+    - genetics
+    - clinical-genetics
+    - rare-disease
+    - variant-interpretation
+    - variant-annotation
+    - variant-effect
+    - population-genetics
+    - allele-frequency
+    - pathogenicity
+    - loss-of-function
+    - acmg
+    - splicing
+    - gene-curation
+    - gene-disease
+    - gene-panel
+    - gene-nomenclature
+    - gene-symbol
+    - gene-expression
+    - transcriptomics
+    - functional-genomics
+    - deep-mutational-scanning
+    - proteomics
+    - protein-structure
+    - protein-domains
+    - protein-protein-interaction
+    - missense-tolerance
+    - network-biology
+    - functional-enrichment
+    - phenotype
+    - ontology
+    - disease-ontology
+    - semantic-web
+    - epidemiology
+    - literature-mining
+    - text-mining
+    - named-entity-recognition
+    - pubmed
+    - mouse-genetics
+    - model-organism
+    - gateway
+    - api-gateway
+  # Source tier — the upstream's proper noun. These are near-empty topic pages
+  # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
+  source:
+    - gnomad
+    - gtex
+    - hgnc
+    - genenames
+    - mgi
+    - uniprot
+    - sparql
+    - rdf
+    - clingen
+    - gencc
+    - litvar
+    - string-db
+    - autopvs1
+    - spliceai
+    - pangolin
+    - genereviews
+    - pubtator
+    - clinvar
+    - vep
+    - ensembl
+    - panelapp
+    - mondo
+    - mavedb
+    - hpo
+    - human-phenotype-ontology
+    - metadome
+    - orphanet
+
+# Official MCP Registry (registry.modelcontextprotocol.io) — ROUTER ONLY.
+#
+# The registry is the hub that MCP directories poll (its own docs tell aggregators to
+# scrape GET /v0.1/servers hourly). Glama, Smithery and awesome-mcp-servers are otherwise
+# submission-driven and do NOT crawl GitHub by topic — so this, not the About box, is how
+# the fleet gets *listed*.
+#
+# ONLY the router is publishable, and this is a security boundary, not an oversight:
+# a `remotes` entry MUST be publicly reachable, and the 21 backends are unauthenticated
+# by design and reachable only behind the router (AGENTS.md). Publishing a backend as a
+# reachable remote would expose an unauthenticated server to the internet. Do not.
+# Listing backends individually would require `packages` (PyPI/OCI) entries instead.
+#
+# The router's endpoint is OAuth-protected (RFC 9728 discovery + dynamic client
+# registration), which the registry supports — clients perform the OAuth flow.
+registry:
+  # Namespace is bound to the auth method: `io.github.<owner>/*` authenticates via GitHub
+  # OIDC. Chosen once — renaming fragments identity across every downstream directory.
+  name: io.github.berntpopp/genefoundry
+  schema: https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json
+  endpoint: https://genefoundry.org/mcp
+  # The registry schema caps `description` at 100 chars — under half the GitHub About-box
+  # budget — so this is its OWN copy, not a reuse. {n} is substituted from servers.yaml.
+  description: >-
+    MCP gateway federating {n} biomedical MCP servers behind one endpoint: gnomAD, ClinVar, HPO, VEP.
+
+# The router. `description` is a template: {n} is substituted with the count of
+# enabled backends in servers.yaml, so the fleet's headline number can never drift
+# (README Standard v1, Rule 9 — derived numbers are machine-owned, not banned).
+router:
+  repo: berntpopp/genefoundry-router
+  description: >-
+    MCP gateway federating {n} biomedical MCP servers — gnomAD, ClinVar, HPO, UniProt,
+    Ensembl VEP, PanelApp and more — behind one Streamable-HTTP endpoint, with
+    collision-free namespaced tools and BM25 tool search.
+  topics:
+    - gateway
+    - api-gateway
+    - genomics
+    - clinical-genetics
+    - variant-interpretation
+
+# The 21 `-link` backends. `namespace` keys into servers.yaml; coverage parity
+# between the two files is gated by scripts/check_fleet_metadata.py.
+backends:
+  - namespace: gnomad
+    description: >-
+      MCP server for gnomAD (Genome Aggregation Database): variant allele frequencies,
+      gene constraint, coverage, structural and mitochondrial variants, and liftover —
+      as typed tools for LLM agents.
+    topics: [gnomad, genomics, variant-interpretation, population-genetics, allele-frequency]
+
+  - namespace: gtex
+    description: >-
+      MCP server for the GTEx Portal: tissue-specific gene expression — median and
+      per-sample TPM, top expressed genes per tissue, and gene/transcript annotation —
+      as typed tools for LLM agents.
+    topics: [gtex, gene-expression, transcriptomics, genomics]
+
+  - namespace: hgnc
+    description: >-
+      MCP server for HGNC (HUGO Gene Nomenclature Committee, genenames.org): gene symbol
+      and ID resolution, cross-references, search, and gene groups — served from a local
+      index of the HGNC bulk download.
+    topics: [hgnc, gene-nomenclature, gene-symbol, genenames, genomics]
+
+  - namespace: mgi
+    description: >-
+      MCP server for MGI (Mouse Genome Informatics): mouse gene, allele, mutation and
+      phenotype data — the MGI marker page as structured tools, served from a local
+      SQLite index.
+    topics: [mgi, mouse-genetics, model-organism, phenotype, genomics]
+
+  - namespace: uniprot
+    description: >-
+      MCP server for UniProt: protein function, sequence, features and cross-references
+      over the UniProt SPARQL endpoint — intent-named tools plus a guarded raw-SPARQL
+      escape hatch.
+    topics: [uniprot, proteomics, sparql, rdf, protein-structure]
+
+  - namespace: clingen
+    description: >-
+      MCP server for ClinGen (Clinical Genome Resource): gene–disease validity, dosage
+      sensitivity, clinical actionability, and expert-panel variant pathogenicity (ERepo)
+      — as typed tools for LLM agents.
+    topics: [clingen, clinical-genetics, gene-curation, variant-interpretation, genomics]
+
+  - namespace: gencc
+    description: >-
+      MCP server for GenCC (Gene Curation Coalition): harmonized gene–disease validity
+      classifications across member submitters, with consensus and conflict detection per
+      gene–disease pair.
+    topics: [gencc, clinical-genetics, gene-curation, gene-disease, genomics]
+
+  - namespace: litvar
+    description: >-
+      MCP server for NCBI LitVar2: search the biomedical literature by genetic variant —
+      the index linking variants to the publications that mention them, as typed tools for
+      LLM agents.
+    topics: [litvar, literature-mining, variant-interpretation, pubmed, genomics]
+
+  - namespace: stringdb
+    description: >-
+      MCP server for STRING v12: protein–protein association networks, interaction
+      partners, and functional enrichment analysis — as typed tools for LLM agents.
+    topics: [string-db, protein-protein-interaction, network-biology, proteomics, functional-enrichment]
+
+  - namespace: autopvs1
+    description: >-
+      MCP server for AutoPVS1: automated ACMG PVS1 loss-of-function evidence for sequence
+      variants and copy-number variants — variant interpretation as typed tools for LLM
+      agents.
+    topics: [autopvs1, acmg, variant-interpretation, clinical-genetics, loss-of-function]
+
+  - namespace: spliceai
+    description: >-
+      MCP server for SpliceAI Lookup (Broad Institute): SpliceAI, Pangolin and
+      SpliceAI-10k splice-impact predictions for variants, plus an Ensembl VEP-backed
+      variant resolver.
+    topics: [spliceai, pangolin, splicing, variant-interpretation, genomics]
+
+  - namespace: genereviews
+    description: >-
+      MCP server for GeneReviews: the expert-authored, peer-reviewed gene–disease chapters
+      on NCBI Bookshelf, served as a searchable corpus of individually citable passages.
+    topics: [genereviews, literature-mining, clinical-genetics, rare-disease, gene-disease]
+
+  - namespace: pubtator
+    description: >-
+      MCP server for NCBI PubTator3: biomedical literature search with gene, variant,
+      disease and chemical entity annotation — returns compact, citable passages instead
+      of raw BioC.
+    topics: [pubtator, literature-mining, named-entity-recognition, pubmed, text-mining]
+
+  - namespace: clinvar
+    description: >-
+      MCP server for NCBI ClinVar: variant clinical significance and gene-level
+      classifications, served from a local SQLite index built from the ClinVar weekly bulk
+      release — not the eUtils API.
+    topics: [clinvar, variant-interpretation, clinical-genetics, pathogenicity, genomics]
+
+  - namespace: vep
+    description: >-
+      MCP server for Ensembl VEP (Variant Effect Predictor) and Variant Recoder: variant
+      consequence annotation and identifier recoding across GRCh38 and GRCh37.
+    topics: [vep, ensembl, variant-annotation, variant-interpretation, genomics]
+
+  - namespace: panelapp
+    description: >-
+      MCP server for PanelApp: consensus diagnostic gene panels and gene–disease ratings
+      from Genomics England (UK) and PanelApp Australia — as typed tools for LLM agents.
+    topics: [panelapp, gene-panel, clinical-genetics, rare-disease, gene-curation]
+
+  - namespace: mondo
+    description: >-
+      MCP server for the Mondo Disease Ontology: disease term lookup, the is_a hierarchy,
+      and cross-ontology mapping across OMIM, Orphanet, DOID, NCIT, UMLS and MeSH.
+    topics: [mondo, ontology, disease-ontology, rare-disease, semantic-web]
+
+  - namespace: mavedb
+    description: >-
+      MCP server for MaveDB: quantitative variant-effect scores from Multiplexed Assays of
+      Variant Effect (MAVE) and deep mutational scanning — functional evidence as typed
+      tools for LLM agents.
+    topics: [mavedb, deep-mutational-scanning, variant-effect, functional-genomics, variant-interpretation]
+
+  - namespace: hpo
+    description: >-
+      MCP server for the Human Phenotype Ontology (HPO): phenotype term lookup, the is_a
+      hierarchy, cross-ontology mapping, and gene–phenotype–disease associations from HPO
+      and HPOA.
+    topics: [hpo, human-phenotype-ontology, phenotype, ontology, rare-disease]
+
+  - namespace: metadome
+    description: >-
+      MCP server for MetaDome: per-position missense tolerance (dN/dS) landscapes for human
+      transcripts, Pfam domains, meta-domain homolog aggregation, and gnomAD/ClinVar
+      per-position counts.
+    topics: [metadome, missense-tolerance, protein-domains, variant-interpretation, proteomics]
+
+  - namespace: orphanet
+    description: >-
+      MCP server for Orphanet (Orphadata): rare-disease nomenclature, gene–disease
+      associations, phenotypes, epidemiology and cross-references, from the Orphadata
+      scientific knowledge files.
+    topics: [orphanet, rare-disease, ontology, disease-ontology, epidemiology]

@@ -1,0 +1,46 @@
+---
+# Publish the router to the official MCP Registry on every release tag.
+#
+# The registry is the hub MCP directories poll (its docs tell aggregators to scrape
+# GET /v0.1/servers hourly), so a stale entry is worse than none — the version there is
+# what clients see. Republishing on tag keeps it honest with zero secrets: `mcp-publisher
+# login github-oidc` exchanges the workflow's OIDC token for the `io.github.berntpopp/*`
+# namespace, which is why `id-token: write` is required.
+#
+# ONLY the router is published. A `remotes` entry must be publicly reachable, and the 21
+# backends are unauthenticated by design behind the router (AGENTS.md) — publishing one
+# would expose an unauthenticated server to the internet.
+name: MCP Registry
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write        # required for `mcp-publisher login github-oidc`
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Verify server.json is current
+        # server.json is generated from fleet-metadata.yaml + pyproject.toml. If the tag
+        # ships a stale manifest, the registry would advertise the wrong version.
+        run: |
+          pipx install uv
+          uv run python scripts/gen_server_json.py --check
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m).tar.gz" \
+            | tar -xz mcp-publisher
+          ./mcp-publisher --version
+
+      - name: Publish to the MCP Registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
