@@ -3,7 +3,10 @@
 > **Status: PROPOSED, 2026-07-14.** Tracking issues: `genefoundry-router#73` (this standard) and
 > `genefoundry-router#74` (the `outputSchema` measurement). A tracking issue titled "Adopt
 > GeneFoundry Tool-Surface Budget Standard v1" exists in each `-link` repo.
-> Enforced offline by `scripts/check_tool_surface.py` (`make lint-surface`, part of `ci-local`).
+> Checked offline by `scripts/check_tool_surface.py` (`make lint-surface`). **It is NOT yet in
+> `ci-local`** — it currently reports 595 real violations across 20 of the 21 backends, which is the
+> point of it: it is the failing test the fleet sweep exists to turn green. It joins `ci-local` in
+> the same change that drives it to zero. A standard must not claim an enforcement it does not have.
 
 A tool definition is not a one-off cost paid at connect time. It sits in the model's
 system-prompt prefix and is re-sent on **every request** for the life of the session. Whatever a
