@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme readme-inventory lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
 
 .DEFAULT_GOAL := help
 
@@ -37,6 +37,12 @@ lint-fix: ## Lint and apply safe fixes
 lint-loc: ## Enforce per-file line budget
 	uv run python scripts/check_file_size.py
 
+lint-readme: ## Enforce the GeneFoundry README Standard v1
+	uv run python scripts/check_readme.py
+
+readme-inventory: ## Regenerate the README's federated-backend table from servers.yaml + the pin
+	uv run python scripts/gen_readme_inventory.py
+
 lint-actions: ## Lint GitHub Actions workflows (actionlint if installed; CI always runs it)
 	@command -v actionlint >/dev/null 2>&1 && actionlint -color || \
 		echo "actionlint not on PATH — skipped locally (CI runs it; the YAML-parse test still gates syntax)"
@@ -72,7 +78,7 @@ http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption 
 
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-readme lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
 
 precommit: ci-local ## Run checks expected before commit
 
