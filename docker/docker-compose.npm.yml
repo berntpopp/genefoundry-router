@@ -1,5 +1,11 @@
 services:
   genefoundry-router:
+    # NPM resolves its upstream by container name (`proxy_pass http://genefoundry_router:8000`),
+    # so this overlay must pin it. Without it Compose auto-names the container
+    # `genefoundry-router-genefoundry-router-1`, nginx cannot resolve the upstream, and the
+    # public /mcp endpoint goes down. Worse, an unresolvable upstream also makes `nginx -s
+    # reload` fail, which blocks NPM config changes for every other site on the host.
+    container_name: genefoundry_router
     # !reset (not []) is required: Compose MERGES list fields across -f overlays, so a
     # plain `ports: []` would NOT drop the base file's "${...:-8010}:8000" mapping — it
     # would stay published on the host, exposing the auth=none gateway on the public IP.
