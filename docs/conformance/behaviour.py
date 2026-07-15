@@ -231,15 +231,17 @@ def rows(env: dict[str, Any]) -> list[Any] | None:
     # 1. A GROUPED COLLECTION — a non-`_` key whose value is a dict of lists,
     #    e.g. mappings: {"OMIM": [...], "ICD10": [...]} — IS a collection, and needs no count.
     #    It cannot be confused with a scalar record field (a record's dict field, like
-    #    `definition: {id, label, ...}`, has non-list values). Checked FIRST and without the
-    #    count guard below, because an empty grouped dict `mappings: {}` is an emptied collection,
-    #    not a record — and reading it as "no collection" is exactly how hpo-link's
+    #    `definition: {id, label, ...}`, has non-list values). Considered without the count guard
+    #    below, because an empty grouped dict `mappings: {}` is an emptied collection, not a record
+    #    — and reading it as "no collection" is exactly how hpo-link's
     #    `map_cross_ontology(prefixes=["__nonsense__"]) -> mappings:{}, success:true` slipped past
     #    an earlier gate that then reported CONFORMANT over a confirmed silent-empty (Codex found
     #    it). A non-empty grouped dict must be all-lists; an empty one reads as an empty collection.
-    grouped = _grouped_collection(env)
-    if grouped is not None:
-        return grouped
+    #
+    #    Do NOT return it immediately. A normal response can also carry an auxiliary empty object
+    #    (`facets: {}`) beside the real counted list (`results: [...]`). The row detector must pick
+    #    the largest actual collection, not let an empty sidecar mask non-empty rows.
+    best = _grouped_collection(env)
 
     # 2. Otherwise, a top-level list of objects — but a bare list is ambiguous. A COLLECTION
     #    declares how many things it holds (Response-Envelope v1: "Always populate
@@ -249,9 +251,8 @@ def rows(env: dict[str, Any]) -> list[Any] | None:
     #    and `response_mode=minimal` (correctly omitting a record's optional detail) both read as
     #    payload destruction. Two false accusations against a server doing nothing wrong.
     if count_of(env) is None:
-        return None
+        return best
 
-    best: list[Any] | None = None
     for key, value in env.items():
         if key.startswith("_") or not isinstance(value, list):
             continue
