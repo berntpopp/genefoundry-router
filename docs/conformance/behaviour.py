@@ -228,45 +228,56 @@ def rows(env: dict[str, Any]) -> list[Any] | None:
     (`prefixes=["__BOGUS__"]` -> `success:true, count:0`) sailed through a gate reporting
     "0 failures, 0 UNGATED". A detector that cannot see a payload shape cannot gate it.
     """
-    # A COLLECTION declares how many things it holds; a RECORD does not. Response-Envelope v1:
-    # "Always populate _meta.pagination: total_count, has_more". That count is the only reliable
-    # signal separating "a list of results" from "a field of one record that happens to be a list".
-    #
-    # Without this gate the probe reads hpo-link's `get_term` — a flat single record whose
-    # `children` field holds 23 sub-terms — as a 23-row collection. `fields=[...]` is then a
-    # PROJECTION parameter doing exactly its job (dropping `children`), and `response_mode=minimal`
-    # is correctly omitting optional detail from one record — and the gate calls both of them
-    # payload destruction. Two false accusations against a server doing nothing wrong. Measured:
-    # this guard removes them while keeping every real finding.
+    # 1. A GROUPED COLLECTION — a non-`_` key whose value is a dict of lists,
+    #    e.g. mappings: {"OMIM": [...], "ICD10": [...]} — IS a collection, and needs no count.
+    #    It cannot be confused with a scalar record field (a record's dict field, like
+    #    `definition: {id, label, ...}`, has non-list values). Checked FIRST and without the
+    #    count guard below, because an empty grouped dict `mappings: {}` is an emptied collection,
+    #    not a record — and reading it as "no collection" is exactly how hpo-link's
+    #    `map_cross_ontology(prefixes=["__nonsense__"]) -> mappings:{}, success:true` slipped past
+    #    an earlier gate that then reported CONFORMANT over a confirmed silent-empty (Codex found
+    #    it). A non-empty grouped dict must be all-lists; an empty one reads as an empty collection.
+    grouped = _grouped_collection(env)
+    if grouped is not None:
+        return grouped
+
+    # 2. Otherwise, a top-level list of objects — but a bare list is ambiguous. A COLLECTION
+    #    declares how many things it holds (Response-Envelope v1: "Always populate
+    #    _meta.pagination: total_count, has_more"); a RECORD does not. Without this count guard the
+    #    probe reads hpo-link's `get_term` — a single record whose `children` field holds 23
+    #    sub-terms — as a 23-row collection, and then `fields=[...]` (a projection doing its job)
+    #    and `response_mode=minimal` (correctly omitting a record's optional detail) both read as
+    #    payload destruction. Two false accusations against a server doing nothing wrong.
     if count_of(env) is None:
         return None
 
     best: list[Any] | None = None
-
-    def consider(value: list[Any]) -> None:
-        nonlocal best
+    for key, value in env.items():
+        if key.startswith("_") or not isinstance(value, list):
+            continue
         if value and not isinstance(value[0], dict):
-            return
+            continue
         if best is None or len(value) > len(best):
             best = value
+    return best
 
+
+def _grouped_collection(env: dict[str, Any]) -> list[Any] | None:
+    """Flatten the largest dict-of-lists in the envelope, or None if there is none.
+
+    Returns `[]` for an empty grouped dict — an emptied collection, not the absence of one.
+    """
+    best: list[Any] | None = None
     for key, value in env.items():
-        if key.startswith("_"):
+        if key.startswith("_") or not isinstance(value, dict):
             continue
-        if isinstance(value, list):
-            consider(value)
-        elif isinstance(value, dict) and value and all(isinstance(b, list) for b in value.values()):
-            # A GROUPED COLLECTION — every branch is a list, e.g.
-            #   mappings: {"OMIM": [...], "ICD10": [...]}
-            # Flatten it into one row set.
-            #
-            # The `all(...)` is load-bearing, not tidiness. Without it this also swallows a single
-            # RECORD that merely contains lists — `term: {"id": ..., "name": ..., "xrefs": [23]}` —
-            # and then `response_mode=minimal` correctly stripping that record's optional detail
-            # reads as payload destruction. That is a false accusation, and I generated exactly it
-            # on hpo-link before adding this guard. A record has scalars; a grouped collection is
-            # lists all the way across.
-            consider([item for branch in value.values() for item in branch])
+        # A non-empty grouped collection is lists all the way across; an empty dict qualifies
+        # (it is an emptied collection). A dict with any non-list value is a record, not a group.
+        if value and not all(isinstance(branch, list) for branch in value.values()):
+            continue
+        flat = [item for branch in value.values() if isinstance(branch, list) for item in branch]
+        if best is None or len(flat) > len(best):
+            best = flat
     return best
 
 
