@@ -2,6 +2,21 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.9] - 2026-07-15
+
+### Added
+
+- Add MCP Behaviour Standard v1, Tool-Surface Budget Standard v1, Tool-Schema
+  Documentation Standard v1, and the canonical behaviour conformance gate used by
+  the GeneFoundry backend fleet.
+
+### Fixed
+
+- Treat `not_found` from a tool's own example-acceptance probe as inconclusive
+  while still failing malformed examples.
+- Keep auxiliary empty objects from hiding collection rows in grouped payload
+  detection.
+
 ## [0.6.8] - 2026-07-15
 
 ### Fixed
