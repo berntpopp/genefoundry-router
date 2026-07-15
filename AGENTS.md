@@ -52,9 +52,17 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
 
 - Tool-Naming & Normalization — `docs/TOOL-NAMING-STANDARD-v1.md`
 - Response-Envelope — `docs/RESPONSE-ENVELOPE-STANDARD-v1.md`
+- Tool-Surface Budget — `docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md` (`make lint-surface`)
+- Tool-Schema Documentation — `docs/TOOL-SCHEMA-DOCUMENTATION-STANDARD-v1.md` (`make lint-surface`)
 - Container & Deployment Hardening — `docs/CONTAINER-HARDENING-STANDARD-v1.md`
 - Versioning (single-source) — `docs/VERSIONING-STANDARD-v1.md`
 - Logging & CLI Standard v1 (sibling; canonical text tracked per-repo)
+
+Conformance is gated, not just documented. `docs/conformance/` is the canonical source vendored
+byte-identical into every `-link` repo: `conformance.py` gates *transport*, `behaviour.py` gates the
+*contract* an agent relies on (no silently-empty filter, honest `total`/`truncated`, an error that
+names the parameter, `isError` on every error envelope). Behaviour probes are derived from each
+server's own advertised schema — there is no per-repo probe list to write, and none to forget.
 
 ## Boundary
 

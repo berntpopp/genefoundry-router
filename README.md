@@ -113,7 +113,7 @@ on a schedule. See [Deployment → drift detection](docs/deployment.md).
 - [Deployment](docs/deployment.md) — container release, digest pinning, rollback, and drift detection.
 - [How discovery works](docs/discovery.md) — the search surface, entry-point pinning, and how discoverability is measured.
 - [Design spec](docs/specs/2026-06-13-genefoundry-router-design.md) — the architecture and why it is shaped this way.
-- Fleet standards — [Tool-Naming](docs/TOOL-NAMING-STANDARD-v1.md) · [Response-Envelope](docs/RESPONSE-ENVELOPE-STANDARD-v1.md) · [Container-Hardening](docs/CONTAINER-HARDENING-STANDARD-v1.md) · [Versioning](docs/VERSIONING-STANDARD-v1.md) · [README](docs/README-STANDARD-v1.md).
+- Fleet standards — [Tool-Naming](docs/TOOL-NAMING-STANDARD-v1.md) · [Response-Envelope](docs/RESPONSE-ENVELOPE-STANDARD-v1.md) · [MCP-Behaviour](docs/MCP-BEHAVIOUR-STANDARD-v1.md) · [Tool-Surface-Budget](docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md) · [Tool-Schema-Documentation](docs/TOOL-SCHEMA-DOCUMENTATION-STANDARD-v1.md) · [Container-Hardening](docs/CONTAINER-HARDENING-STANDARD-v1.md) · [Versioning](docs/VERSIONING-STANDARD-v1.md) · [README](docs/README-STANDARD-v1.md).
 
 ## Contributing
 

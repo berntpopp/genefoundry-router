@@ -74,8 +74,7 @@ def main() -> int:
 
     if not BLOCK_RE.search(text):
         print(
-            f"error: README.md has no '{MARKER}' GENERATED block "
-            f"(expected {BEGIN} ... {END})",
+            f"error: README.md has no '{MARKER}' GENERATED block (expected {BEGIN} ... {END})",
             file=sys.stderr,
         )
         return 1
@@ -85,8 +84,7 @@ def main() -> int:
     if check:
         if updated != text:
             print(
-                "error: README.md fleet inventory is stale.\n"
-                "       Run: make readme-inventory",
+                "error: README.md fleet inventory is stale.\n       Run: make readme-inventory",
                 file=sys.stderr,
             )
             return 1

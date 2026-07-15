@@ -43,6 +43,9 @@ lint-readme: ## Enforce the GeneFoundry README Standard v1
 lint-metadata: ## Enforce the GeneFoundry Repository Metadata Standard v1 (offline)
 	uv run python scripts/check_fleet_metadata.py
 
+lint-surface: ## Enforce the Tool-Surface Budget + Tool-Schema Documentation standards (offline)
+	uv run python scripts/check_tool_surface.py
+
 metadata-check: ## Report drift between fleet-metadata.yaml and live GitHub (needs gh)
 	uv run python scripts/sync_fleet_metadata.py --check
 
@@ -100,6 +103,10 @@ http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption 
 check: format lint ## Format and lint
 
 ci-local: format-check lint-ci lint-loc lint-readme lint-metadata lint-server-json lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
+# NB: `lint-surface` is deliberately NOT in ci-local yet. It currently reports 595 real
+# violations across 20 of the 21 backends — that is the point of it, and it is the failing test
+# the fleet sweep exists to turn green. It joins ci-local in the same change that drives it to
+# zero. See docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md.
 
 precommit: ci-local ## Run checks expected before commit
 
@@ -194,6 +201,14 @@ ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
 .PHONY: conformance
 conformance:  ## Probe a live MCP server: make conformance MCP_URL=... NAME=... TIER=stateless
 	uv run python -m genefoundry_router.conformance $(MCP_URL) --name $(NAME) --tier $(or $(TIER),stateless)
+
+.PHONY: behaviour
+behaviour:  ## Probe a live MCP server for Behaviour Conformance v1: make behaviour MCP_URL=... NAME=...
+	uv run python docs/conformance/behaviour.py $(MCP_URL) --name $(NAME)
+
+.PHONY: survey
+survey:  ## Measure the live fleet's tool surface (online): token cost, outputSchema %, doc %
+	uv run python scripts/mcp_survey.py
 
 .PHONY: fleet-probe
 fleet-probe:  ## Probe EVERY enabled backend's live /mcp for transport conformance (online)
