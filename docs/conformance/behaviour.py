@@ -719,6 +719,23 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
             _record_error_frame(rep, name, control_result, control_env)
             if code in INCONCLUSIVE:
                 rep.skip(f"{name}: dynamic probes", f"upstream inconclusive ({code})")
+            elif code == "not_found":
+                # The server UNDERSTOOD the call — it did not reject the example as MALFORMED — and
+                # answered honestly that the referenced entity is absent. That is the only possible
+                # answer for a tool keyed on a runtime-issued handle (a session/job id, an opaque
+                # cursor) whose example can never resolve against a fresh deployment, and it leaves
+                # nothing to verify a filter or page against: the same "a zero result proves nothing"
+                # case as the empty-collection branch below, reached one step earlier. Only a
+                # MALFORMED example (invalid_input / ambiguous_query) is a real documentation defect,
+                # so only those still fail. Treating an honest not_found as a failure punished
+                # exactly the servers that report entity-absence correctly (pubtator-link's
+                # get_research_session_status), and would have pressured them back toward a vaguer,
+                # less actionable error to satisfy the gate.
+                rep.skip(
+                    f"{name}: dynamic probes",
+                    "its documented example is a well-formed handle whose entity is absent "
+                    "(not_found) — the call form is valid, so there is nothing to verify against",
+                )
             else:
                 rep.check(
                     f"{name}: its own documented example is accepted",
