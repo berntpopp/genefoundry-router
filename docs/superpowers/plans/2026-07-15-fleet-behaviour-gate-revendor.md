@@ -4,7 +4,7 @@
 > (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Re-vendor router behaviour gate blob `30d639242b700e556abf41be620172e1f3d497ec` into the
+**Goal:** Re-vendor router behaviour gate blob `c69801687d5d9292c538ff00e68bc2886b152d2b` into the
 21 in-scope GeneFoundry backends and prove every backend's `main` conformance gate is green.
 
 **Architecture:** Use the router gate as the byte-identity source, process relaxation-only repos
@@ -30,8 +30,8 @@ backend, Codex CLI for adversarial review where stricter live validation require
 Run from `/home/bernt-popp/development/genefoundry-router`:
 
 ```bash
-CANONICAL_BLOB=30d639242b700e556abf41be620172e1f3d497ec
-CANONICAL_REF=ba09fdc:docs/conformance/behaviour.py
+CANONICAL_BLOB=c69801687d5d9292c538ff00e68bc2886b152d2b
+CANONICAL_REF=56db958:docs/conformance/behaviour.py
 BASE=/home/bernt-popp/development
 SAFE_REPOS="hpo-link panelapp-link mondo-link gtex-link uniprot-link autopvs1-link hgnc-link genereviews-link mgi-link gencc-link metadome-link gnomad-link stringdb-link vep-link spliceailookup-link mavedb-link"
 UNDER_REPOS="clinvar-link orphanet-link clingen-link litvar-link"
@@ -53,7 +53,7 @@ git rev-parse "$CANONICAL_REF"
 Expected:
 
 ```text
-30d639242b700e556abf41be620172e1f3d497ec
+c69801687d5d9292c538ff00e68bc2886b152d2b
 ```
 
 - [ ] **Step 2: Verify all in-scope local repositories exist.**
@@ -96,7 +96,7 @@ cd "$BASE/$repo"
 git fetch origin
 git switch main
 git pull --ff-only origin main
-git switch -c chore/revendor-behaviour-gate-ba09fdc
+git switch -c chore/revendor-behaviour-gate-56db958
 ```
 
 Expected: branch created from current `origin/main`.
@@ -118,8 +118,8 @@ Insert this entry below the title or current Unreleased heading, preserving the 
 changelog style:
 
 ```markdown
-- Re-vendored the behaviour conformance gate from genefoundry-router `ba09fdc`
-  (`docs/conformance/behaviour.py` blob `30d639242b`) so live MCP contract checks treat
+- Re-vendored the behaviour conformance gate from genefoundry-router `56db958`
+  (`docs/conformance/behaviour.py` blob `c69801687`) so live MCP contract checks treat
   not-found example probes as inconclusive instead of failures.
 ```
 
@@ -140,7 +140,7 @@ Run:
 ```bash
 git add tests/conformance/behaviour.py CHANGELOG.md
 git commit -m "chore: re-vendor behaviour conformance gate"
-git push -u origin chore/revendor-behaviour-gate-ba09fdc
+git push -u origin chore/revendor-behaviour-gate-56db958
 ```
 
 Expected: commit contains only the gate file and changelog.
@@ -173,7 +173,7 @@ to sequential validation.
 Run from each repo:
 
 ```bash
-gh pr create --fill --base main --head chore/revendor-behaviour-gate-ba09fdc
+gh pr create --fill --base main --head chore/revendor-behaviour-gate-56db958
 ```
 
 Expected: PR URL printed.
@@ -242,7 +242,7 @@ cd "$BASE/$repo"
 git fetch origin
 git switch main
 git pull --ff-only origin main
-git switch -c chore/revendor-behaviour-gate-ba09fdc
+git switch -c chore/revendor-behaviour-gate-56db958
 ```
 
 Expected: branch created from current `origin/main`.
@@ -372,7 +372,7 @@ Expected: one focused commit.
 Run:
 
 ```bash
-gh pr create --fill --base main --head chore/revendor-behaviour-gate-ba09fdc
+gh pr create --fill --base main --head chore/revendor-behaviour-gate-56db958
 ```
 
 Expected: PR URL printed.

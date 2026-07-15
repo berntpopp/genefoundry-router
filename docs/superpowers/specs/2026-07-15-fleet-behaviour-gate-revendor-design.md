@@ -3,8 +3,8 @@
 ## Goal
 
 Bring the 21 in-scope GeneFoundry `*-link` backend repositories to the router's canonical
-behaviour conformance gate at router commit `ba09fdc`, blob
-`30d639242b700e556abf41be620172e1f3d497ec`, and prove each backend's `main` branch has a green
+behaviour conformance gate at router commit `56db958`, blob
+`c69801687d5d9292c538ff00e68bc2886b152d2b`, and prove each backend's `main` branch has a green
 `mcp-conformance` check after merge.
 
 ## Scope
@@ -47,11 +47,11 @@ array enum, wrong-server, or `not_found` behaviour.
 For each backend:
 
 1. Start from the latest `origin/main` in the main checkout.
-2. Create a short-lived branch named `chore/revendor-behaviour-gate-ba09fdc`.
-3. Copy router `docs/conformance/behaviour.py` from commit `ba09fdc` into
+2. Create a short-lived branch named `chore/revendor-behaviour-gate-56db958`.
+3. Copy router `docs/conformance/behaviour.py` from commit `56db958` into
    `tests/conformance/behaviour.py`.
 4. Add a concise `CHANGELOG.md` note saying the behaviour conformance gate was re-vendored to router
-   blob `30d639242b`.
+   blob `c69801687`.
 5. Run local validation.
 6. Push, open a PR, and wait for GitHub CI.
 7. Query check runs for the PR head SHA with the GitHub check-runs API endpoint for the concrete
@@ -61,7 +61,7 @@ For each backend:
 9. Query check runs on the new `main` SHA and require the same conformance success.
 
 The final fleet audit compares every in-scope backend's `main:tests/conformance/behaviour.py` blob
-with `30d639242b700e556abf41be620172e1f3d497ec`.
+with `c69801687d5d9292c538ff00e68bc2886b152d2b`.
 
 ## Error Handling
 
@@ -100,7 +100,7 @@ green by API.
 ## Acceptance Criteria
 
 - All 21 in-scope backend `main` branches have `tests/conformance/behaviour.py` blob
-  `30d639242b700e556abf41be620172e1f3d497ec`.
+  `c69801687d5d9292c538ff00e68bc2886b152d2b`.
 - Every in-scope backend's latest `main` SHA has a check-run matching `onformance` with conclusion
   `success`.
 - The only safe-lane repo source changes are `tests/conformance/behaviour.py` and `CHANGELOG.md`.
