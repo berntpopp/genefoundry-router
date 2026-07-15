@@ -20,6 +20,9 @@ Each repository receives a short-lived branch, focused test-first commits, a PR,
 `make ci-local`, GitHub checks, and a deployment evidence record before the matching issue is
 closed. Existing local repairs are released and externally re-probed rather than reimplemented.
 Issue closure requires the exact acceptance criteria below, not a passing unit suite alone.
+Version labels and old tags are evidence only: for a repair already present in `main`, the release
+candidate must be bound to its exact commit SHA, then to the built image digest and deployed
+`/health` revision. No wave may assume that an untagged version in `pyproject.toml` is live.
 
 The work is sequenced as follows:
 
@@ -116,8 +119,10 @@ Split this issue into independent commits:
    documents, and distinguish invalid input, no full text, and upstream failure.
 4. Add stable opaque cursor pagination and compact default session summaries; retrieve detail only
    through the status surface.
-5. Define a contiguous read-only workflow that ends in public retrieval. Full indexing remains
-   available only to an authenticated configured profile; do not re-expose writes publicly.
+5. Retain the already-shipped v7.1.0 readonly write boundary and repair only the remaining static
+   `next_tools`/workflow-profile mismatch: define a contiguous read-only workflow ending in public
+   retrieval and suppress every unavailable indexing command. Full indexing remains available only
+   to an authenticated configured profile; do not re-expose writes publicly.
 6. Treat source-preflight as a deployment/live-contract investigation first. Add audit-PMID
    contract coverage and only alter semantics when current live evidence proves a source defect.
 
@@ -200,13 +205,15 @@ This is not a serving change. The probe requires an exact corpus release/digest 
 checksum-locked gold passage fixture), six explicit gold passages, category-specific required
 anchors, fixed dependency/model revisions, deterministic sampling, raw and resolved spans, and
 JSONL evidence with environment metadata. Evaluate per-category normalized-anchor recall,
-per-case conjunctions, false-positive samples, and latency over the current 300-query benchmark.
-HFE is a non-regression guard; CFTR and GRIN2B are the improvement targets.
+per-case conjunctions, false-positive samples, and latency over a checksum-pinned benchmark;
+record both its raw-line count and semantic query count, rather than hard-coding the disputed
+299/300 cardinality. HFE is a non-regression guard; CFTR and GRIN2B are the improvement targets.
 
-**Acceptance:** a CPU command produces deterministic evidence for 300 benchmark queries, six
-gold passages, and 50 seeded samples; missing corpus/gold data is rejected; overlapping spans and
-HGVS parsing are deterministic; output states whether CFTR/GRIN2B improve without HFE regression;
-no production dependency, schema, or retrieval-ranker change is introduced.
+**Acceptance:** a CPU command produces deterministic evidence for every valid query in the
+checksum-pinned benchmark, six gold passages, and 50 seeded samples, recording raw-line and
+semantic-query counts; missing corpus/gold data is rejected; overlapping spans and HGVS parsing
+are deterministic; output states whether CFTR/GRIN2B improve without HFE regression; no
+production dependency, schema, or retrieval-ranker change is introduced.
 
 ## Non-goals
 
@@ -221,7 +228,8 @@ no production dependency, schema, or retrieval-ranker change is introduced.
 
 Each PR runs the repository's `make ci-local`; affected container/data work also runs the rendered
 Compose and local smoke commands named in its implementation plan. After merge, query the exact
-main SHA's GitHub checks, deploy the immutable/released artifact, and rerun the issue's public MCP
-or container acceptance probe. Record the SHA, version/image or data digest, commands, and output
-summary in the issue before closure. The router's behaviour and surface gates remain the fleet-wide
-regression backstop; they complement, not replace, the issue-specific tests above.
+main SHA's GitHub checks, tag only that verified SHA, deploy the immutable/released artifact, and
+rerun the issue's public MCP or container acceptance probe. Record the SHA, tag, version/image or
+data digest, commands, and output summary in the issue before closure. The router's behaviour and
+surface gates remain the fleet-wide regression backstop; they complement, not replace, the
+issue-specific tests above.
