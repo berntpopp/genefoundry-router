@@ -2,6 +2,34 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.8] - 2026-07-15
+
+### Fixed
+
+- **Restore OAuth login. Reverts the auth part of #71, which broke every Claude/ChatGPT
+  login to `genefoundry.org/mcp` (incident 2026-07-15).** #71 set the OAuthProxy's
+  `resource_base_url` to the root origin, on the theory that FastMCP forms
+  `_resource_url = resource_base_url + set_mcp_path("/mcp")`. That is true only when you call
+  `set_mcp_path("/mcp")` by hand. Under the real mount — `server.http_app(path="/mcp")` inside
+  FastAPI — the OAuthProxy's `set_mcp_path` receives the sub-app's own root, `""`, so
+  `_resource_url == resource_base_url` verbatim. With the origin, the live `_resource_url` was
+  the bare origin: the OAuthProxy's RFC 8707 resource check rejected every client sending
+  `…/mcp` (the endpoint the RFC 9728 metadata itself advertises) with `server_error`, and
+  minted tokens carried `audience == origin`, which the router's own `JWTVerifier`
+  (`GF_JWT_AUDIENCE` = `…/mcp`) rejects.
+
+  `resource_base_url` is now `GF_JWT_AUDIENCE` again, so the live `_resource_url` is the
+  endpoint (correct resource check + correct minted audience). `_install_resource_tolerance()`
+  is restored: because FastMCP's PRM derivation *does* append the path, it can advertise
+  `…/mcp/mcp`, and the tolerance collapses that doubled segment so clients echoing it back
+  still validate. `tests/unit/test_auth_resource_url.py` now models the LIVE mount
+  (`set_mcp_path("")`), not the hand-call, so origin-base fails it — #71 cannot silently
+  return. The proper long-term fix is upstream in FastMCP: the PRM advertisement and the
+  OAuthProxy resource check must derive the resource URI the same way (see the tracking issue).
+
+**Operator note:** minted-token audience changes back to `…/mcp`, so live OAuth sessions
+re-authenticate after the redeploy (clients re-run dynamic client registration).
+
 ## [0.6.7] - 2026-07-14
 
 ### Fixed

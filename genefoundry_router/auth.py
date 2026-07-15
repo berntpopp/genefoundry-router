@@ -87,9 +87,37 @@ def _build_jwt(settings: RouterSettings) -> Any:
     )
 
 
+def _install_resource_tolerance() -> None:
+    """Collapse a duplicated trailing path segment in the RFC 8707 ``resource``.
+
+    Because ``resource_base_url`` is GF_JWT_AUDIENCE (already ``…/mcp``) and FastMCP's
+    protected-resource metadata appends the mount path a second time, the PRM can advertise
+    ``…/mcp/mcp``; spec-compliant clients then echo that doubled URI back in their
+    ``resource`` param. The strict OAuthProxy check would raise
+    ``AuthorizeError(error="invalid_target")`` -> the MCP SDK's error enum rejects it ->
+    pydantic ValidationError -> the authorize handler 500s. Collapse ``/mcp/mcp`` -> ``/mcp``
+    in the normalizer so client and server resource URLs compare equal. Idempotent.
+    """
+    import re
+
+    from fastmcp.server.auth.oauth_proxy import proxy as _p
+
+    if getattr(_p, "_gf_resource_tolerant", False):
+        return
+    _orig = _p._normalize_resource_url
+
+    def _norm(url: str) -> str:
+        return re.sub(r"(/[^/]+)\1(?=$|/)", r"\1", _orig(url))
+
+    _p._normalize_resource_url = _norm
+    # Marker attribute for idempotency; dynamic, so it isn't in fastmcp's stubs.
+    _p._gf_resource_tolerant = True  # type: ignore[attr-defined]
+
+
 def _build_oauth(settings: RouterSettings) -> Any:
     # R1.5: OAuthProxy.token_verifier is REQUIRED — so the JWT verifier inputs are
     # mandatory in oauth mode too (no None verifier). base_url MUST be the public URL.
+    _install_resource_tolerance()
     required = {
         "GF_OAUTH_CLIENT_ID": settings.GF_OAUTH_CLIENT_ID,
         "GF_OAUTH_CLIENT_SECRET": settings.GF_OAUTH_CLIENT_SECRET,
@@ -121,19 +149,28 @@ def _build_oauth(settings: RouterSettings) -> Any:
         upstream_client_secret=settings.GF_OAUTH_CLIENT_SECRET,
         token_verifier=verifier,  # REQUIRED — never None
         base_url=public_base,  # ROOT origin — OAuth endpoints (/authorize, /token) live here
-        # resource_base_url is the PREFIX, not the resource URI. FastMCP appends the MCP
-        # mount path itself: set_mcp_path("/mcp") sets
-        #     _resource_url = _get_resource_url("/mcp") = resource_base_url + "/mcp"
-        # so this MUST be the ROOT origin. Passing GF_JWT_AUDIENCE (already …/mcp) bakes
-        # the segment in twice and yields …/mcp/mcp — which is exactly what production
-        # advertised: a PRM resource that is not the endpoint, tokens minted with an
-        # audience the router's own JWTVerifier rejects, and spec-compliant clients
-        # echoing the doubled URI back in their RFC 8707 `resource`.
+        # resource_base_url MUST be the full resource URI (GF_JWT_AUDIENCE, …/mcp), NOT the
+        # root origin. This reverts #71.
         #
-        # The resulting resource URI equals GF_JWT_AUDIENCE, which is the contract:
-        # resource URI == token audience. jwt mode has always done this correctly.
-        # Pinned by tests/unit/test_auth_resource_url.py.
-        resource_base_url=public_base,
+        # #71 assumed the OAuthProxy's own `_resource_url` (which it validates the client's
+        # RFC 8707 `resource` against, and mints token audiences from) is computed as
+        # `resource_base_url + set_mcp_path("/mcp")`. That is true at construction time —
+        # but NOT for the live app. Mounted via `server.http_app(path="/mcp")` inside FastAPI,
+        # the OAuthProxy's set_mcp_path receives "" (the sub-app's own root), so
+        # `_resource_url == resource_base_url` verbatim. Setting it to the root origin made
+        # the live `_resource_url` the bare origin, so every client sending `…/mcp` was
+        # rejected with server_error, and minted tokens carried audience==origin, which the
+        # router's own JWTVerifier (GF_JWT_AUDIENCE=…/mcp) rejects. That is INCIDENT
+        # 2026-07-15: all Claude/ChatGPT logins to genefoundry.org/mcp broke.
+        #
+        # With this = GF_JWT_AUDIENCE, the live `_resource_url` is …/mcp (correct check +
+        # correct minted audience). The PRM's separate, path-appending derivation can then
+        # advertise …/mcp/mcp; `_install_resource_tolerance()` collapses the doubled segment
+        # so clients that echo it back still validate. That doubled-PRM cosmetics is the
+        # lesser evil vs. a hard login outage — the proper fix is a FastMCP change so the PRM
+        # and the OAuthProxy resource-check derive the URI the same way. Guarded by
+        # tests/unit/test_auth_resource_url.py so #71 cannot silently return.
+        resource_base_url=settings.GF_JWT_AUDIENCE,
         # Fixed signing key → the OAuthProxy-minted tokens AND the encrypted on-disk client
         # store (whose dir + Fernet key derive from this) stay valid across restarts and
         # Keycloak client-secret rotation. None falls back to fastmcp's deterministic
