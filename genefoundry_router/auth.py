@@ -180,6 +180,10 @@ def _build_oauth(settings: RouterSettings) -> Any:
         # Skip fastmcp's own "Allow Access" consent page — Keycloak is the auth + login
         # gate; the proxy's redundant, unstyled interstitial breaks the branded flow.
         require_authorization_consent=require_consent,
+        # The connector holds this router-issued reference token, not the short-lived
+        # Keycloak bearer token. OAuthProxy validates/refreshes upstream state separately,
+        # which lets a bounded 12-hour token avoid needless interactive reauthorization.
+        fastmcp_access_token_expiry_seconds=settings.GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS,
     )
     log.info("auth_mode", mode="oauth", provider=settings.GF_OAUTH_PROVIDER)
     # MultiAuth lets M2M JWT + interactive OAuth coexist (spec §9).

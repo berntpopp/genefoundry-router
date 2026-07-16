@@ -34,7 +34,7 @@ AUDIENCE = "https://genefoundry.example/mcp"  # the MCP endpoint = the resource 
 LIVE_MOUNT_PATH = ""
 
 
-def _settings(mode: str) -> RouterSettings:
+def _settings(mode: str, **overrides: object) -> RouterSettings:
     return RouterSettings(
         _env_file=None,
         GF_AUTH_MODE=mode,
@@ -46,6 +46,7 @@ def _settings(mode: str) -> RouterSettings:
         GF_OAUTH_CLIENT_SECRET="secret",  # noqa: S106 - test fixture, not a real secret
         GF_OAUTH_AUTHORIZE_URL=f"{ISSUER}/protocol/openid-connect/auth",
         GF_OAUTH_TOKEN_URL=f"{ISSUER}/protocol/openid-connect/token",
+        **overrides,
     )
 
 
@@ -73,6 +74,21 @@ def test_minted_token_audience_matches_the_verifier() -> None:
     from GF_JWT_AUDIENCE — which the JWTVerifier enforces — the router issues tokens it will
     itself reject. Under the live mount they must agree."""
     assert _live_resource_url(build_auth(_settings("oauth"))) == AUDIENCE
+
+
+def test_router_reference_token_lifetime_is_bounded_and_configurable() -> None:
+    """The MCP client receives a router token, not the short-lived Keycloak bearer token.
+
+    FastMCP still validates/refreshes the upstream token, but this bounded reference-token
+    lifetime prevents ChatGPT and Claude from needlessly restarting OAuth during normal use.
+    """
+    default_proxy = _oauth_proxy(build_auth(_settings("oauth")))
+    configured_proxy = _oauth_proxy(
+        build_auth(_settings("oauth", GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=7_200))
+    )
+
+    assert default_proxy._fastmcp_access_token_expiry_seconds == 43_200  # type: ignore[attr-defined]
+    assert configured_proxy._fastmcp_access_token_expiry_seconds == 7_200  # type: ignore[attr-defined]
 
 
 def test_resource_tolerance_patch_is_installed_and_collapses_the_doubled_segment() -> None:

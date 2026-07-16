@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 import yaml
-from pydantic import ValidationError, field_validator, model_validator
+from pydantic import Field, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from genefoundry_router.exceptions import RegistryError
@@ -94,6 +94,12 @@ class RouterSettings(BaseSettings):
     # survive a Keycloak client-secret rotation. MUST stay constant once set (rotating it
     # invalidates all live sessions and orphans the persisted client store).
     GF_OAUTH_JWT_SIGNING_KEY: str | None = None
+    # Lifetime of the router's FastMCP reference access token, not the upstream IdP bearer
+    # token. The OAuthProxy validates (and when needed refreshes) the upstream token on each
+    # request, so this can span a normal working day without extending the IdP token's
+    # exposure window. Keep a deliberate upper bound: a connector-held bearer token must not
+    # become a multi-day credential.
+    GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS: int = Field(default=43_200, ge=300, le=86_400)
     # OAuthProxy built-in consent ("Allow Access") screen. Keycloak is the real
     # authorization gate + branded login UI, so the proxy's own consent page is redundant
     # and unstyled; default "external" skips it for a unified single-page login.
