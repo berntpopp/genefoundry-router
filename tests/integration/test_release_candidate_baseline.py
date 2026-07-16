@@ -50,11 +50,14 @@ def test_baseline_is_bound_to_an_oci_release_candidate_inventory() -> None:
     assert baseline.snapshot_meta.release_candidate == inventory
 
 
-def test_release_candidate_baseline_has_corrected_tool_metadata() -> None:
+def test_release_candidate_baseline_has_reviewed_tool_metadata() -> None:
     manifest = load_manifest(BASELINE)
 
     assert all(tool.annotations is not None for tool in manifest.backends["litvar"].tools)
-    assert all(tool.outputSchema is not None for tool in manifest.backends["litvar"].tools)
+    # LitVar v6 intentionally suppresses its optional output schemas under Tool-Surface
+    # Budget v1 B3. The backend returns a dict response envelope, so FastMCP still emits
+    # structuredContent; requiring an outputSchema here would contradict the fleet policy.
+    assert all(tool.outputSchema is None for tool in manifest.backends["litvar"].tools)
     assert all(
         tool.annotations is not None and tool.annotations["readOnlyHint"] is True
         for tool in manifest.backends["vep"].tools

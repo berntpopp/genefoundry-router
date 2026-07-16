@@ -2,6 +2,14 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.11] - 2026-07-16
+
+### Changed
+
+- Re-pin the reviewed, signed LitVar-Link v6.0.0 release and its live six-tool
+  definition surface. This restores router-to-runtime attestation after the
+  backend's runtime-hardening release.
+
 ## [0.6.10] - 2026-07-16
 
 ### Changed
