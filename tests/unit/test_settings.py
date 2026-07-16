@@ -22,6 +22,7 @@ def test_defaults(monkeypatch):
     assert s.GF_PUBLIC_BASE_URL is None  # R1.5 - public URL for OAuth metadata
     assert s.GF_TRUSTED_PROXY_HOPS == 1
     assert s.GF_METRICS_TOKEN is None
+    assert s.GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS == 43_200
 
 
 def test_allowed_origins_parses_csv(monkeypatch):
@@ -78,6 +79,12 @@ def test_invalid_auth_mode_rejected(monkeypatch):
     monkeypatch.setenv("GF_AUTH_MODE", "bogus")
     with pytest.raises(ValidationError):
         RouterSettings(_env_file=None)
+
+
+@pytest.mark.parametrize("expiry", [299, 86_401])
+def test_oauth_access_token_expiry_has_safe_bounds(expiry: int) -> None:
+    with pytest.raises(ValidationError, match="GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS"):
+        RouterSettings(_env_file=None, GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=expiry)
 
 
 def test_negative_trusted_proxy_hops_rejected(monkeypatch):

@@ -28,6 +28,7 @@ starts.
 | `GF_JWT_AUDIENCE` | _(unset)_ | jwt/oauth: required token `aud` (MUST match; audience binding) |
 | `GF_OAUTH_CLIENT_ID` / `GF_OAUTH_CLIENT_SECRET` | _(unset)_ | oauth: upstream provider client credentials |
 | `GF_OAUTH_AUTHORIZE_URL` / `GF_OAUTH_TOKEN_URL` | _(unset)_ | oauth: upstream provider authorize/token endpoints |
+| `GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS` | `43200` | oauth: router-issued reference-token lifetime in seconds (5 min–24 h); it does not lengthen the upstream IdP bearer token |
 | `GF_RATE_LIMIT_RPM` | `0` | Per-client requests/min (429 over). An authenticated `GF_DEPLOYMENT_MODE=production` router **refuses to start** with `0`, even on loopback behind a proxy |
 | `GF_METRICS_TOKEN` | _(unset)_ | Bearer token for `GET /metrics`. An authenticated production router **refuses to start** without it, even on loopback behind a proxy |
 | `GF_DRIFT_MODE` | `warn` | Runtime catalog policy: `off` \| `warn` \| `enforce` |
@@ -46,7 +47,10 @@ authenticated modes.
   against `GF_JWT_JWKS_URL` with audience binding (`GF_JWT_AUDIENCE`). The router's
   OAuthProxy **is** the Dynamic-Client-Registration facade — it serves `/register` itself,
   so Keycloak's DCR stays closed; on the Keycloak client, whitelist the router's callback
-  `https://genefoundry.org/auth/callback` as a Valid Redirect URI.
+  `https://genefoundry.org/auth/callback` as a Valid Redirect URI. The connector receives a
+  router-issued reference token (12 hours by default); FastMCP continues to validate and,
+  when necessary, refresh the short-lived upstream token. It must therefore be paired with
+  a bounded upstream online session rather than an unrestricted offline token.
 - **`jwt`** — machine-to-machine: verify bearer JWTs from `GF_JWT_ISSUER` (JWKS +
   audience), with no interactive-login facade.
 
@@ -72,6 +76,7 @@ GF_OAUTH_CLIENT_ID=genefoundry-router
 GF_OAUTH_CLIENT_SECRET=…                 # secret; set in the server env, never commit
 GF_OAUTH_AUTHORIZE_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/auth
 GF_OAUTH_TOKEN_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/token
+GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=43200  # router reference token; 12 h default, 24 h maximum
 GF_JWT_ISSUER=https://auth.example.org/realms/genefoundry
 GF_JWT_JWKS_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/certs
 GF_JWT_AUDIENCE=https://genefoundry.org/mcp   # Keycloak must stamp this into the token `aud`

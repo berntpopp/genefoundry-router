@@ -2,6 +2,15 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.13] - 2026-07-16
+
+### Changed
+
+- Give OAuthProxy-issued MCP reference tokens a configurable, bounded 12-hour
+  lifetime by default. The router continues to validate and refresh the
+  short-lived upstream Keycloak token, improving hosted-connector continuity
+  without extending the upstream bearer-token lifetime.
+
 ## [0.6.12] - 2026-07-16
 
 ### Documentation
