@@ -1,0 +1,1143 @@
+{
+  "backends": {
+    "autopvs1": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:36fbf6bac4934b754ebbdbcbd8f8e207654e067db41782855fc6064fb8cd1739",
+        "name": "ghcr.io/berntpopp/autopvs1-link",
+        "platforms": [
+          {
+            "digest": "sha256:36fbf6bac4934b754ebbdbcbd8f8e207654e067db41782855fc6064fb8cd1739",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "af98c306d57a5644d45ab26ebf7797708ef4be724b5c6e3f77eb140fd874f4d4",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "778255b227295db4e572a1cb322f62424edd0a0e712aba7c8cf4090405cb2881"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:7c40e29c68886f39394ca7ad732e5b8a7e662731b130af84411aa4e388a25c37",
+        "image-manifest.json": "sha256:36fbf6bac4934b754ebbdbcbd8f8e207654e067db41782855fc6064fb8cd1739",
+        "mcp-capture-context.json": "sha256:af98c306d57a5644d45ab26ebf7797708ef4be724b5c6e3f77eb140fd874f4d4",
+        "mcp-definitions.json": "sha256:778255b227295db4e572a1cb322f62424edd0a0e712aba7c8cf4090405cb2881",
+        "sbom.spdx.json": "sha256:0432cbdc36e32bbd93cca6c8b517de32d51bb81ef38aa810796d95d16f09cf56",
+        "trivy.json": "sha256:fc71eeb14807571c075dae7d2ced52ed036c643b5ae263b23852d3731c80b9e0",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:79d41338094f3a213eb44d614f33f7c2c83e5d81b07addea0c8465bc2d0862e4"
+      },
+      "repository": "berntpopp/autopvs1-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "7c40e29c68886f39394ca7ad732e5b8a7e662731b130af84411aa4e388a25c37",
+        "database_updated_at": "2026-07-15T07:37:19.831518Z",
+        "sbom_sha256": "0432cbdc36e32bbd93cca6c8b517de32d51bb81ef38aa810796d95d16f09cf56",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "fc71eeb14807571c075dae7d2ced52ed036c643b5ae263b23852d3731c80b9e0",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "79d41338094f3a213eb44d614f33f7c2c83e5d81b07addea0c8465bc2d0862e4"
+      },
+      "source": {
+        "revision": "e687b038a2899703445aae9381543ecb0eb8e846",
+        "tag": "v4.1.1"
+      },
+      "version": "4.1.1",
+      "workflow": {
+        "caller": "berntpopp/autopvs1-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "35f31f3a53fd423ca4f88f4d10e13d4f23011b7a"
+      }
+    },
+    "clingen": {
+      "data_requirements": {
+        "digest": "sha256:8ef351827e0ac86741891af4e53d91c1793f6c6cfc278754bff107774f9dd53c",
+        "mode": "external-reference",
+        "release_tag": "data-clingen-2026-07-16",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:66713dc90f407d5262fd5565772aa523b94c59aed0db45fa4a852f01c53b5b34",
+        "name": "ghcr.io/berntpopp/clingen-link",
+        "platforms": [
+          {
+            "digest": "sha256:66713dc90f407d5262fd5565772aa523b94c59aed0db45fa4a852f01c53b5b34",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "56848390ffb89de9345c6c410c8e508c4c53cf448082701bf7786f6253bb8ba6",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "f3108155dcb9621becdbb3e5dc36e3e57330a4e0adef004b06c8f9e626b8bc9e"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:f8a118a7371ae348c0aa061e1f86ee1a9d9976666fb719164d9957118bd5b2ea",
+        "image-manifest.json": "sha256:66713dc90f407d5262fd5565772aa523b94c59aed0db45fa4a852f01c53b5b34",
+        "mcp-capture-context.json": "sha256:56848390ffb89de9345c6c410c8e508c4c53cf448082701bf7786f6253bb8ba6",
+        "mcp-definitions.json": "sha256:f3108155dcb9621becdbb3e5dc36e3e57330a4e0adef004b06c8f9e626b8bc9e",
+        "sbom.spdx.json": "sha256:dc5640c096207545a11ac777e8895d699e3c5c719a7bbdd6e1f2b876eb38c8ea",
+        "trivy.json": "sha256:9095d4b81a9c4d69618250011d265c00692fd49210db44d9025fe68bd41c23df",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:85bd4bdcdbaeef3db469ee9a9bc6978d540a6f752155271878d92f0ac83c0ac2"
+      },
+      "repository": "berntpopp/clingen-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "f8a118a7371ae348c0aa061e1f86ee1a9d9976666fb719164d9957118bd5b2ea",
+        "database_updated_at": "2026-07-16T07:27:44.878390Z",
+        "sbom_sha256": "dc5640c096207545a11ac777e8895d699e3c5c719a7bbdd6e1f2b876eb38c8ea",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "9095d4b81a9c4d69618250011d265c00692fd49210db44d9025fe68bd41c23df",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "85bd4bdcdbaeef3db469ee9a9bc6978d540a6f752155271878d92f0ac83c0ac2"
+      },
+      "source": {
+        "revision": "9c2855229fa2a2baea6f4005bd5e78c679cb8183",
+        "tag": "v4.0.1"
+      },
+      "version": "4.0.1",
+      "workflow": {
+        "caller": "berntpopp/clingen-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "clinvar": {
+      "data_requirements": {
+        "digest": "sha256:52eed6e488f9934432034449281afb73ed699a1b7e39cd85c0a1e731d82e48a8",
+        "mode": "external-reference",
+        "release_tag": "bundle-2026-07-07",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:ed00c9a6bfa85c32b9f4a3f1162de41db32787048aa52dd33d18edff58d12f69",
+        "name": "ghcr.io/berntpopp/clinvar-link",
+        "platforms": [
+          {
+            "digest": "sha256:ed00c9a6bfa85c32b9f4a3f1162de41db32787048aa52dd33d18edff58d12f69",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "4445bcaf58f762307a2454ae54f3a7cec2bd193e8c952bb351a7b38fd47547b7",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "0e75adbad4f3389d918f9e9719b7e4eb21e3e046f27455ef859e52ef6f66c54c"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:370298685e9e5a1898984088f0881595688599b4dad5ecbcc0c551d1db89518a",
+        "image-manifest.json": "sha256:ed00c9a6bfa85c32b9f4a3f1162de41db32787048aa52dd33d18edff58d12f69",
+        "mcp-capture-context.json": "sha256:4445bcaf58f762307a2454ae54f3a7cec2bd193e8c952bb351a7b38fd47547b7",
+        "mcp-definitions.json": "sha256:0e75adbad4f3389d918f9e9719b7e4eb21e3e046f27455ef859e52ef6f66c54c",
+        "sbom.spdx.json": "sha256:54ddb7e68eb1e2d9cc758d972d9f70ca0cdd91edf23a67b9931f976b153a8701",
+        "trivy.json": "sha256:ed8c0290c69688b53f950624717b536fe02a1aca63d437ab8332e593a2b52a97",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:bcbd8f5f5db0c25b6808bfff0bf5c2af17206fed81fe91d94aede25eafc07610"
+      },
+      "repository": "berntpopp/clinvar-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "370298685e9e5a1898984088f0881595688599b4dad5ecbcc0c551d1db89518a",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "54ddb7e68eb1e2d9cc758d972d9f70ca0cdd91edf23a67b9931f976b153a8701",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "ed8c0290c69688b53f950624717b536fe02a1aca63d437ab8332e593a2b52a97",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "bcbd8f5f5db0c25b6808bfff0bf5c2af17206fed81fe91d94aede25eafc07610"
+      },
+      "source": {
+        "revision": "635e44c66ccac4d7c119138ccaa94fc5d3bf35d3",
+        "tag": "v0.5.0"
+      },
+      "version": "0.5.0",
+      "workflow": {
+        "caller": "berntpopp/clinvar-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "gencc": {
+      "data_requirements": {
+        "digest": "sha256:1b090422659cfeda7cc4e16dd27f9b4fcf66012138e9f91c6266b73be9a1d111",
+        "mode": "upstream-live",
+        "release_tag": "observed-2026.07.13",
+        "reproducible_rollback": false,
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:d8cfb6ae6d8f3a309c5de5c4a110a5a0877f883b3d390f925c3d91ad250c1d13",
+        "name": "ghcr.io/berntpopp/gencc-link",
+        "platforms": [
+          {
+            "digest": "sha256:d8cfb6ae6d8f3a309c5de5c4a110a5a0877f883b3d390f925c3d91ad250c1d13",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "774ca13a0d85c25db02e4b0979f8f5cd7d3aba14c5af4b4d490728815bfc99d8",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "28002619a34ec7c3a526ac57def7686e4a8f1d38aa64d3b0c5e5ffeefa997e79"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:0664a6da4a2230a4abd1630ca10257bd7cfc94b1f57f1a32cb6210a9a710382d",
+        "image-manifest.json": "sha256:d8cfb6ae6d8f3a309c5de5c4a110a5a0877f883b3d390f925c3d91ad250c1d13",
+        "mcp-capture-context.json": "sha256:774ca13a0d85c25db02e4b0979f8f5cd7d3aba14c5af4b4d490728815bfc99d8",
+        "mcp-definitions.json": "sha256:28002619a34ec7c3a526ac57def7686e4a8f1d38aa64d3b0c5e5ffeefa997e79",
+        "sbom.spdx.json": "sha256:c81b4671902b1c21e3f77f13bcd68d335592be632e9c158afaf392b4930a2298",
+        "trivy.json": "sha256:0f34257e3a5a076a1d4aa919ee0f77ea4ed5f971a57cfdf75a40beaaedcae722",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:c48fa26ecdda60b32b1961c991d09fe2f80f65843b0eb9d7eaf7991af0da272d"
+      },
+      "repository": "berntpopp/gencc-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "0664a6da4a2230a4abd1630ca10257bd7cfc94b1f57f1a32cb6210a9a710382d",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "c81b4671902b1c21e3f77f13bcd68d335592be632e9c158afaf392b4930a2298",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "0f34257e3a5a076a1d4aa919ee0f77ea4ed5f971a57cfdf75a40beaaedcae722",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "c48fa26ecdda60b32b1961c991d09fe2f80f65843b0eb9d7eaf7991af0da272d"
+      },
+      "source": {
+        "revision": "f6558df2c59b43e118245204c376dc2d25182ada",
+        "tag": "v0.8.0"
+      },
+      "version": "0.8.0",
+      "workflow": {
+        "caller": "berntpopp/gencc-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "genereviews": {
+      "data_requirements": {
+        "digest": "sha256:4486e499337e9f816a2aa0741f2a0e51ca38cda52f96fb57564cfc36f4b3c5bc",
+        "mode": "restored-database",
+        "release_tag": "corpus-data-2026-07-13-r1",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:088ae7ea346fbe6eb339aadcd3a301034536f21664cf56566c9ebf9e1fdf78e3",
+        "name": "ghcr.io/berntpopp/genereviews-link",
+        "platforms": [
+          {
+            "digest": "sha256:088ae7ea346fbe6eb339aadcd3a301034536f21664cf56566c9ebf9e1fdf78e3",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "92b4f5f997b5573f07066e261980a6e3d2a704bc87113df2ed57416408743178",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "e721041e753855e4ce41b0b988de42d4f8a6415d235db52fa76e352792f77f49"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:142b1d1f664d51115b030378304eee7aa3c0e009e3e210456b0442adfd319ec4",
+        "image-manifest.json": "sha256:088ae7ea346fbe6eb339aadcd3a301034536f21664cf56566c9ebf9e1fdf78e3",
+        "mcp-capture-context.json": "sha256:92b4f5f997b5573f07066e261980a6e3d2a704bc87113df2ed57416408743178",
+        "mcp-definitions.json": "sha256:e721041e753855e4ce41b0b988de42d4f8a6415d235db52fa76e352792f77f49",
+        "sbom.spdx.json": "sha256:5bc937c70b5971a7566e0f32f4a51ffe023ddc3ccfb76ec64c71fa28a324b381",
+        "trivy.json": "sha256:fa43c5171d18384e96e8bf1b31ae54f82b4655c72ba5081e72b01117b84a05b3",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:a20cec66ebf32fa9d2729f8b60c38e13879cbb1b8a0aacdc4f9e747879b0084a"
+      },
+      "repository": "berntpopp/genereviews-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "142b1d1f664d51115b030378304eee7aa3c0e009e3e210456b0442adfd319ec4",
+        "database_updated_at": "2026-07-15T07:37:19.831518Z",
+        "sbom_sha256": "5bc937c70b5971a7566e0f32f4a51ffe023ddc3ccfb76ec64c71fa28a324b381",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "fa43c5171d18384e96e8bf1b31ae54f82b4655c72ba5081e72b01117b84a05b3",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "a20cec66ebf32fa9d2729f8b60c38e13879cbb1b8a0aacdc4f9e747879b0084a"
+      },
+      "source": {
+        "revision": "005e32f2c48f1952926bffe20214e56f4c1268c4",
+        "tag": "v5.1.0"
+      },
+      "version": "5.1.0",
+      "workflow": {
+        "caller": "berntpopp/genereviews-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "gnomad": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:b629748216fd49f473982f749438a27d04cd2c71e2dcb897c55099287cc2e818",
+        "name": "ghcr.io/berntpopp/gnomad-link",
+        "platforms": [
+          {
+            "digest": "sha256:b629748216fd49f473982f749438a27d04cd2c71e2dcb897c55099287cc2e818",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "5c2f309272f5e18b31e3c038a4d0c899a0c0db0357be63e3114d692f965206b4",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "68cdbdd59e7e230002147afb7099e01ad0ed291ca2b62c1fe67739be487960e7"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:fce65594ba1db75b0011b4acb69de3f56186354e863e7f702e0d4b9641f38217",
+        "image-manifest.json": "sha256:b629748216fd49f473982f749438a27d04cd2c71e2dcb897c55099287cc2e818",
+        "mcp-capture-context.json": "sha256:5c2f309272f5e18b31e3c038a4d0c899a0c0db0357be63e3114d692f965206b4",
+        "mcp-definitions.json": "sha256:68cdbdd59e7e230002147afb7099e01ad0ed291ca2b62c1fe67739be487960e7",
+        "sbom.spdx.json": "sha256:4971a08561197ab09fdc9c5e6a285e415336329c0ee0d5217b43d875f3b01734",
+        "trivy.json": "sha256:74f8d6005ff09946c156d52d490e9bfab0427ebcf908a9f886215b522ded9690",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:35ab1afa2c2febfae9f76dde495d3a339f02432e1e92a7535b02eb550cdba76f"
+      },
+      "repository": "berntpopp/gnomad-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "fce65594ba1db75b0011b4acb69de3f56186354e863e7f702e0d4b9641f38217",
+        "database_updated_at": "2026-07-15T19:04:37.151625Z",
+        "sbom_sha256": "4971a08561197ab09fdc9c5e6a285e415336329c0ee0d5217b43d875f3b01734",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "74f8d6005ff09946c156d52d490e9bfab0427ebcf908a9f886215b522ded9690",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "35ab1afa2c2febfae9f76dde495d3a339f02432e1e92a7535b02eb550cdba76f"
+      },
+      "source": {
+        "revision": "facd5a1afb89d33c87b5618765f4b26c4a03f489",
+        "tag": "v9.0.0"
+      },
+      "version": "9.0.0",
+      "workflow": {
+        "caller": "berntpopp/gnomad-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "ddac098c57ac9a020a46ebb1897185e35fd00168"
+      }
+    },
+    "gtex": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:96f045361631b3a59f7aa731192914ed46f4d0d461f0bda431b2cd070b865322",
+        "name": "ghcr.io/berntpopp/gtex-link",
+        "platforms": [
+          {
+            "digest": "sha256:96f045361631b3a59f7aa731192914ed46f4d0d461f0bda431b2cd070b865322",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "fc678cb05900717d164d62aec78ccb36f9cb124ac98997a0b4ab1b35cd86ab19",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "134223246652cc01b1d2ec9d9d5969c299be33d985b831e7447a19521bbbdd23"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:646d16d58f6f26f956ac3098133c0410549d5e4ebb0356b1564065f401564563",
+        "image-manifest.json": "sha256:96f045361631b3a59f7aa731192914ed46f4d0d461f0bda431b2cd070b865322",
+        "mcp-capture-context.json": "sha256:fc678cb05900717d164d62aec78ccb36f9cb124ac98997a0b4ab1b35cd86ab19",
+        "mcp-definitions.json": "sha256:134223246652cc01b1d2ec9d9d5969c299be33d985b831e7447a19521bbbdd23",
+        "sbom.spdx.json": "sha256:0721e2ee81781b24b5f124d4a2686cf69b2e0eb23da5b3c59d6e8ce702449f37",
+        "trivy.json": "sha256:e26a7bcd025ce2f9637dec23c0bc6e7125e5c9a3227eee66b418415d8f316e39",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:4dffe32f096301968ac9f3f21bc2f7901d2a8bfccba5dc6afa670ffcf936ca63"
+      },
+      "repository": "berntpopp/gtex-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "646d16d58f6f26f956ac3098133c0410549d5e4ebb0356b1564065f401564563",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "0721e2ee81781b24b5f124d4a2686cf69b2e0eb23da5b3c59d6e8ce702449f37",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "e26a7bcd025ce2f9637dec23c0bc6e7125e5c9a3227eee66b418415d8f316e39",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "4dffe32f096301968ac9f3f21bc2f7901d2a8bfccba5dc6afa670ffcf936ca63"
+      },
+      "source": {
+        "revision": "79af70f80ed836fe215f6e57a1ed2503842144f9",
+        "tag": "v3.1.0"
+      },
+      "version": "3.1.0",
+      "workflow": {
+        "caller": "berntpopp/gtex-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "35f31f3a53fd423ca4f88f4d10e13d4f23011b7a"
+      }
+    },
+    "hgnc": {
+      "data_requirements": {
+        "digest": "sha256:3a106439d733bdb57353ccdc587de943b0fcb269d6979a97170954b596881fdc",
+        "mode": "upstream-live",
+        "release_tag": "observed-2026.07.13",
+        "reproducible_rollback": false,
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:f94c921c1d973da17e05550cad54bad96d1b24ead780c7d125871afde92200fb",
+        "name": "ghcr.io/berntpopp/hgnc-link",
+        "platforms": [
+          {
+            "digest": "sha256:f94c921c1d973da17e05550cad54bad96d1b24ead780c7d125871afde92200fb",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "d469c9492fd9f492b542ae37d37e27421224cd4d395c25ebf7b6922835c6a424",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "bcc5612d7f8435048bb4f9169abd520a05c91583c8ccb0391a63c18b4a8177c9"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:7b52083858ef24dcb9c79ee6e37658a6338d2ecef43f65069fc2462b48e566a5",
+        "image-manifest.json": "sha256:f94c921c1d973da17e05550cad54bad96d1b24ead780c7d125871afde92200fb",
+        "mcp-capture-context.json": "sha256:d469c9492fd9f492b542ae37d37e27421224cd4d395c25ebf7b6922835c6a424",
+        "mcp-definitions.json": "sha256:bcc5612d7f8435048bb4f9169abd520a05c91583c8ccb0391a63c18b4a8177c9",
+        "sbom.spdx.json": "sha256:e4a7ad9257aba8aaf4ebad36681ffe376d87f846cc107e96f0bec8348d913bde",
+        "trivy.json": "sha256:7ba905bc100c986c818e385f01d06e692c02bf47253125a6d3e81ff11bd6248b",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:37ed3f0a57232c1ed8b22d95360a5e7fcbbc32875d23c04910d7bbe22fd120c4"
+      },
+      "repository": "berntpopp/hgnc-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "7b52083858ef24dcb9c79ee6e37658a6338d2ecef43f65069fc2462b48e566a5",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "e4a7ad9257aba8aaf4ebad36681ffe376d87f846cc107e96f0bec8348d913bde",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "7ba905bc100c986c818e385f01d06e692c02bf47253125a6d3e81ff11bd6248b",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "37ed3f0a57232c1ed8b22d95360a5e7fcbbc32875d23c04910d7bbe22fd120c4"
+      },
+      "source": {
+        "revision": "16c1d48798e98ae5ce6e4fc942b5d390055cad28",
+        "tag": "v2.1.0"
+      },
+      "version": "2.1.0",
+      "workflow": {
+        "caller": "berntpopp/hgnc-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "hpo": {
+      "data_requirements": {
+        "digest": "sha256:d677a96efd8c274045241934c33b25dfb6fc9a6414c27bed7ae3334d05d4c9f6",
+        "mode": "external-reference",
+        "release_tag": "db-v2026-06-23",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:3a31d864b618353c54e06f258488200c2d312b03fe7e0aa62936ce272f5f4d1a",
+        "name": "ghcr.io/berntpopp/hpo-link",
+        "platforms": [
+          {
+            "digest": "sha256:3a31d864b618353c54e06f258488200c2d312b03fe7e0aa62936ce272f5f4d1a",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "c788a460602915e91fdc36332a576c0d52bc5c7f17883c4c81b42921129dd2c8",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "71b81906ece974d4391ecccf775e78a2dee9f9f742437f6b760f73174823552f"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:a255c7dbdfa73306138a5b97b069e8818da0eeb762f63d860777e671273a52fa",
+        "image-manifest.json": "sha256:3a31d864b618353c54e06f258488200c2d312b03fe7e0aa62936ce272f5f4d1a",
+        "mcp-capture-context.json": "sha256:c788a460602915e91fdc36332a576c0d52bc5c7f17883c4c81b42921129dd2c8",
+        "mcp-definitions.json": "sha256:71b81906ece974d4391ecccf775e78a2dee9f9f742437f6b760f73174823552f",
+        "sbom.spdx.json": "sha256:992d55289cd2dc69e2903cfdaa09ec794f5cd27419003d01d99ced50d457f3f9",
+        "trivy.json": "sha256:8fc548a982779fbf51983bd4a5c2082365c31f22659af724bc8f874d7b2afc5b",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:e92ec0711705a8f7e369a98ac366245d6e4ef8400c14d78716798486d775487a"
+      },
+      "repository": "berntpopp/hpo-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "a255c7dbdfa73306138a5b97b069e8818da0eeb762f63d860777e671273a52fa",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "992d55289cd2dc69e2903cfdaa09ec794f5cd27419003d01d99ced50d457f3f9",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "8fc548a982779fbf51983bd4a5c2082365c31f22659af724bc8f874d7b2afc5b",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "e92ec0711705a8f7e369a98ac366245d6e4ef8400c14d78716798486d775487a"
+      },
+      "source": {
+        "revision": "6484a31f343cf45f063c2875561581b2a631f3dc",
+        "tag": "v0.4.0"
+      },
+      "version": "0.4.0",
+      "workflow": {
+        "caller": "berntpopp/hpo-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "litvar": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:9ac14c67b3f6debe05ae4599fd670a04cb1c42f210d07b66138e98210394b5b7",
+        "name": "ghcr.io/berntpopp/litvar-link",
+        "platforms": [
+          {
+            "digest": "sha256:9ac14c67b3f6debe05ae4599fd670a04cb1c42f210d07b66138e98210394b5b7",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "3ef21be3c518fb535b9b07957271ea8b19737b3063fa174116f0325bbdcb09fe",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "7fed6228dd4eee633c599500cf4f6ec06c2242ae30d74d7690970d9145469821"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:6a18c4a3ced614f48041f562f8b38087903f27ddc0c2b644a4064a962be35818",
+        "image-manifest.json": "sha256:9ac14c67b3f6debe05ae4599fd670a04cb1c42f210d07b66138e98210394b5b7",
+        "mcp-capture-context.json": "sha256:3ef21be3c518fb535b9b07957271ea8b19737b3063fa174116f0325bbdcb09fe",
+        "mcp-definitions.json": "sha256:7fed6228dd4eee633c599500cf4f6ec06c2242ae30d74d7690970d9145469821",
+        "sbom.spdx.json": "sha256:ecf64c0ba9b761556faecf9130e5158606f5e1607aee1aaab9bb5bf6dfe7a69f",
+        "trivy.json": "sha256:78673cf4f229bb92f5039861aef4e73592a1d385fe3e50b7981ed78b0082f0a8",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:2619556943097e0a86c4de7e17fa40ecaaa2a02324b3ed4532c71d95fe7ea4b4"
+      },
+      "repository": "berntpopp/litvar-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "6a18c4a3ced614f48041f562f8b38087903f27ddc0c2b644a4064a962be35818",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "ecf64c0ba9b761556faecf9130e5158606f5e1607aee1aaab9bb5bf6dfe7a69f",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "78673cf4f229bb92f5039861aef4e73592a1d385fe3e50b7981ed78b0082f0a8",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "2619556943097e0a86c4de7e17fa40ecaaa2a02324b3ed4532c71d95fe7ea4b4"
+      },
+      "source": {
+        "revision": "a7247e3cdc1d0552596e13966249f340f06530b5",
+        "tag": "v6.0.0"
+      },
+      "version": "6.0.0",
+      "workflow": {
+        "caller": "berntpopp/litvar-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "35f31f3a53fd423ca4f88f4d10e13d4f23011b7a"
+      }
+    },
+    "mavedb": {
+      "data_requirements": {
+        "digest": "sha256:30b2b4fdbdff9a1a2e9f13e9f7de072a22ff07e70dea5d45eba297a5b9a5155a",
+        "mode": "external-reference",
+        "release_tag": "data-2026-06-24",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:f7cdea38f33a169717088b4ea28b790a0e74dc52826fb7a1822e9655c6728a78",
+        "name": "ghcr.io/berntpopp/mavedb-link",
+        "platforms": [
+          {
+            "digest": "sha256:f7cdea38f33a169717088b4ea28b790a0e74dc52826fb7a1822e9655c6728a78",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "785f49dc27f9b6871137e3269475af765c0f3c50770892567a8c5fb990ef313c",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "7163a135521e80bbe1ba28070b8c41d356c779c2ebdf4c71b7acbcf282f1c7f6"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:38a1f55d9cccfd5ef2b10e8010cd3da986655098e5385c22967e05baad11e671",
+        "image-manifest.json": "sha256:f7cdea38f33a169717088b4ea28b790a0e74dc52826fb7a1822e9655c6728a78",
+        "mcp-capture-context.json": "sha256:785f49dc27f9b6871137e3269475af765c0f3c50770892567a8c5fb990ef313c",
+        "mcp-definitions.json": "sha256:7163a135521e80bbe1ba28070b8c41d356c779c2ebdf4c71b7acbcf282f1c7f6",
+        "sbom.spdx.json": "sha256:9fa95b626dbb51c2cac14db618270e5860f76c4cef2cac4ec0b86949e12ed14e",
+        "trivy.json": "sha256:50dc4b62780d4ca807cc3a8dea5d97aae5d782359633ce6a3f84e32e91dfcdf5",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:96f712a90f9be1a6723270ff41610ce359b3edeeffb2fdd8e063d5546390744b"
+      },
+      "repository": "berntpopp/mavedb-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "38a1f55d9cccfd5ef2b10e8010cd3da986655098e5385c22967e05baad11e671",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "9fa95b626dbb51c2cac14db618270e5860f76c4cef2cac4ec0b86949e12ed14e",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "50dc4b62780d4ca807cc3a8dea5d97aae5d782359633ce6a3f84e32e91dfcdf5",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "96f712a90f9be1a6723270ff41610ce359b3edeeffb2fdd8e063d5546390744b"
+      },
+      "source": {
+        "revision": "8ee79dc7faa472f543816ae56fbf5969d7b0959a",
+        "tag": "v0.5.0"
+      },
+      "version": "0.5.0",
+      "workflow": {
+        "caller": "berntpopp/mavedb-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "metadome": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:85bfb9ce9a1cc45e7d26545cdeb9acae64997a44dd17cf610c644a0c13c7c99d",
+        "name": "ghcr.io/berntpopp/metadome-link",
+        "platforms": [
+          {
+            "digest": "sha256:85bfb9ce9a1cc45e7d26545cdeb9acae64997a44dd17cf610c644a0c13c7c99d",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "cf85a2e35c2d421819c7efe8593b6729631b2b60ac2f89b3b0a1e4b63f9d3dd2",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "5cd8bd20c134081f8b8ac970977ae59535c20dcf9f43772160b5ed00e4d2f8ca"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:5b1dcc3e0e276a47f3825057df3cfa5e5690face8801ecf60fd5a974a921e703",
+        "image-manifest.json": "sha256:85bfb9ce9a1cc45e7d26545cdeb9acae64997a44dd17cf610c644a0c13c7c99d",
+        "mcp-capture-context.json": "sha256:cf85a2e35c2d421819c7efe8593b6729631b2b60ac2f89b3b0a1e4b63f9d3dd2",
+        "mcp-definitions.json": "sha256:5cd8bd20c134081f8b8ac970977ae59535c20dcf9f43772160b5ed00e4d2f8ca",
+        "sbom.spdx.json": "sha256:5f3e87b20279d445eeea20241086d38a25e0fac33d650929a6d97b5deb85944f",
+        "trivy.json": "sha256:67e205289e44c2dfe05f43577d75cef25a5ad5b6d81ef7967459bc94de50dfcd",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:25cc0024fd2900ababc09271c7244e1ed7aab1619172dc6a0cb6911fe1020309"
+      },
+      "repository": "berntpopp/metadome-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "5b1dcc3e0e276a47f3825057df3cfa5e5690face8801ecf60fd5a974a921e703",
+        "database_updated_at": "2026-07-16T07:27:44.878390Z",
+        "sbom_sha256": "5f3e87b20279d445eeea20241086d38a25e0fac33d650929a6d97b5deb85944f",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "67e205289e44c2dfe05f43577d75cef25a5ad5b6d81ef7967459bc94de50dfcd",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "25cc0024fd2900ababc09271c7244e1ed7aab1619172dc6a0cb6911fe1020309"
+      },
+      "source": {
+        "revision": "9014b4f0d93aca5449525f87d3e9da62feec8f68",
+        "tag": "v0.3.1"
+      },
+      "version": "0.3.1",
+      "workflow": {
+        "caller": "berntpopp/metadome-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "35f31f3a53fd423ca4f88f4d10e13d4f23011b7a"
+      }
+    },
+    "mgi": {
+      "data_requirements": {
+        "digest": "sha256:1efd2fe47b73ce84f486eff9a8d3ad9262be98e3c944cda9460672f33cfac717",
+        "mode": "upstream-live",
+        "release_tag": "observed-2026.07.13",
+        "reproducible_rollback": false,
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:f9ae402329fdeb3fbad4ec90925547bd383b163e48e2cbb0a3147b0933ef3603",
+        "name": "ghcr.io/berntpopp/mgi-link",
+        "platforms": [
+          {
+            "digest": "sha256:f9ae402329fdeb3fbad4ec90925547bd383b163e48e2cbb0a3147b0933ef3603",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "280bad4bfd6d9eda17cafdac897b10b7833182aeabd4910cd1fe54c8a7ef3fa7",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "6f0cbd449985078f74b2fadfab101fbfef830bce8eb042c2ebbcb043ca1e7283"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:e9d6b0219d54fe283f9836d076445f48ef8668b0b21caabd4bf6dde856d3e277",
+        "image-manifest.json": "sha256:f9ae402329fdeb3fbad4ec90925547bd383b163e48e2cbb0a3147b0933ef3603",
+        "mcp-capture-context.json": "sha256:280bad4bfd6d9eda17cafdac897b10b7833182aeabd4910cd1fe54c8a7ef3fa7",
+        "mcp-definitions.json": "sha256:6f0cbd449985078f74b2fadfab101fbfef830bce8eb042c2ebbcb043ca1e7283",
+        "sbom.spdx.json": "sha256:b55b9e57640f4356f9054ae24012bc3193b4a5aa52d509b29397909cc1ce6a0c",
+        "trivy.json": "sha256:ddc504551b6cbad931e725cd5633f83035b5fc9fdea3b17d796187f225fa7f8f",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:bcffb2d3ad42c09612b593de21ae10e13fe10279f6a929af518e66cdff83ba5d"
+      },
+      "repository": "berntpopp/mgi-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "e9d6b0219d54fe283f9836d076445f48ef8668b0b21caabd4bf6dde856d3e277",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "b55b9e57640f4356f9054ae24012bc3193b4a5aa52d509b29397909cc1ce6a0c",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "ddc504551b6cbad931e725cd5633f83035b5fc9fdea3b17d796187f225fa7f8f",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "bcffb2d3ad42c09612b593de21ae10e13fe10279f6a929af518e66cdff83ba5d"
+      },
+      "source": {
+        "revision": "e96de78c6efae98e59ca1c92452bcf3ab811b22c",
+        "tag": "v0.6.0"
+      },
+      "version": "0.6.0",
+      "workflow": {
+        "caller": "berntpopp/mgi-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "mondo": {
+      "data_requirements": {
+        "digest": "sha256:c588ebf0141f1cf8cb30bbc0a0ef545dc12045402ddaaf7e4ecc4d1b236a9191",
+        "mode": "upstream-live",
+        "release_tag": "observed-2026.07.13",
+        "reproducible_rollback": false,
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:96c6605761cafef4d914ed21b7e2e7699d549a87ebd0ad9e19703801d24a9a7f",
+        "name": "ghcr.io/berntpopp/mondo-link",
+        "platforms": [
+          {
+            "digest": "sha256:96c6605761cafef4d914ed21b7e2e7699d549a87ebd0ad9e19703801d24a9a7f",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "68f29b6eee55736997c47abeef93e5158f34d3ed991a91b769d135828c648ba1",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "179f9225ffd41cb8551e11b75604f20cf96e4b4fd7af5e338846602740a331ca"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:06638af66d536310b7d9a86f80b175fa5338b1171f8723820ab1196689ab5991",
+        "image-manifest.json": "sha256:96c6605761cafef4d914ed21b7e2e7699d549a87ebd0ad9e19703801d24a9a7f",
+        "mcp-capture-context.json": "sha256:68f29b6eee55736997c47abeef93e5158f34d3ed991a91b769d135828c648ba1",
+        "mcp-definitions.json": "sha256:179f9225ffd41cb8551e11b75604f20cf96e4b4fd7af5e338846602740a331ca",
+        "sbom.spdx.json": "sha256:2134c33f66819f4427843d437c38f4a05716d5965f71ff138b5a7dff1eb69be1",
+        "trivy.json": "sha256:f8a5bddfc4fda8ee50e8c709652ef6e062a3e63c72f5a3afca6a88c7acb6f8ec",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:d2556d08d43690eb871e00ccc2e7949d74b32ee74e81f6c898aa425f52c5855d"
+      },
+      "repository": "berntpopp/mondo-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "06638af66d536310b7d9a86f80b175fa5338b1171f8723820ab1196689ab5991",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "2134c33f66819f4427843d437c38f4a05716d5965f71ff138b5a7dff1eb69be1",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "f8a5bddfc4fda8ee50e8c709652ef6e062a3e63c72f5a3afca6a88c7acb6f8ec",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "d2556d08d43690eb871e00ccc2e7949d74b32ee74e81f6c898aa425f52c5855d"
+      },
+      "source": {
+        "revision": "2ce51497e0a70a6d72cb6d0d508fb2e7ecc79781",
+        "tag": "v0.4.0"
+      },
+      "version": "0.4.0",
+      "workflow": {
+        "caller": "berntpopp/mondo-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "orphanet": {
+      "data_requirements": {
+        "digest": "sha256:a8af3fc39cca2acedd12c188cb0e1f907ac320e73d2b965c17ad5a28c5f5fe38",
+        "mode": "external-reference",
+        "release_tag": "data-1.3.42-4.1.8-2025-03-03",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:6e6edb67beac65e189b3599c95a3e3e788d3d6e59ee239a50d43d118da1f9c5f",
+        "name": "ghcr.io/berntpopp/orphanet-link",
+        "platforms": [
+          {
+            "digest": "sha256:6e6edb67beac65e189b3599c95a3e3e788d3d6e59ee239a50d43d118da1f9c5f",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "6c13367ba6c8bd70519182a3cce56e9d7e3175530e6afd9c158c421d0a165dca",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "e48c67610afd134796521ce8e0ebca4c641ad8042882b4c0aff98330713ef632"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:d34dd8deb03ddbc64a88c515c2e809b525695add039a7b3aaf15caf9b70a447a",
+        "image-manifest.json": "sha256:6e6edb67beac65e189b3599c95a3e3e788d3d6e59ee239a50d43d118da1f9c5f",
+        "mcp-capture-context.json": "sha256:6c13367ba6c8bd70519182a3cce56e9d7e3175530e6afd9c158c421d0a165dca",
+        "mcp-definitions.json": "sha256:e48c67610afd134796521ce8e0ebca4c641ad8042882b4c0aff98330713ef632",
+        "sbom.spdx.json": "sha256:5162291b19f70db70f0c59bba2f5ae78dd77b6a5ee394d1afd4b5041327abc59",
+        "trivy.json": "sha256:c95fd7dffd5b867464ed81d57602f49a5d5d788176fb0df9a9b13249ffb31f3a",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:7daad679d66e5f7b1f579b67e7217ac463b52d3f33146f5c936649da61af9841"
+      },
+      "repository": "berntpopp/orphanet-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "d34dd8deb03ddbc64a88c515c2e809b525695add039a7b3aaf15caf9b70a447a",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "5162291b19f70db70f0c59bba2f5ae78dd77b6a5ee394d1afd4b5041327abc59",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "c95fd7dffd5b867464ed81d57602f49a5d5d788176fb0df9a9b13249ffb31f3a",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "7daad679d66e5f7b1f579b67e7217ac463b52d3f33146f5c936649da61af9841"
+      },
+      "source": {
+        "revision": "2193aac3a5d0a3fa8a8d47b0f7194ee6ea08c487",
+        "tag": "v0.4.0"
+      },
+      "version": "0.4.0",
+      "workflow": {
+        "caller": "berntpopp/orphanet-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "panelapp": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:87ff168a453ec0ed26ad66d794743f2ae294b09d6bf413b56b55c14a34c32118",
+        "name": "ghcr.io/berntpopp/panelapp-link",
+        "platforms": [
+          {
+            "digest": "sha256:87ff168a453ec0ed26ad66d794743f2ae294b09d6bf413b56b55c14a34c32118",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "f8705f3c585a6c0ebe1c0786491b3b074c269a98fbb3b0e2c81ccf32fb874e03",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "3380ee33889a46567361df9ec7f781374eb6ac1f87eb39b608202bffbba4bd67"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:5388f27c27acbd796549f699867d2278baae7804d57ccb039c4a6e62365307d7",
+        "image-manifest.json": "sha256:87ff168a453ec0ed26ad66d794743f2ae294b09d6bf413b56b55c14a34c32118",
+        "mcp-capture-context.json": "sha256:f8705f3c585a6c0ebe1c0786491b3b074c269a98fbb3b0e2c81ccf32fb874e03",
+        "mcp-definitions.json": "sha256:3380ee33889a46567361df9ec7f781374eb6ac1f87eb39b608202bffbba4bd67",
+        "sbom.spdx.json": "sha256:0536e663afa0f72db82768f306b247415767aaddbf0045e8d38a5ff6b4774645",
+        "trivy.json": "sha256:780dd410b580231e76e14ce71cfef01ed7d8ed3d18c2725dd24b900a9ce94a94",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:d7362f0d3901c05185200e723812ebf572b5303dd6ae504096cc5cb1233c2bd8"
+      },
+      "repository": "berntpopp/panelapp-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "5388f27c27acbd796549f699867d2278baae7804d57ccb039c4a6e62365307d7",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "0536e663afa0f72db82768f306b247415767aaddbf0045e8d38a5ff6b4774645",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "780dd410b580231e76e14ce71cfef01ed7d8ed3d18c2725dd24b900a9ce94a94",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "d7362f0d3901c05185200e723812ebf572b5303dd6ae504096cc5cb1233c2bd8"
+      },
+      "source": {
+        "revision": "cc5b5fa0a7039f0edadcef78e4d43e4d2e74e1a2",
+        "tag": "v0.6.0"
+      },
+      "version": "0.6.0",
+      "workflow": {
+        "caller": "berntpopp/panelapp-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "35f31f3a53fd423ca4f88f4d10e13d4f23011b7a"
+      }
+    },
+    "pubtator": {
+      "data_requirements": {
+        "digest": "sha256:e3a508657abbea8cb5a2282459f9313ff4f52aa27506f24d554292f9d2635295",
+        "mode": "restored-database",
+        "release_tag": "observed-2026.07.13",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:195a19242081aab55dacb20396f59e46b081f8bb702ad5604281d81dcf1c88da",
+        "name": "ghcr.io/berntpopp/pubtator-link",
+        "platforms": [
+          {
+            "digest": "sha256:195a19242081aab55dacb20396f59e46b081f8bb702ad5604281d81dcf1c88da",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "adf3b7b7ff4bcb271a4a85d9f7f8d7582272b285d82bb9049d9a583dae2b0b6b",
+        "definition_contract": "data-bound",
+        "definitions_sha256": "512f5c1dc2fe8e7e9fa383ba5e88e568933125e6143434d0b1f09614230b3441"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:16cf1e44946bc869a11e4ca8911dd0587ecd2dc63e265a03091f0898b8b884eb",
+        "image-manifest.json": "sha256:195a19242081aab55dacb20396f59e46b081f8bb702ad5604281d81dcf1c88da",
+        "mcp-capture-context.json": "sha256:adf3b7b7ff4bcb271a4a85d9f7f8d7582272b285d82bb9049d9a583dae2b0b6b",
+        "mcp-definitions.json": "sha256:512f5c1dc2fe8e7e9fa383ba5e88e568933125e6143434d0b1f09614230b3441",
+        "sbom.spdx.json": "sha256:b8c530de61dc7448c5701af5fb925a0c7af447aa415f0515087cd8decfad4d43",
+        "trivy.json": "sha256:dbbaeb06ff75182bf3e46a3691077129d7a03fded58306308c8f1ca0f27ac81d",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:130462a94e3891a8c7b849cd717d7d19944fb93d8d696649b7e7faedcf8b177c"
+      },
+      "repository": "berntpopp/pubtator-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "16cf1e44946bc869a11e4ca8911dd0587ecd2dc63e265a03091f0898b8b884eb",
+        "database_updated_at": "2026-07-15T07:37:19.831518Z",
+        "sbom_sha256": "b8c530de61dc7448c5701af5fb925a0c7af447aa415f0515087cd8decfad4d43",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "dbbaeb06ff75182bf3e46a3691077129d7a03fded58306308c8f1ca0f27ac81d",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "130462a94e3891a8c7b849cd717d7d19944fb93d8d696649b7e7faedcf8b177c"
+      },
+      "source": {
+        "revision": "e74bde90e6a80f0576e2ae2668bcfbe9cc2862e7",
+        "tag": "v7.1.4"
+      },
+      "version": "7.1.4",
+      "workflow": {
+        "caller": "berntpopp/pubtator-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+      }
+    },
+    "spliceai": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:4fbec28d1557388a6defc6f92ddf012704784f960069a46fcb66c2861294403b",
+        "name": "ghcr.io/berntpopp/spliceailookup-link",
+        "platforms": [
+          {
+            "digest": "sha256:4fbec28d1557388a6defc6f92ddf012704784f960069a46fcb66c2861294403b",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "a6c87f7231d5bdeb45c3fc07bfa9fedd746797e8dc533fbcdd826c7cd47f3271",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "7bc98a2c95f0fab7e26fd4fc42e8fa032f3472b7598deb8ac73f0f0ad8febf5f"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:ae696f7810ba734e2a7022ca6c78541263223dada0012f67b2199e170c41c0f6",
+        "image-manifest.json": "sha256:4fbec28d1557388a6defc6f92ddf012704784f960069a46fcb66c2861294403b",
+        "mcp-capture-context.json": "sha256:a6c87f7231d5bdeb45c3fc07bfa9fedd746797e8dc533fbcdd826c7cd47f3271",
+        "mcp-definitions.json": "sha256:7bc98a2c95f0fab7e26fd4fc42e8fa032f3472b7598deb8ac73f0f0ad8febf5f",
+        "sbom.spdx.json": "sha256:b5d1e686f9cae39cb7a3db467528e31193aaedea80f08638e0ee0b3cb3fa2c36",
+        "trivy.json": "sha256:c1e67ed9353bc313ee38a7a7cbf2b7d4ef876b9475093d9c6e1a65ab1cf358e4",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:eaa860686f262d48632583dc1ef38edb092c83fb73b28070fc2ab0609a32c107"
+      },
+      "repository": "berntpopp/spliceailookup-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "ae696f7810ba734e2a7022ca6c78541263223dada0012f67b2199e170c41c0f6",
+        "database_updated_at": "2026-07-15T07:37:19.831518Z",
+        "sbom_sha256": "b5d1e686f9cae39cb7a3db467528e31193aaedea80f08638e0ee0b3cb3fa2c36",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "c1e67ed9353bc313ee38a7a7cbf2b7d4ef876b9475093d9c6e1a65ab1cf358e4",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "eaa860686f262d48632583dc1ef38edb092c83fb73b28070fc2ab0609a32c107"
+      },
+      "source": {
+        "revision": "2ba2e00bdac7b6109264b4460586e161e33571a9",
+        "tag": "v4.0.0"
+      },
+      "version": "4.0.0",
+      "workflow": {
+        "caller": "berntpopp/spliceailookup-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "35f31f3a53fd423ca4f88f4d10e13d4f23011b7a"
+      }
+    },
+    "stringdb": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:01243c2d86a607e6cd30a5deba25103d50a0077c973cc32ce641781470b3440f",
+        "name": "ghcr.io/berntpopp/stringdb-link",
+        "platforms": [
+          {
+            "digest": "sha256:01243c2d86a607e6cd30a5deba25103d50a0077c973cc32ce641781470b3440f",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "5095d5f40e5a382d07b565278a374f7dc41687ba04f7096304741c0a9989e25c",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "62a8908b84685b727d28bf5a79b0fa241cdeb4e963768989c58a3e17334e8dde"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:68795b7e64bf7f8ae05dba89ae42f9aab8f8109e5844c7cf0628e55049d7783e",
+        "image-manifest.json": "sha256:01243c2d86a607e6cd30a5deba25103d50a0077c973cc32ce641781470b3440f",
+        "mcp-capture-context.json": "sha256:5095d5f40e5a382d07b565278a374f7dc41687ba04f7096304741c0a9989e25c",
+        "mcp-definitions.json": "sha256:62a8908b84685b727d28bf5a79b0fa241cdeb4e963768989c58a3e17334e8dde",
+        "sbom.spdx.json": "sha256:5af79c16d652a89bb5e3fb9ea75b7d6d71fa773915dbd1dbfbe44d8ab9c909ad",
+        "trivy.json": "sha256:de0a092b2d702d3d526fb564a2023aeb2b9ae452b059a96f47b57057fa275d01",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:19719c742f427e7ca14f24c631f29b04ee461b8df497fed62853599a31745c2a"
+      },
+      "repository": "berntpopp/stringdb-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "68795b7e64bf7f8ae05dba89ae42f9aab8f8109e5844c7cf0628e55049d7783e",
+        "database_updated_at": "2026-07-15T19:04:37.151625Z",
+        "sbom_sha256": "5af79c16d652a89bb5e3fb9ea75b7d6d71fa773915dbd1dbfbe44d8ab9c909ad",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "de0a092b2d702d3d526fb564a2023aeb2b9ae452b059a96f47b57057fa275d01",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "19719c742f427e7ca14f24c631f29b04ee461b8df497fed62853599a31745c2a"
+      },
+      "source": {
+        "revision": "7a90981c9bfddf3e3b610d32fecec3e2300a9d62",
+        "tag": "v4.1.0"
+      },
+      "version": "4.1.0",
+      "workflow": {
+        "caller": "berntpopp/stringdb-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "35f31f3a53fd423ca4f88f4d10e13d4f23011b7a"
+      }
+    },
+    "uniprot": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:d3e3a473ef5005a6051017cc276946c11cb0570c8b55a0f9c2f4303d9afc77dd",
+        "name": "ghcr.io/berntpopp/uniprot-link",
+        "platforms": [
+          {
+            "digest": "sha256:d3e3a473ef5005a6051017cc276946c11cb0570c8b55a0f9c2f4303d9afc77dd",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "0bc5f1f525cc05a1e8d8e2356d28c1ceffc1b07511c6416cc87b9a861ab205bd",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "5db727612cb2e5a1e4c086009d0878235a133b76f672349edde9b12e905ce92e"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:7cef119831572733db163bcd54a3764794a47b1a7ac05dbadb1828e51014be7a",
+        "image-manifest.json": "sha256:d3e3a473ef5005a6051017cc276946c11cb0570c8b55a0f9c2f4303d9afc77dd",
+        "mcp-capture-context.json": "sha256:0bc5f1f525cc05a1e8d8e2356d28c1ceffc1b07511c6416cc87b9a861ab205bd",
+        "mcp-definitions.json": "sha256:5db727612cb2e5a1e4c086009d0878235a133b76f672349edde9b12e905ce92e",
+        "sbom.spdx.json": "sha256:5a070cc64864186ff5eef1b53cae5870ee93c07b4c03c5a11d355988d032c66e",
+        "trivy.json": "sha256:0a8c56441443cf09d89d68aa1162918a97404c2e88da21262b0d81726ef8aeb4",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:b0f785b4cb242a756296006fb889bd4d96faf3479a1367b75b09aa35299b1ca2"
+      },
+      "repository": "berntpopp/uniprot-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "7cef119831572733db163bcd54a3764794a47b1a7ac05dbadb1828e51014be7a",
+        "database_updated_at": "2026-07-16T01:02:16.559290Z",
+        "sbom_sha256": "5a070cc64864186ff5eef1b53cae5870ee93c07b4c03c5a11d355988d032c66e",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "0a8c56441443cf09d89d68aa1162918a97404c2e88da21262b0d81726ef8aeb4",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "b0f785b4cb242a756296006fb889bd4d96faf3479a1367b75b09aa35299b1ca2"
+      },
+      "source": {
+        "revision": "9f77087fcc5762b5c98788f1eeef15ec5977b742",
+        "tag": "v5.0.0"
+      },
+      "version": "5.0.0",
+      "workflow": {
+        "caller": "berntpopp/uniprot-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "35f31f3a53fd423ca4f88f4d10e13d4f23011b7a"
+      }
+    },
+    "vep": {
+      "data_requirements": {
+        "mode": "none",
+        "schema_compatibility": []
+      },
+      "image": {
+        "digest": "sha256:1152e055cf2741b58544b806b6bf1936191146aa67add05989e2889b46f2ec94",
+        "name": "ghcr.io/berntpopp/vep-link",
+        "platforms": [
+          {
+            "digest": "sha256:1152e055cf2741b58544b806b6bf1936191146aa67add05989e2889b46f2ec94",
+            "platform": "linux/amd64"
+          }
+        ]
+      },
+      "mcp": {
+        "capture_context_sha256": "13289e8e9976b8c89aa2cc3f9f770ca5d1d62dca71d01287c91b3af6c3174331",
+        "definition_contract": "data-independent",
+        "definitions_sha256": "68dc33bdc4d7e76c685b05aa4a321af68b318df39474af66352eeb34a53c99f8"
+      },
+      "release_assets": {
+        "attestation-bundle.json": "sha256:186279e1972da457a4a529d4045d778834b72f8c609dc0af39d4d540678085ff",
+        "image-manifest.json": "sha256:1152e055cf2741b58544b806b6bf1936191146aa67add05989e2889b46f2ec94",
+        "mcp-capture-context.json": "sha256:13289e8e9976b8c89aa2cc3f9f770ca5d1d62dca71d01287c91b3af6c3174331",
+        "mcp-definitions.json": "sha256:68dc33bdc4d7e76c685b05aa4a321af68b318df39474af66352eeb34a53c99f8",
+        "sbom.spdx.json": "sha256:786aeafd3ac147a5bc02a00a4a2dc68caf9e998800478b001fdc466aecaf32c5",
+        "trivy.json": "sha256:b2c7e9c258e02ff4600536fa87d3227c8f3271b8aad7eaa86366da5c60b1fc4b",
+        "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification.json": "sha256:7d261ee705b118c73ba72607c3ad1288b975155869694730cb356852a2fea2db"
+      },
+      "repository": "berntpopp/vep-link",
+      "schema_version": 1,
+      "security_evidence": {
+        "attestation_bundle_sha256": "186279e1972da457a4a529d4045d778834b72f8c609dc0af39d4d540678085ff",
+        "database_updated_at": "2026-07-15T07:37:19.831518Z",
+        "sbom_sha256": "786aeafd3ac147a5bc02a00a4a2dc68caf9e998800478b001fdc466aecaf32c5",
+        "scanner": "trivy",
+        "scanner_evidence_sha256": "b2c7e9c258e02ff4600536fa87d3227c8f3271b8aad7eaa86366da5c60b1fc4b",
+        "scanner_version": "0.70.0",
+        "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+        "verification_sha256": "7d261ee705b118c73ba72607c3ad1288b975155869694730cb356852a2fea2db"
+      },
+      "source": {
+        "revision": "431b66e3ea69eb5f6fae6f7d6474f8f6119b3dc5",
+        "tag": "v1.1.0"
+      },
+      "version": "1.1.0",
+      "workflow": {
+        "caller": "berntpopp/vep-link/.github/workflows/container-release.yml",
+        "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+        "standard_revision": "35f31f3a53fd423ca4f88f4d10e13d4f23011b7a"
+      }
+    }
+  }
+}
