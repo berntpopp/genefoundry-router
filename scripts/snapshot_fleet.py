@@ -73,17 +73,16 @@ def _validated_release_manifest(value: object, *, label: str) -> dict[str, Any]:
 
 
 def validate_release_candidate_inventory(inventory: object) -> dict[str, Any]:
-    """Validate one atomic router/backend inventory bound to release manifests."""
-    if not isinstance(inventory, dict) or not isinstance(inventory.get("identity"), str):
+    """Validate one atomic backend inventory bound to backend release manifests."""
+    if not isinstance(inventory, dict) or set(inventory) != {"identity", "backends"}:
+        raise ReleaseCandidateCaptureError(
+            "release-candidate inventory requires identity and backends only"
+        )
+    if not isinstance(inventory["identity"], str):
         raise ReleaseCandidateCaptureError("release-candidate inventory requires an identity")
     identity = inventory["identity"]
     if not identity.strip():
         raise ReleaseCandidateCaptureError("release-candidate inventory requires an identity")
-    router = _validated_release_manifest(
-        inventory.get("router"), label="router application release"
-    )
-    if router["repository"] != "berntpopp/genefoundry-router":
-        raise ReleaseCandidateCaptureError("router application release has a repository mismatch")
     backends = inventory.get("backends")
     if not isinstance(backends, dict) or not backends:
         raise ReleaseCandidateCaptureError("release-candidate inventory requires backends")
@@ -106,11 +105,11 @@ def validate_release_candidate_inventory(inventory: object) -> dict[str, Any]:
                 entry["application_release"], label=namespace
             ),
         }
-    return {"identity": identity, "router": router, "backends": normalized}
+    return {"identity": identity, "backends": normalized}
 
 
 def load_release_candidate_inventory(path: Path) -> dict[str, Any]:
-    """Load immutable image/source/data/definition provenance for a candidate fleet."""
+    """Load immutable backend image/source/data/definition provenance for a candidate."""
     try:
         inventory = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:

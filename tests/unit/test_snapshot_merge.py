@@ -7,6 +7,7 @@ import pytest
 
 from genefoundry_router.devtools.fakes import BackendSpec, ToolSpec, load_manifest
 from scripts.make_release_candidate import _load_application_releases
+from scripts.make_release_candidate import _run as author_candidate
 from scripts.snapshot_fleet import (
     ReleaseCandidateCaptureError,
     _run,
@@ -87,7 +88,6 @@ def _raw_tools() -> list[Any]:
 def _inventory(spec: BackendSpec) -> dict[str, object]:
     return {
         "identity": "release-1",
-        "router": _application_release("berntpopp/genefoundry-router", version="0.6.4"),
         "backends": {
             "one": {
                 "endpoint": "https://candidate.example/mcp",
@@ -119,7 +119,18 @@ def test_release_candidate_inventory_rejects_bare_revision_map(tmp_path):
         '{"identity":"release-1","backends":{"one":{"endpoint":"https://one.example/mcp","revision":"main"}}}'
     )
 
-    with pytest.raises(ReleaseCandidateCaptureError, match="router application release"):
+    with pytest.raises(ReleaseCandidateCaptureError, match="endpoint and application release"):
+        load_release_candidate_inventory(inventory)
+
+
+def test_release_candidate_inventory_rejects_legacy_router_release(tmp_path):
+    spec = BackendSpec(version="1.0.0", tools=[ToolSpec(name="get_one")])
+    payload = _inventory(spec)
+    payload["router"] = _application_release("berntpopp/genefoundry-router", version="0.6.4")
+    inventory = tmp_path / "candidate.json"
+    inventory.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ReleaseCandidateCaptureError, match="identity and backends only"):
         load_release_candidate_inventory(inventory)
 
 
@@ -238,7 +249,48 @@ def test_candidate_snapshot_rejects_manifest_repository_mismatch(monkeypatch, tm
         )
 
 
+def test_candidate_snapshot_rejects_incomplete_backend_map(monkeypatch, tmp_path):
+    spec = BackendSpec(version="1.0.0", tools=[ToolSpec(name="get_one")])
+    inventory = _inventory(spec)
+    monkeypatch.setattr(
+        "scripts.snapshot_fleet.load_registry",
+        lambda *_args: [
+            SimpleNamespace(enabled=True, namespace="one"),
+            SimpleNamespace(enabled=True, namespace="two"),
+        ],
+    )
+
+    with pytest.raises(ReleaseCandidateCaptureError, match="cover exactly"):
+        asyncio.run(
+            _run("servers.yaml", tmp_path / "baseline.json", "2026-07-12T00:00:00Z", inventory)
+        )
+
+
 def test_release_candidate_authoring_consumes_complete_release_manifests(tmp_path):
+    source = tmp_path / "releases.json"
+    source.write_text(
+        json.dumps(
+            {
+                "backends": {"one": _application_release()},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    releases = _load_application_releases(source)
+
+    assert releases["backends"]["one"]["security_evidence"]["sbom_sha256"] == "1" * 64
+
+
+def test_release_candidate_authoring_rejects_partial_manifest_set(tmp_path):
+    source = tmp_path / "releases.json"
+    source.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(ReleaseCandidateCaptureError, match="requires backends"):
+        _load_application_releases(source)
+
+
+def test_release_candidate_authoring_rejects_router_manifest_in_backend_only_input(tmp_path):
     source = tmp_path / "releases.json"
     source.write_text(
         json.dumps(
@@ -250,15 +302,58 @@ def test_release_candidate_authoring_consumes_complete_release_manifests(tmp_pat
         encoding="utf-8",
     )
 
-    releases = _load_application_releases(source)
-
-    assert releases["router"]["image"]["digest"] == f"sha256:{'a' * 64}"
-    assert releases["backends"]["one"]["security_evidence"]["sbom_sha256"] == "1" * 64
-
-
-def test_release_candidate_authoring_rejects_partial_manifest_set(tmp_path):
-    source = tmp_path / "releases.json"
-    source.write_text(json.dumps({"router": _application_release()}), encoding="utf-8")
-
-    with pytest.raises(ReleaseCandidateCaptureError, match="requires backends"):
+    with pytest.raises(ReleaseCandidateCaptureError, match="requires backends only"):
         _load_application_releases(source)
+
+
+def test_release_candidate_authoring_rejects_incomplete_backend_map(monkeypatch, tmp_path):
+    release = _application_release(
+        version="1.0.0", definitions_sha256=release_definitions_digest(_raw_tools())
+    )
+    monkeypatch.setattr(
+        "scripts.make_release_candidate.load_registry",
+        lambda *_args: [
+            SimpleNamespace(enabled=True, namespace="one"),
+            SimpleNamespace(enabled=True, namespace="two"),
+        ],
+    )
+
+    with pytest.raises(ReleaseCandidateCaptureError, match="cover exactly"):
+        asyncio.run(
+            author_candidate(
+                "servers.yaml", "release-1", {"backends": {"one": release}}, tmp_path / "out.json"
+            )
+        )
+
+
+def test_release_candidate_authoring_emits_backend_only_inventory(monkeypatch, tmp_path):
+    release = _application_release(
+        version="1.0.0", definitions_sha256=release_definitions_digest(_raw_tools())
+    )
+    releases = {"backends": {"one": release}}
+    spec = BackendSpec(version="1.0.0", tools=[ToolSpec(name="get_one")])
+
+    async def snapshot(
+        _url: str, _service_token: str | None = None
+    ) -> tuple[BackendSpec, list[Any]]:
+        return spec, _raw_tools()
+
+    monkeypatch.setattr(
+        "scripts.make_release_candidate.load_registry",
+        lambda *_args: [
+            SimpleNamespace(
+                enabled=True,
+                namespace="one",
+                repo="berntpopp/one-link",
+                url="https://candidate.example/mcp",
+                url_env="ONE_URL",
+                service_token=None,
+            )
+        ],
+    )
+    monkeypatch.setattr("scripts.make_release_candidate._capture_backend", snapshot)
+    output = tmp_path / "candidate.json"
+
+    asyncio.run(author_candidate("servers.yaml", "release-1", releases, output))
+
+    assert set(json.loads(output.read_text(encoding="utf-8"))) == {"identity", "backends"}

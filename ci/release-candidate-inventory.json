@@ -1203,58 +1203,5 @@
       "endpoint": "https://vep-link.genefoundry.org/mcp"
     }
   },
-  "identity": "fleet-2026-07-16-litvar-6.0.0",
-  "router": {
-    "data_requirements": {
-      "mode": "none",
-      "schema_compatibility": []
-    },
-    "image": {
-      "digest": "sha256:31491529d9da7ac6d0eeb1ca23178b6a0f994fb02a1ca89d28e711a3e99dc39f",
-      "name": "ghcr.io/berntpopp/genefoundry-router",
-      "platforms": [
-        {
-          "digest": "sha256:31491529d9da7ac6d0eeb1ca23178b6a0f994fb02a1ca89d28e711a3e99dc39f",
-          "platform": "linux/amd64"
-        }
-      ]
-    },
-    "mcp": {
-      "capture_context_sha256": "12de5f92cd0b5dc89637894292c7a6176a23086cc2e4ee35ba6569a1dfdfe9ae",
-      "definition_contract": "data-independent",
-      "definitions_sha256": "59ade2997825ada349c4ca3511b141a4a1f1abf950e47de2a77601314dbd5437"
-    },
-    "release_assets": {
-      "attestation-bundle.json": "sha256:d3e70d02b3bc978b97093bbd4c15392290281b3d57ca10c768d46bdd2d61328e",
-      "image-manifest.json": "sha256:31491529d9da7ac6d0eeb1ca23178b6a0f994fb02a1ca89d28e711a3e99dc39f",
-      "mcp-capture-context.json": "sha256:12de5f92cd0b5dc89637894292c7a6176a23086cc2e4ee35ba6569a1dfdfe9ae",
-      "mcp-definitions.json": "sha256:59ade2997825ada349c4ca3511b141a4a1f1abf950e47de2a77601314dbd5437",
-      "sbom.spdx.json": "sha256:7e08bcb7a482c61d3ee664ffc4a9a8f4442c378830f227f3d15744c9c8f7116a",
-      "trivy.json": "sha256:b0fd486dbf76d8e407ffc9baff22b301050bd18ae9c2cafc4da257efb7fe15db",
-      "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-      "verification.json": "sha256:2f08c0754917eb3185bfc9fe13176fea1071e4da7045b867ac04c63961c9bf07"
-    },
-    "repository": "berntpopp/genefoundry-router",
-    "schema_version": 1,
-    "security_evidence": {
-      "attestation_bundle_sha256": "d3e70d02b3bc978b97093bbd4c15392290281b3d57ca10c768d46bdd2d61328e",
-      "database_updated_at": "2026-07-15T00:56:58.403064Z",
-      "sbom_sha256": "7e08bcb7a482c61d3ee664ffc4a9a8f4442c378830f227f3d15744c9c8f7116a",
-      "scanner": "trivy",
-      "scanner_evidence_sha256": "b0fd486dbf76d8e407ffc9baff22b301050bd18ae9c2cafc4da257efb7fe15db",
-      "scanner_version": "0.70.0",
-      "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-      "verification_sha256": "2f08c0754917eb3185bfc9fe13176fea1071e4da7045b867ac04c63961c9bf07"
-    },
-    "source": {
-      "revision": "3c0d8a2bca1e9122a36903d1ac7551fd9a5d5d92",
-      "tag": "v0.6.8"
-    },
-    "version": "0.6.8",
-    "workflow": {
-      "caller": "berntpopp/genefoundry-router/.github/workflows/container-release.yml",
-      "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
-      "standard_revision": "3c0d8a2bca1e9122a36903d1ac7551fd9a5d5d92"
-    }
-  }
+  "identity": "fleet-2026-07-16-litvar-6.0.0"
 }
