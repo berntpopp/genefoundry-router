@@ -2,6 +2,14 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.10] - 2026-07-16
+
+### Changed
+
+- Re-pin the reviewed, signed fleet inventory and packaged drift baseline to AutoPVS1
+  v4.1.1, StringDB v4.1.0, and PubTator-Link v7.1.4 after live definition
+  verification. This restores end-to-end deployment attestation for those releases.
+
 ## [0.6.9] - 2026-07-15
 
 ### Added
