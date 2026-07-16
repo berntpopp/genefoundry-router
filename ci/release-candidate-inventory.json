@@ -525,47 +525,47 @@
           "schema_compatibility": []
         },
         "image": {
-          "digest": "sha256:6486bab9340527dff3b865f1402eb4d017ab94f20eba9597dbb11ac255680c4f",
+          "digest": "sha256:9ac14c67b3f6debe05ae4599fd670a04cb1c42f210d07b66138e98210394b5b7",
           "name": "ghcr.io/berntpopp/litvar-link",
           "platforms": [
             {
-              "digest": "sha256:6486bab9340527dff3b865f1402eb4d017ab94f20eba9597dbb11ac255680c4f",
+              "digest": "sha256:9ac14c67b3f6debe05ae4599fd670a04cb1c42f210d07b66138e98210394b5b7",
               "platform": "linux/amd64"
             }
           ]
         },
         "mcp": {
-          "capture_context_sha256": "f10885dcfdf9eb428a397dfa13811b18ce2d6bfdd7518fd28f5bc26c762526fd",
+          "capture_context_sha256": "3ef21be3c518fb535b9b07957271ea8b19737b3063fa174116f0325bbdcb09fe",
           "definition_contract": "data-independent",
-          "definitions_sha256": "d0355375b6f6e87e11baa54e6ae5e1254bfa8c03a7a636dd41a7372f300e36c6"
+          "definitions_sha256": "7fed6228dd4eee633c599500cf4f6ec06c2242ae30d74d7690970d9145469821"
         },
         "release_assets": {
-          "attestation-bundle.json": "sha256:4e57e6ea578999986bd0bf3efc04446ebe951617c81f6cf76fc986ba9debc7e9",
-          "image-manifest.json": "sha256:6486bab9340527dff3b865f1402eb4d017ab94f20eba9597dbb11ac255680c4f",
-          "mcp-capture-context.json": "sha256:f10885dcfdf9eb428a397dfa13811b18ce2d6bfdd7518fd28f5bc26c762526fd",
-          "mcp-definitions.json": "sha256:d0355375b6f6e87e11baa54e6ae5e1254bfa8c03a7a636dd41a7372f300e36c6",
-          "sbom.spdx.json": "sha256:615b2e085f5e36bfdb54ccfdc79aedf86878b3e5ca89a78aca0a57c2992d9fcc",
-          "trivy.json": "sha256:45ef407e8c2f5b2d2b807858b25a4a7141f6119a5ce045577687ab0f329dad05",
+          "attestation-bundle.json": "sha256:6a18c4a3ced614f48041f562f8b38087903f27ddc0c2b644a4064a962be35818",
+          "image-manifest.json": "sha256:9ac14c67b3f6debe05ae4599fd670a04cb1c42f210d07b66138e98210394b5b7",
+          "mcp-capture-context.json": "sha256:3ef21be3c518fb535b9b07957271ea8b19737b3063fa174116f0325bbdcb09fe",
+          "mcp-definitions.json": "sha256:7fed6228dd4eee633c599500cf4f6ec06c2242ae30d74d7690970d9145469821",
+          "sbom.spdx.json": "sha256:ecf64c0ba9b761556faecf9130e5158606f5e1607aee1aaab9bb5bf6dfe7a69f",
+          "trivy.json": "sha256:78673cf4f229bb92f5039861aef4e73592a1d385fe3e50b7981ed78b0082f0a8",
           "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-          "verification.json": "sha256:ec448fd0b0ca40e422ff5acce46365a40d61bbbe9090c3d313b93641969d0af1"
+          "verification.json": "sha256:2619556943097e0a86c4de7e17fa40ecaaa2a02324b3ed4532c71d95fe7ea4b4"
         },
         "repository": "berntpopp/litvar-link",
         "schema_version": 1,
         "security_evidence": {
-          "attestation_bundle_sha256": "4e57e6ea578999986bd0bf3efc04446ebe951617c81f6cf76fc986ba9debc7e9",
-          "database_updated_at": "2026-07-14T07:34:27.465333Z",
-          "sbom_sha256": "615b2e085f5e36bfdb54ccfdc79aedf86878b3e5ca89a78aca0a57c2992d9fcc",
+          "attestation_bundle_sha256": "6a18c4a3ced614f48041f562f8b38087903f27ddc0c2b644a4064a962be35818",
+          "database_updated_at": "2026-07-16T01:02:16.559290Z",
+          "sbom_sha256": "ecf64c0ba9b761556faecf9130e5158606f5e1607aee1aaab9bb5bf6dfe7a69f",
           "scanner": "trivy",
-          "scanner_evidence_sha256": "45ef407e8c2f5b2d2b807858b25a4a7141f6119a5ce045577687ab0f329dad05",
+          "scanner_evidence_sha256": "78673cf4f229bb92f5039861aef4e73592a1d385fe3e50b7981ed78b0082f0a8",
           "scanner_version": "0.70.0",
           "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-          "verification_sha256": "ec448fd0b0ca40e422ff5acce46365a40d61bbbe9090c3d313b93641969d0af1"
+          "verification_sha256": "2619556943097e0a86c4de7e17fa40ecaaa2a02324b3ed4532c71d95fe7ea4b4"
         },
         "source": {
-          "revision": "af55876930fa88b801a0ea92e2a37402b248d5e8",
-          "tag": "v5.0.5"
+          "revision": "a7247e3cdc1d0552596e13966249f340f06530b5",
+          "tag": "v6.0.0"
         },
-        "version": "5.0.5",
+        "version": "6.0.0",
         "workflow": {
           "caller": "berntpopp/litvar-link/.github/workflows/container-release.yml",
           "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
@@ -1203,7 +1203,7 @@
       "endpoint": "https://vep-link.genefoundry.org/mcp"
     }
   },
-  "identity": "fleet-2026-07-16-release-pins",
+  "identity": "fleet-2026-07-16-litvar-6.0.0",
   "router": {
     "data_requirements": {
       "mode": "none",
