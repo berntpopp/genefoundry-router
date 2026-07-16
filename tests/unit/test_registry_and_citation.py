@@ -110,6 +110,18 @@ def test_every_fleet_repo_gets_a_citation_entry(data: dict) -> None:
     assert len(set(slugs)) == len(slugs)
 
 
+def test_citation_fleet_dir_escapes_a_named_worktree(tmp_path: Path) -> None:
+    """Fleet-level generation must locate siblings from an isolated worktree."""
+    fleet = tmp_path / "development"
+    router = fleet / "genefoundry-router"
+    router.mkdir(parents=True)
+    (router / "pyproject.toml").write_text('[project]\nname = "genefoundry-router"\n')
+    worktree = router / ".worktrees" / "release-candidate"
+    worktree.mkdir(parents=True)
+
+    assert gen_cff.fleet_dir(worktree) == fleet
+
+
 def test_rendered_citation_has_the_fields_github_needs(data: dict) -> None:
     """GitHub renders "Cite this repository" from these; a missing one silently
     degrades the citation rather than failing loudly."""
