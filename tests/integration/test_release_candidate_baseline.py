@@ -12,12 +12,11 @@ RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 
 
 def test_baseline_is_bound_to_an_oci_release_candidate_inventory() -> None:
-    """The packaged baseline is bound to an inventory that names an application release.
+    """The packaged baseline is bound to an inventory that names backend releases.
 
-    This previously asserted the *inverse*: the pre-OCI inventory carried no router
-    application release, so loading it raised. The fleet now ships attested GHCR images and
-    every entry is bound to a signed release manifest, so the inventory must load cleanly --
-    a baseline that cannot name what produced it is exactly what the drift pin exists to stop.
+    Every backend entry is bound to a signed release manifest, so the inventory must load
+    cleanly. Router provenance is verified separately through its protected release manifest and
+    Strato lock/runtime attestation, rather than recursively duplicated in candidate data.
     """
     baseline = load_manifest(BASELINE)
     candidate = load_manifest(RELEASE_CANDIDATE)
@@ -25,7 +24,7 @@ def test_baseline_is_bound_to_an_oci_release_candidate_inventory() -> None:
 
     loaded = load_release_candidate_inventory(RELEASE_INVENTORY)
     assert loaded["identity"] == inventory["identity"]
-    assert inventory["router"]["image"]["digest"].startswith("sha256:")
+    assert set(inventory) == {"identity", "backends"}
     assert all(
         entry["application_release"]["image"]["digest"].startswith("sha256:")
         for entry in inventory["backends"].values()

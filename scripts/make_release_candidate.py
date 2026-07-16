@@ -9,8 +9,10 @@ It records, per backend, the identity of what is actually deployed:
 ``make snapshot-baseline`` then re-probes the fleet and FAILS CLOSED if any live definition
 digest disagrees with what this wrote, so the pin and the inventory cannot drift apart.
 
-The input is the set of verified immutable application-release manifests produced by the
-protected release workflows. Bare revision maps are intentionally unsupported.
+The input is ``{"backends": {...}}``: verified immutable backend application-release
+manifests produced by protected release workflows. Router provenance comes from its protected
+release manifest and Strato lock/runtime attestation, not recursive candidate data. Bare revision
+maps are intentionally unsupported.
 """
 
 from __future__ import annotations
@@ -44,14 +46,13 @@ def _parse_manifest(value: object, label: str) -> dict[str, object]:
 
 
 def _load_application_releases(path: Path) -> dict[str, object]:
-    """Load one complete router/backend application-release manifest set."""
+    """Load one complete backend application-release manifest set."""
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ReleaseCandidateCaptureError(f"invalid application release set: {path}") from exc
-    if not isinstance(payload, dict):
-        raise ReleaseCandidateCaptureError("application release set must be an object")
-    router = _parse_manifest(payload.get("router"), "router")
+    if not isinstance(payload, dict) or set(payload) != {"backends"}:
+        raise ReleaseCandidateCaptureError("application release set requires backends only")
     backends = payload.get("backends")
     if not isinstance(backends, dict) or not backends:
         raise ReleaseCandidateCaptureError("application release set requires backends")
@@ -60,7 +61,7 @@ def _load_application_releases(path: Path) -> dict[str, object]:
         if not isinstance(namespace, str):
             raise ReleaseCandidateCaptureError("application release namespace must be a string")
         normalized[namespace] = _parse_manifest(manifest, namespace)
-    return {"router": router, "backends": normalized}
+    return {"backends": normalized}
 
 
 async def _run(
@@ -125,9 +126,7 @@ async def _run(
             print(f"  FAIL {problem}")
         raise ReleaseCandidateCaptureError(f"incomplete fleet capture: {len(problems)} backend(s)")
 
-    candidate = validate_release_candidate_inventory(
-        {"identity": identity, "router": releases["router"], "backends": backends}
-    )
+    candidate = validate_release_candidate_inventory({"identity": identity, "backends": backends})
     out.write_text(json.dumps(candidate, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"\nwrote {out} ({len(backends)} backends) identity={identity}")
 
@@ -140,7 +139,7 @@ def main() -> None:
         "--release-manifests",
         type=Path,
         required=True,
-        help="JSON document containing verified router/backend application release manifests.",
+        help="JSON document containing verified backend application release manifests.",
     )
     parser.add_argument("--out", type=Path, default=Path("ci/release-candidate-inventory.json"))
     args = parser.parse_args()
