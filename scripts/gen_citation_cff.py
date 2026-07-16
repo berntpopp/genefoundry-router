@@ -40,7 +40,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from check_fleet_metadata import load  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-FLEET_DIR = ROOT.parent
 OWNER = "berntpopp"
 LICENSE = "MIT"
 
@@ -50,6 +49,17 @@ HEADER = (
     "# Regenerate: `make citation-write` in genefoundry-router.\n"
     "# See genefoundry-router/docs/REPO-METADATA-STANDARD-v1.md.\n"
 )
+
+
+def fleet_dir(root: Path = ROOT) -> Path:
+    """Find the sibling-checkout directory from a main checkout or a worktree."""
+    for candidate in root.parents:
+        if (candidate / "genefoundry-router" / "pyproject.toml").is_file():
+            return candidate
+    return root.parent
+
+
+FLEET_DIR = fleet_dir()
 
 
 def repo_slugs() -> list[tuple[str, dict[str, Any]]]:
