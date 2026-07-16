@@ -133,6 +133,11 @@ and reachable; exact audit-PMID preflight behaviour is documented by a live-safe
 
 ### LitVar #67 — harden every supported effective Compose profile
 
+This is a proposed follow-up, not a description of LitVar v6.0.0 production.
+That release hardened the actual Strato base+NPM composition with read-only root,
+safe `/tmp`, dropped capabilities, no-new-privileges, and init; PID limits and a
+canonical base+prod+NPM profile remain to be implemented.
+
 Move the mandatory hardening block into the base/NPM effective deployment path: read-only root,
 bounded `noexec,nosuid` tmpfs, `cap_drop: ALL`, `no-new-privileges`, init, and an effective PID
 limit. Retain only necessary production overrides. Test rendered base+NPM, base+prod, and

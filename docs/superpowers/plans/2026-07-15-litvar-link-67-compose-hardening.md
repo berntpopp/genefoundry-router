@@ -2,9 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ensure every supported LitVar Compose composition has an effective read-only root filesystem, bounded safe scratch, no capabilities, no-new-privileges, an init process, and a live PID ceiling, while preserving health and Streamable-HTTP MCP service without an NPM host port.
+> **Status: proposed follow-up, not part of LitVar v6.0.0.** The released #67
+> remediation deploys the exact base+NPM composition used by Strato and enforces
+> read-only root, bounded safe `/tmp`, `cap_drop: ALL`, `no-new-privileges`, and
+> `init`. It does **not** yet enforce a PID ceiling or use the three-file
+> base+prod+NPM release composition described below. This plan records the
+> remaining hardening and release-profile reconciliation work; it is not
+> evidence that those controls are live.
 
-**Architecture:** Mandatory runtime controls move to the base application service so both direct base+NPM and base+prod inherit them. Production overlays retain only deploy-specific image, ingress, resources, and logging choices. A small rendered-Compose validator checks the effective model for all three supported compositions; a disposable Docker smoke verifies the Engine-level security settings and runtime write behavior.
+**Goal:** Define the follow-up required for every supported LitVar Compose composition to have an effective read-only root filesystem, bounded safe scratch, no capabilities, no-new-privileges, an init process, and a live PID ceiling, while preserving health and Streamable-HTTP MCP service without an NPM host port.
+
+**Architecture:** The target architecture moves mandatory runtime controls to the base application service so both direct base+NPM and base+prod inherit them. Production overlays retain only deploy-specific image, ingress, resources, and logging choices. A small rendered-Compose validator checks the effective model for all three supported compositions; a disposable Docker smoke verifies the Engine-level security settings and runtime write behavior.
 
 **Tech Stack:** Docker Compose v2, Docker Engine inspect, Python 3.12, PyYAML, pytest, Make, FastAPI/FastMCP Streamable HTTP.
 
@@ -12,9 +20,10 @@
 
 **Repository and branch:** `/home/bernt-popp/development/litvar-link`, new branch `fix/compose-hardening-67` from current `origin/main`. All implementation paths below are relative to that repository.
 
-## Fixed policy
+## Target policy (proposed)
 
-For the `litvar-link` service in each of `base+prod`, `base+npm`, and `base+prod+npm`, the rendered Compose model must contain exactly these material controls:
+For a future `litvar-link` release, each of `base+prod`, `base+npm`, and
+`base+prod+npm` must render exactly these material controls:
 
 ```yaml
 read_only: true
@@ -28,7 +37,7 @@ init: true
 pids_limit: 256
 ```
 
-`deploy.resources.limits` remains present with `memory`, `cpus`, and `pids: 256`; `pids_limit: 256` is deliberately also set because it is directly applied by non-Swarm Docker Compose and is verified with `docker inspect`. NPM has no host `ports`; it is expose-only on port 8000. The canonical container release profile is the full `base+prod+npm` composition, while the two shorter compositions are independently supported and validated—not undocumented aliases.
+`deploy.resources.limits` remains present with `memory`, `cpus`, and `pids: 256`; `pids_limit: 256` is deliberately also set because it is directly applied by non-Swarm Docker Compose and is verified with `docker inspect`. NPM has no host `ports`; it is expose-only on port 8000. The proposed canonical container-release profile is the full `base+prod+npm` composition, while the two shorter compositions are independently supported and validated—not undocumented aliases.
 
 ## File map
 

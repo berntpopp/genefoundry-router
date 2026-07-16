@@ -2,6 +2,14 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.12] - 2026-07-16
+
+### Documentation
+
+- Publish the reviewed cross-fleet issue-remediation design and implementation
+  plans, explicitly distinguishing completed remediations from proposed
+  follow-up controls.
+
 ## [0.6.11] - 2026-07-16
 
 ### Changed
