@@ -159,8 +159,8 @@ tasks:
     expected: [pubtator_find_entity_relations]
   - id: pubtator-ground
     category: literature
-    query: answer a biomedical question grounded in cited PubMed evidence
-    expected: [pubtator_ground_question]
+    query: retrieve grounded citable context for a biomedical question from prepared PubMed evidence
+    expected: [pubtator_get_review_context_batch]
   - id: pubtator-variant-evidence
     category: literature
     query: published evidence for a variant from the literature

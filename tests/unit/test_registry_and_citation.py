@@ -122,6 +122,33 @@ def test_citation_fleet_dir_escapes_a_named_worktree(tmp_path: Path) -> None:
     assert gen_cff.fleet_dir(worktree) == fleet
 
 
+def test_citation_fleet_dir_uses_git_main_checkout_from_external_worktree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An externally located release worktree still finds the fleet siblings."""
+    fleet = tmp_path / "development"
+    router = fleet / "genefoundry-router"
+    router.mkdir(parents=True)
+    (router / "pyproject.toml").write_text('[project]\nname = "genefoundry-router"\n')
+    external_worktree = tmp_path / "worktrees" / "release-candidate"
+    external_worktree.mkdir(parents=True)
+    monkeypatch.setattr(gen_cff, "_main_worktree", lambda _root: router)
+
+    assert gen_cff.fleet_dir(external_worktree) == fleet
+
+
+def test_citation_router_version_uses_the_active_release_worktree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A release worktree must not read the router version from its main checkout."""
+    release_worktree = tmp_path / "release-worktree"
+    release_worktree.mkdir()
+    (release_worktree / "pyproject.toml").write_text('[project]\nversion = "0.6.14"\n')
+    monkeypatch.setattr(gen_cff, "ROOT", release_worktree)
+
+    assert gen_cff.pyproject_version("genefoundry-router") == "0.6.14"
+
+
 def test_rendered_citation_has_the_fields_github_needs(data: dict) -> None:
     """GitHub renders "Cite this repository" from these; a missing one silently
     degrades the citation rather than failing loudly."""

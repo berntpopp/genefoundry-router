@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 import tomllib
@@ -51,8 +52,35 @@ HEADER = (
 )
 
 
+def _main_worktree(root: Path) -> Path | None:
+    """Return Git's main checkout for ``root`` when it is available."""
+    git = shutil.which("git")
+    if git is None:
+        return None
+    try:
+        result = subprocess.run(  # noqa: S603 -- fixed git argv; root is this checkout
+            [git, "-C", str(root), "worktree", "list", "--porcelain"],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    for line in result.stdout.splitlines():
+        if line.startswith("worktree "):
+            candidate = Path(line.removeprefix("worktree "))
+            if (candidate / "pyproject.toml").is_file():
+                return candidate
+    return None
+
+
 def fleet_dir(root: Path = ROOT) -> Path:
-    """Find the sibling-checkout directory from a main checkout or a worktree."""
+    """Find sibling checkouts from a main checkout or any Git worktree."""
+    main = _main_worktree(root)
+    if main is not None and main.name == "genefoundry-router":
+        return main.parent
     for candidate in root.parents:
         if (candidate / "genefoundry-router" / "pyproject.toml").is_file():
             return candidate
@@ -60,6 +88,12 @@ def fleet_dir(root: Path = ROOT) -> Path:
 
 
 FLEET_DIR = fleet_dir()
+ROUTER_SLUG = "genefoundry-router"
+
+
+def repo_dir(slug: str) -> Path:
+    """Return a fleet checkout, keeping this router worktree authoritative."""
+    return ROOT if slug == ROUTER_SLUG else FLEET_DIR / slug
 
 
 def repo_slugs() -> list[tuple[str, dict[str, Any]]]:
@@ -75,7 +109,7 @@ def repo_slugs() -> list[tuple[str, dict[str, Any]]]:
 
 
 def pyproject_version(slug: str) -> str:
-    pp = tomllib.loads((FLEET_DIR / slug / "pyproject.toml").read_bytes().decode())
+    pp = tomllib.loads((repo_dir(slug) / "pyproject.toml").read_bytes().decode())
     return str(pp["project"]["version"])
 
 
@@ -126,11 +160,11 @@ def main() -> int:
     missing_checkout: list[str] = []
 
     for slug, entry in repo_slugs():
-        repo_dir = FLEET_DIR / slug
-        if not (repo_dir / "pyproject.toml").exists():
+        checkout = repo_dir(slug)
+        if not (checkout / "pyproject.toml").exists():
             missing_checkout.append(slug)
             continue
-        target = repo_dir / "CITATION.cff"
+        target = checkout / "CITATION.cff"
 
         if args.write:
             text = render(slug, entry, data, released_at(slug))

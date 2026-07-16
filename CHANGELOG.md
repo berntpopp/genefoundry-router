@@ -2,6 +2,18 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.14] - 2026-07-16
+
+### Changed
+
+- Re-pin the reviewed runtime baseline, release-candidate inventory, and
+  discoverability catalog to the fully deployed 21-backend fleet. The inventory
+  carries the exact immutable application-release provenance for each backend,
+  including ClinGen v4.0.1 and MetaDome v0.3.1.
+- Make fleet-level README and citation checks reliable from isolated Git
+  worktrees by resolving the repository/fleet location from Git's main
+  checkout.
+
 ## [0.6.13] - 2026-07-16
 
 ### Changed
