@@ -2,6 +2,19 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.6.15] - 2026-07-18
+
+### Fixed
+
+- Re-pin the digest-locked Python runtime base image so the released container
+  includes Debian's `liblzma5 5.8.1-1+deb13u1` fix for CVE-2026-34743 (Trivy
+  alert #5), without suppressing the vulnerability scanner.
+
+### Changed
+
+- Consolidate the reviewed Dependabot updates for FastAPI, Typer, Ruff, Mypy,
+  and the pinned CI, attestation, and scanner actions.
+
 ## [0.6.14] - 2026-07-16
 
 ### Changed
