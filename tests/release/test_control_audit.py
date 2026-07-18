@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -11,11 +12,29 @@ from scripts import audit_container_controls as audit
 
 REPO = "berntpopp/genefoundry-router"
 
-RULESET_LIST = [{"id": 1, "name": audit.RULESET_NAME, "target": "tag"}]
+RULESET_LIST = [
+    {"id": 1, "name": audit.RULESET_NAME, "target": "tag"},
+    {"id": 2, "name": "Protect trusted-builder main", "target": "branch"},
+]
 RULESET_DETAIL = {
     "enforcement": "active",
     "rules": [{"type": rule} for rule in ("creation", "update", "deletion", "non_fast_forward")],
     "bypass_actors": [{"actor_type": "RepositoryRole", "actor_id": 5}],
+}
+MAIN_RULESET_DETAIL = {
+    "enforcement": "active",
+    "conditions": {
+        "ref_name": {"include": ["refs/heads/main"], "exclude": []},
+    },
+    "bypass_actors": [],
+    "rules": [
+        {"type": "deletion"},
+        {"type": "non_fast_forward"},
+        {
+            "type": "pull_request",
+            "parameters": {"required_approving_review_count": 1},
+        },
+    ],
 }
 ENVIRONMENT = {
     "protection_rules": [
@@ -30,6 +49,7 @@ def _install_api(monkeypatch: pytest.MonkeyPatch, overrides: dict[str, Any] | No
     responses: dict[str, Any] = {
         f"repos/{REPO}/rulesets": RULESET_LIST,
         f"repos/{REPO}/rulesets/1": RULESET_DETAIL,
+        f"repos/{REPO}/rulesets/2": MAIN_RULESET_DETAIL,
         f"repos/{REPO}/environments/release": ENVIRONMENT,
         f"repos/{REPO}/environments/release/deployment-branch-policies": TAG_POLICIES,
         f"repos/{REPO}/immutable-releases": IMMUTABLE,
@@ -46,9 +66,20 @@ def test_row_is_verified_when_every_control_is_proven(monkeypatch: pytest.Monkey
     _install_api(monkeypatch)
     _install_anonymous_pull(monkeypatch, 200)
 
-    row = audit.build_row(REPO)
+    row = audit.build_row(REPO, role="trusted-builder")
 
     assert row["status"] == "verified"
+    assert row["role"] == "trusted-builder"
+    assert row["main_branch_ruleset"] == {
+        "active": True,
+        "targets_main": True,
+        "requires_pull_request": True,
+        "required_approving_review_count": 1,
+        "blocks_force_pushes": True,
+        "blocks_deletions": True,
+        "bypass_actors": [],
+        "evidence": row["main_branch_ruleset"]["evidence"],
+    }
     assert row["package"]["anonymous_pull"] is True
     assert row["package"]["standing_package_pat"] is False
     ledger = load_control_ledger(
@@ -98,7 +129,7 @@ def test_unproven_control_blocks_the_release(
     _install_api(monkeypatch, overrides)
     _install_anonymous_pull(monkeypatch, pull_status)
 
-    row = audit.build_row(REPO)
+    row = audit.build_row(REPO, role="backend")
 
     assert row["status"] == "unavailable"
     assert control in row["reason"]
@@ -110,7 +141,7 @@ def test_private_package_is_never_auto_passed(monkeypatch: pytest.MonkeyPatch) -
     _install_api(monkeypatch)
     _install_anonymous_pull(monkeypatch, 401)
 
-    row = audit.build_row(REPO)
+    row = audit.build_row(REPO, role="backend")
 
     assert row["status"] == "unavailable"
     assert "package" in row["reason"]
@@ -120,8 +151,123 @@ def test_unreachable_api_blocks_rather_than_passes(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(audit, "_gh_api", lambda path: None)
     _install_anonymous_pull(monkeypatch, 0)
 
-    row = audit.build_row(REPO)
+    row = audit.build_row(REPO, role="backend")
 
     assert row["status"] == "unavailable"
     for control in ("tag_ruleset", "release_environment", "immutable_releases", "package"):
         assert control in row["reason"]
+
+
+def test_main_branch_ruleset_probe_returns_exact_verified_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_api(monkeypatch)
+
+    control = audit.probe_main_branch_ruleset(REPO)
+
+    assert control is not None
+    assert control["bypass_actors"] == []
+    assert control["required_approving_review_count"] == 1
+    for field in (
+        "active",
+        "targets_main",
+        "requires_pull_request",
+        "blocks_force_pushes",
+        "blocks_deletions",
+    ):
+        assert control[field] is True
+
+
+@pytest.mark.parametrize(
+    "detail",
+    [
+        {**MAIN_RULESET_DETAIL, "bypass_actors": [{"actor_type": "RepositoryRole"}]},
+        {**MAIN_RULESET_DETAIL, "enforcement": "evaluate"},
+        {
+            **MAIN_RULESET_DETAIL,
+            "conditions": {
+                "ref_name": {"include": ["refs/heads/dev"], "exclude": []},
+            },
+        },
+        {
+            **MAIN_RULESET_DETAIL,
+            "rules": [
+                {"type": "deletion"},
+                {"type": "non_fast_forward"},
+                {
+                    "type": "pull_request",
+                    "parameters": {"required_approving_review_count": 2},
+                },
+            ],
+        },
+        None,
+        {},
+        {**MAIN_RULESET_DETAIL, "conditions": {"ref_name": "unknown"}},
+        {**MAIN_RULESET_DETAIL, "rules": "unknown"},
+        {
+            **MAIN_RULESET_DETAIL,
+            "rules": [
+                *MAIN_RULESET_DETAIL["rules"],
+                {
+                    "type": "pull_request",
+                    "parameters": {"required_approving_review_count": 1},
+                },
+            ],
+        },
+    ],
+)
+def test_main_branch_ruleset_probe_rejects_untrusted_or_malformed_policy(
+    monkeypatch: pytest.MonkeyPatch, detail: object
+) -> None:
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+def test_trusted_builder_row_fails_closed_when_main_ruleset_is_unproven(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": None})
+    _install_anonymous_pull(monkeypatch, 200)
+
+    row = audit.build_row(REPO, role="trusted-builder")
+
+    assert row["status"] == "unavailable"
+    assert "main_branch_ruleset" in row["reason"]
+    assert "role" not in row
+
+
+def test_backend_row_never_probes_or_includes_main_ruleset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_api(monkeypatch)
+    _install_anonymous_pull(monkeypatch, 200)
+
+    def unexpected_probe(repo: str) -> dict[str, Any] | None:
+        raise AssertionError(f"unexpected main ruleset probe for {repo}")
+
+    monkeypatch.setattr(audit, "probe_main_branch_ruleset", unexpected_probe)
+
+    row = audit.build_row(REPO, role="backend")
+
+    assert row["status"] == "verified"
+    assert row["role"] == "backend"
+    assert "main_branch_ruleset" not in row
+
+
+def test_build_ledger_assigns_router_as_only_trusted_builder_outside_repo_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    backend = "berntpopp/example-link"
+    calls: list[tuple[str, str]] = []
+
+    def record_row(repo: str, role: str) -> dict[str, Any]:
+        calls.append((repo, role))
+        return {"status": "unavailable", "repository": repo}
+
+    monkeypatch.setattr(audit, "build_row", record_row)
+    monkeypatch.chdir(tmp_path)
+
+    audit.build_ledger({REPO, backend})
+
+    assert calls == [(backend, "backend"), (REPO, "trusted-builder")]
