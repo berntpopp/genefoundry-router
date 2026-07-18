@@ -1,5 +1,8 @@
 # Fleet Container Release Adoption Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Adopt the router release control plane in all 21 backend repositories, configure GitHub/GHCR controls, publish reviewed code-only releases, and reconcile production to verified image/data/definition tuples.

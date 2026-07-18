@@ -3,6 +3,9 @@
 **Date:** 2026-07-18  
 **Status:** Review complete — awaiting approval for planning
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 **Issues:** `genefoundry-router` #79, #63, and #68
 
 > Historical record — this document records the 2026-07-18 design. Current behavior is

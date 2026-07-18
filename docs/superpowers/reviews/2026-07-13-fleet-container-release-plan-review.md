@@ -1,5 +1,8 @@
 # Fleet Container Release Plans — Adversarial Review Record
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 **Artifacts:** the control-plane, immutable-data, and fleet-adoption plans dated
 2026-07-13
 

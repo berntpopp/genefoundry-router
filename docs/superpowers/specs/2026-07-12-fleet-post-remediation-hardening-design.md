@@ -1,6 +1,9 @@
 # Fleet Post-Remediation Hardening — Design (2026-07-12)
 
 - **Status:** DRAFT — awaiting operator approval (Phase 0 gate)
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Author:** Claude (Superpowers brainstorming)
 - **Scope:** `genefoundry-router` + 21 `-link` backends + `genefoundry-mcp-security-profile`
 - **Source of truth:** 23 consolidated GitHub issues (findings F-01…F-22), pulled verbatim

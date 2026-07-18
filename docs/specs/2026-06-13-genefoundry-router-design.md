@@ -2,6 +2,9 @@
 
 - **Date:** 2026-06-13
 - **Status:** Draft for review
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Owner:** Bernt Popp
 - **Repo (planned):** `github.com/berntpopp/genefoundry-router` (deployed MCP server name: `genefoundry`)
 

@@ -2,6 +2,9 @@
 
 - **Date:** 2026-07-16
 - **Status:** Approved for execution
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Scope:** Every GeneFoundry `*-link` service plus the router and Strato deployment lock.
 
 ## Summary

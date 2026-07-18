@@ -1,5 +1,8 @@
 # Fleet Post-Remediation Hardening — Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development. One
 > subagent per repo. Each subagent reads: (a) this plan's **Shared Primitives** section, (b) its
 > **repo task card**, (c) the design spec `docs/superpowers/specs/2026-07-12-fleet-post-remediation-hardening-design.md`,

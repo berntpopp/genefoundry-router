@@ -1,5 +1,8 @@
 # HPO #23 — Immutable Reference Data Init-Sidecar Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace HPO’s serving-time latest-release/bootstrap/source-build behavior with an exact, digest-verified HPO bundle materialized by a hardened init sidecar and opened by the application using SQLite `mode=ro&immutable=1`.

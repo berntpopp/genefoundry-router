@@ -1,5 +1,8 @@
 # MCP Transport & Session Standard v1 — Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make every GeneFoundry `-link` server and the `genefoundry` router serve MCP at a single `/mcp` endpoint with no 307 redirect, in the stateless+JSON tier, with canonical `serverInfo` and `/health`, all enforced by one shared, vendored conformance probe.

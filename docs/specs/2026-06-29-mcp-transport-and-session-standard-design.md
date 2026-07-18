@@ -2,6 +2,9 @@
 
 - **Status:** DRAFT (design approved; pending spec review → implementation plan)
 - **Date:** 2026-06-29
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Scope:** All GeneFoundry `-link` MCP servers and the `genefoundry` router.
 - **Companion standards:** [Tool-Naming v1](../TOOL-NAMING-STANDARD-v1.md),
   [Response-Envelope v1](../RESPONSE-ENVELOPE-STANDARD-v1.md),

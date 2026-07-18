@@ -1,5 +1,8 @@
 # GeneFoundry Logging & CLI Standard v1 + gnomad-link 3.0.0 — Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Publish the GeneFoundry Logging & CLI Standard v1 and bring `gnomad-link` into compliance as the exemplar — `typer` CLI (`serve` command), `structlog` logging, HTTP-only (stdio removed), version `3.0.0`.

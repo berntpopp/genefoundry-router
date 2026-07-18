@@ -4,6 +4,9 @@
 
 **Status:** Approved delivery scope — implementation proceeds through reviewed PRs, release/deployment verification, and evidence-backed issue closure.
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 **Scope:** `genereviews-link` #27, #40, #49; `uniprot-link` #28; `clingen-link` #45; `litvar-link` #67; `stringdb-link` #33; `autopvs1-link` #76; `pubtator-link` #127; `hpo-link` #23; `metadome-link` #19; and `orphanet-link` #23.
 
 ## Goal

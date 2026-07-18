@@ -1,5 +1,8 @@
 # Fleet Security Remediation — Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** Use superpowers:subagent-driven-development / test-driven-development.
 > Every fix is TDD: failing guard/behavior test first → minimal fix → that repo's `make ci-local`
 > (or targeted `uv run pytest`) green → one atomic commit on a per-repo feature branch. **No push /

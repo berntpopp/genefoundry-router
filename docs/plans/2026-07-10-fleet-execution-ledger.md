@@ -1,5 +1,8 @@
 # Fleet Modernization Execution Ledger
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 Completed evidence is immutable. Pending cells are updated only after the named gate has produced
 verifiable evidence; runtime run identifiers refer to the post-release validation workflow.
 

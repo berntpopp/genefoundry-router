@@ -2,6 +2,9 @@
 
 **Date:** 2026-07-14
 **Status:** ADOPTED. Standards written, gate built and validated against production, fleet sweep in progress.
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 **Issues:** `genefoundry-router` #73 #74 #75 #76 #77 #68, plus 15 per-repo defect issues.
 **Input:** the adversarial fleet audit of 2026-07-14 (82 confirmed defects, fleet average 6.3/10).
 

@@ -1,5 +1,8 @@
 # Fleet Unmerged-Branch Triage (GeneFoundry `-link` fleet + router)
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - Status: DRAFT — pending operator review
 - Author: release/security engineering (Claude Fable 5, session aed790b7)
 - Date: 2026-07-12

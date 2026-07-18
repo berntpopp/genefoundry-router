@@ -2,6 +2,9 @@
 
 - **Status:** Approved by task direction; ready for implementation planning
 - **Date:** 2026-07-12
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Scope:** `genefoundry-router` and the 12 affected `*-link` repositories
 - **Source issues:** R-01 through R-08 in the supplied issue brief
 - **Boundary:** Research use only; not clinical decision support. No deployment or secret-setting

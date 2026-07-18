@@ -1,5 +1,8 @@
 # MetaDome #19: make local evidence, aggregates, and pagination honest
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For the implementer:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement this plan task by task.
 
 **Goal:** Stop presenting cross-gene MetaDome domain aggregates as residue-local gnomAD/ClinVar evidence; preserve only clearly provenance-scoped aggregate data; and ensure paginated MCP responses never silently lose rows after pagination metadata has been calculated.

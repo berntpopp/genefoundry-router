@@ -1,5 +1,8 @@
 # Scheduled Tool-Definition Drift Detection (CI) — Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make the existing `genefoundry-router drift` tripwire run automatically every 6 hours via an opt-in GitHub Actions workflow that alerts on tool-definition drift through a deduplicated GitHub issue and a dead-man's-switch heartbeat.

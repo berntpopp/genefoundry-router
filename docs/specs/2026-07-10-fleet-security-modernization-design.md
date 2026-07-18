@@ -2,6 +2,9 @@
 
 - **Date:** 2026-07-10
 - **Status:** Approved for implementation; adversarial review required before merge
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Scope:** `genefoundry-router`, all 21 active `*-link` backends, all open fleet
   issues, and all open Dependabot pull requests
 - **Boundary:** Research use only; not clinical decision support

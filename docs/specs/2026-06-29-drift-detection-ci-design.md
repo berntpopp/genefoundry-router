@@ -2,6 +2,9 @@
 
 - **Date:** 2026-06-29
 - **Status:** Draft for review
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Owner:** Bernt Popp
 - **Scope:** An **opt-in** scheduled GitHub Actions tripwire that runs `genefoundry-router drift`
   against the live fleet every 6 hours, alerts on drift via a deduplicated GitHub issue, and uses a

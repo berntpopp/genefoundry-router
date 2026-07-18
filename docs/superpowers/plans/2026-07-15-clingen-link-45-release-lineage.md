@@ -1,5 +1,8 @@
 # ClinGen #45 — Previous-Known-Good Release Lineage Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make the privileged ClinGen data publisher refuse a candidate whose declared previous-known-good digest is not the immediately preceding published `data-clingen-*` release, before it can create a draft or upload an asset.

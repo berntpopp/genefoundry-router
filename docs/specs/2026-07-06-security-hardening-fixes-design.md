@@ -2,6 +2,9 @@
 
 - **Date:** 2026-07-06
 - **Status:** Approved design decisions; implementation plan is separate
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Owner:** Bernt Popp
 - **Scope:** Five router-side hardening fixes covering inbound rate limiting, streaming body limits,
   metrics exposure, middleware ordering, and Docker example defaults.

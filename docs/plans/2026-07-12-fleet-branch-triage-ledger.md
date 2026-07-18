@@ -1,5 +1,8 @@
 # Fleet Unmerged-Branch Triage — Ledger (COMPLETE 2026-07-12)
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - Session: aed790b7 · Spec: `docs/specs/2026-07-12-fleet-branch-triage-design.md` · Plan: `docs/plans/2026-07-12-fleet-branch-triage.md`
 - Baseline: pristine `origin/main` on every triage-target repo (origin_ahead=0). No deploy (operator owns redeploy).
 - Codex gate: `gpt-5.6-sol` xhigh, read-only, `< /dev/null` (foreground). Legend: `-D` force-delete; `-d` delete-if-merged; MERGE finish-and-ship.

@@ -1,6 +1,9 @@
 # Fleet Adoption of Untrusted-Content Fencing (Response-Envelope Standard v1.1)
 
 - **Date:** 2026-07-11
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Author:** brainstorming pass (Claude), acting as MCP/LLM security engineer.
 - **Status:** DESIGN — presented for approval before execution.
 - **Boundary:** Research use only; not clinical decision support. Backends mirror their

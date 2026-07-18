@@ -1,5 +1,8 @@
 # Fleet README Standard — design spec
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > Status: **approved** 2026-07-14, after an adversarial review pass (Codex GPT-5.5 xhigh)
 > that rejected the first draft. Produces [`docs/README-STANDARD-v1.md`](../README-STANDARD-v1.md)
 > (the normative rules) and a 22-repo refactor.

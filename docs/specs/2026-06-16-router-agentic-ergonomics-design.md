@@ -2,6 +2,9 @@
 
 - **Date:** 2026-06-16
 - **Status:** Approved for implementation
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Owner:** Bernt Popp
 - **Repo:** `github.com/berntpopp/genefoundry-router`
 

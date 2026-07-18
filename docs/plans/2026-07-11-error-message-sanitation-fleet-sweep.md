@@ -1,5 +1,8 @@
 # Fleet Error-Message-Sanitation Sweep — Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to
 > implement this plan — one subagent per backend, dispatched in waves ≤6 concurrent, with a Codex
 > adversarial review between the implement and release steps. Steps use checkbox (`- [ ]`) syntax.
