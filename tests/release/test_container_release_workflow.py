@@ -16,16 +16,23 @@ TRIVY_CACHE_DIR = "${{ github.workspace }}/.cache/trivy"
 ACTION_PINS = {
     "actions/checkout": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
     "actions/setup-python": "ece7cb06caefa5fff74198d8649806c4678c61a1",
-    "astral-sh/setup-uv": "fac544c07dec837d0ccb6301d7b5580bf5edae39",
+    "astral-sh/setup-uv": "11f9893b081a58869d3b5fccaea48c9e9e46f990",
     "docker/setup-buildx-action": "bb05f3f5519dd87d3ba754cc423b652a5edd6d2c",
     "docker/build-push-action": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
-    "aquasecurity/trivy-action": "a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8",
+    "aquasecurity/trivy-action": "ed142fd0673e97e23eac54620cfb913e5ce36c25",
     "anchore/sbom-action": "e22c389904149dbc22b58101806040fa8d37a610",
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
     "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
     "docker/login-action": "af1e73f918a031802d376d3c8bbc3fe56130a9b0",
-    "actions/attest-build-provenance": "43d14bc2b83dec42d39ecae14e916627a18bb661",
-    "actions/attest-sbom": "51e74621a501c89df81fc1391c5a8f4cfc9fab2f",
+    "actions/attest-build-provenance": "977bb373ede98d70efdf65b84cb5f73e068dcc2a",
+    "actions/attest-sbom": "4651f806c01d8637787e274ac3bdf724ef169f34",
+}
+
+ACTION_PIN_VERSIONS = {
+    "astral-sh/setup-uv": "v8.3.2",
+    "aquasecurity/trivy-action": "v0.36.0",
+    "actions/attest-build-provenance": "v3.0.0",
+    "actions/attest-sbom": "v3.0.0",
 }
 
 READ_JOBS = {"prepare", "build-gate", "capture", "assemble-evidence"}
@@ -126,6 +133,12 @@ def test_every_action_is_full_sha_pinned_and_required_pins_are_exact() -> None:
         seen.setdefault(action, set()).add(revision)
     for action, revision in ACTION_PINS.items():
         assert seen[action] == {revision}
+
+
+def test_required_action_version_comments_match_pinned_revisions() -> None:
+    text = REUSABLE.read_text(encoding="utf-8")
+    for action, version in ACTION_PIN_VERSIONS.items():
+        assert f"uses: {action}@{ACTION_PINS[action]} # {version}" in text
 
 
 def test_runtime_revalidates_exact_stable_tag_and_called_workflow_identity() -> None:

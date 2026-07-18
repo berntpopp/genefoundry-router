@@ -22,9 +22,13 @@ ACTION_PINS = {
     "actions/checkout": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
     "docker/setup-buildx-action": "bb05f3f5519dd87d3ba754cc423b652a5edd6d2c",
     "docker/build-push-action": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
-    "aquasecurity/trivy-action": "a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8",
+    "aquasecurity/trivy-action": "ed142fd0673e97e23eac54620cfb913e5ce36c25",
     "anchore/sbom-action": "e22c389904149dbc22b58101806040fa8d37a610",
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+}
+
+ACTION_PIN_VERSIONS = {
+    "aquasecurity/trivy-action": "v0.36.0",
 }
 
 ROUTER_IMAGE_ALLOWLIST = {
@@ -106,6 +110,12 @@ def test_every_action_is_full_sha_pinned_and_required_pins_are_exact() -> None:
         seen.setdefault(action, []).append(revision)
     for action, revision in ACTION_PINS.items():
         assert seen[action] and set(seen[action]) == {revision}
+
+
+def test_required_action_version_comments_match_pinned_revisions() -> None:
+    text = REUSABLE.read_text(encoding="utf-8")
+    for action, version in ACTION_PIN_VERSIONS.items():
+        assert f"uses: {action}@{ACTION_PINS[action]} # {version}" in text
 
 
 def test_called_workflow_identity_is_checked_before_any_checkout() -> None:
