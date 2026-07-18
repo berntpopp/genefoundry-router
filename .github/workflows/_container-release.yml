@@ -629,7 +629,7 @@ jobs:
           echo "published_digest_hex=${published_digest#sha256:}" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v4.1.0
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v4.1.0
         with:
           subject-name: ${{ needs.prepare.outputs.image }}
           subject-digest: sha256:${{ steps.publish.outputs.published_digest_hex }}
