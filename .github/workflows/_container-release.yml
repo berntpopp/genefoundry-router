@@ -637,7 +637,7 @@ jobs:
           show-summary: true
 
       - name: Attest SPDX SBOM
-        uses: actions/attest-sbom@51e74621a501c89df81fc1391c5a8f4cfc9fab2f # v4.0.0
+        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34 # v4.0.0
         with:
           subject-name: ${{ needs.prepare.outputs.image }}
           subject-digest: sha256:${{ steps.publish.outputs.published_digest_hex }}
