@@ -39,6 +39,7 @@ from genefoundry_router.release.evidence import (
     ApplicationIdentity,
     ReleaseAsset,
     ScannerIdentity,
+    application_release_document,
     assemble_application_release_manifest,
     write_json_atomic,
 )
@@ -490,7 +491,7 @@ def assemble_manifest_command(
             data_requirements=_object(data),
             assets=assets,
         )
-        write_json_atomic(out, manifest.model_dump(mode="json"))
+        write_json_atomic(out, application_release_document(manifest))
         return _CliResult(
             {
                 "image_digest": manifest.image.digest,

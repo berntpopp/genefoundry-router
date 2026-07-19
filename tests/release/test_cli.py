@@ -503,6 +503,11 @@ def test_assemble_manifest_success_wires_evidence_and_assets(
         "assemble_application_release_manifest",
         fake_assemble_application_release_manifest,
     )
+    monkeypatch.setattr(
+        release_cli,
+        "application_release_document",
+        lambda _: manifest_payload,
+    )
     result = runner.invoke(
         app,
         [
@@ -529,6 +534,83 @@ def test_assemble_manifest_success_wires_evidence_and_assets(
     assert captured["data_requirements"] == {"mode": "none", "schema_compatibility": []}
     assert [asset.name for asset in captured["assets"]] == list(release_cli.STANDARD_ASSETS)
     assert json.loads(output.read_text(encoding="utf-8")) == manifest_payload
+
+
+def test_assemble_manifest_preserves_authentic_legacy_omission(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    releases_path = Path(__file__).parents[2] / "ci" / "fleet-application-releases.json"
+    release_set = json.loads(releases_path.read_text(encoding="utf-8"))
+    historical = release_set["backends"]["clingen"]
+    requirements = historical["data_requirements"]
+    assert "data_identity_contract" not in requirements
+
+    identity = tmp_path / "identity.json"
+    definitions = tmp_path / "definitions.json"
+    context = tmp_path / "context.json"
+    scanner = tmp_path / "scanner.json"
+    data = tmp_path / "data.json"
+    output = tmp_path / "application-release-manifest.json"
+    identity.write_text(
+        json.dumps(
+            {
+                "repository": historical["repository"],
+                "version": historical["version"],
+                "source_tag": historical["source"]["tag"],
+                "source_revision": historical["source"]["revision"],
+                "image_name": historical["image"]["name"],
+                "image_digest": historical["image"]["digest"],
+                "workflow_caller": historical["workflow"]["caller"],
+                "workflow_standard": historical["workflow"]["standard"],
+                "workflow_revision": historical["workflow"]["standard_revision"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    for path in (definitions, context):
+        path.write_text("{}", encoding="utf-8")
+    scanner.write_text(
+        json.dumps(
+            {
+                "version": historical["security_evidence"]["scanner_version"],
+                "database_updated_at": historical["security_evidence"]["database_updated_at"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    data.write_text(json.dumps(requirements), encoding="utf-8")
+    manifest = release_cli.ApplicationReleaseManifest.model_validate(historical)
+    monkeypatch.setattr(release_cli, "load_definition_evidence", lambda *_: object())
+    monkeypatch.setattr(
+        release_cli,
+        "assemble_application_release_manifest",
+        lambda **_: manifest,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "assemble-manifest",
+            "--identity",
+            str(identity),
+            "--definitions",
+            str(definitions),
+            "--context",
+            str(context),
+            "--scanner",
+            str(scanner),
+            "--data",
+            str(data),
+            "--asset-dir",
+            str(tmp_path),
+            "--out",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == ReleaseExitCode.SUCCESS
+    assert json.loads(output.read_text(encoding="utf-8")) == historical
+    assert "data_identity_contract" not in json.loads(output.read_text())["data_requirements"]
 
 
 def test_verify_deployment_success_wires_online_and_offline_options(
