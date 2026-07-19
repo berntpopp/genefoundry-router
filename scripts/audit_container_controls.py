@@ -220,7 +220,12 @@ def probe_main_branch_ruleset(repo: str) -> JsonDict | None:
     rules = detail.get("rules")
     if not isinstance(rules, list) or any(not isinstance(rule, dict) for rule in rules):
         return None
-    rule_types = [rule.get("type") for rule in rules]
+    rule_types: list[str] = []
+    for rule in rules:
+        rule_type = rule.get("type")
+        if type(rule_type) is not str:
+            return None
+        rule_types.append(rule_type)
     if len(rule_types) != len(MAIN_BRANCH_RULE_TYPES) or set(rule_types) != MAIN_BRANCH_RULE_TYPES:
         return None
     deletion = [rule for rule in rules if rule.get("type") == "deletion"]

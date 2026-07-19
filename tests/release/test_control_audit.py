@@ -235,6 +235,35 @@ def test_main_branch_ruleset_probe_rejects_untrusted_or_malformed_policy(
     assert audit.probe_main_branch_ruleset(REPO) is None
 
 
+@pytest.mark.parametrize("rule_type", [[], {}, True, 1, None])
+def test_main_branch_ruleset_probe_rejects_non_string_rule_types(
+    monkeypatch: pytest.MonkeyPatch, rule_type: object
+) -> None:
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [
+            *MAIN_RULESET_DETAIL["rules"][:-1],
+            {"type": rule_type},
+        ],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+@pytest.mark.parametrize("malformed_rule", [[], None, True, 1, {}, {"parameters": {}}])
+def test_main_branch_ruleset_probe_rejects_malformed_rule_elements(
+    monkeypatch: pytest.MonkeyPatch, malformed_rule: object
+) -> None:
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [*MAIN_RULESET_DETAIL["rules"][:-1], malformed_rule],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
 @pytest.mark.parametrize(
     "rule_type",
     [
