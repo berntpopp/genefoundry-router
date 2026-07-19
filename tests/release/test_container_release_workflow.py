@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -61,11 +62,24 @@ def _run_text(job: dict[str, Any]) -> str:
     return "\n".join(str(step.get("run", "")) for step in _steps(job))
 
 
+def _executable_shell(shell: str) -> str:
+    """Remove lines that cannot execute before inspecting shell contracts."""
+    executable: list[str] = []
+    continued = False
+    for line in shell.splitlines():
+        stripped = line.strip()
+        if not stripped or line.lstrip().startswith("#"):
+            assert not continued, "comment or blank line interrupts a shell continuation"
+            continue
+        executable.append(line)
+        trailing_backslashes = len(stripped) - len(stripped.rstrip("\\"))
+        continued = trailing_backslashes % 2 == 1
+    return "\n".join(executable)
+
+
 def _commands(job: dict[str, Any]) -> str:
     """The executed shell of a job, with comment lines removed."""
-    return "\n".join(
-        line for line in _run_text(job).splitlines() if not line.lstrip().startswith("#")
-    )
+    return _executable_shell(_run_text(job))
 
 
 def _all_steps(workflow: dict[str, Any]) -> list[dict[str, Any]]:
@@ -78,6 +92,479 @@ def _step_index(job: dict[str, Any], fragment: str) -> int:
         for index, step in enumerate(_steps(job))
         if fragment in str(step.get("name", "")) + str(step.get("uses", ""))
     )
+
+
+def _step_run(job: dict[str, Any], fragment: str) -> str:
+    """Return the one run step containing a stable workflow fragment."""
+    matching = [
+        str(step.get("run", "")) for step in _steps(job) if fragment in str(step.get("run", ""))
+    ]
+    assert len(matching) == 1
+    return matching[0]
+
+
+RUNTIME_V1_CONDITION = (
+    '[ "$contract" = "data-bound" ] && [ "$data_identity_contract" = "runtime-v1" ]'
+)
+UNADOPTED_CONDITION = (
+    '[ "$contract" = "data-bound" ] && [ "$data_identity_contract" = "unadopted" ]'
+)
+DATA_INDEPENDENT_CONDITION = (
+    '[ "$contract" = "data-independent" ] && [ "$data_identity_contract" = "none" ]'
+)
+RUNTIME_IDENTITY_BOUNDARIES = (
+    (
+        "build-gate",
+        "release-gate-health.json",
+        "$RUNNER_TEMP/release-gate-health.json",
+        "$RUNNER_TEMP/smoke-observed-data-identity.json",
+    ),
+    (
+        "capture",
+        "capture_tools()",
+        "$RUNNER_TEMP/capture/a-health.json",
+        "$RUNNER_TEMP/capture/observed-data-identity.json",
+    ),
+)
+RUNTIME_IDENTITY_PRODUCERS = (
+    (
+        "curl -fsS -H 'Host: localhost' \\",
+        '"http://127.0.0.1:18000$health_path" > "$RUNNER_TEMP/release-gate-health.json"',
+    ),
+    (
+        'capture_tools a 18000 "$RUNNER_TEMP/capture/mcp-tools-a.json" \\',
+        '"$RUNNER_TEMP/capture/context-a.json"',
+    ),
+)
+CAPTURE_FUNCTION_HEALTH_PRODUCER = (
+    "curl -fsS -H 'Host: localhost' \\",
+    '"http://127.0.0.1:${host_port}${health_path}" \\',
+    '> "$RUNNER_TEMP/capture/${label}-health.json"',
+)
+
+
+def _branch_body(shell: str, start_marker: str, next_marker: str) -> str:
+    """Return lines between two unique exact executable branch markers."""
+    lines = _normalized_executable_lines(shell)
+    starts = [index for index, line in enumerate(lines) if line == start_marker]
+    assert len(starts) == 1
+    start = starts[0]
+    ends = [
+        index for index, line in enumerate(lines[start + 1 :], start + 1) if line == next_marker
+    ]
+    assert len(ends) == 1
+    return "\n".join(lines[start + 1 : ends[0]])
+
+
+def _if_branch(shell: str, condition: str, next_marker: str) -> str:
+    """Return one exact shell branch, excluding later adoption states."""
+    return _branch_body(shell, f"if {condition}; then", next_marker)
+
+
+def _elif_branch(shell: str, condition: str, next_marker: str) -> str:
+    """Return one exact elif branch, excluding later adoption states."""
+    return _branch_body(shell, f"elif {condition}; then", next_marker)
+
+
+def _normalized_executable_lines(shell: str) -> list[str]:
+    return [line.strip() for line in _executable_shell(shell).splitlines()]
+
+
+def _exact_sequence_index(shell: str, expected: tuple[str, ...]) -> int:
+    """Find one exact consecutive executable-line sequence."""
+    lines = _normalized_executable_lines(shell)
+    matches = [
+        index
+        for index in range(len(lines) - len(expected) + 1)
+        if tuple(lines[index : index + len(expected)]) == expected
+    ]
+    assert len(matches) == 1
+    return matches[0]
+
+
+def _verifier_command(health: str, output: str) -> tuple[str, ...]:
+    return (
+        "uv run --project .container-release-tools \\",
+        "python .container-release-tools/scripts/container_release.py \\",
+        "verify-runtime-data-identity \\",
+        "--config container-release.json \\",
+        f'--health "{health}" \\',
+        f'--out "{output}"',
+    )
+
+
+def _runtime_v1_branch_body(health: str, output: str) -> tuple[str, ...]:
+    body = _verifier_command(health, output)
+    if output == "$RUNNER_TEMP/capture/observed-data-identity.json":
+        body += (
+            "data_identity_args=(",
+            '--observed-identity "$RUNNER_TEMP/capture/observed-data-identity.json"',
+            ")",
+        )
+    return body
+
+
+def _adoption_assignments() -> tuple[str, ...]:
+    return (
+        "contract=\"$(jq -er '.definitions.contract' container-release.json)\"",
+        'data_identity_contract="$(jq -er \\',
+        "'if .data_identity_contract == null then \"none\" else .data_identity_contract end' \\",
+        'container-release.json)"',
+    )
+
+
+def _adoption_conditional(boundary: int, health: str, output: str) -> tuple[str, ...]:
+    body = (
+        f"if {RUNTIME_V1_CONDITION}; then",
+        *_runtime_v1_branch_body(health, output),
+        f"elif {UNADOPTED_CONDITION}; then",
+    )
+    if boundary == 0:
+        body += (": # Explicit legacy path during staged adoption.",)
+    else:
+        body += (
+            "data_identity_args=(",
+            "--data-release-tag \"$(jq -er '.data.release_tag' container-release.json)\"",
+            "--data-digest \"$(jq -er '.data.digest' container-release.json)\"",
+            ")",
+        )
+    body += (f"elif {DATA_INDEPENDENT_CONDITION}; then",)
+    if boundary == 0:
+        body += (": # Data-independent releases have no runtime data identity.",)
+    else:
+        body += (
+            'capture_tools b 18001 "$RUNNER_TEMP/capture/mcp-tools-b.json" \\',
+            '"$RUNNER_TEMP/capture/context-b.json"',
+            "capture_args+=(",
+            '--tools "$RUNNER_TEMP/capture/mcp-tools-b.json"',
+            '--context "$RUNNER_TEMP/capture/context-b.json"',
+            ")",
+        )
+    return (
+        *body,
+        "else",
+        'echo "unsupported data identity contract state" >&2',
+        "exit 1",
+        "fi",
+    )
+
+
+def _critical_boundary_slice(boundary: int, health: str, output: str) -> tuple[str, ...]:
+    conditional = _adoption_conditional(boundary, health, output)
+    if boundary == 0:
+        return (
+            "mcp_path=\"$(jq -er '.service.mcp_path' container-release.json)\"",
+            *RUNTIME_IDENTITY_PRODUCERS[boundary],
+            *_adoption_assignments(),
+            *conditional,
+            'curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \\',
+        )
+    return (
+        *_adoption_assignments(),
+        *RUNTIME_IDENTITY_PRODUCERS[boundary],
+        "capture_args=(",
+        '--tools "$RUNNER_TEMP/capture/mcp-tools-a.json"',
+        '--context "$RUNNER_TEMP/capture/context-a.json"',
+        ")",
+        "data_identity_args=()",
+        *conditional,
+        "uv run --project .container-release-tools \\",
+    )
+
+
+def _capture_tools_body(shell: str) -> tuple[str, ...]:
+    lines = _normalized_executable_lines(shell)
+    starts = [index for index, line in enumerate(lines) if line == "capture_tools() {"]
+    assert len(starts) == 1
+    start = starts[0]
+    ends = [index for index, line in enumerate(lines[start + 1 :], start + 1) if line == "}"]
+    assert len(ends) == 1
+    return tuple(lines[start : ends[0] + 1])
+
+
+def _assert_capture_health_source(shell: str) -> None:
+    function = _capture_tools_body(shell)
+    _exact_sequence_index("\n".join(function), CAPTURE_FUNCTION_HEALTH_PRODUCER)
+    target = '"$RUNNER_TEMP/capture/${label}-health.json"'
+    assert sum(target in line for line in function) == 1
+
+
+def _assert_top_level_critical_slice(shell: str, critical_index: int) -> None:
+    lines = _normalized_executable_lines(shell)
+    assert lines[0] == "set -euo pipefail"
+    assert not any(
+        re.fullmatch(r"set \+(?:[A-Za-z]*e[A-Za-z]*|o\s+errexit)", line) for line in lines[1:]
+    )
+    assert not any("<<" in line for line in lines)
+    depth = 0
+    for index, line in enumerate(lines):
+        if index == critical_index:
+            assert depth == 0
+        if line == "fi" or line == "}" or line == "esac" or line == ")" or line.startswith("done"):
+            depth -= 1
+            assert depth >= 0
+        if (
+            (line.startswith(("if ", "while ", "for ")) and line.endswith(("; then", "; do")))
+            or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\(\) \{", line)
+            or line.endswith("&& {")
+            or line.endswith("(")
+        ):
+            depth += 1
+    assert depth == 0
+
+
+def _assert_verifier_branch(shell: str, health: str, output: str) -> None:
+    runtime_branch = _if_branch(
+        shell,
+        RUNTIME_V1_CONDITION,
+        f"elif {UNADOPTED_CONDITION}; then",
+    )
+    assert tuple(_normalized_executable_lines(runtime_branch)) == _runtime_v1_branch_body(
+        health, output
+    )
+    assert "--data-release-tag" not in runtime_branch
+    assert "--data-digest" not in runtime_branch
+
+
+def _assert_runtime_identity_boundary(
+    shell: str,
+    boundary: int,
+    health: str,
+    output: str,
+) -> None:
+    if boundary == 1:
+        _assert_capture_health_source(shell)
+    critical_index = _exact_sequence_index(
+        shell, _critical_boundary_slice(boundary, health, output)
+    )
+    _assert_top_level_critical_slice(shell, critical_index)
+    _assert_verifier_branch(shell, health, output)
+
+
+def _boundary_step(workflow: dict[str, Any], boundary: int) -> dict[str, Any]:
+    job_name, fragment, _health, _output = RUNTIME_IDENTITY_BOUNDARIES[boundary]
+    return next(
+        step for step in _steps(workflow["jobs"][job_name]) if fragment in str(step.get("run", ""))
+    )
+
+
+def _mutate_verifier_block(shell: str, output: str, mutation: str) -> str:
+    """Comment or remove the verifier command ending at one exact output path."""
+    lines = shell.splitlines(keepends=True)
+    verify_index = next(
+        index for index, line in enumerate(lines) if "verify-runtime-data-identity" in line
+    )
+    start = verify_index
+    while "uv run --project .container-release-tools" not in lines[start]:
+        start -= 1
+    end = verify_index
+    while f'--out "{output}"' not in lines[end]:
+        end += 1
+    return _replace_line_range(shell, start, end, mutation)
+
+
+def _wrap_verifier_block(shell: str, output: str, wrapper: str) -> str:
+    """Put an unchanged verifier sequence behind a non-executing shell construct."""
+    lines = shell.splitlines(keepends=True)
+    verify_index = next(
+        index for index, line in enumerate(lines) if "verify-runtime-data-identity" in line
+    )
+    start = verify_index
+    while "uv run --project .container-release-tools" not in lines[start]:
+        start -= 1
+    end = verify_index
+    while f'--out "{output}"' not in lines[end]:
+        end += 1
+    return _wrap_line_range(shell, start, end, wrapper)
+
+
+def _mutate_workflow_verifiers(
+    workflow: dict[str, Any], boundaries: tuple[int, ...], mutation: str
+) -> None:
+    for boundary in boundaries:
+        step = _boundary_step(workflow, boundary)
+        output = RUNTIME_IDENTITY_BOUNDARIES[boundary][3]
+        if mutation in {"if-false", "heredoc"}:
+            step["run"] = _wrap_verifier_block(str(step["run"]), output, mutation)
+        else:
+            step["run"] = _mutate_verifier_block(str(step["run"]), output, mutation)
+
+
+def _replace_producer_with_inline_noops(shell: str, expected: tuple[str, ...]) -> str:
+    lines = shell.splitlines(keepends=True)
+    start, end = _line_range_for_sequence(lines, expected)
+    return _replace_line_range(shell, start, end, "inline-noop")
+
+
+def _line_range_for_sequence(lines: list[str], expected: tuple[str, ...]) -> tuple[int, int]:
+    normalized = [line.strip() for line in lines]
+    starts = [
+        index
+        for index in range(len(lines) - len(expected) + 1)
+        if tuple(normalized[index : index + len(expected)]) == expected
+    ]
+    assert len(starts) == 1
+    return starts[0], starts[0] + len(expected) - 1
+
+
+def _replace_line_range(shell: str, start: int, end: int, mutation: str) -> str:
+    lines = shell.splitlines(keepends=True)
+    if mutation == "remove":
+        replacement: list[str] = []
+    else:
+        prefix = ": # " if mutation == "inline-noop" else "# "
+        assert mutation in {"inline-noop", "comment"}
+        replacement = [
+            f"{line[: len(line) - len(line.lstrip())]}{prefix}{line.lstrip()}"
+            for line in lines[start : end + 1]
+        ]
+    return "".join([*lines[:start], *replacement, *lines[end + 1 :]])
+
+
+def _adoption_conditional_range(lines: list[str]) -> tuple[int, int]:
+    start_marker = f"if {RUNTIME_V1_CONDITION}; then"
+    starts = [index for index, line in enumerate(lines) if line.strip() == start_marker]
+    assert len(starts) == 1
+    start = starts[0]
+    end = next(index for index in range(start + 1, len(lines)) if lines[index].strip() == "fi")
+    return start, end
+
+
+def _wrap_line_range(shell: str, start: int, end: int, wrapper: str) -> str:
+    lines = shell.splitlines(keepends=True)
+    indent = lines[start][: len(lines[start]) - len(lines[start].lstrip())]
+    if wrapper == "if-false":
+        before = [f"{indent}if false; then\n"]
+        after = [f"{indent}fi\n"]
+    elif wrapper == "heredoc":
+        before = [f"{indent}: <<'DISABLED_BOUNDARY'\n"]
+        after = ["DISABLED_BOUNDARY\n"]
+    elif wrapper == "function":
+        before = [f"{indent}disabled_boundary() {{\n"]
+        after = [f"{indent}}}\n"]
+    elif wrapper == "true-or-subshell":
+        before = [f"{indent}true || (\n"]
+        after = [f"{indent})\n"]
+    else:
+        assert wrapper == "false-and"
+        before = [f"{indent}false && {{\n"]
+        after = [f"{indent}}}\n"]
+    return "".join([*lines[:start], *before, *lines[start : end + 1], *after, *lines[end + 1 :]])
+
+
+def _wrap_workflow_boundary_part(
+    workflow: dict[str, Any], boundary: int, part: str, wrapper: str
+) -> None:
+    step = _boundary_step(workflow, boundary)
+    shell = str(step["run"])
+    lines = shell.splitlines(keepends=True)
+    if part == "producer":
+        start, end = _line_range_for_sequence(lines, RUNTIME_IDENTITY_PRODUCERS[boundary])
+    else:
+        assert part == "conditional"
+        start, end = _adoption_conditional_range(lines)
+    step["run"] = _wrap_line_range(shell, start, end, wrapper)
+
+
+def _insert_health_rewrite(workflow: dict[str, Any], boundary: int, rewrite: str) -> None:
+    health = RUNTIME_IDENTITY_BOUNDARIES[boundary][2]
+    step = _boundary_step(workflow, boundary)
+    shell = str(step["run"])
+    lines = shell.splitlines(keepends=True)
+    _start, end = _line_range_for_sequence(lines, RUNTIME_IDENTITY_PRODUCERS[boundary])
+    indent = lines[end][: len(lines[end]) - len(lines[end].lstrip())]
+    if rewrite == "overwrite":
+        inserted = [f"{indent}printf '{{}}' > \"{health}\"\n"]
+    else:
+        assert rewrite == "reproduce"
+        inserted = [
+            f'{indent}jq -c . "{health}" > "{health}.tmp"\n',
+            f'{indent}mv "{health}.tmp" "{health}"\n',
+        ]
+    step["run"] = "".join([*lines[: end + 1], *inserted, *lines[end + 1 :]])
+
+
+def _mutate_capture_function_health(workflow: dict[str, Any], mutation: str) -> None:
+    step = next(
+        step
+        for step in _steps(workflow["jobs"]["capture"])
+        if "capture_tools()" in str(step.get("run", ""))
+    )
+    shell = str(step["run"])
+    if mutation == "inline-noop":
+        step["run"] = _replace_producer_with_inline_noops(shell, CAPTURE_FUNCTION_HEALTH_PRODUCER)
+        return
+    assert mutation == "config-overwrite"
+    lines = shell.splitlines(keepends=True)
+    _start, end = _line_range_for_sequence(lines, CAPTURE_FUNCTION_HEALTH_PRODUCER)
+    indent = lines[end][: len(lines[end]) - len(lines[end].lstrip())]
+    inserted = [
+        f"{indent}jq -n --arg release_tag \"$(jq -er '.data.release_tag' "
+        'container-release.json)" \\\n',
+        f"{indent}'{{release_identity:{{data_identity:{{actual:{{release_tag:$release_tag}}}}}}}}' "
+        '> "$RUNNER_TEMP/capture/${label}-health.json"\n',
+    ]
+    step["run"] = "".join([*lines[: end + 1], *inserted, *lines[end + 1 :]])
+
+
+def _insert_comment_after_continuation(
+    workflow: dict[str, Any], boundary: int, sequence: tuple[str, ...]
+) -> None:
+    step = _boundary_step(workflow, boundary)
+    lines = str(step["run"]).splitlines(keepends=True)
+    start, _end = _line_range_for_sequence(lines, sequence)
+    assert lines[start].rstrip().endswith("\\")
+    indent = lines[start][: len(lines[start]) - len(lines[start].lstrip())]
+    lines.insert(start + 1, f"{indent}# continuation bypass\n")
+    step["run"] = "".join(lines)
+
+
+def _mutate_step_context(workflow: dict[str, Any], boundary: int, mutation: str) -> None:
+    step = _boundary_step(workflow, boundary)
+    if mutation == "if-metadata":
+        step["if"] = "${{ false }}"
+        return
+    if mutation == "continue-on-error":
+        step["continue-on-error"] = True
+        return
+    if mutation == "shell-suffix":
+        step["shell"] = "bash {0} || true"
+        return
+    shell = str(step["run"])
+    lines = shell.splitlines(keepends=True)
+    strict = next(index for index, line in enumerate(lines) if line.strip() == "set -euo pipefail")
+    if mutation == "if-false-wrapper":
+        step["run"] = _wrap_line_range(shell, strict + 1, len(lines) - 1, "if-false")
+        return
+    if mutation == "subshell-wrapper":
+        step["run"] = _wrap_line_range(shell, strict + 1, len(lines) - 1, "true-or-subshell")
+        return
+    assert mutation in {"set +e", "set +o errexit"}
+    indent = lines[strict][: len(lines[strict]) - len(lines[strict].lstrip())]
+    lines.insert(strict + 1, f"{indent}{mutation}\n")
+    step["run"] = "".join(lines)
+
+
+def _mutate_workflow_producers(workflow: dict[str, Any], boundaries: tuple[int, ...]) -> None:
+    for boundary in boundaries:
+        step = _boundary_step(workflow, boundary)
+        step["run"] = _replace_producer_with_inline_noops(
+            str(step["run"]), RUNTIME_IDENTITY_PRODUCERS[boundary]
+        )
+
+
+def _assert_workflow_verifiers(workflow: dict[str, Any]) -> None:
+    for boundary, (_job_name, _fragment, health, output) in enumerate(RUNTIME_IDENTITY_BOUNDARIES):
+        step = _boundary_step(workflow, boundary)
+        assert "if" not in step
+        assert "continue-on-error" not in step
+        assert step.get("shell") == "bash"
+        _assert_runtime_identity_boundary(
+            str(step["run"]),
+            boundary,
+            health,
+            output,
+        )
 
 
 def test_caller_accepts_tag_push_only_with_release_permission_ceiling() -> None:
@@ -600,6 +1087,223 @@ def test_release_evidence_states_the_declared_data_contract() -> None:
     assert "--data-release-tag" in capture and "--data-digest" in capture
 
 
+def test_local_smoke_verifies_adopted_runtime_identity_after_health_capture() -> None:
+    """An adopted release must prove readiness identity before publication."""
+    build_gate = _executable_shell(
+        _step_run(_load(REUSABLE)["jobs"]["build-gate"], "release-gate-health.json")
+    )
+    _assert_runtime_identity_boundary(
+        build_gate,
+        0,
+        "$RUNNER_TEMP/release-gate-health.json",
+        "$RUNNER_TEMP/smoke-observed-data-identity.json",
+    )
+
+
+def test_published_capture_uses_observed_identity_only_for_runtime_v1() -> None:
+    """Published evidence separates observed adoption from the explicit legacy path."""
+    capture = _executable_shell(_step_run(_load(REUSABLE)["jobs"]["capture"], "capture_tools()"))
+    _assert_runtime_identity_boundary(
+        capture,
+        1,
+        "$RUNNER_TEMP/capture/a-health.json",
+        "$RUNNER_TEMP/capture/observed-data-identity.json",
+    )
+    runtime_branch = _if_branch(
+        capture,
+        RUNTIME_V1_CONDITION,
+        f"elif {UNADOPTED_CONDITION}; then",
+    )
+    unadopted_branch = _elif_branch(
+        capture,
+        UNADOPTED_CONDITION,
+        f"elif {DATA_INDEPENDENT_CONDITION}; then",
+    )
+
+    assert '--observed-identity "$RUNNER_TEMP/capture/observed-data-identity.json"' in (
+        runtime_branch
+    )
+
+    assert "verify-runtime-data-identity" not in unadopted_branch
+    assert "--observed-identity" not in unadopted_branch
+    assert "--data-release-tag" in unadopted_branch
+    assert "--data-digest" in unadopted_branch
+
+
+def test_release_identity_shell_branches_are_quoted_and_fail_closed() -> None:
+    """Only the three valid contract/adoption pairings may reach publication evidence."""
+    workflow = _load(REUSABLE)
+    for job_name, fragment in (
+        ("build-gate", "release-gate-health.json"),
+        ("capture", "capture_tools()"),
+    ):
+        shell = _executable_shell(_step_run(workflow["jobs"][job_name], fragment))
+        assert "set -euo pipefail" in shell
+        assert f"if {RUNTIME_V1_CONDITION}; then" in shell
+        assert f"elif {UNADOPTED_CONDITION}; then" in shell
+        assert f"elif {DATA_INDEPENDENT_CONDITION}; then" in shell
+        assert "unsupported data identity contract state" in shell
+        assert "exit 1" in shell
+
+
+def test_runtime_verification_never_logs_complete_health_payloads() -> None:
+    workflow = _load(REUSABLE)
+    paths = (
+        "$RUNNER_TEMP/release-gate-health.json",
+        "$RUNNER_TEMP/capture/a-health.json",
+    )
+    shell = _executable_shell(
+        "\n".join(
+            (
+                _step_run(workflow["jobs"]["build-gate"], "release-gate-health.json"),
+                _step_run(workflow["jobs"]["capture"], "capture_tools()"),
+            )
+        )
+    )
+
+    for path in paths:
+        assert f'cat "{path}"' not in shell
+        assert f'jq . "{path}"' not in shell
+        assert f'echo "$(<"{path}")"' not in shell
+
+
+@pytest.mark.parametrize(
+    ("boundaries", "mutation"),
+    (
+        *(((boundary,), mutation) for boundary in (0, 1) for mutation in ("comment", "remove")),
+        *(((0, 1), mutation) for mutation in ("comment", "remove")),
+        *(
+            ((boundary,), mutation)
+            for boundary in (0, 1)
+            for mutation in ("if-false", "heredoc", "inline-noop")
+        ),
+    ),
+)
+def test_runtime_identity_contract_rejects_disabled_verifier(
+    boundaries: tuple[int, ...], mutation: str
+) -> None:
+    workflow = _load(REUSABLE)
+    _mutate_workflow_verifiers(workflow, boundaries, mutation)
+
+    with pytest.raises(AssertionError):
+        _assert_workflow_verifiers(workflow)
+
+
+@pytest.mark.parametrize("boundaries", ((0,), (1,), (0, 1)))
+def test_runtime_identity_contract_rejects_inline_comment_producer_noop(
+    boundaries: tuple[int, ...],
+) -> None:
+    workflow = _load(REUSABLE)
+    _mutate_workflow_producers(workflow, boundaries)
+
+    with pytest.raises(AssertionError):
+        _assert_workflow_verifiers(workflow)
+
+
+@pytest.mark.parametrize("boundary", (0, 1))
+@pytest.mark.parametrize("part", ("producer", "conditional"))
+@pytest.mark.parametrize("wrapper", ("if-false", "heredoc", "function", "false-and"))
+def test_runtime_identity_contract_rejects_outer_nonexecuting_context(
+    boundary: int, part: str, wrapper: str
+) -> None:
+    workflow = _load(REUSABLE)
+    _wrap_workflow_boundary_part(workflow, boundary, part, wrapper)
+
+    with pytest.raises(AssertionError):
+        _assert_workflow_verifiers(workflow)
+
+
+@pytest.mark.parametrize("boundary", (0, 1))
+@pytest.mark.parametrize("rewrite", ("overwrite", "reproduce"))
+def test_runtime_identity_contract_rejects_health_rewrite_before_verification(
+    boundary: int, rewrite: str
+) -> None:
+    workflow = _load(REUSABLE)
+    _insert_health_rewrite(workflow, boundary, rewrite)
+
+    with pytest.raises(AssertionError):
+        _assert_workflow_verifiers(workflow)
+
+
+@pytest.mark.parametrize("mutation", ("config-overwrite", "inline-noop"))
+def test_runtime_identity_contract_rejects_untrusted_capture_function_health(
+    mutation: str,
+) -> None:
+    workflow = _load(REUSABLE)
+    _mutate_capture_function_health(workflow, mutation)
+
+    with pytest.raises(AssertionError):
+        _assert_workflow_verifiers(workflow)
+
+
+@pytest.mark.parametrize(
+    ("boundary", "sequence"),
+    (
+        (
+            0,
+            _verifier_command(
+                "$RUNNER_TEMP/release-gate-health.json",
+                "$RUNNER_TEMP/smoke-observed-data-identity.json",
+            ),
+        ),
+        (
+            1,
+            _verifier_command(
+                "$RUNNER_TEMP/capture/a-health.json",
+                "$RUNNER_TEMP/capture/observed-data-identity.json",
+            ),
+        ),
+        (0, RUNTIME_IDENTITY_PRODUCERS[0]),
+        (1, CAPTURE_FUNCTION_HEALTH_PRODUCER),
+    ),
+)
+def test_runtime_identity_contract_rejects_comment_after_continuation(
+    boundary: int, sequence: tuple[str, ...]
+) -> None:
+    workflow = _load(REUSABLE)
+    _insert_comment_after_continuation(workflow, boundary, sequence)
+
+    with pytest.raises(AssertionError):
+        _assert_workflow_verifiers(workflow)
+
+
+def test_executable_shell_ignores_ordinary_comments() -> None:
+    assert _executable_shell("echo before\n# ordinary comment\necho after\n") == (
+        "echo before\necho after"
+    )
+
+
+@pytest.mark.parametrize("boundary", (0, 1))
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "if-metadata",
+        "continue-on-error",
+        "shell-suffix",
+        "if-false-wrapper",
+        "subshell-wrapper",
+        "set +e",
+        "set +o errexit",
+    ),
+)
+def test_runtime_identity_contract_rejects_weakened_step_context(
+    boundary: int, mutation: str
+) -> None:
+    workflow = _load(REUSABLE)
+    _mutate_step_context(workflow, boundary, mutation)
+
+    with pytest.raises(AssertionError):
+        _assert_workflow_verifiers(workflow)
+
+
+def test_capture_projects_top_level_adoption_into_sealed_data_requirements() -> None:
+    capture = _executable_shell(_step_run(_load(REUSABLE)["jobs"]["capture"], "capture_tools()"))
+
+    assert ". as $release" in capture
+    assert "{data_identity_contract: $release.data_identity_contract}" in capture
+    assert 'container-release.json > "$RUNNER_TEMP/capture/data-requirements.json"' in capture
+
+
 def test_capture_takes_the_context_count_its_contract_requires() -> None:
     """data-independent needs exactly two capture contexts; data-bound exactly one.
 
@@ -607,13 +1311,23 @@ def test_capture_takes_the_context_count_its_contract_requires() -> None:
     data-bound release died in `capture` -- which runs AFTER publish-attest, meaning the
     image and attestation were already pushed and the immutable version tag burned.
     """
-    capture = _run_text(_load(REUSABLE)["jobs"]["capture"])
-
-    assert 'if [ "$contract" = "data-bound" ]' in capture
+    capture = _executable_shell(_step_run(_load(REUSABLE)["jobs"]["capture"], "capture_tools()"))
     assert "capture_args=(" in capture
-    # The second context is captured only on the data-independent branch.
-    body = capture.split('if [ "$contract" = "data-bound" ]', 1)[1]
-    assert "capture_tools b" in body.split("else", 1)[1]
+    runtime_branch = _if_branch(
+        capture,
+        RUNTIME_V1_CONDITION,
+        f"elif {UNADOPTED_CONDITION}; then",
+    )
+    unadopted_branch = _elif_branch(
+        capture,
+        UNADOPTED_CONDITION,
+        f"elif {DATA_INDEPENDENT_CONDITION}; then",
+    )
+    independent_branch = _elif_branch(capture, DATA_INDEPENDENT_CONDITION, "else")
+
+    assert "capture_tools b" not in runtime_branch
+    assert "capture_tools b" not in unadopted_branch
+    assert "capture_tools b" in independent_branch
 
 
 def test_assemble_evidence_consumes_only_sealed_artifacts() -> None:
