@@ -21,6 +21,8 @@ RULESET_DETAIL = {
     "rules": [{"type": rule} for rule in ("creation", "update", "deletion", "non_fast_forward")],
     "bypass_actors": [{"actor_type": "RepositoryRole", "actor_id": 5}],
 }
+# Current GitHub REST ``GET /repos/{owner}/{repo}/rulesets/{id}`` response shape. The API
+# serializes neutral merge/reviewer/Copilot settings instead of omitting those fields.
 MAIN_RULESET_DETAIL = {
     "enforcement": "active",
     "conditions": {
@@ -33,11 +35,14 @@ MAIN_RULESET_DETAIL = {
         {
             "type": "pull_request",
             "parameters": {
+                "allowed_merge_methods": ["squash", "merge", "rebase"],
+                "automatic_copilot_code_review_enabled": False,
                 "dismiss_stale_reviews_on_push": False,
                 "require_code_owner_review": False,
                 "require_last_push_approval": False,
                 "required_approving_review_count": 1,
                 "required_review_thread_resolution": False,
+                "required_reviewers": [],
             },
         },
     ],
@@ -259,8 +264,23 @@ def test_main_branch_ruleset_probe_rejects_additional_rule_types(
         ("require_code_owner_review", True),
         ("require_last_push_approval", True),
         ("required_review_thread_resolution", True),
-        ("required_reviewers", []),
-        ("dismissal_restriction", {"enabled": False}),
+        (
+            "required_reviewers",
+            [
+                {
+                    "file_patterns": ["*"],
+                    "minimum_approvals": 1,
+                    "reviewer": {"id": 1, "type": "Team"},
+                }
+            ],
+        ),
+        (
+            "dismissal_restriction",
+            {
+                "allowed_actors": [{"id": 1, "type": "Team"}],
+                "enabled": True,
+            },
+        ),
         ("allowed_merge_methods", ["squash"]),
         ("automatic_copilot_code_review_enabled", True),
         ("unknown_future_parameter", False),
@@ -280,6 +300,83 @@ def test_main_branch_ruleset_probe_rejects_additional_review_requirements(
                     parameter: value,
                 },
             },
+        ],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+def test_main_branch_ruleset_probe_accepts_neutral_dismissal_restriction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [
+            *MAIN_RULESET_DETAIL["rules"][:-1],
+            {
+                "type": "pull_request",
+                "parameters": {
+                    **MAIN_RULESET_DETAIL["rules"][-1]["parameters"],
+                    "dismissal_restriction": {"allowed_actors": [], "enabled": False},
+                },
+            },
+        ],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is not None
+
+
+@pytest.mark.parametrize(
+    "methods",
+    [
+        ["merge", "squash", "squash"],
+        ["merge", "squash", "unknown"],
+        ["merge", "squash", 1],
+    ],
+)
+def test_main_branch_ruleset_probe_rejects_non_neutral_merge_methods(
+    monkeypatch: pytest.MonkeyPatch, methods: list[object]
+) -> None:
+    parameters = {
+        **MAIN_RULESET_DETAIL["rules"][-1]["parameters"],
+        "allowed_merge_methods": methods,
+    }
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [
+            *MAIN_RULESET_DETAIL["rules"][:-1],
+            {"type": "pull_request", "parameters": parameters},
+        ],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+@pytest.mark.parametrize(
+    "dismissal_restriction",
+    [
+        None,
+        {"enabled": False},
+        {"allowed_actors": [{"id": 1, "type": "Team"}], "enabled": False},
+        {"allowed_actors": [], "enabled": True},
+        {"allowed_actors": [], "enabled": False, "unknown_future_field": False},
+    ],
+)
+def test_main_branch_ruleset_probe_rejects_non_neutral_dismissal_restriction(
+    monkeypatch: pytest.MonkeyPatch, dismissal_restriction: object
+) -> None:
+    parameters = {
+        **MAIN_RULESET_DETAIL["rules"][-1]["parameters"],
+        "dismissal_restriction": dismissal_restriction,
+    }
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [
+            *MAIN_RULESET_DETAIL["rules"][:-1],
+            {"type": "pull_request", "parameters": parameters},
         ],
     }
     _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})

@@ -35,12 +35,25 @@ REQUIRED_RULES = frozenset({"creation", "update", "deletion", "non_fast_forward"
 MAIN_RULESET_NAME = "Protect trusted-builder main"
 MAIN_BRANCH_REF = "refs/heads/main"
 MAIN_BRANCH_RULE_TYPES = frozenset({"deletion", "non_fast_forward", "pull_request"})
-MAIN_PULL_REQUEST_PARAMETERS: dict[str, Any] = {
+MAIN_PULL_REQUEST_PARAMETER_VALUES: dict[str, Any] = {
+    "automatic_copilot_code_review_enabled": False,
     "dismiss_stale_reviews_on_push": False,
     "require_code_owner_review": False,
     "require_last_push_approval": False,
     "required_approving_review_count": 1,
     "required_review_thread_resolution": False,
+}
+MAIN_PULL_REQUEST_PARAMETER_KEYS = frozenset(
+    {
+        *MAIN_PULL_REQUEST_PARAMETER_VALUES,
+        "allowed_merge_methods",
+        "required_reviewers",
+    }
+)
+SUPPORTED_MERGE_METHODS = frozenset({"merge", "squash", "rebase"})
+NEUTRAL_DISMISSAL_RESTRICTION: dict[str, Any] = {
+    "allowed_actors": [],
+    "enabled": False,
 }
 RELEASE_ENVIRONMENT = "release"
 EXACT_TAG_POLICY = "v*.*.*"
@@ -61,6 +74,34 @@ def _matches_exact_typed_values(actual: JsonDict, expected: JsonDict) -> bool:
     """Return whether a JSON object has exactly the expected keys, types, and values."""
     return actual.keys() == expected.keys() and all(
         type(actual[key]) is type(value) and actual[key] == value for key, value in expected.items()
+    )
+
+
+def _matches_neutral_pull_request_parameters(parameters: JsonDict) -> bool:
+    """Accept only GitHub's known, non-restrictive pull-request response fields."""
+    keys = frozenset(parameters)
+    allowed_keys = MAIN_PULL_REQUEST_PARAMETER_KEYS | {"dismissal_restriction"}
+    if keys not in {MAIN_PULL_REQUEST_PARAMETER_KEYS, allowed_keys}:
+        return False
+    scalar_values = {key: parameters[key] for key in MAIN_PULL_REQUEST_PARAMETER_VALUES}
+    if not _matches_exact_typed_values(scalar_values, MAIN_PULL_REQUEST_PARAMETER_VALUES):
+        return False
+    merge_methods = parameters["allowed_merge_methods"]
+    if (
+        not isinstance(merge_methods, list)
+        or len(merge_methods) != len(SUPPORTED_MERGE_METHODS)
+        or any(type(method) is not str for method in merge_methods)
+        or set(merge_methods) != SUPPORTED_MERGE_METHODS
+    ):
+        return False
+    required_reviewers = parameters["required_reviewers"]
+    if type(required_reviewers) is not list or required_reviewers != []:
+        return False
+    if "dismissal_restriction" not in parameters:
+        return True
+    dismissal = parameters["dismissal_restriction"]
+    return isinstance(dismissal, dict) and _matches_exact_typed_values(
+        dismissal, NEUTRAL_DISMISSAL_RESTRICTION
     )
 
 
@@ -192,9 +233,7 @@ def probe_main_branch_ruleset(repo: str) -> JsonDict | None:
     if pull_requests[0].keys() != {"type", "parameters"}:
         return None
     parameters = pull_requests[0].get("parameters")
-    if not isinstance(parameters, dict) or not _matches_exact_typed_values(
-        parameters, MAIN_PULL_REQUEST_PARAMETERS
-    ):
+    if not isinstance(parameters, dict) or not _matches_neutral_pull_request_parameters(parameters):
         return None
     return {
         "active": True,
