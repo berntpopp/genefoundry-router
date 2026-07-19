@@ -14,7 +14,6 @@ from pydantic import (
 )
 
 from genefoundry_router.release.models import (
-    TOP_LEVEL_SCHEMA_METADATA,
     DataReleaseTag,
     GitRevision,
     RepositoryName,
@@ -24,6 +23,7 @@ from genefoundry_router.release.models import (
     Sha256Hex,
     StrictModel,
 )
+from genefoundry_router.release.schema_metadata import TOP_LEVEL_SCHEMA_METADATA
 
 
 class DataVerificationError(ValueError):

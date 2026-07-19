@@ -3,18 +3,16 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal
 
 from pydantic import ValidationError
 
 from genefoundry_router.release.models import (
+    DataIdentityAdoption,
     DataReleaseTag,
     SchemaVersion,
     Sha256Digest,
     StrictModel,
 )
-
-DataIdentityAdoption = Literal["unadopted", "runtime-v1"]
 
 
 class RuntimeIdentityError(ValueError):

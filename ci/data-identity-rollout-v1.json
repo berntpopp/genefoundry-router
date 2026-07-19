@@ -1,0 +1,71 @@
+{
+  "repositories": {
+    "clingen-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "clinvar-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "gencc-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "genereviews-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "hgnc-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "hpo-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "mavedb-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "mgi-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "mondo-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "orphanet-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    },
+    "pubtator-link": {
+      "evidence": null,
+      "observed_identity_sha256": null,
+      "status": "unadopted",
+      "verified_commit": null
+    }
+  },
+  "schema_version": 1
+}

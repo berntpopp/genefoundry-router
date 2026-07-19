@@ -205,6 +205,7 @@ def test_release_config_accepts_definition_contracts(
 ) -> None:
     valid_config["definitions"] = {"contract": contract}
     if contract == "data-bound":
+        valid_config["data_identity_contract"] = "unadopted"
         valid_config["data"] = {
             "mode": "external-reference",
             "image_allowlist": [],
@@ -221,6 +222,7 @@ def test_upstream_live_data_bound_records_observed_identity_and_degraded_rollbac
     valid_config: dict[str, object],
 ) -> None:
     valid_config["definitions"] = {"contract": "data-bound"}
+    valid_config["data_identity_contract"] = "unadopted"
     valid_config["data"] = {
         "mode": "upstream-live",
         "image_allowlist": [],
@@ -261,6 +263,7 @@ def test_release_config_rejects_unknown_definition_contract(
 
 def test_data_bound_requires_exact_data_identity(valid_config: dict[str, object]) -> None:
     valid_config["definitions"] = {"contract": "data-bound"}
+    valid_config["data_identity_contract"] = "runtime-v1"
     valid_config["data"] = {"mode": "external-reference", "image_allowlist": []}
     with pytest.raises(ValidationError, match=r"release_tag.*sha256"):
         ReleaseConfig.model_validate(valid_config)
@@ -287,7 +290,66 @@ def test_data_bound_rejects_non_exact_identity(
     valid_config: dict[str, object], data: dict[str, object]
 ) -> None:
     valid_config["definitions"] = {"contract": "data-bound"}
+    valid_config["data_identity_contract"] = "runtime-v1"
     valid_config["data"] = data
+
+    with pytest.raises(ValidationError):
+        ReleaseConfig.model_validate(valid_config)
+
+
+def _data_bound_config(valid_config: dict[str, object]) -> None:
+    valid_config["definitions"] = {"contract": "data-bound"}
+    valid_config["data"] = {
+        "mode": "external-reference",
+        "image_allowlist": [],
+        "release_tag": "data-2026.07.13",
+        "digest": f"sha256:{'a' * 64}",
+    }
+
+
+def test_data_bound_requires_explicit_data_identity_adoption(
+    valid_config: dict[str, object],
+) -> None:
+    _data_bound_config(valid_config)
+
+    with pytest.raises(ValidationError, match="explicit data_identity_contract"):
+        ReleaseConfig.model_validate(valid_config)
+
+
+@pytest.mark.parametrize("adoption", ["unadopted", "runtime-v1"])
+def test_data_bound_accepts_known_data_identity_adoption_states(
+    valid_config: dict[str, object], adoption: str
+) -> None:
+    _data_bound_config(valid_config)
+    valid_config["data_identity_contract"] = adoption
+
+    assert ReleaseConfig.model_validate(valid_config).data_identity_contract == adoption
+
+
+def test_data_independent_rejects_runtime_identity_adoption(
+    valid_config: dict[str, object],
+) -> None:
+    valid_config["data_identity_contract"] = "runtime-v1"
+
+    with pytest.raises(ValidationError, match="only data-bound"):
+        ReleaseConfig.model_validate(valid_config)
+
+
+def test_no_authoritative_data_rejects_identity_adoption(
+    valid_config: dict[str, object],
+) -> None:
+    valid_config["definitions"] = {"contract": "data-bound"}
+    valid_config["data_identity_contract"] = "unadopted"
+
+    with pytest.raises(ValidationError, match="authoritative data"):
+        ReleaseConfig.model_validate(valid_config)
+
+
+def test_data_bound_rejects_unknown_identity_adoption(
+    valid_config: dict[str, object],
+) -> None:
+    _data_bound_config(valid_config)
+    valid_config["data_identity_contract"] = "unknown"
 
     with pytest.raises(ValidationError):
         ReleaseConfig.model_validate(valid_config)
@@ -396,6 +458,7 @@ def test_upstream_live_manifest_records_degraded_rollback(
         "digest": f"sha256:{'a' * 64}",
         "schema_compatibility": [],
         "reproducible_rollback": False,
+        "data_identity_contract": "unadopted",
     }
 
     manifest = ApplicationReleaseManifest.model_validate(valid_manifest)

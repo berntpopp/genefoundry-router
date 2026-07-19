@@ -55,6 +55,7 @@
     },
     "clingen": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:8ef351827e0ac86741891af4e53d91c1793f6c6cfc278754bff107774f9dd53c",
         "mode": "external-reference",
         "release_tag": "data-clingen-2026-07-16",
@@ -110,6 +111,7 @@
     },
     "clinvar": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:52eed6e488f9934432034449281afb73ed699a1b7e39cd85c0a1e731d82e48a8",
         "mode": "external-reference",
         "release_tag": "bundle-2026-07-07",
@@ -165,6 +167,7 @@
     },
     "gencc": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:1b090422659cfeda7cc4e16dd27f9b4fcf66012138e9f91c6266b73be9a1d111",
         "mode": "upstream-live",
         "release_tag": "observed-2026.07.13",
@@ -221,6 +224,7 @@
     },
     "genereviews": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:4486e499337e9f816a2aa0741f2a0e51ca38cda52f96fb57564cfc36f4b3c5bc",
         "mode": "restored-database",
         "release_tag": "corpus-data-2026-07-13-r1",
@@ -382,6 +386,7 @@
     },
     "hgnc": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:3a106439d733bdb57353ccdc587de943b0fcb269d6979a97170954b596881fdc",
         "mode": "upstream-live",
         "release_tag": "observed-2026.07.13",
@@ -438,6 +443,7 @@
     },
     "hpo": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:d677a96efd8c274045241934c33b25dfb6fc9a6414c27bed7ae3334d05d4c9f6",
         "mode": "external-reference",
         "release_tag": "db-v2026-06-23",
@@ -546,6 +552,7 @@
     },
     "mavedb": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:30b2b4fdbdff9a1a2e9f13e9f7de072a22ff07e70dea5d45eba297a5b9a5155a",
         "mode": "external-reference",
         "release_tag": "data-2026-06-24",
@@ -654,6 +661,7 @@
     },
     "mgi": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:1efd2fe47b73ce84f486eff9a8d3ad9262be98e3c944cda9460672f33cfac717",
         "mode": "upstream-live",
         "release_tag": "observed-2026.07.13",
@@ -710,6 +718,7 @@
     },
     "mondo": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:c588ebf0141f1cf8cb30bbc0a0ef545dc12045402ddaaf7e4ecc4d1b236a9191",
         "mode": "upstream-live",
         "release_tag": "observed-2026.07.13",
@@ -766,6 +775,7 @@
     },
     "orphanet": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:a8af3fc39cca2acedd12c188cb0e1f907ac320e73d2b965c17ad5a28c5f5fe38",
         "mode": "external-reference",
         "release_tag": "data-1.3.42-4.1.8-2025-03-03",
@@ -874,6 +884,7 @@
     },
     "pubtator": {
       "data_requirements": {
+        "data_identity_contract": "unadopted",
         "digest": "sha256:e3a508657abbea8cb5a2282459f9313ff4f52aa27506f24d554292f9d2635295",
         "mode": "restored-database",
         "release_tag": "observed-2026.07.13",

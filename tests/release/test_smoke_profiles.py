@@ -46,6 +46,7 @@ def _bundle_config() -> ReleaseConfig:
             "digest": f"sha256:{'a' * 64}",
         },
         definitions={"contract": "data-bound"},
+        data_identity_contract="unadopted",
         smoke={"profile": "immutable-bundle"},
         preparation="docker/ci-prepare-smoke.sh",
     )
@@ -73,6 +74,7 @@ def _postgres_config() -> ReleaseConfig:
             "digest": f"sha256:{'b' * 64}",
         },
         definitions={"contract": "data-bound"},
+        data_identity_contract="unadopted",
         smoke={"profile": "postgres-bundle"},
     )
 

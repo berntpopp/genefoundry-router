@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import stat
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 
@@ -29,8 +30,8 @@ from genefoundry_router.release.evidence import (
 )
 
 
-def _definition_evidence() -> DefinitionEvidence:
-    tools: list[dict[str, object]] = [
+def _tools() -> list[dict[str, object]]:
+    return [
         {
             "name": "get_capabilities",
             "description": "Describe the server.",
@@ -40,6 +41,10 @@ def _definition_evidence() -> DefinitionEvidence:
             "execution": None,
         }
     ]
+
+
+def _definition_evidence() -> DefinitionEvidence:
+    tools = _tools()
     first = capture_definitions(tools, context={"fixture": "empty", "rows": 0})
     second = capture_definitions(tools, context={"fixture": "populated", "rows": 1})
     return verify_definition_contract("data-independent", (first, second))
@@ -50,22 +55,33 @@ def _observed_definition_evidence() -> DefinitionEvidence:
         "release_tag": "data-clingen-2026-07-16",
         "digest": "sha256:" + "a" * 64,
     }
-    tools: list[dict[str, object]] = [
-        {
-            "name": "get_capabilities",
-            "description": "Describe the server.",
-            "inputSchema": {"type": "object", "properties": {}, "required": []},
-            "outputSchema": None,
-            "annotations": {"readOnlyHint": True},
-            "execution": None,
-        }
-    ]
     capture = capture_definitions(
-        tools,
+        _tools(),
         context={"runtime": "published"},
         observed_identity=observed,
     )
     return verify_definition_contract("data-bound", (capture,), observed_identity=observed)
+
+
+def _unadopted_definition_evidence() -> DefinitionEvidence:
+    identity = {
+        "release_tag": "data-clingen-2026-07-16",
+        "digest": "sha256:" + "a" * 64,
+    }
+    capture = capture_definitions(
+        _tools(),
+        context={"runtime": "published"},
+        data_release_tag=identity["release_tag"],
+        data_digest=identity["digest"],
+        adoption="unadopted",
+    )
+    return verify_definition_contract(
+        "data-bound",
+        (capture,),
+        data_release_tag=identity["release_tag"],
+        data_digest=identity["digest"],
+        adoption="unadopted",
+    )
 
 
 def _asset_files(tmp_path: Path) -> tuple[list[ReleaseAsset], DefinitionEvidence, str]:
@@ -103,6 +119,21 @@ def _identity(image_digest: str) -> ApplicationIdentity:
         workflow_standard=("berntpopp/genefoundry-router/.github/workflows/_container-release.yml"),
         workflow_revision="d" * 40,
     )
+
+
+def _install_definition_assets(tmp_path: Path, definitions: DefinitionEvidence) -> None:
+    write_json_atomic(tmp_path / "mcp-definitions.json", definitions.definitions_document)
+    write_json_atomic(tmp_path / "mcp-capture-context.json", definitions.context_document)
+
+
+def _data_requirements(adoption: object = "runtime-v1") -> dict[str, object]:
+    return {
+        "mode": "external-reference",
+        "release_tag": "data-clingen-2026-07-16",
+        "digest": "sha256:" + "a" * 64,
+        "schema_compatibility": [],
+        "data_identity_contract": adoption,
+    }
 
 
 def test_canonical_json_hash_is_key_order_independent() -> None:
@@ -241,11 +272,77 @@ def test_manifest_only_identity_change_cannot_rewrite_observed_capture(tmp_path:
                 "mode": "external-reference",
                 "release_tag": "data-clingen-2026-07-17",
                 "digest": "sha256:" + "b" * 64,
+                "data_identity_contract": "runtime-v1",
                 "reproducible_rollback": False,
                 "schema_compatibility": [],
             },
             assets=assets,
         )
+
+
+@pytest.mark.parametrize(
+    ("definitions_factory", "requirements_adoption"),
+    [
+        (_observed_definition_evidence, "unadopted"),
+        (_unadopted_definition_evidence, "runtime-v1"),
+        (_observed_definition_evidence, None),
+        (_observed_definition_evidence, "bypass"),
+    ],
+    ids=["runtime-v1-vs-unadopted", "unadopted-vs-runtime-v1", "omitted", "unknown"],
+)
+def test_manifest_assembly_rejects_unsealed_or_mismatched_adoption_provenance(
+    tmp_path: Path,
+    definitions_factory: Callable[[], DefinitionEvidence],
+    requirements_adoption: object,
+) -> None:
+    assets, _, image_digest = _asset_files(tmp_path)
+    definitions = definitions_factory()
+    _install_definition_assets(tmp_path, definitions)
+    requirements = _data_requirements(requirements_adoption)
+    if requirements_adoption is None:
+        del requirements["data_identity_contract"]
+
+    with pytest.raises(EvidenceAssemblyError, match="identity provenance"):
+        assemble_application_release_manifest(
+            identity=_identity(image_digest),
+            definitions=definitions,
+            scanner=ScannerIdentity(
+                version="0.66.0",
+                database_updated_at="2026-07-13T10:30:00Z",
+            ),
+            data_requirements=requirements,
+            assets=assets,
+        )
+
+
+@pytest.mark.parametrize(
+    ("definitions_factory", "adoption"),
+    [
+        (_observed_definition_evidence, "runtime-v1"),
+        (_unadopted_definition_evidence, "unadopted"),
+    ],
+)
+def test_manifest_assembly_seals_matching_adoption_provenance(
+    tmp_path: Path,
+    definitions_factory: Callable[[], DefinitionEvidence],
+    adoption: str,
+) -> None:
+    assets, _, image_digest = _asset_files(tmp_path)
+    definitions = definitions_factory()
+    _install_definition_assets(tmp_path, definitions)
+
+    manifest = assemble_application_release_manifest(
+        identity=_identity(image_digest),
+        definitions=definitions,
+        scanner=ScannerIdentity(
+            version="0.66.0",
+            database_updated_at="2026-07-13T10:30:00Z",
+        ),
+        data_requirements=_data_requirements(adoption),
+        assets=assets,
+    )
+
+    assert manifest.data_requirements.data_identity_contract == adoption
 
 
 def test_manifest_bytes_and_atomic_write_are_deterministic(tmp_path: Path) -> None:

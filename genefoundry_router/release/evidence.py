@@ -127,6 +127,11 @@ def _require_data_binding(
         raise EvidenceAssemblyError(
             "data-bound definition evidence lacks explicit identity provenance"
         )
+    requirements_adoption = data_requirements.get("data_identity_contract")
+    if requirements_adoption != definitions.data_identity_contract:
+        raise EvidenceAssemblyError(
+            "sealed data requirements do not match definition identity provenance"
+        )
     identity = definitions.data_identity
     if identity is None or (
         data_requirements.get("release_tag") != identity["release_tag"]

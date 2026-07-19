@@ -15,6 +15,35 @@ from genefoundry_router.release.source import SourceRelease
 from genefoundry_router.release.vulnerabilities import ReleaseExitCode
 
 runner = CliRunner()
+RUNTIME_IDENTITY = {
+    "release_identity": {
+        "schema_version": 1,
+        "data_identity": {
+            "expected": {
+                "release_tag": "data-clingen-2026-07-16",
+                "digest": f"sha256:{'a' * 64}",
+            },
+            "actual": {
+                "release_tag": "data-clingen-2026-07-16",
+                "digest": f"sha256:{'a' * 64}",
+            },
+        },
+    }
+}
+
+
+def _data_bound_release_config(adoption: str = "runtime-v1") -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "service": {"name": "clingen-link", "compose_files": ["docker/docker-compose.yml"]},
+        "data": {
+            "mode": "external-reference",
+            "release_tag": "data-clingen-2026-07-16",
+            "digest": f"sha256:{'a' * 64}",
+        },
+        "definitions": {"contract": "data-bound"},
+        "data_identity_contract": adoption,
+    }
 
 
 @pytest.mark.parametrize(
@@ -54,6 +83,10 @@ runner = CliRunner()
                 "--out-context",
                 "context.json",
             ],
+        ),
+        (
+            "verify-runtime-data-identity",
+            ["--config", "bad.json", "--health", "bad.json", "--out", "observed.json"],
         ),
         (
             "assemble-manifest",
@@ -293,6 +326,7 @@ def test_capture_definitions_success_wires_inputs_and_outputs(
         [{"name": "lookup"}],
         {
             "context": {"capture": "first"},
+            "observed_identity": None,
             "data_release_tag": "v2026.07",
             "data_digest": f"sha256:{'c' * 64}",
             "adoption": "unadopted",
@@ -301,6 +335,7 @@ def test_capture_definitions_success_wires_inputs_and_outputs(
     assert captured["verify"] == (
         ("data-bound", ("capture",)),
         {
+            "observed_identity": None,
             "data_release_tag": "v2026.07",
             "data_digest": f"sha256:{'c' * 64}",
             "adoption": "unadopted",
@@ -308,6 +343,113 @@ def test_capture_definitions_success_wires_inputs_and_outputs(
     )
     assert json.loads(definitions_out.read_text(encoding="utf-8")) == evidence.definitions_document
     assert json.loads(context_out.read_text(encoding="utf-8")) == evidence.context_document
+
+
+def test_capture_definitions_runtime_v1_uses_only_observed_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tools = tmp_path / "tools.json"
+    context = tmp_path / "context.json"
+    observed = tmp_path / "observed.json"
+    tools.write_text('[{"name":"lookup"}]', encoding="utf-8")
+    context.write_text('{"capture":"published"}', encoding="utf-8")
+    observed.write_text(
+        json.dumps(RUNTIME_IDENTITY["release_identity"]["data_identity"]["actual"]),
+        encoding="utf-8",
+    )
+    captured: dict[str, object] = {}
+    evidence = SimpleNamespace(
+        definitions_document={},
+        context_document={},
+        capture_context_sha256="b" * 64,
+        definition_contract="data-bound",
+        definitions_sha256="a" * 64,
+    )
+    monkeypatch.setattr(
+        release_cli,
+        "capture_definitions",
+        lambda value, **kwargs: captured.setdefault("capture", (value, kwargs)),
+    )
+    monkeypatch.setattr(
+        release_cli,
+        "verify_definition_contract",
+        lambda *args, **kwargs: (captured.setdefault("verify", (args, kwargs)), evidence)[1],
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "capture-definitions",
+            "--tools",
+            str(tools),
+            "--context",
+            str(context),
+            "--contract",
+            "data-bound",
+            "--out-definitions",
+            str(tmp_path / "definitions.json"),
+            "--out-context",
+            str(tmp_path / "context-out.json"),
+            "--observed-identity",
+            str(observed),
+        ],
+    )
+
+    identity = RUNTIME_IDENTITY["release_identity"]["data_identity"]["actual"]
+    assert result.exit_code == ReleaseExitCode.SUCCESS
+    assert captured["capture"] == (
+        [{"name": "lookup"}],
+        {
+            "context": {"capture": "published"},
+            "observed_identity": identity,
+            "data_release_tag": None,
+            "data_digest": None,
+            "adoption": "runtime-v1",
+        },
+    )
+    assert captured["verify"] == (
+        ("data-bound", (captured["capture"],)),
+        {
+            "observed_identity": identity,
+            "data_release_tag": None,
+            "data_digest": None,
+            "adoption": "runtime-v1",
+        },
+    )
+
+
+def test_capture_definitions_rejects_mixed_runtime_and_legacy_identity(tmp_path: Path) -> None:
+    tools = tmp_path / "tools.json"
+    context = tmp_path / "context.json"
+    observed = tmp_path / "observed.json"
+    tools.write_text("[]", encoding="utf-8")
+    context.write_text("{}", encoding="utf-8")
+    observed.write_text('{"release_tag":"tag","digest":"sha256:' + "a" * 64 + '"}')
+
+    result = runner.invoke(
+        app,
+        [
+            "capture-definitions",
+            "--tools",
+            str(tools),
+            "--context",
+            str(context),
+            "--contract",
+            "data-bound",
+            "--out-definitions",
+            str(tmp_path / "definitions.json"),
+            "--out-context",
+            str(tmp_path / "context-out.json"),
+            "--observed-identity",
+            str(observed),
+            "--data-release-tag",
+            "tag",
+            "--data-digest",
+            f"sha256:{'a' * 64}",
+        ],
+    )
+
+    assert result.exit_code == ReleaseExitCode.INVALID_EVIDENCE
 
 
 def test_assemble_manifest_success_wires_evidence_and_assets(

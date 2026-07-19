@@ -114,6 +114,134 @@ def test_generated_json_schemas_accept_valid_documents() -> None:
         assert not list(Draft202012Validator(schema).iter_errors(document))
 
 
+def test_release_config_schema_exposes_only_supported_data_identity_states() -> None:
+    property_schema = ReleaseConfig.model_json_schema()["properties"]["data_identity_contract"]
+
+    assert property_schema["anyOf"] == [
+        {"enum": ["unadopted", "runtime-v1"], "type": "string"},
+        {"type": "null"},
+    ]
+
+
+def _data_bound_config(adoption: str | None = "unadopted") -> dict[str, object]:
+    config = valid_config()
+    config["definitions"] = {"contract": "data-bound"}
+    config["data"] = {
+        "mode": "external-reference",
+        "release_tag": "data-2026.07.13",
+        "digest": f"sha256:{'a' * 64}",
+    }
+    if adoption is not None:
+        config["data_identity_contract"] = adoption
+    return config
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        valid_config() | {"data_identity_contract": "runtime-v1"},
+        _data_bound_config(adoption=None),
+        _data_bound_config() | {"data": {"mode": "none", "image_allowlist": []}},
+        _data_bound_config() | {"data": {"mode": "external-reference", "image_allowlist": []}},
+    ],
+    ids=[
+        "data-independent-adopted",
+        "data-bound-missing-adoption",
+        "data-bound-no-authoritative-data",
+        "data-bound-missing-exact-identity",
+    ],
+)
+def test_release_config_schema_rejects_invalid_data_identity_adoption(
+    config: dict[str, object],
+) -> None:
+    assert list(Draft202012Validator(ReleaseConfig.model_json_schema()).iter_errors(config))
+
+
+@pytest.mark.parametrize(
+    "config",
+    [valid_config(), _data_bound_config("unadopted"), _data_bound_config("runtime-v1")],
+    ids=["data-independent", "unadopted-data-bound", "runtime-v1-data-bound"],
+)
+def test_release_config_schema_accepts_valid_data_identity_adoption(
+    config: dict[str, object],
+) -> None:
+    assert not list(Draft202012Validator(ReleaseConfig.model_json_schema()).iter_errors(config))
+
+
+def _data_bound_manifest(adoption: object = "unadopted") -> dict[str, object]:
+    manifest = valid_manifest()
+    mcp = manifest["mcp"]
+    assert isinstance(mcp, dict)
+    mcp["definition_contract"] = "data-bound"
+    manifest["data_requirements"] = {
+        "mode": "external-reference",
+        "release_tag": "data-2026.07.13",
+        "digest": f"sha256:{'a' * 64}",
+        "schema_compatibility": [],
+        "data_identity_contract": adoption,
+    }
+    return manifest
+
+
+@pytest.mark.parametrize("adoption", ["unadopted", "runtime-v1"])
+def test_manifest_seals_valid_data_identity_adoption(adoption: str) -> None:
+    manifest = ApplicationReleaseManifest.model_validate(_data_bound_manifest(adoption))
+
+    assert manifest.data_requirements.data_identity_contract == adoption
+
+
+@pytest.mark.parametrize("adoption", [None, "unknown"])
+def test_manifest_rejects_missing_or_unknown_data_identity_adoption(adoption: object) -> None:
+    payload = _data_bound_manifest(adoption)
+    requirements = payload["data_requirements"]
+    assert isinstance(requirements, dict)
+    if adoption is None:
+        del requirements["data_identity_contract"]
+
+    with pytest.raises(ValidationError):
+        ApplicationReleaseManifest.model_validate(payload)
+
+
+@pytest.mark.parametrize("adoption", [None, "unknown"])
+def test_manifest_schema_rejects_missing_or_unknown_data_identity_adoption(
+    adoption: object,
+) -> None:
+    payload = _data_bound_manifest(adoption)
+    requirements = payload["data_requirements"]
+    assert isinstance(requirements, dict)
+    if adoption is None:
+        del requirements["data_identity_contract"]
+
+    errors = Draft202012Validator(ApplicationReleaseManifest.model_json_schema()).iter_errors(
+        payload
+    )
+    assert list(errors)
+
+
+@pytest.mark.parametrize("adoption", ["unadopted", "runtime-v1"])
+def test_manifest_schema_accepts_sealed_data_identity_adoption(adoption: str) -> None:
+    errors = Draft202012Validator(ApplicationReleaseManifest.model_json_schema()).iter_errors(
+        _data_bound_manifest(adoption)
+    )
+
+    assert not list(errors)
+
+
+def test_data_independent_exact_requirements_seal_explicit_null_adoption() -> None:
+    payload = _data_bound_manifest(None)
+    mcp = payload["mcp"]
+    assert isinstance(mcp, dict)
+    mcp["definition_contract"] = "data-independent"
+
+    manifest = ApplicationReleaseManifest.model_validate(payload)
+    errors = Draft202012Validator(ApplicationReleaseManifest.model_json_schema()).iter_errors(
+        payload
+    )
+
+    assert manifest.data_requirements.data_identity_contract is None
+    assert not list(errors)
+
+
 def test_models_round_trip_through_canonical_json_names() -> None:
     config = ReleaseConfig.model_validate(valid_config())
     manifest = ApplicationReleaseManifest.model_validate(valid_manifest())

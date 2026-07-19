@@ -43,6 +43,10 @@ from genefoundry_router.release.evidence import (
     write_json_atomic,
 )
 from genefoundry_router.release.models import ApplicationReleaseManifest, ReleaseConfig
+from genefoundry_router.release.runtime_identity import (
+    DataIdentityAdoption,
+    verify_readiness_data_identity,
+)
 from genefoundry_router.release.smoke import parse_smoke_env, render_smoke_override
 from genefoundry_router.release.source import validate_source_release
 from genefoundry_router.release.vulnerabilities import ReleaseExitCode, evaluate_trivy
@@ -379,19 +383,29 @@ def capture_definitions_command(
     out_context: Path = typer.Option(..., "--out-context"),
     data_release_tag: str | None = typer.Option(None, "--data-release-tag"),
     data_digest: str | None = typer.Option(None, "--data-digest"),
+    observed_identity: Path | None = typer.Option(None, "--observed-identity"),
 ) -> None:
     """Canonicalize MCP tools and prove their declared definition contract."""
 
     def operation() -> _CliResult:
         if len(tools) != len(context):
             raise ValueError("tools and context counts differ")
-        adoption: Literal["unadopted"] | None = (
-            "unadopted" if data_release_tag is not None or data_digest is not None else None
-        )
+        if observed_identity is not None and (
+            data_release_tag is not None or data_digest is not None
+        ):
+            raise ValueError("observed and legacy data identity inputs are mutually exclusive")
+        observed_value: dict[str, Any] | None = None
+        adoption: DataIdentityAdoption | None = None
+        if observed_identity is not None:
+            observed_value = _object(observed_identity)
+            adoption = "runtime-v1"
+        elif data_release_tag is not None or data_digest is not None:
+            adoption = "unadopted"
         captures = tuple(
             capture_definitions(
                 _array(tool_path),
                 context=_object(context_path),
+                observed_identity=observed_value,
                 data_release_tag=data_release_tag,
                 data_digest=data_digest,
                 adoption=adoption,
@@ -401,6 +415,7 @@ def capture_definitions_command(
         evidence = verify_definition_contract(
             contract,
             captures,
+            observed_identity=observed_value,
             data_release_tag=data_release_tag,
             data_digest=data_digest,
             adoption=adoption,
@@ -418,6 +433,35 @@ def capture_definitions_command(
         )
 
     _execute("capture-definitions", operation)
+
+
+@app.command("verify-runtime-data-identity")
+def verify_runtime_data_identity_command(
+    config: Path = typer.Option(..., "--config", help="Container release JSON configuration."),
+    health: Path = typer.Option(..., "--health", help="Readiness JSON captured from the image."),
+    out: Path = typer.Option(..., "--out", help="Canonical observed identity JSON."),
+) -> None:
+    """Verify an adopted data-bound image's independently observed identity."""
+
+    def operation() -> _CliResult:
+        parsed = ReleaseConfig.model_validate(_object(config))
+        adoption = parsed.data_identity_contract
+        if parsed.definitions.contract != "data-bound" or adoption is None:
+            raise ValueError("runtime identity verification requires a data-bound release")
+        observed = verify_readiness_data_identity(
+            _object(health),
+            release_tag=getattr(parsed.data, "release_tag", None),
+            digest=getattr(parsed.data, "digest", None),
+            adoption=adoption,
+        )
+        if observed is None:
+            raise ValueError("unadopted releases do not provide observed runtime identity")
+        write_json_atomic(out, observed)
+        return _CliResult(
+            {"observed_identity": str(out), "verdict": "pass"}, ReleaseExitCode.SUCCESS
+        )
+
+    _execute("verify-runtime-data-identity", operation)
 
 
 @app.command("assemble-manifest")

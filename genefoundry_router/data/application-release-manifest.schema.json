@@ -33,6 +33,21 @@
           "title": "Schema Compatibility",
           "type": "array"
         },
+        "data_identity_contract": {
+          "anyOf": [
+            {
+              "enum": [
+                "unadopted",
+                "runtime-v1"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Data Identity Contract"
+        },
         "mode": {
           "const": "external-reference",
           "title": "Mode",
@@ -42,6 +57,7 @@
       "required": [
         "release_tag",
         "digest",
+        "data_identity_contract",
         "mode"
       ],
       "title": "ExternalReferenceRequirements",
@@ -246,6 +262,21 @@
           "title": "Schema Compatibility",
           "type": "array"
         },
+        "data_identity_contract": {
+          "anyOf": [
+            {
+              "enum": [
+                "unadopted",
+                "runtime-v1"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Data Identity Contract"
+        },
         "mode": {
           "const": "restored-database",
           "title": "Mode",
@@ -255,6 +286,7 @@
       "required": [
         "release_tag",
         "digest",
+        "data_identity_contract",
         "mode"
       ],
       "title": "RestoredDatabaseRequirements",
@@ -374,6 +406,21 @@
           "title": "Schema Compatibility",
           "type": "array"
         },
+        "data_identity_contract": {
+          "anyOf": [
+            {
+              "enum": [
+                "unadopted",
+                "runtime-v1"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Data Identity Contract"
+        },
         "mode": {
           "const": "upstream-live",
           "title": "Mode",
@@ -388,6 +435,7 @@
       "required": [
         "release_tag",
         "digest",
+        "data_identity_contract",
         "mode",
         "reproducible_rollback"
       ],
@@ -425,6 +473,54 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "else": {
+        "properties": {
+          "data_requirements": {
+            "properties": {
+              "data_identity_contract": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "mcp": {
+            "properties": {
+              "definition_contract": {
+                "const": "data-bound"
+              }
+            },
+            "required": [
+              "definition_contract"
+            ]
+          }
+        },
+        "required": [
+          "mcp"
+        ]
+      },
+      "then": {
+        "properties": {
+          "data_requirements": {
+            "properties": {
+              "data_identity_contract": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            },
+            "required": [
+              "data_identity_contract"
+            ]
+          }
+        }
+      }
+    }
+  ],
   "description": "Complete immutable evidence record for one accepted application image.",
   "properties": {
     "schema_version": {

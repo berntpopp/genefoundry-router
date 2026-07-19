@@ -485,6 +485,67 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "else": {
+        "properties": {
+          "data_identity_contract": {
+            "type": "null"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "definitions": {
+            "properties": {
+              "contract": {
+                "const": "data-bound"
+              }
+            },
+            "required": [
+              "contract"
+            ]
+          }
+        },
+        "required": [
+          "definitions"
+        ]
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "properties": {
+              "mode": {
+                "not": {
+                  "const": "none"
+                }
+              },
+              "release_tag": {
+                "type": "string"
+              },
+              "digest": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "mode",
+              "release_tag",
+              "digest"
+            ]
+          },
+          "data_identity_contract": {
+            "not": {
+              "type": "null"
+            }
+          }
+        },
+        "required": [
+          "data",
+          "data_identity_contract"
+        ]
+      }
+    }
+  ],
   "description": "Per-repository facts consumed by the central container release workflow.",
   "properties": {
     "schema_version": {
@@ -553,6 +614,22 @@
     },
     "definitions": {
       "$ref": "#/$defs/DefinitionsConfig"
+    },
+    "data_identity_contract": {
+      "anyOf": [
+        {
+          "enum": [
+            "unadopted",
+            "runtime-v1"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Data Identity Contract"
     },
     "smoke": {
       "$ref": "#/$defs/SmokeConfig"
