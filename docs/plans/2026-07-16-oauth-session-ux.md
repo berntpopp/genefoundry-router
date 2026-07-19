@@ -1,5 +1,8 @@
 # OAuth Session UX Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 1. Add a bounded router setting for the FastMCP OAuthProxy access-token lifetime.
    Write settings and provider-wiring tests first; verify the default is twelve
    hours and the configured value reaches FastMCP.

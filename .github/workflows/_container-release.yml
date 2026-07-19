@@ -447,6 +447,25 @@ jobs:
           mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
           curl -fsS -H 'Host: localhost' \
             "http://127.0.0.1:18000$health_path" > "$RUNNER_TEMP/release-gate-health.json"
+          contract="$(jq -er '.definitions.contract' container-release.json)"
+          data_identity_contract="$(jq -er \
+            'if .data_identity_contract == null then "none" else .data_identity_contract end' \
+            container-release.json)"
+          if [ "$contract" = "data-bound" ] && [ "$data_identity_contract" = "runtime-v1" ]; then
+            uv run --project .container-release-tools \
+              python .container-release-tools/scripts/container_release.py \
+              verify-runtime-data-identity \
+              --config container-release.json \
+              --health "$RUNNER_TEMP/release-gate-health.json" \
+              --out "$RUNNER_TEMP/smoke-observed-data-identity.json"
+          elif [ "$contract" = "data-bound" ] && [ "$data_identity_contract" = "unadopted" ]; then
+            : # Explicit legacy path during staged adoption.
+          elif [ "$contract" = "data-independent" ] && [ "$data_identity_contract" = "none" ]; then
+            : # Data-independent releases have no runtime data identity.
+          else
+            echo "unsupported data identity contract state" >&2
+            exit 1
+          fi
           curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \
             -H 'Host: localhost' -H 'Content-Type: application/json' \
             -H 'Accept: application/json, text/event-stream' \
@@ -871,6 +890,9 @@ jobs:
           # counts, so the shell has to branch -- passing two captures with a data-bound
           # contract fails, and it fails after publish-attest has already pushed the image.
           contract="$(jq -er '.definitions.contract' container-release.json)"
+          data_identity_contract="$(jq -er \
+            'if .data_identity_contract == null then "none" else .data_identity_contract end' \
+            container-release.json)"
           capture_tools a 18000 "$RUNNER_TEMP/capture/mcp-tools-a.json" \
             "$RUNNER_TEMP/capture/context-a.json"
           capture_args=(
@@ -878,18 +900,31 @@ jobs:
             --context "$RUNNER_TEMP/capture/context-a.json"
           )
           data_identity_args=()
-          if [ "$contract" = "data-bound" ]; then
+          if [ "$contract" = "data-bound" ] && [ "$data_identity_contract" = "runtime-v1" ]; then
+            uv run --project .container-release-tools \
+              python .container-release-tools/scripts/container_release.py \
+              verify-runtime-data-identity \
+              --config container-release.json \
+              --health "$RUNNER_TEMP/capture/a-health.json" \
+              --out "$RUNNER_TEMP/capture/observed-data-identity.json"
+            data_identity_args=(
+              --observed-identity "$RUNNER_TEMP/capture/observed-data-identity.json"
+            )
+          elif [ "$contract" = "data-bound" ] && [ "$data_identity_contract" = "unadopted" ]; then
             data_identity_args=(
               --data-release-tag "$(jq -er '.data.release_tag' container-release.json)"
               --data-digest "$(jq -er '.data.digest' container-release.json)"
             )
-          else
+          elif [ "$contract" = "data-independent" ] && [ "$data_identity_contract" = "none" ]; then
             capture_tools b 18001 "$RUNNER_TEMP/capture/mcp-tools-b.json" \
               "$RUNNER_TEMP/capture/context-b.json"
             capture_args+=(
               --tools "$RUNNER_TEMP/capture/mcp-tools-b.json"
               --context "$RUNNER_TEMP/capture/context-b.json"
             )
+          else
+            echo "unsupported data identity contract state" >&2
+            exit 1
           fi
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py capture-definitions \
@@ -901,11 +936,15 @@ jobs:
           # assemble-evidence deliberately checks out no caller source -- it consumes only
           # sealed artifacts -- so the contract must reach it as sealed evidence, never by
           # reading container-release.json from a workspace it does not have.
-          jq -e '.data
+          jq -e '. as $release
+            | .data
             | {mode}
             + (if has("release_tag") then {release_tag, digest} else {} end)
             + (if has("reproducible_rollback") then {reproducible_rollback} else {} end)
-            + {schema_compatibility: (.schema_compatibility // [])}' \
+            + {schema_compatibility: (.schema_compatibility // [])}
+            + (if $release.definitions.contract == "data-bound"
+               then {data_identity_contract: $release.data_identity_contract}
+               else {} end)' \
             container-release.json > "$RUNNER_TEMP/capture/data-requirements.json"
           cd "$RUNNER_TEMP/capture"
           sha256sum mcp-definitions.json mcp-capture-context.json data-requirements.json > SHA256SUMS

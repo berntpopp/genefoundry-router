@@ -1,5 +1,8 @@
 # GeneReviews-Link Issue #49 Offline Annotation Probe Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (- [ ]) syntax for tracking.
 
 **Goal:** Run a reproducible, offline-only experiment that measures hybrid GLiNER/tmVar candidate annotations on fixed GeneReviews evidence, without changing the service, MCP schema, database, retrieval/ranking, image, or production dependencies.

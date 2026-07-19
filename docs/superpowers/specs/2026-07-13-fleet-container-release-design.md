@@ -2,6 +2,9 @@
 
 **Status:** Approved for implementation on 2026-07-13
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 **Scope:** `genefoundry-router` plus all 21 repositories registered in
 `servers.yaml`
 

@@ -1,6 +1,9 @@
 # Fleet Security Modernization — Reconciliation & Remaining-Work Ledger
 
 - **Date:** 2026-07-10
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Author:** continuation pass (Claude) over the Codex-authored
   `docs/specs/2026-07-10-fleet-security-modernization-design.md` and its plans.
 - **Purpose:** Reconcile the immutable

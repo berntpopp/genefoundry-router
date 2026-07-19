@@ -123,6 +123,17 @@ def _require_data_binding(
 ) -> None:
     if definitions.definition_contract != "data-bound":
         return
+    if definitions.data_identity_contract not in {"unadopted", "runtime-v1"}:
+        raise EvidenceAssemblyError(
+            "data-bound definition evidence lacks explicit identity provenance"
+        )
+    # Authentic application evidence predating runtime-v1 omitted this field. Treat only
+    # omission (not an explicit null) as the legacy unadopted path at the comparison boundary.
+    requirements_adoption = data_requirements.get("data_identity_contract", "unadopted")
+    if requirements_adoption != definitions.data_identity_contract:
+        raise EvidenceAssemblyError(
+            "sealed data requirements do not match definition identity provenance"
+        )
     identity = definitions.data_identity
     if identity is None or (
         data_requirements.get("release_tag") != identity["release_tag"]
@@ -185,9 +196,22 @@ def assemble_application_release_manifest(
         raise EvidenceAssemblyError("assembled application release manifest is invalid") from exc
 
 
+def application_release_document(manifest: ApplicationReleaseManifest) -> dict[str, object]:
+    """Serialize evidence without inventing a field omitted by a legacy producer."""
+    document = manifest.model_dump(mode="json")
+    requirements = document["data_requirements"]
+    if (
+        isinstance(requirements, dict)
+        and hasattr(manifest.data_requirements, "data_identity_contract")
+        and "data_identity_contract" not in manifest.data_requirements.model_fields_set
+    ):
+        requirements.pop("data_identity_contract", None)
+    return document
+
+
 def manifest_json_bytes(manifest: ApplicationReleaseManifest) -> bytes:
     """Serialize a validated manifest with stable keys and compact separators."""
-    return canonical_json_bytes(manifest.model_dump(mode="json"))
+    return canonical_json_bytes(application_release_document(manifest))
 
 
 def write_json_atomic(path: Path, value: object) -> None:
@@ -220,6 +244,7 @@ __all__ = [
     "EvidenceAssemblyError",
     "ReleaseAsset",
     "ScannerIdentity",
+    "application_release_document",
     "assemble_application_release_manifest",
     "canonical_json_bytes",
     "hash_release_assets",

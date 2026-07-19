@@ -1,5 +1,8 @@
 # Fleet Repository Metadata & Findability — Design
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > Design spec for **GeneFoundry Repository Metadata Standard v1**. Written 2026-07-14,
 > the day after [README Standard v1](../README-STANDARD-v1.md) shipped. Sibling of the
 > [Tool-Naming](../TOOL-NAMING-STANDARD-v1.md), [Response-Envelope](../RESPONSE-ENVELOPE-STANDARD-v1.md),

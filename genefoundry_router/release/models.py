@@ -17,7 +17,8 @@ from pydantic import (
     WithJsonSchema,
     model_validator,
 )
-from pydantic.json_schema import JsonDict
+
+from genefoundry_router.release import schema_metadata as schemas
 
 
 def _require_exact_schema_version(value: object) -> object:
@@ -174,16 +175,6 @@ Rfc3339Timestamp = Annotated[
     WithJsonSchema({"type": "string", "format": "date-time", "pattern": RFC3339_PATTERN}),
 ]
 SafeIdentifier = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")]
-SEMANTIC_SCHEMA_COMMENT = (
-    "This checked-in schema enforces structural constraints. Acceptance additionally requires "
-    "semantic validation through ReleaseConfig or ApplicationReleaseManifest; cross-field "
-    "equality is enforced by Pydantic validators."
-)
-TOP_LEVEL_SCHEMA_METADATA: JsonDict = {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$comment": SEMANTIC_SCHEMA_COMMENT,
-}
-
 StableVersion = Annotated[
     str,
     Field(pattern=r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$"),
@@ -233,6 +224,7 @@ WorkflowIdentityPath = Annotated[
     ),
 ]
 DefinitionContract = Literal["data-independent", "data-bound"]
+DataIdentityAdoption = Literal["unadopted", "runtime-v1"]
 
 
 class StrictModel(BaseModel):
@@ -400,7 +392,7 @@ EnvAssignment = Annotated[
 class ReleaseConfig(StrictModel):
     """Per-repository facts consumed by the central container release workflow."""
 
-    model_config = ConfigDict(json_schema_extra=TOP_LEVEL_SCHEMA_METADATA)
+    model_config = ConfigDict(json_schema_extra=schemas.RELEASE_CONFIG_SCHEMA_METADATA)
 
     schema_version: SchemaVersion = 1
     dockerfile: RepositoryRelativePath = "docker/Dockerfile"
@@ -410,27 +402,27 @@ class ReleaseConfig(StrictModel):
     data: ReleaseDataConfig = Field(default_factory=lambda: NoAuthoritativeData(mode="none"))
     runtime_cache: RuntimeCacheConfig | None = None
     definitions: DefinitionsConfig
+    data_identity_contract: DataIdentityAdoption | None = None
     smoke: SmokeConfig = Field(default_factory=SmokeConfig)
     smoke_environment: tuple[EnvAssignment, ...] = ()
     preparation: Literal["docker/ci-prepare-smoke.sh"] | None = None
 
     @model_validator(mode="after")
-    def _smoke_environment_keys_are_unique(self) -> ReleaseConfig:
+    def _release_contract_is_consistent(self) -> ReleaseConfig:
         keys = [assignment.split("=", 1)[0] for assignment in self.smoke_environment]
         if len(keys) != len(set(keys)):
             raise ValueError("smoke_environment must not assign the same key twice")
-        return self
-
-    @model_validator(mode="after")
-    def _data_bound_has_exact_identity(self) -> ReleaseConfig:
         if self.definitions.contract != "data-bound":
+            if self.data_identity_contract is not None:
+                raise ValueError("only data-bound services may adopt runtime data identity")
             return self
-        release_tag = getattr(self.data, "release_tag", None)
-        digest = getattr(self.data, "digest", None)
-        if release_tag is None or digest is None:
-            raise ValueError(
-                "data-bound definitions require an exact data release_tag and sha256 digest"
-            )
+        if self.data.mode == "none":
+            raise ValueError("data-bound definitions require authoritative data")
+        if self.data_identity_contract is None:
+            raise ValueError("data-bound definitions require explicit data_identity_contract")
+        identity = (getattr(self.data, "release_tag", None), getattr(self.data, "digest", None))
+        if None in identity:
+            raise ValueError("data-bound definitions require exact release_tag and sha256 digest")
         return self
 
 
@@ -521,6 +513,7 @@ class ExactDataRequirements(StrictModel):
     release_tag: DataReleaseTag
     digest: Sha256Digest
     schema_compatibility: tuple[str, ...] = ()
+    data_identity_contract: DataIdentityAdoption | None = None
 
 
 class ExternalReferenceRequirements(ExactDataRequirements):
@@ -554,7 +547,7 @@ DataRequirements = Annotated[
 class ApplicationReleaseManifest(StrictModel):
     """Complete immutable evidence record for one accepted application image."""
 
-    model_config = ConfigDict(json_schema_extra=TOP_LEVEL_SCHEMA_METADATA)
+    model_config = ConfigDict(json_schema_extra=schemas.APPLICATION_RELEASE_SCHEMA_METADATA)
 
     schema_version: SchemaVersion = 1
     repository: RepositoryName
@@ -592,8 +585,15 @@ class ApplicationReleaseManifest(StrictModel):
         )
         if any(asset != f"sha256:{evidence}" for asset, evidence in asset_evidence):
             raise ValueError("release asset digest must match its corresponding evidence digest")
-        if self.mcp.definition_contract == "data-bound" and self.data_requirements.mode == "none":
+        data_bound = self.mcp.definition_contract == "data-bound"
+        adoption = getattr(self.data_requirements, "data_identity_contract", None)
+        adoption_was_sealed = "data_identity_contract" in self.data_requirements.model_fields_set
+        if data_bound and self.data_requirements.mode == "none":
             raise ValueError("data-bound definitions require an authoritative data mode")
+        if data_bound and adoption_was_sealed and adoption is None:
+            raise ValueError("sealed data identity provenance cannot be null")
+        if not data_bound and adoption is not None:
+            raise ValueError("definition and data identity contracts require matching provenance")
         return self
 
 

@@ -19,18 +19,42 @@ import urllib.error
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from genefoundry_router.release.controls import (
     ControlLedgerError,
     expected_fleet_repositories,
     load_control_ledger,
     require_compliant_controls,
+    router_repository,
 )
 
 REVIEWER = "bernt-popp"
 RULESET_NAME = "Protect semantic release tags"
 REQUIRED_RULES = frozenset({"creation", "update", "deletion", "non_fast_forward"})
+MAIN_RULESET_NAME = "Protect trusted-builder main"
+MAIN_BRANCH_REF = "refs/heads/main"
+MAIN_BRANCH_RULE_TYPES = frozenset({"deletion", "non_fast_forward", "pull_request"})
+MAIN_PULL_REQUEST_PARAMETER_VALUES: dict[str, Any] = {
+    "automatic_copilot_code_review_enabled": False,
+    "dismiss_stale_reviews_on_push": False,
+    "require_code_owner_review": False,
+    "require_last_push_approval": False,
+    "required_approving_review_count": 1,
+    "required_review_thread_resolution": False,
+}
+MAIN_PULL_REQUEST_PARAMETER_KEYS = frozenset(
+    {
+        *MAIN_PULL_REQUEST_PARAMETER_VALUES,
+        "allowed_merge_methods",
+        "required_reviewers",
+    }
+)
+SUPPORTED_MERGE_METHODS = frozenset({"merge", "squash", "rebase"})
+NEUTRAL_DISMISSAL_RESTRICTION: dict[str, Any] = {
+    "allowed_actors": [],
+    "enabled": False,
+}
 RELEASE_ENVIRONMENT = "release"
 EXACT_TAG_POLICY = "v*.*.*"
 BOOTSTRAP_TAG = "control-bootstrap"
@@ -44,6 +68,41 @@ MANIFEST_ACCEPT = ",".join(
 )
 
 JsonDict = dict[str, Any]
+
+
+def _matches_exact_typed_values(actual: JsonDict, expected: JsonDict) -> bool:
+    """Return whether a JSON object has exactly the expected keys, types, and values."""
+    return actual.keys() == expected.keys() and all(
+        type(actual[key]) is type(value) and actual[key] == value for key, value in expected.items()
+    )
+
+
+def _matches_neutral_pull_request_parameters(parameters: JsonDict) -> bool:
+    """Accept only GitHub's known, non-restrictive pull-request response fields."""
+    keys = frozenset(parameters)
+    allowed_keys = MAIN_PULL_REQUEST_PARAMETER_KEYS | {"dismissal_restriction"}
+    if keys not in {MAIN_PULL_REQUEST_PARAMETER_KEYS, allowed_keys}:
+        return False
+    scalar_values = {key: parameters[key] for key in MAIN_PULL_REQUEST_PARAMETER_VALUES}
+    if not _matches_exact_typed_values(scalar_values, MAIN_PULL_REQUEST_PARAMETER_VALUES):
+        return False
+    merge_methods = parameters["allowed_merge_methods"]
+    if (
+        not isinstance(merge_methods, list)
+        or len(merge_methods) != len(SUPPORTED_MERGE_METHODS)
+        or any(type(method) is not str for method in merge_methods)
+        or set(merge_methods) != SUPPORTED_MERGE_METHODS
+    ):
+        return False
+    required_reviewers = parameters["required_reviewers"]
+    if type(required_reviewers) is not list or required_reviewers != []:
+        return False
+    if "dismissal_restriction" not in parameters:
+        return True
+    dismissal = parameters["dismissal_restriction"]
+    return isinstance(dismissal, dict) and _matches_exact_typed_values(
+        dismissal, NEUTRAL_DISMISSAL_RESTRICTION
+    )
 
 
 def _now() -> str:
@@ -124,6 +183,74 @@ def probe_tag_ruleset(repo: str) -> JsonDict | None:
         "evidence": _api_evidence(
             f"https://github.com/{repo}/settings/rules/{match['id']}",
             "Active tag ruleset probed via the repository rulesets API.",
+        ),
+    }
+
+
+def probe_main_branch_ruleset(repo: str) -> JsonDict | None:
+    """Prove the exact active main-branch policy for the trusted builder."""
+    rulesets = _gh_api(f"repos/{repo}/rulesets")
+    if not isinstance(rulesets, list):
+        return None
+    matches = [
+        item
+        for item in rulesets
+        if isinstance(item, dict)
+        and item.get("name") == MAIN_RULESET_NAME
+        and item.get("target") == "branch"
+    ]
+    if len(matches) != 1:
+        return None
+    ruleset_id = matches[0].get("id")
+    if type(ruleset_id) is not int:
+        return None
+    detail = _gh_api(f"repos/{repo}/rulesets/{ruleset_id}")
+    if not isinstance(detail, dict) or detail.get("enforcement") != "active":
+        return None
+    conditions = detail.get("conditions")
+    if not isinstance(conditions, dict) or conditions.keys() != {"ref_name"}:
+        return None
+    ref_name = conditions.get("ref_name")
+    if not isinstance(ref_name, dict) or ref_name.keys() != {"include", "exclude"}:
+        return None
+    if ref_name.get("include") != [MAIN_BRANCH_REF] or ref_name.get("exclude") != []:
+        return None
+    if detail.get("bypass_actors") != []:
+        return None
+    rules = detail.get("rules")
+    if not isinstance(rules, list) or any(not isinstance(rule, dict) for rule in rules):
+        return None
+    rule_types: list[str] = []
+    for rule in rules:
+        rule_type = rule.get("type")
+        if type(rule_type) is not str:
+            return None
+        rule_types.append(rule_type)
+    if len(rule_types) != len(MAIN_BRANCH_RULE_TYPES) or set(rule_types) != MAIN_BRANCH_RULE_TYPES:
+        return None
+    deletion = [rule for rule in rules if rule.get("type") == "deletion"]
+    non_fast_forward = [rule for rule in rules if rule.get("type") == "non_fast_forward"]
+    pull_requests = [rule for rule in rules if rule.get("type") == "pull_request"]
+    if len(deletion) != 1 or len(non_fast_forward) != 1 or len(pull_requests) != 1:
+        return None
+    if deletion[0].keys() != {"type"} or non_fast_forward[0].keys() != {"type"}:
+        return None
+    if pull_requests[0].keys() != {"type", "parameters"}:
+        return None
+    parameters = pull_requests[0].get("parameters")
+    if not isinstance(parameters, dict) or not _matches_neutral_pull_request_parameters(parameters):
+        return None
+    return {
+        "active": True,
+        "targets_main": True,
+        "requires_pull_request": True,
+        "required_approving_review_count": 1,
+        "blocks_force_pushes": True,
+        "blocks_deletions": True,
+        "bypass_actors": [],
+        "evidence": _api_evidence(
+            f"https://github.com/{repo}/settings/rules/{ruleset_id}",
+            "Exact active main branch ruleset probed via the repository rulesets API.",
         ),
     }
 
@@ -237,7 +364,7 @@ def probe_retention(repo: str) -> JsonDict:
     }
 
 
-def build_row(repo: str) -> JsonDict:
+def build_row(repo: str, role: Literal["trusted-builder", "backend"]) -> JsonDict:
     """Return a verified row, or an unavailable row naming the exact failed control."""
     probes = {
         "tag_ruleset": probe_tag_ruleset(repo),
@@ -245,6 +372,8 @@ def build_row(repo: str) -> JsonDict:
         "immutable_releases": probe_immutable_releases(repo),
         "package": probe_package(repo),
     }
+    if role == "trusted-builder":
+        probes["main_branch_ruleset"] = probe_main_branch_ruleset(repo)
     missing = sorted(name for name, value in probes.items() if value is None)
     if missing:
         reason = f"unproven hard controls: {', '.join(missing)}"
@@ -261,22 +390,33 @@ def build_row(repo: str) -> JsonDict:
                 "reason": reason,
             },
         }
-    return {
+    row = {
         "status": "verified",
         "repository": repo,
+        "role": role,
         "tag_ruleset": probes["tag_ruleset"],
         "release_environment": probes["release_environment"],
         "immutable_releases": probes["immutable_releases"],
         "package": probes["package"],
         "retention": probe_retention(repo),
     }
+    if role == "trusted-builder":
+        row["main_branch_ruleset"] = probes["main_branch_ruleset"]
+    return row
 
 
 def build_ledger(repositories: set[str]) -> JsonDict:
+    router = router_repository()
     return {
         "schema_version": 1,
         "reviewed_at": _now(),
-        "repositories": {repo: build_row(repo) for repo in sorted(repositories)},
+        "repositories": {
+            repo: build_row(
+                repo,
+                role="trusted-builder" if repo == router else "backend",
+            )
+            for repo in sorted(repositories)
+        },
     }
 
 

@@ -1,5 +1,8 @@
 # Data Artifact Contract Review
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 Date: 2026-07-13
 PR: https://github.com/berntpopp/genefoundry-router/pull/60
 Reviewer command: `claude -p --model claude-opus-4-8 --effort xhigh`

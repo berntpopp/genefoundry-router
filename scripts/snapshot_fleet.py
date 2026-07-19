@@ -27,7 +27,10 @@ from genefoundry_router.devtools.fakes import (
     load_manifest,
 )
 from genefoundry_router.drift import canonical_json_schema
-from genefoundry_router.release.models import ApplicationReleaseManifest
+from genefoundry_router.release.evidence import application_release_document
+from genefoundry_router.release.models import (
+    ApplicationReleaseManifest,
+)
 
 
 class ReleaseCandidateCaptureError(RuntimeError):
@@ -69,7 +72,7 @@ def _validated_release_manifest(value: object, *, label: str) -> dict[str, Any]:
         raise ReleaseCandidateCaptureError(
             f"invalid application release manifest for {label}"
         ) from exc
-    return manifest.model_dump(mode="json")
+    return application_release_document(manifest)
 
 
 def validate_release_candidate_inventory(inventory: object) -> dict[str, Any]:

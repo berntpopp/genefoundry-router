@@ -1,5 +1,8 @@
 # GeneReviews-Link Issue #40 Revision and Composition Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Finish the remaining #40 ergonomics work with durable, bounded chapter revision history and documented composable workflows, while explicitly retaining the deliberate removal of duplicated `markdown_table` output.

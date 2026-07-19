@@ -1,5 +1,8 @@
 # Orphanet #23 — Immutable Reference Data Init-Sidecar Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Remove Orphanet’s runtime `latest` release selection, checksum-sidecar trust, and local XML-build fallback; serve only an exact data release verified and atomically selected by a hardened init sidecar with SQLite opened `mode=ro&immutable=1`.

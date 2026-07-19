@@ -1,6 +1,9 @@
 # Fleet Error-Message-Sanitation Sweep (Response-Envelope Standard v1.1 §Error-message sanitation)
 
 - **Date:** 2026-07-11
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Author:** senior MCP/LLM security engineer (Claude), continuing the untrusted-content fencing programme.
 - **Status:** DESIGN — presented for approval before execution.
 - **Boundary:** Research use only; not clinical decision support. Backends mirror their upstream disclaimers.

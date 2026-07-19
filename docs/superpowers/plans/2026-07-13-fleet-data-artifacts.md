@@ -1,5 +1,8 @@
 # Fleet Immutable Data Artifacts Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Remove authoritative datasets from public application images and give every data-bearing backend an explicit, verified, independently rollbackable data identity.

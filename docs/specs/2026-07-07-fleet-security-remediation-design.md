@@ -2,6 +2,9 @@
 
 - **Date:** 2026-07-07
 - **Status:** Revised after Codex `high` adversarial review (8 must-fix + 3 should-fix incorporated); ready for implementation plan
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Review:** Codex `high` red-teamed this spec against the live `-link` source on 2026-07-07; its
   corrections are folded into D2–D8, the Theme B/C inventories, and the phasing. Raw review kept in
   the session artifact `codex-review-out.md`.

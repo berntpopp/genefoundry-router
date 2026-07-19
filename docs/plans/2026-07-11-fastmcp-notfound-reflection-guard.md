@@ -1,5 +1,8 @@
 # Fleet FastMCP-Core Not-Found Reflection Guard — Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 Spec: `docs/specs/2026-07-11-fastmcp-notfound-reflection-guard-design.md`. Read it first.
 Boundary: research-use-only; **no deploy** (operator owns redeploy + live probes).
 

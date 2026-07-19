@@ -1,6 +1,9 @@
 # Fleet Agent Skills — Design
 
 - **Date:** 2026-07-06
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Scope:** `genefoundry-router` + all real `-link` backends (21; `omim-link` is an empty
   stub and is skipped)
 - **Goal:** Give every repo a consistent set of Claude Code / Agent-Skills-format

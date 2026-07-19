@@ -141,12 +141,14 @@ def test_manifest_allows_standard_workflow_from_router_repository() -> None:
             "release_tag": "data-2026.07.13",
             "digest": f"sha256:{'6' * 64}",
             "schema_compatibility": [">=1,<2"],
+            "data_identity_contract": None,
         },
         {
             "mode": "restored-database",
             "release_tag": "data-2026.07.13",
             "digest": f"sha256:{'6' * 64}",
             "schema_compatibility": [">=1,<2"],
+            "data_identity_contract": None,
         },
         {
             "mode": "upstream-live",
@@ -154,6 +156,7 @@ def test_manifest_allows_standard_workflow_from_router_repository() -> None:
             "digest": f"sha256:{'6' * 64}",
             "schema_compatibility": [],
             "reproducible_rollback": False,
+            "data_identity_contract": None,
         },
     ],
 )

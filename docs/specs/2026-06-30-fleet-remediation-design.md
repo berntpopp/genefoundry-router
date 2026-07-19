@@ -2,6 +2,9 @@
 
 **Date:** 2026-06-30
 **Status:** Draft (drives the per-workstream plans under `docs/plans/2026-06-30-fleet-remediation/`)
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 **Source:** 22-agent parallel audit of the whole `-link` fleet + router, run `link-fleet-issue-audit` (`wf_bbf0fd58-f47`), 2026-06-30. See memory `fleet-issue-audit-2026-06-30`.
 
 ## 1. Summary

@@ -1,5 +1,8 @@
 # Fleet FastMCP-Core Not-Found Reflection Guard (Response-Envelope Standard v1.1 §Error-message sanitation — Fast-follow)
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - Status: DRAFT — pending operator review
 - Author: security engineering (Claude, session 92270f93)
 - Date: 2026-07-11

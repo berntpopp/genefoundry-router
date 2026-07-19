@@ -1,5 +1,8 @@
 # Fleet Findability — Rollout Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > Companion to [Repository Metadata Standard v1](../REPO-METADATA-STANDARD-v1.md) and its
 > [design spec](../specs/2026-07-14-fleet-repo-metadata-design.md). Written 2026-07-14.
 

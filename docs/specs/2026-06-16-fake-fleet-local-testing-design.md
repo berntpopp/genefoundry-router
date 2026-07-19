@@ -2,6 +2,9 @@
 
 - **Date:** 2026-06-16
 - **Status:** Approved (brainstorm) — revised after code-grounded review — pending implementation plan
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 - **Scope:** `genefoundry-router` only
 - **Related:** `docs/specs/2026-06-13-genefoundry-router-design.md`
 

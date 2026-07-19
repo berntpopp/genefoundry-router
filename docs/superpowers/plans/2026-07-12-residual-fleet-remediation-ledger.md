@@ -2,6 +2,9 @@
 
 **Status:** remote CI verified on all remediation draft PRs; unmerged and not deployed
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 **Scope:** R-01 through R-08 from the supplied issue brief.  This ledger is deliberately an
 evidence record, not a statement that the draft PRs have been merged, released, or deployed.
 

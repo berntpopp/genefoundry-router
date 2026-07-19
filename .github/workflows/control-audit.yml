@@ -1,0 +1,31 @@
+name: Trusted-builder control audit
+
+on:
+  schedule:
+    - cron: "31 4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
+    # Admin prerequisite: restrict to protected main/default-branch runs and gate the token here.
+    environment: control-audit
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          version: "0.8.7"
+      - name: Install dependencies
+        run: uv sync --group dev --frozen
+      - name: Verify trusted-builder controls
+        env:
+          GH_TOKEN: ${{ secrets.CONTROL_AUDIT_TOKEN }}
+        run: uv run python scripts/audit_container_controls.py --check
