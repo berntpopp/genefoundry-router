@@ -32,7 +32,13 @@ MAIN_RULESET_DETAIL = {
         {"type": "non_fast_forward"},
         {
             "type": "pull_request",
-            "parameters": {"required_approving_review_count": 1},
+            "parameters": {
+                "dismiss_stale_reviews_on_push": False,
+                "require_code_owner_review": False,
+                "require_last_push_approval": False,
+                "required_approving_review_count": 1,
+                "required_review_thread_resolution": False,
+            },
         },
     ],
 }
@@ -219,6 +225,106 @@ def test_main_branch_ruleset_probe_returns_exact_verified_model(
 def test_main_branch_ruleset_probe_rejects_untrusted_or_malformed_policy(
     monkeypatch: pytest.MonkeyPatch, detail: object
 ) -> None:
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+@pytest.mark.parametrize(
+    "rule_type",
+    [
+        "required_status_checks",
+        "merge_queue",
+        "required_signatures",
+        "required_linear_history",
+        "unknown_future_rule",
+    ],
+)
+def test_main_branch_ruleset_probe_rejects_additional_rule_types(
+    monkeypatch: pytest.MonkeyPatch, rule_type: str
+) -> None:
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [*MAIN_RULESET_DETAIL["rules"], {"type": rule_type}],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+@pytest.mark.parametrize(
+    ("parameter", "value"),
+    [
+        ("dismiss_stale_reviews_on_push", True),
+        ("require_code_owner_review", True),
+        ("require_last_push_approval", True),
+        ("required_review_thread_resolution", True),
+        ("required_reviewers", []),
+        ("dismissal_restriction", {"enabled": False}),
+        ("allowed_merge_methods", ["squash"]),
+        ("automatic_copilot_code_review_enabled", True),
+        ("unknown_future_parameter", False),
+    ],
+)
+def test_main_branch_ruleset_probe_rejects_additional_review_requirements(
+    monkeypatch: pytest.MonkeyPatch, parameter: str, value: object
+) -> None:
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [
+            *MAIN_RULESET_DETAIL["rules"][:-1],
+            {
+                "type": "pull_request",
+                "parameters": {
+                    **MAIN_RULESET_DETAIL["rules"][-1]["parameters"],
+                    parameter: value,
+                },
+            },
+        ],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+@pytest.mark.parametrize(
+    ("parameter", "value"),
+    [
+        ("required_approving_review_count", True),
+        ("require_code_owner_review", 0),
+    ],
+)
+def test_main_branch_ruleset_probe_rejects_json_type_coercion(
+    monkeypatch: pytest.MonkeyPatch, parameter: str, value: object
+) -> None:
+    parameters = {
+        **MAIN_RULESET_DETAIL["rules"][-1]["parameters"],
+        parameter: value,
+    }
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [
+            *MAIN_RULESET_DETAIL["rules"][:-1],
+            {"type": "pull_request", "parameters": parameters},
+        ],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+def test_main_branch_ruleset_probe_rejects_missing_required_parameter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parameters = dict(MAIN_RULESET_DETAIL["rules"][-1]["parameters"])
+    parameters.pop("require_code_owner_review")
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [
+            *MAIN_RULESET_DETAIL["rules"][:-1],
+            {"type": "pull_request", "parameters": parameters},
+        ],
+    }
     _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
 
     assert audit.probe_main_branch_ruleset(REPO) is None

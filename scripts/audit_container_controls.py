@@ -34,6 +34,14 @@ RULESET_NAME = "Protect semantic release tags"
 REQUIRED_RULES = frozenset({"creation", "update", "deletion", "non_fast_forward"})
 MAIN_RULESET_NAME = "Protect trusted-builder main"
 MAIN_BRANCH_REF = "refs/heads/main"
+MAIN_BRANCH_RULE_TYPES = frozenset({"deletion", "non_fast_forward", "pull_request"})
+MAIN_PULL_REQUEST_PARAMETERS: dict[str, Any] = {
+    "dismiss_stale_reviews_on_push": False,
+    "require_code_owner_review": False,
+    "require_last_push_approval": False,
+    "required_approving_review_count": 1,
+    "required_review_thread_resolution": False,
+}
 RELEASE_ENVIRONMENT = "release"
 EXACT_TAG_POLICY = "v*.*.*"
 BOOTSTRAP_TAG = "control-bootstrap"
@@ -47,6 +55,13 @@ MANIFEST_ACCEPT = ",".join(
 )
 
 JsonDict = dict[str, Any]
+
+
+def _matches_exact_typed_values(actual: JsonDict, expected: JsonDict) -> bool:
+    """Return whether a JSON object has exactly the expected keys, types, and values."""
+    return actual.keys() == expected.keys() and all(
+        type(actual[key]) is type(value) and actual[key] == value for key, value in expected.items()
+    )
 
 
 def _now() -> str:
@@ -152,10 +167,10 @@ def probe_main_branch_ruleset(repo: str) -> JsonDict | None:
     if not isinstance(detail, dict) or detail.get("enforcement") != "active":
         return None
     conditions = detail.get("conditions")
-    if not isinstance(conditions, dict):
+    if not isinstance(conditions, dict) or conditions.keys() != {"ref_name"}:
         return None
     ref_name = conditions.get("ref_name")
-    if not isinstance(ref_name, dict):
+    if not isinstance(ref_name, dict) or ref_name.keys() != {"include", "exclude"}:
         return None
     if ref_name.get("include") != [MAIN_BRANCH_REF] or ref_name.get("exclude") != []:
         return None
@@ -164,16 +179,22 @@ def probe_main_branch_ruleset(repo: str) -> JsonDict | None:
     rules = detail.get("rules")
     if not isinstance(rules, list) or any(not isinstance(rule, dict) for rule in rules):
         return None
+    rule_types = [rule.get("type") for rule in rules]
+    if len(rule_types) != len(MAIN_BRANCH_RULE_TYPES) or set(rule_types) != MAIN_BRANCH_RULE_TYPES:
+        return None
     deletion = [rule for rule in rules if rule.get("type") == "deletion"]
     non_fast_forward = [rule for rule in rules if rule.get("type") == "non_fast_forward"]
     pull_requests = [rule for rule in rules if rule.get("type") == "pull_request"]
     if len(deletion) != 1 or len(non_fast_forward) != 1 or len(pull_requests) != 1:
         return None
-    parameters = pull_requests[0].get("parameters")
-    if not isinstance(parameters, dict):
+    if deletion[0].keys() != {"type"} or non_fast_forward[0].keys() != {"type"}:
         return None
-    approval_count = parameters.get("required_approving_review_count")
-    if type(approval_count) is not int or approval_count != 1:
+    if pull_requests[0].keys() != {"type", "parameters"}:
+        return None
+    parameters = pull_requests[0].get("parameters")
+    if not isinstance(parameters, dict) or not _matches_exact_typed_values(
+        parameters, MAIN_PULL_REQUEST_PARAMETERS
+    ):
         return None
     return {
         "active": True,
