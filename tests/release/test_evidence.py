@@ -45,6 +45,29 @@ def _definition_evidence() -> DefinitionEvidence:
     return verify_definition_contract("data-independent", (first, second))
 
 
+def _observed_definition_evidence() -> DefinitionEvidence:
+    observed = {
+        "release_tag": "data-clingen-2026-07-16",
+        "digest": "sha256:" + "a" * 64,
+    }
+    tools: list[dict[str, object]] = [
+        {
+            "name": "get_capabilities",
+            "description": "Describe the server.",
+            "inputSchema": {"type": "object", "properties": {}, "required": []},
+            "outputSchema": None,
+            "annotations": {"readOnlyHint": True},
+            "execution": None,
+        }
+    ]
+    capture = capture_definitions(
+        tools,
+        context={"runtime": "published"},
+        observed_identity=observed,
+    )
+    return verify_definition_contract("data-bound", (capture,), observed_identity=observed)
+
+
 def _asset_files(tmp_path: Path) -> tuple[list[ReleaseAsset], DefinitionEvidence, str]:
     definitions = _definition_evidence()
     payloads: dict[str, object] = {
@@ -196,6 +219,31 @@ def test_manifest_assembly_revalidates_definition_contract_document(tmp_path: Pa
                 database_updated_at="2026-07-13T10:30:00Z",
             ),
             data_requirements={"mode": "none", "schema_compatibility": []},
+            assets=assets,
+        )
+
+
+def test_manifest_only_identity_change_cannot_rewrite_observed_capture(tmp_path: Path) -> None:
+    assets, _, image_digest = _asset_files(tmp_path)
+    definitions = _observed_definition_evidence()
+    write_json_atomic(tmp_path / "mcp-definitions.json", definitions.definitions_document)
+    write_json_atomic(tmp_path / "mcp-capture-context.json", definitions.context_document)
+
+    with pytest.raises(EvidenceAssemblyError, match="manifest data identity"):
+        assemble_application_release_manifest(
+            identity=_identity(image_digest),
+            definitions=definitions,
+            scanner=ScannerIdentity(
+                version="0.66.0",
+                database_updated_at="2026-07-13T10:30:00Z",
+            ),
+            data_requirements={
+                "mode": "external-reference",
+                "release_tag": "data-clingen-2026-07-17",
+                "digest": "sha256:" + "b" * 64,
+                "reproducible_rollback": False,
+                "schema_compatibility": [],
+            },
             assets=assets,
         )
 

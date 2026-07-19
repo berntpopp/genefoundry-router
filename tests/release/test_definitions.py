@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import replace
+from typing import Any
 
 import pytest
 from mcp.types import Tool as McpTool
@@ -14,6 +15,26 @@ from genefoundry_router.release.definitions import (
     load_definition_evidence,
     verify_definition_contract,
 )
+from genefoundry_router.release.runtime_identity import (
+    RuntimeIdentityError,
+    verify_readiness_data_identity,
+)
+
+RUNTIME_IDENTITY: dict[str, Any] = {
+    "release_identity": {
+        "schema_version": 1,
+        "data_identity": {
+            "expected": {
+                "release_tag": "data-clingen-2026-07-16",
+                "digest": "sha256:" + "a" * 64,
+            },
+            "actual": {
+                "release_tag": "data-clingen-2026-07-16",
+                "digest": "sha256:" + "a" * 64,
+            },
+        },
+    }
+}
 
 
 def _tools() -> list[dict[str, object]]:
@@ -140,6 +161,7 @@ def test_data_bound_requires_exact_declared_data_identity() -> None:
         context={"fixture": "production"},
         data_release_tag="data-2026.07.13",
         data_digest=data_digest,
+        adoption="unadopted",
     )
 
     evidence = verify_definition_contract(
@@ -147,12 +169,15 @@ def test_data_bound_requires_exact_declared_data_identity() -> None:
         (capture,),
         data_release_tag="data-2026.07.13",
         data_digest=data_digest,
+        adoption="unadopted",
     )
 
     assert evidence.context_document["data_identity"] == {
         "digest": data_digest,
         "release_tag": "data-2026.07.13",
     }
+    assert evidence.context_document["data_identity_contract"] == "unadopted"
+    assert evidence.data_identity_contract == "unadopted"
     assert evidence.definition_contract == "data-bound"
 
 
@@ -172,6 +197,7 @@ def test_data_bound_rejects_missing_or_mismatched_identity(
         context={"fixture": "production"},
         data_release_tag="data-2026.07.13",
         data_digest=f"sha256:{'a' * 64}",
+        adoption="unadopted",
     )
 
     with pytest.raises(DefinitionEvidenceError, match=message):
@@ -180,6 +206,7 @@ def test_data_bound_rejects_missing_or_mismatched_identity(
             (capture,),
             data_release_tag=tag,
             data_digest=digest,
+            adoption="unadopted",
         )
 
 
@@ -189,6 +216,7 @@ def test_data_identity_must_be_complete_and_exact() -> None:
             _tools(),
             context={"fixture": "production"},
             data_release_tag="data-2026.07.13",
+            adoption="unadopted",
         )
 
     with pytest.raises(DefinitionEvidenceError, match="sha256"):
@@ -197,6 +225,118 @@ def test_data_identity_must_be_complete_and_exact() -> None:
             context={"fixture": "production"},
             data_release_tag="data-2026.07.13",
             data_digest="sha256:not-exact",
+            adoption="unadopted",
+        )
+
+
+def test_adopted_data_bound_capture_seals_observed_health_identity() -> None:
+    observed = verify_readiness_data_identity(
+        RUNTIME_IDENTITY,
+        release_tag="data-clingen-2026-07-16",
+        digest="sha256:" + "a" * 64,
+        adoption="runtime-v1",
+    )
+    capture = capture_definitions(
+        _tools(), context={"runtime": "published"}, observed_identity=observed
+    )
+
+    evidence = verify_definition_contract("data-bound", [capture], observed_identity=observed)
+
+    assert evidence.data_identity == RUNTIME_IDENTITY["release_identity"]["data_identity"]["actual"]
+    assert evidence.data_identity_contract == "runtime-v1"
+    assert evidence.context_document["data_identity_contract"] == "runtime-v1"
+
+
+@pytest.mark.parametrize(
+    ("mutator", "message"),
+    [
+        (lambda value: value.pop("release_identity"), "release_identity"),
+        (
+            lambda value: value["release_identity"].update({"unknown": True}),
+            "invalid runtime-v1 release_identity",
+        ),
+        (
+            lambda value: value["release_identity"]["data_identity"]["actual"].update(
+                {"unknown": True}
+            ),
+            "invalid runtime-v1 release_identity",
+        ),
+        (
+            lambda value: value["release_identity"]["data_identity"].pop("actual"),
+            "invalid runtime-v1 release_identity",
+        ),
+        (
+            lambda value: value["release_identity"].update({"schema_version": 2}),
+            "invalid runtime-v1 release_identity",
+        ),
+        (
+            lambda value: value["release_identity"].update({"schema_version": True}),
+            "invalid runtime-v1 release_identity",
+        ),
+        (
+            lambda value: value["release_identity"]["data_identity"]["expected"].update(
+                {"digest": "sha256:" + "b" * 64}
+            ),
+            "expected identity does not match",
+        ),
+        (
+            lambda value: value["release_identity"]["data_identity"]["actual"].update(
+                {"release_tag": "data-clingen-2026-07-17"}
+            ),
+            "actual identity does not match",
+        ),
+    ],
+)
+def test_adopted_readiness_rejects_unprovable_identity(mutator: Any, message: str) -> None:
+    readiness = copy.deepcopy(RUNTIME_IDENTITY)
+    mutator(readiness)
+
+    with pytest.raises(RuntimeIdentityError, match=message):
+        verify_readiness_data_identity(
+            readiness,
+            release_tag="data-clingen-2026-07-16",
+            digest="sha256:" + "a" * 64,
+            adoption="runtime-v1",
+        )
+
+
+def test_runtime_v1_rejects_data_independent_requirements() -> None:
+    with pytest.raises(RuntimeIdentityError, match="data-bound"):
+        verify_readiness_data_identity(
+            RUNTIME_IDENTITY,
+            release_tag=None,
+            digest=None,
+            adoption="runtime-v1",
+        )
+
+
+def test_runtime_identity_rejects_unknown_adoption_state() -> None:
+    with pytest.raises(RuntimeIdentityError, match="adoption"):
+        verify_readiness_data_identity(
+            RUNTIME_IDENTITY,
+            release_tag="data-clingen-2026-07-16",
+            digest="sha256:" + "a" * 64,
+            adoption="unknown",  # type: ignore[arg-type]
+        )
+
+
+def test_unadopted_release_preserves_legacy_identity_only_when_explicit() -> None:
+    assert (
+        verify_readiness_data_identity(
+            {"release_identity": {"legacy": "ignored"}},
+            release_tag="data-clingen-2026-07-16",
+            digest="sha256:" + "a" * 64,
+            adoption="unadopted",
+        )
+        is None
+    )
+
+    with pytest.raises(DefinitionEvidenceError, match="explicitly unadopted"):
+        capture_definitions(
+            _tools(),
+            context={"fixture": "legacy"},
+            data_release_tag="data-clingen-2026-07-16",
+            data_digest="sha256:" + "a" * 64,
         )
 
 

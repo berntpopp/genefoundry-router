@@ -295,11 +295,16 @@ def test_capture_definitions_success_wires_inputs_and_outputs(
             "context": {"capture": "first"},
             "data_release_tag": "v2026.07",
             "data_digest": f"sha256:{'c' * 64}",
+            "adoption": "unadopted",
         },
     )
     assert captured["verify"] == (
         ("data-bound", ("capture",)),
-        {"data_release_tag": "v2026.07", "data_digest": f"sha256:{'c' * 64}"},
+        {
+            "data_release_tag": "v2026.07",
+            "data_digest": f"sha256:{'c' * 64}",
+            "adoption": "unadopted",
+        },
     )
     assert json.loads(definitions_out.read_text(encoding="utf-8")) == evidence.definitions_document
     assert json.loads(context_out.read_text(encoding="utf-8")) == evidence.context_document

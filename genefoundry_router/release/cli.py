@@ -385,12 +385,16 @@ def capture_definitions_command(
     def operation() -> _CliResult:
         if len(tools) != len(context):
             raise ValueError("tools and context counts differ")
+        adoption: Literal["unadopted"] | None = (
+            "unadopted" if data_release_tag is not None or data_digest is not None else None
+        )
         captures = tuple(
             capture_definitions(
                 _array(tool_path),
                 context=_object(context_path),
                 data_release_tag=data_release_tag,
                 data_digest=data_digest,
+                adoption=adoption,
             )
             for tool_path, context_path in zip(tools, context, strict=True)
         )
@@ -399,6 +403,7 @@ def capture_definitions_command(
             captures,
             data_release_tag=data_release_tag,
             data_digest=data_digest,
+            adoption=adoption,
         )
         write_json_atomic(out_definitions, evidence.definitions_document)
         write_json_atomic(out_context, evidence.context_document)

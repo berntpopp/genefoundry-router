@@ -123,6 +123,10 @@ def _require_data_binding(
 ) -> None:
     if definitions.definition_contract != "data-bound":
         return
+    if definitions.data_identity_contract not in {"unadopted", "runtime-v1"}:
+        raise EvidenceAssemblyError(
+            "data-bound definition evidence lacks explicit identity provenance"
+        )
     identity = definitions.data_identity
     if identity is None or (
         data_requirements.get("release_tag") != identity["release_tag"]
