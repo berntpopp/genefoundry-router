@@ -2,6 +2,23 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.7.0] - 2026-07-19
+
+### Added
+
+- Establish trusted-builder governance for reusable container releases, with
+  immutable workflow provenance, protected-branch control audits, and sealed
+  release manifests.
+- Publish the canonical Contract Truth v1 and Runtime Data Identity v1
+  conformance helpers, backed by router dogfood tests and rollout gates.
+
+### Changed
+
+- Require release evidence to bind observed runtime data identity while
+  preserving explicit compatibility with historical release records.
+- Harden GitHub ruleset verification against permissive, unknown, and malformed
+  branch-control policy representations.
+
 ## [0.6.15] - 2026-07-18
 
 ### Fixed
