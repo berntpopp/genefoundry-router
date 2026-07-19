@@ -18,10 +18,7 @@ from pydantic import (
     model_validator,
 )
 
-from genefoundry_router.release.schema_metadata import (
-    APPLICATION_RELEASE_SCHEMA_METADATA,
-    RELEASE_CONFIG_SCHEMA_METADATA,
-)
+from genefoundry_router.release import schema_metadata as schemas
 
 
 def _require_exact_schema_version(value: object) -> object:
@@ -395,7 +392,7 @@ EnvAssignment = Annotated[
 class ReleaseConfig(StrictModel):
     """Per-repository facts consumed by the central container release workflow."""
 
-    model_config = ConfigDict(json_schema_extra=RELEASE_CONFIG_SCHEMA_METADATA)
+    model_config = ConfigDict(json_schema_extra=schemas.RELEASE_CONFIG_SCHEMA_METADATA)
 
     schema_version: SchemaVersion = 1
     dockerfile: RepositoryRelativePath = "docker/Dockerfile"
@@ -516,7 +513,7 @@ class ExactDataRequirements(StrictModel):
     release_tag: DataReleaseTag
     digest: Sha256Digest
     schema_compatibility: tuple[str, ...] = ()
-    data_identity_contract: DataIdentityAdoption | None
+    data_identity_contract: DataIdentityAdoption | None = None
 
 
 class ExternalReferenceRequirements(ExactDataRequirements):
@@ -550,7 +547,7 @@ DataRequirements = Annotated[
 class ApplicationReleaseManifest(StrictModel):
     """Complete immutable evidence record for one accepted application image."""
 
-    model_config = ConfigDict(json_schema_extra=APPLICATION_RELEASE_SCHEMA_METADATA)
+    model_config = ConfigDict(json_schema_extra=schemas.APPLICATION_RELEASE_SCHEMA_METADATA)
 
     schema_version: SchemaVersion = 1
     repository: RepositoryName
@@ -590,9 +587,12 @@ class ApplicationReleaseManifest(StrictModel):
             raise ValueError("release asset digest must match its corresponding evidence digest")
         data_bound = self.mcp.definition_contract == "data-bound"
         adoption = getattr(self.data_requirements, "data_identity_contract", None)
+        adoption_was_sealed = "data_identity_contract" in self.data_requirements.model_fields_set
         if data_bound and self.data_requirements.mode == "none":
             raise ValueError("data-bound definitions require an authoritative data mode")
-        if data_bound == (adoption is None):
+        if data_bound and adoption_was_sealed and adoption is None:
+            raise ValueError("sealed data identity provenance cannot be null")
+        if not data_bound and adoption is not None:
             raise ValueError("definition and data identity contracts require matching provenance")
         return self
 

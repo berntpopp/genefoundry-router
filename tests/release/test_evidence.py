@@ -345,6 +345,49 @@ def test_manifest_assembly_seals_matching_adoption_provenance(
     assert manifest.data_requirements.data_identity_contract == adoption
 
 
+def test_manifest_assembly_accepts_legacy_omitted_adoption_as_unadopted(
+    tmp_path: Path,
+) -> None:
+    assets, _, image_digest = _asset_files(tmp_path)
+    definitions = _unadopted_definition_evidence()
+    _install_definition_assets(tmp_path, definitions)
+    requirements = _data_requirements()
+    del requirements["data_identity_contract"]
+
+    manifest = assemble_application_release_manifest(
+        identity=_identity(image_digest),
+        definitions=definitions,
+        scanner=ScannerIdentity(
+            version="0.66.0",
+            database_updated_at="2026-07-13T10:30:00Z",
+        ),
+        data_requirements=requirements,
+        assets=assets,
+    )
+
+    assert manifest.data_requirements.data_identity_contract is None
+    assert "data_identity_contract" not in manifest.data_requirements.model_fields_set
+    assert b"data_identity_contract" not in manifest_json_bytes(manifest)
+
+
+def test_manifest_assembly_rejects_explicit_null_legacy_adoption(tmp_path: Path) -> None:
+    assets, _, image_digest = _asset_files(tmp_path)
+    definitions = _unadopted_definition_evidence()
+    _install_definition_assets(tmp_path, definitions)
+
+    with pytest.raises(EvidenceAssemblyError, match="identity provenance"):
+        assemble_application_release_manifest(
+            identity=_identity(image_digest),
+            definitions=definitions,
+            scanner=ScannerIdentity(
+                version="0.66.0",
+                database_updated_at="2026-07-13T10:30:00Z",
+            ),
+            data_requirements=_data_requirements(None),
+            assets=assets,
+        )
+
+
 def test_manifest_bytes_and_atomic_write_are_deterministic(tmp_path: Path) -> None:
     assets, definitions, image_digest = _asset_files(tmp_path)
     manifest = assemble_application_release_manifest(

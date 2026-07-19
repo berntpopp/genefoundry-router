@@ -65,8 +65,9 @@ APPLICATION_RELEASE_SCHEMA_METADATA: JsonDict = TOP_LEVEL_SCHEMA_METADATA | {
             "then": {
                 "properties": {
                     "data_requirements": {
-                        "properties": {"data_identity_contract": {"not": {"type": "null"}}},
-                        "required": ["data_identity_contract"],
+                        "properties": {
+                            "data_identity_contract": {"enum": ["unadopted", "runtime-v1"]}
+                        },
                     }
                 }
             },

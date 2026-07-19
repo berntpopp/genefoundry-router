@@ -46,6 +46,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Data Identity Contract"
         },
         "mode": {
@@ -57,7 +58,6 @@
       "required": [
         "release_tag",
         "digest",
-        "data_identity_contract",
         "mode"
       ],
       "title": "ExternalReferenceRequirements",
@@ -275,6 +275,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Data Identity Contract"
         },
         "mode": {
@@ -286,7 +287,6 @@
       "required": [
         "release_tag",
         "digest",
-        "data_identity_contract",
         "mode"
       ],
       "title": "RestoredDatabaseRequirements",
@@ -419,6 +419,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Data Identity Contract"
         },
         "mode": {
@@ -435,7 +436,6 @@
       "required": [
         "release_tag",
         "digest",
-        "data_identity_contract",
         "mode",
         "reproducible_rollback"
       ],
@@ -508,14 +508,12 @@
           "data_requirements": {
             "properties": {
               "data_identity_contract": {
-                "not": {
-                  "type": "null"
-                }
+                "enum": [
+                  "unadopted",
+                  "runtime-v1"
+                ]
               }
-            },
-            "required": [
-              "data_identity_contract"
-            ]
+            }
           }
         }
       }

@@ -26,6 +26,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from genefoundry_router.config import load_registry
+from genefoundry_router.release.evidence import application_release_document
 from genefoundry_router.release.models import ApplicationReleaseManifest
 from scripts.snapshot_fleet import (
     ReleaseCandidateCaptureError,
@@ -42,7 +43,7 @@ def _parse_manifest(value: object, label: str) -> dict[str, object]:
         raise ReleaseCandidateCaptureError(
             f"invalid application release manifest for {label}"
         ) from exc
-    return manifest.model_dump(mode="json")
+    return application_release_document(manifest)
 
 
 def _load_application_releases(path: Path) -> dict[str, object]:

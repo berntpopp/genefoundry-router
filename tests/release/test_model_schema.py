@@ -191,31 +191,50 @@ def test_manifest_seals_valid_data_identity_adoption(adoption: str) -> None:
 
 
 @pytest.mark.parametrize("adoption", [None, "unknown"])
-def test_manifest_rejects_missing_or_unknown_data_identity_adoption(adoption: object) -> None:
+def test_manifest_rejects_explicit_null_or_unknown_data_identity_adoption(
+    adoption: object,
+) -> None:
     payload = _data_bound_manifest(adoption)
-    requirements = payload["data_requirements"]
-    assert isinstance(requirements, dict)
-    if adoption is None:
-        del requirements["data_identity_contract"]
 
     with pytest.raises(ValidationError):
         ApplicationReleaseManifest.model_validate(payload)
 
 
 @pytest.mark.parametrize("adoption", [None, "unknown"])
-def test_manifest_schema_rejects_missing_or_unknown_data_identity_adoption(
+def test_manifest_schema_rejects_explicit_null_or_unknown_data_identity_adoption(
     adoption: object,
 ) -> None:
     payload = _data_bound_manifest(adoption)
-    requirements = payload["data_requirements"]
-    assert isinstance(requirements, dict)
-    if adoption is None:
-        del requirements["data_identity_contract"]
 
     errors = Draft202012Validator(ApplicationReleaseManifest.model_json_schema()).iter_errors(
         payload
     )
     assert list(errors)
+
+
+def test_manifest_accepts_legacy_omitted_data_identity_adoption() -> None:
+    payload = _data_bound_manifest()
+    requirements = payload["data_requirements"]
+    assert isinstance(requirements, dict)
+    del requirements["data_identity_contract"]
+
+    manifest = ApplicationReleaseManifest.model_validate(payload)
+
+    assert manifest.data_requirements.data_identity_contract is None
+    assert "data_identity_contract" not in manifest.data_requirements.model_fields_set
+
+
+def test_manifest_schema_accepts_legacy_omitted_data_identity_adoption() -> None:
+    payload = _data_bound_manifest()
+    requirements = payload["data_requirements"]
+    assert isinstance(requirements, dict)
+    del requirements["data_identity_contract"]
+
+    errors = Draft202012Validator(ApplicationReleaseManifest.model_json_schema()).iter_errors(
+        payload
+    )
+
+    assert not list(errors)
 
 
 @pytest.mark.parametrize("adoption", ["unadopted", "runtime-v1"])

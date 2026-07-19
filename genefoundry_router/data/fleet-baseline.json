@@ -113,7 +113,6 @@
               "verification.json": "sha256:85bd4bdcdbaeef3db469ee9a9bc6978d540a6f752155271878d92f0ac83c0ac2"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "data-clingen-2026-07-16",
               "digest": "sha256:8ef351827e0ac86741891af4e53d91c1793f6c6cfc278754bff107774f9dd53c",
               "schema_compatibility": [],
@@ -172,7 +171,6 @@
               "verification.json": "sha256:bcbd8f5f5db0c25b6808bfff0bf5c2af17206fed81fe91d94aede25eafc07610"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "bundle-2026-07-07",
               "digest": "sha256:52eed6e488f9934432034449281afb73ed699a1b7e39cd85c0a1e731d82e48a8",
               "schema_compatibility": [],
@@ -231,7 +229,6 @@
               "verification.json": "sha256:c48fa26ecdda60b32b1961c991d09fe2f80f65843b0eb9d7eaf7991af0da272d"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "observed-2026.07.13",
               "digest": "sha256:1b090422659cfeda7cc4e16dd27f9b4fcf66012138e9f91c6266b73be9a1d111",
               "schema_compatibility": [],
@@ -291,7 +288,6 @@
               "verification.json": "sha256:a20cec66ebf32fa9d2729f8b60c38e13879cbb1b8a0aacdc4f9e747879b0084a"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "corpus-data-2026-07-13-r1",
               "digest": "sha256:4486e499337e9f816a2aa0741f2a0e51ca38cda52f96fb57564cfc36f4b3c5bc",
               "schema_compatibility": [],
@@ -462,7 +458,6 @@
               "verification.json": "sha256:37ed3f0a57232c1ed8b22d95360a5e7fcbbc32875d23c04910d7bbe22fd120c4"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "observed-2026.07.13",
               "digest": "sha256:3a106439d733bdb57353ccdc587de943b0fcb269d6979a97170954b596881fdc",
               "schema_compatibility": [],
@@ -522,7 +517,6 @@
               "verification.json": "sha256:e92ec0711705a8f7e369a98ac366245d6e4ef8400c14d78716798486d775487a"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "db-v2026-06-23",
               "digest": "sha256:d677a96efd8c274045241934c33b25dfb6fc9a6414c27bed7ae3334d05d4c9f6",
               "schema_compatibility": [],
@@ -637,7 +631,6 @@
               "verification.json": "sha256:96f712a90f9be1a6723270ff41610ce359b3edeeffb2fdd8e063d5546390744b"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "data-2026-06-24",
               "digest": "sha256:30b2b4fdbdff9a1a2e9f13e9f7de072a22ff07e70dea5d45eba297a5b9a5155a",
               "schema_compatibility": [],
@@ -752,7 +745,6 @@
               "verification.json": "sha256:bcffb2d3ad42c09612b593de21ae10e13fe10279f6a929af518e66cdff83ba5d"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "observed-2026.07.13",
               "digest": "sha256:1efd2fe47b73ce84f486eff9a8d3ad9262be98e3c944cda9460672f33cfac717",
               "schema_compatibility": [],
@@ -812,7 +804,6 @@
               "verification.json": "sha256:d2556d08d43690eb871e00ccc2e7949d74b32ee74e81f6c898aa425f52c5855d"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "observed-2026.07.13",
               "digest": "sha256:c588ebf0141f1cf8cb30bbc0a0ef545dc12045402ddaaf7e4ecc4d1b236a9191",
               "schema_compatibility": [],
@@ -872,7 +863,6 @@
               "verification.json": "sha256:7daad679d66e5f7b1f579b67e7217ac463b52d3f33146f5c936649da61af9841"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "data-1.3.42-4.1.8-2025-03-03",
               "digest": "sha256:a8af3fc39cca2acedd12c188cb0e1f907ac320e73d2b965c17ad5a28c5f5fe38",
               "schema_compatibility": [],
@@ -987,7 +977,6 @@
               "verification.json": "sha256:130462a94e3891a8c7b849cd717d7d19944fb93d8d696649b7e7faedcf8b177c"
             },
             "data_requirements": {
-              "data_identity_contract": "unadopted",
               "release_tag": "observed-2026.07.13",
               "digest": "sha256:e3a508657abbea8cb5a2282459f9313ff4f52aa27506f24d554292f9d2635295",
               "schema_compatibility": [],

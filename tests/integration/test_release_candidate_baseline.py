@@ -1,14 +1,35 @@
 """Offline release-contract gate for the packaged drift baseline."""
 
+import hashlib
 import json
 from pathlib import Path
 
 from genefoundry_router.devtools.fakes import load_manifest
+from scripts.make_release_candidate import _load_application_releases
 from scripts.snapshot_fleet import load_release_candidate_inventory
 
 BASELINE = Path("genefoundry_router/data/fleet-baseline.json")
 RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
+APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
+
+HISTORICAL_EVIDENCE_SHA256 = {
+    APPLICATION_RELEASES: "bab275d68a724269138731c8ae205ccc0e353fc2649ffaeaf128a74e067f8779",
+    RELEASE_INVENTORY: "9913230aa1f858e7e081ad94e6e1b9af7bd0433c6a1e523a20ed7d6b9b484fbd",
+    RELEASE_CANDIDATE: "90b95de272b95cf180427bb5eb5d11ffbb1154678468ed90fb9ccc54a37037e0",
+    BASELINE: "90b95de272b95cf180427bb5eb5d11ffbb1154678468ed90fb9ccc54a37037e0",
+}
+
+
+def test_historical_release_evidence_bytes_are_immutable() -> None:
+    for path, expected in HISTORICAL_EVIDENCE_SHA256.items():
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == expected
+
+
+def test_historical_application_release_reader_preserves_semantic_objects() -> None:
+    releases = json.loads(APPLICATION_RELEASES.read_text(encoding="utf-8"))
+
+    assert _load_application_releases(APPLICATION_RELEASES) == releases
 
 
 def test_baseline_is_bound_to_an_oci_release_candidate_inventory() -> None:
@@ -23,7 +44,7 @@ def test_baseline_is_bound_to_an_oci_release_candidate_inventory() -> None:
     inventory = json.loads(RELEASE_INVENTORY.read_text(encoding="utf-8"))
 
     loaded = load_release_candidate_inventory(RELEASE_INVENTORY)
-    assert loaded["identity"] == inventory["identity"]
+    assert loaded == inventory
     assert set(inventory) == {"identity", "backends"}
     assert all(
         entry["application_release"]["image"]["digest"].startswith("sha256:")
