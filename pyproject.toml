@@ -37,7 +37,7 @@ dependencies = [
     "structlog>=26.1.0,<27.0.0",
     "orjson>=3.10.0,<4.0.0",
     "asgi-correlation-id>=5.0.1,<6.0.0",
-    "prometheus-client>=0.21.0,<1.0.0",
+    "prometheus-client>=0.26.0,<1.0.0",
 ]
 
 [dependency-groups]
