@@ -49,14 +49,14 @@ jobs:
           echo "STANDARD_SHA=$workflow_sha" >> "$GITHUB_ENV"
 
       - name: Checkout exact tagged caller source
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
           ref: ${{ github.sha }}
 
       - name: Checkout exact container standard revision
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ steps.workflow-identity.outputs.workflow_repository }}
           ref: ${{ steps.workflow-identity.outputs.workflow_sha }}
@@ -229,13 +229,13 @@ jobs:
       # smoke paths are therefore derived from $RUNNER_TEMP inside each step.
     steps:
       - name: Checkout exact tagged caller source
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ needs.prepare.outputs.source_sha }}
 
       - name: Checkout exact container standard revision
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: berntpopp/genefoundry-router
           ref: ${{ needs.prepare.outputs.standard_sha }}
@@ -735,13 +735,13 @@ jobs:
       # smoke paths are therefore derived from $RUNNER_TEMP inside each step.
     steps:
       - name: Checkout exact tagged caller source
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ needs.prepare.outputs.source_sha }}
 
       - name: Checkout exact container standard revision
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: berntpopp/genefoundry-router
           ref: ${{ needs.prepare.outputs.standard_sha }}
@@ -984,7 +984,7 @@ jobs:
       artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
     steps:
       - name: Checkout exact container standard revision
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: berntpopp/genefoundry-router
           ref: ${{ needs.prepare.outputs.standard_sha }}
