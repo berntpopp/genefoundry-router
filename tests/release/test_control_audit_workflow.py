@@ -12,8 +12,8 @@ WORKFLOW = ROOT / ".github/workflows/control-audit.yml"
 AUDIT_COMMAND = "uv run python scripts/audit_container_controls.py --check"
 CONTROL_AUDIT_SECRET_REF = "${{ secrets.CONTROL_AUDIT_TOKEN }}"  # noqa: S105
 SECRET_EXPRESSION_PREFIX = "${{ secrets."  # noqa: S105
-CHECKOUT_ACTION = "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
-SETUP_UV_ACTION = "astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990"
+CHECKOUT_ACTION = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
+SETUP_UV_ACTION = "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9"
 
 
 def _load() -> dict[str, Any]:

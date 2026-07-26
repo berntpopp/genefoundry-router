@@ -15,9 +15,9 @@ CALLER = ROOT / ".github/workflows/container-release.yml"
 TRIVY_CACHE_DIR = "${{ github.workspace }}/.cache/trivy"
 
 ACTION_PINS = {
-    "actions/checkout": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
-    "actions/setup-python": "ece7cb06caefa5fff74198d8649806c4678c61a1",
-    "astral-sh/setup-uv": "11f9893b081a58869d3b5fccaea48c9e9e46f990",
+    "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+    "actions/setup-python": "5fda3b95a4ea91299a34e894583c3862153e4b97",
+    "astral-sh/setup-uv": "c771a70e6277c0a99b617c7a806ffedaca235ff9",
     "docker/setup-buildx-action": "bb05f3f5519dd87d3ba754cc423b652a5edd6d2c",
     "docker/build-push-action": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
     "aquasecurity/trivy-action": "ed142fd0673e97e23eac54620cfb913e5ce36c25",
@@ -25,15 +25,15 @@ ACTION_PINS = {
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
     "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
     "docker/login-action": "af1e73f918a031802d376d3c8bbc3fe56130a9b0",
-    "actions/attest-build-provenance": "977bb373ede98d70efdf65b84cb5f73e068dcc2a",
-    "actions/attest-sbom": "4651f806c01d8637787e274ac3bdf724ef169f34",
+    "actions/attest-build-provenance": "0f67c3f4856b2e3261c31976d6725780e5e4c373",
+    "actions/attest-sbom": "c604332985a26aa8cf1bdc465b92731239ec6b9e",
 }
 
 ACTION_PIN_VERSIONS = {
-    "astral-sh/setup-uv": "v8.3.2",
+    "astral-sh/setup-uv": "v9.0.0",
     "aquasecurity/trivy-action": "v0.36.0",
-    "actions/attest-build-provenance": "v3.0.0",
-    "actions/attest-sbom": "v3.0.0",
+    "actions/attest-build-provenance": "v4.1.1",
+    "actions/attest-sbom": "v4.1.0",
 }
 
 READ_JOBS = {"prepare", "build-gate", "capture", "assemble-evidence"}

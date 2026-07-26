@@ -25,7 +25,7 @@ classifiers = [
 dependencies = [
     "fastmcp>=3.4.4,<4.0.0",
     "mcp[cli]>=1.28.1,<2.0.0",
-    "fastapi>=0.139.2,<1.0.0",
+    "fastapi>=0.140.0,<1.0.0",
     "uvicorn[standard]>=0.51.0,<1.0.0",
     "gunicorn>=25.3.0,<27.0.0",
     "pydantic>=2.11.0,<3.0.0",
@@ -37,7 +37,7 @@ dependencies = [
     "structlog>=26.1.0,<27.0.0",
     "orjson>=3.10.0,<4.0.0",
     "asgi-correlation-id>=5.0.1,<6.0.0",
-    "prometheus-client>=0.21.0,<1.0.0",
+    "prometheus-client>=0.26.0,<1.0.0",
 ]
 
 [dependency-groups]
@@ -49,10 +49,10 @@ dev = [
     "pytest-xdist>=3.6.0,<4.0.0",
     "jsonschema>=4.26.0,<5.0.0",
     "respx>=0.22.0,<1.0.0",
-    "types-pyyaml>=6.0.0,<7.0.0",
-    "ruff>=0.15.22,<1.0.0",
+    "types-pyyaml>=6.0.12.20260724,<7.0.0",
+    "ruff>=0.16.0,<1.0.0",
     "mypy>=2.3.0,<3.0.0",
-    "pre-commit>=4.0.0,<5.0.0",
+    "pre-commit>=4.6.1,<5.0.0",
 ]
 
 [project.scripts]
@@ -76,7 +76,7 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-extend-select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "S", "T20", "SIM", "RUF"]
+select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "S", "T20", "SIM", "RUF"]
 ignore = ["S101", "E501", "B008", "N999", "RUF006", "RUF012", "RUF022", "SIM108", "SIM117", "T201", "UP042"]
 
 [tool.ruff.format]
