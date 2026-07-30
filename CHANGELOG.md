@@ -33,6 +33,24 @@ All notable changes to genefoundry-router are documented here.
   stayed green for ten days against a ledger the release gate rejected. Proven by reverting
   the ledger and watching the guard fail.
 
+- Re-pin the packaged drift baseline and the release-candidate inventory to
+  `fleet-2026-07-30`, the fleet released once the gate above was unblocked. All 21 backends
+  moved (`autopvs1` 4.1.1→4.1.3, `clingen` 4.0.1→4.0.3, `clinvar` 0.5.0→0.5.3,
+  `gencc` 0.8.0→0.8.2, `genereviews` 5.1.0→5.1.1, `gnomad` 9.0.0→9.0.2,
+  `gtex` 3.1.0→3.1.2, `hgnc` 2.1.0→2.1.2, `hpo` 0.4.0→0.4.2, `litvar` 6.0.0→6.0.2,
+  `mavedb` 0.5.0→0.5.2, `metadome` 0.3.1→0.3.3, `mgi` 0.6.0→0.6.2, `mondo` 0.4.0→0.4.2,
+  `orphanet` 0.4.0→0.4.2, `panelapp` 0.6.0→0.6.2, `pubtator` 7.1.4→7.1.6,
+  `spliceai` 4.0.0→4.0.2, `stringdb` 4.1.0→4.1.2, `uniprot` 5.0.0→5.0.2,
+  `vep` 1.1.0→1.1.2), so every definition digest changed.
+
+  The tool **contract** barely moved, which is the point of reading the diff rather than
+  trusting the digest: 272 tools across 21 namespaces before and after, none added and none
+  removed. Exactly four definitions changed beyond an embedded version string —
+  `gencc.find_curations` gained `Natera` as a submitter enum value, and
+  `genereviews.search_passages`, `gnomad.compute_gene_carrier_frequency` and
+  `gnomad.get_gene_variants` had their descriptions shortened by the tool-surface-budget
+  work, with parameters, enums and semantics unchanged.
+
 ## [0.7.3] - 2026-07-30
 
 ### Fixed
