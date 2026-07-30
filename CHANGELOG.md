@@ -2,6 +2,18 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.7.3] - 2026-07-30
+
+### Fixed
+
+- Re-pin `github/codeql-action` so Dependabot can actually track it. The pin
+  `ed410739…` is not a commit — it is the *annotated tag object* the moving `v4` tag
+  pointed at when the pin was taken. GitHub Actions resolves it, so CI stayed green, but
+  Dependabot cannot resolve a tag object to a release and therefore never proposed an
+  update. The pin had silently frozen at **v4.35.3** while upstream reached v4.37.4.
+  Now pinned to the commit `f205ea1c…` with an exact `# v4.37.4` comment, which both
+  unfreezes it and restores Dependabot tracking.
+
 ## [0.7.2] - 2026-07-30
 
 ### Fixed
