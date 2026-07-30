@@ -8,7 +8,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/autopvs1-link/settings",
-          "verified_at": "2026-07-13T17:29:57Z"
+          "verified_at": "2026-07-30T15:05:05Z"
         }
       },
       "package": {
@@ -18,7 +18,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/autopvs1-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:29:57Z"
+          "verified_at": "2026-07-30T15:05:05Z"
         },
         "linked_repository": "berntpopp/autopvs1-link",
         "name": "ghcr.io/berntpopp/autopvs1-link",
@@ -31,7 +31,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/autopvs1-link/settings/environments",
-          "verified_at": "2026-07-13T17:29:57Z"
+          "verified_at": "2026-07-30T15:05:04Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -49,11 +49,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/autopvs1-link/settings",
-          "verified_at": "2026-07-13T17:29:57Z"
+          "verified_at": "2026-07-30T15:05:05Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -65,7 +66,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/autopvs1-link/settings/rules/18884678",
-          "verified_at": "2026-07-13T17:29:56Z"
+          "verified_at": "2026-07-30T15:05:03Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -81,7 +82,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/clingen-link/settings",
-          "verified_at": "2026-07-13T17:29:59Z"
+          "verified_at": "2026-07-30T15:05:07Z"
         }
       },
       "package": {
@@ -91,7 +92,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/clingen-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:00Z"
+          "verified_at": "2026-07-30T15:05:08Z"
         },
         "linked_repository": "berntpopp/clingen-link",
         "name": "ghcr.io/berntpopp/clingen-link",
@@ -104,7 +105,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/clingen-link/settings/environments",
-          "verified_at": "2026-07-13T17:29:59Z"
+          "verified_at": "2026-07-30T15:05:07Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -122,11 +123,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/clingen-link/settings",
-          "verified_at": "2026-07-13T17:30:00Z"
+          "verified_at": "2026-07-30T15:05:08Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -138,7 +140,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/clingen-link/settings/rules/18884670",
-          "verified_at": "2026-07-13T17:29:58Z"
+          "verified_at": "2026-07-30T15:05:06Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -154,7 +156,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/clinvar-link/settings",
-          "verified_at": "2026-07-13T17:30:02Z"
+          "verified_at": "2026-07-30T15:05:10Z"
         }
       },
       "package": {
@@ -164,7 +166,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/clinvar-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:03Z"
+          "verified_at": "2026-07-30T15:05:11Z"
         },
         "linked_repository": "berntpopp/clinvar-link",
         "name": "ghcr.io/berntpopp/clinvar-link",
@@ -177,7 +179,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/clinvar-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:02Z"
+          "verified_at": "2026-07-30T15:05:10Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -195,11 +197,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/clinvar-link/settings",
-          "verified_at": "2026-07-13T17:30:03Z"
+          "verified_at": "2026-07-30T15:05:11Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -211,7 +214,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/clinvar-link/settings/rules/18884688",
-          "verified_at": "2026-07-13T17:30:01Z"
+          "verified_at": "2026-07-30T15:05:09Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -227,7 +230,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/gencc-link/settings",
-          "verified_at": "2026-07-13T17:30:05Z"
+          "verified_at": "2026-07-30T15:05:13Z"
         }
       },
       "package": {
@@ -237,7 +240,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/gencc-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:05Z"
+          "verified_at": "2026-07-30T15:05:15Z"
         },
         "linked_repository": "berntpopp/gencc-link",
         "name": "ghcr.io/berntpopp/gencc-link",
@@ -250,7 +253,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/gencc-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:04Z"
+          "verified_at": "2026-07-30T15:05:13Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -268,11 +271,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/gencc-link/settings",
-          "verified_at": "2026-07-13T17:30:05Z"
+          "verified_at": "2026-07-30T15:05:15Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -284,7 +288,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/gencc-link/settings/rules/18884673",
-          "verified_at": "2026-07-13T17:30:03Z"
+          "verified_at": "2026-07-30T15:05:12Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -300,8 +304,24 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/genefoundry-router/settings",
-          "verified_at": "2026-07-13T17:30:07Z"
+          "verified_at": "2026-07-30T15:05:17Z"
         }
+      },
+      "main_branch_ruleset": {
+        "active": true,
+        "blocks_deletions": true,
+        "blocks_force_pushes": true,
+        "bypass_actors": [],
+        "evidence": {
+          "reason": "Exact active main branch ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/genefoundry-router/settings/rules/20051431",
+          "verified_at": "2026-07-30T15:05:19Z"
+        },
+        "required_approving_review_count": 0,
+        "requires_pull_request": true,
+        "targets_main": true
       },
       "package": {
         "anonymous_pull": true,
@@ -310,7 +330,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/genefoundry-router/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:08Z"
+          "verified_at": "2026-07-30T15:05:18Z"
         },
         "linked_repository": "berntpopp/genefoundry-router",
         "name": "ghcr.io/berntpopp/genefoundry-router",
@@ -323,7 +343,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/genefoundry-router/settings/environments",
-          "verified_at": "2026-07-13T17:30:07Z"
+          "verified_at": "2026-07-30T15:05:17Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -341,11 +361,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/genefoundry-router/settings",
-          "verified_at": "2026-07-13T17:30:08Z"
+          "verified_at": "2026-07-30T15:05:19Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "trusted-builder",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -357,7 +378,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/genefoundry-router/settings/rules/18883963",
-          "verified_at": "2026-07-13T17:30:06Z"
+          "verified_at": "2026-07-30T15:05:16Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -373,7 +394,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/genereviews-link/settings",
-          "verified_at": "2026-07-13T17:30:10Z"
+          "verified_at": "2026-07-30T15:05:21Z"
         }
       },
       "package": {
@@ -383,7 +404,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/genereviews-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:11Z"
+          "verified_at": "2026-07-30T15:05:22Z"
         },
         "linked_repository": "berntpopp/genereviews-link",
         "name": "ghcr.io/berntpopp/genereviews-link",
@@ -396,7 +417,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/genereviews-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:10Z"
+          "verified_at": "2026-07-30T15:05:21Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -414,11 +435,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/genereviews-link/settings",
-          "verified_at": "2026-07-13T17:30:11Z"
+          "verified_at": "2026-07-30T15:05:22Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -430,7 +452,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/genereviews-link/settings/rules/18884683",
-          "verified_at": "2026-07-13T17:30:09Z"
+          "verified_at": "2026-07-30T15:05:20Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -446,7 +468,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/gnomad-link/settings",
-          "verified_at": "2026-07-13T17:30:12Z"
+          "verified_at": "2026-07-30T15:05:24Z"
         }
       },
       "package": {
@@ -456,7 +478,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/gnomad-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:13Z"
+          "verified_at": "2026-07-30T15:05:27Z"
         },
         "linked_repository": "berntpopp/gnomad-link",
         "name": "ghcr.io/berntpopp/gnomad-link",
@@ -469,7 +491,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/gnomad-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:12Z"
+          "verified_at": "2026-07-30T15:05:24Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -487,11 +509,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/gnomad-link/settings",
-          "verified_at": "2026-07-13T17:30:13Z"
+          "verified_at": "2026-07-30T15:05:27Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -503,7 +526,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/gnomad-link/settings/rules/18884662",
-          "verified_at": "2026-07-13T17:30:11Z"
+          "verified_at": "2026-07-30T15:05:23Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -519,7 +542,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/gtex-link/settings",
-          "verified_at": "2026-07-13T17:30:15Z"
+          "verified_at": "2026-07-30T15:05:29Z"
         }
       },
       "package": {
@@ -529,7 +552,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/gtex-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:16Z"
+          "verified_at": "2026-07-30T15:05:30Z"
         },
         "linked_repository": "berntpopp/gtex-link",
         "name": "ghcr.io/berntpopp/gtex-link",
@@ -542,7 +565,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/gtex-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:15Z"
+          "verified_at": "2026-07-30T15:05:29Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -560,11 +583,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/gtex-link/settings",
-          "verified_at": "2026-07-13T17:30:16Z"
+          "verified_at": "2026-07-30T15:05:30Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -576,7 +600,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/gtex-link/settings/rules/18884663",
-          "verified_at": "2026-07-13T17:30:14Z"
+          "verified_at": "2026-07-30T15:05:28Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -592,7 +616,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/hgnc-link/settings",
-          "verified_at": "2026-07-13T17:30:18Z"
+          "verified_at": "2026-07-30T15:05:32Z"
         }
       },
       "package": {
@@ -602,7 +626,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/hgnc-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:18Z"
+          "verified_at": "2026-07-30T15:05:33Z"
         },
         "linked_repository": "berntpopp/hgnc-link",
         "name": "ghcr.io/berntpopp/hgnc-link",
@@ -615,7 +639,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/hgnc-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:17Z"
+          "verified_at": "2026-07-30T15:05:31Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -633,11 +657,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/hgnc-link/settings",
-          "verified_at": "2026-07-13T17:30:18Z"
+          "verified_at": "2026-07-30T15:05:33Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -649,7 +674,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/hgnc-link/settings/rules/18884665",
-          "verified_at": "2026-07-13T17:30:17Z"
+          "verified_at": "2026-07-30T15:05:31Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -665,7 +690,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/hpo-link/settings",
-          "verified_at": "2026-07-13T17:30:21Z"
+          "verified_at": "2026-07-30T15:05:35Z"
         }
       },
       "package": {
@@ -675,7 +700,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/hpo-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:21Z"
+          "verified_at": "2026-07-30T15:05:46Z"
         },
         "linked_repository": "berntpopp/hpo-link",
         "name": "ghcr.io/berntpopp/hpo-link",
@@ -688,7 +713,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/hpo-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:20Z"
+          "verified_at": "2026-07-30T15:05:34Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -706,11 +731,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/hpo-link/settings",
-          "verified_at": "2026-07-13T17:30:21Z"
+          "verified_at": "2026-07-30T15:05:46Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -722,7 +748,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/hpo-link/settings/rules/18884699",
-          "verified_at": "2026-07-13T17:30:20Z"
+          "verified_at": "2026-07-30T15:05:33Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -738,7 +764,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/litvar-link/settings",
-          "verified_at": "2026-07-13T17:30:23Z"
+          "verified_at": "2026-07-30T15:05:49Z"
         }
       },
       "package": {
@@ -748,7 +774,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/litvar-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:24Z"
+          "verified_at": "2026-07-30T15:05:50Z"
         },
         "linked_repository": "berntpopp/litvar-link",
         "name": "ghcr.io/berntpopp/litvar-link",
@@ -761,7 +787,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/litvar-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:23Z"
+          "verified_at": "2026-07-30T15:05:49Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -779,11 +805,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/litvar-link/settings",
-          "verified_at": "2026-07-13T17:30:24Z"
+          "verified_at": "2026-07-30T15:05:50Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -795,7 +822,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/litvar-link/settings/rules/18884675",
-          "verified_at": "2026-07-13T17:30:22Z"
+          "verified_at": "2026-07-30T15:05:48Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -811,7 +838,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/mavedb-link/settings",
-          "verified_at": "2026-07-13T17:30:26Z"
+          "verified_at": "2026-07-30T15:05:53Z"
         }
       },
       "package": {
@@ -821,7 +848,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/mavedb-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:26Z"
+          "verified_at": "2026-07-30T15:05:53Z"
         },
         "linked_repository": "berntpopp/mavedb-link",
         "name": "ghcr.io/berntpopp/mavedb-link",
@@ -834,7 +861,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/mavedb-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:26Z"
+          "verified_at": "2026-07-30T15:05:52Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -852,11 +879,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/mavedb-link/settings",
-          "verified_at": "2026-07-13T17:30:26Z"
+          "verified_at": "2026-07-30T15:05:53Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -868,7 +896,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/mavedb-link/settings/rules/18884696",
-          "verified_at": "2026-07-13T17:30:25Z"
+          "verified_at": "2026-07-30T15:05:51Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -884,7 +912,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/metadome-link/settings",
-          "verified_at": "2026-07-13T17:30:28Z"
+          "verified_at": "2026-07-30T15:05:55Z"
         }
       },
       "package": {
@@ -894,7 +922,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/metadome-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:28Z"
+          "verified_at": "2026-07-30T15:05:56Z"
         },
         "linked_repository": "berntpopp/metadome-link",
         "name": "ghcr.io/berntpopp/metadome-link",
@@ -907,7 +935,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/metadome-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:28Z"
+          "verified_at": "2026-07-30T15:05:55Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -925,11 +953,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/metadome-link/settings",
-          "verified_at": "2026-07-13T17:30:28Z"
+          "verified_at": "2026-07-30T15:05:56Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -941,7 +970,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/metadome-link/settings/rules/18884701",
-          "verified_at": "2026-07-13T17:30:27Z"
+          "verified_at": "2026-07-30T15:05:54Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -957,7 +986,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/mgi-link/settings",
-          "verified_at": "2026-07-13T17:30:30Z"
+          "verified_at": "2026-07-30T15:05:58Z"
         }
       },
       "package": {
@@ -967,7 +996,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/mgi-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:31Z"
+          "verified_at": "2026-07-30T15:05:59Z"
         },
         "linked_repository": "berntpopp/mgi-link",
         "name": "ghcr.io/berntpopp/mgi-link",
@@ -980,7 +1009,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/mgi-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:30Z"
+          "verified_at": "2026-07-30T15:05:58Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -998,11 +1027,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/mgi-link/settings",
-          "verified_at": "2026-07-13T17:30:31Z"
+          "verified_at": "2026-07-30T15:05:59Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -1014,7 +1044,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/mgi-link/settings/rules/18884666",
-          "verified_at": "2026-07-13T17:30:29Z"
+          "verified_at": "2026-07-30T15:05:57Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -1030,7 +1060,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/mondo-link/settings",
-          "verified_at": "2026-07-13T17:30:33Z"
+          "verified_at": "2026-07-30T15:06:01Z"
         }
       },
       "package": {
@@ -1040,7 +1070,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/mondo-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:34Z"
+          "verified_at": "2026-07-30T15:06:02Z"
         },
         "linked_repository": "berntpopp/mondo-link",
         "name": "ghcr.io/berntpopp/mondo-link",
@@ -1053,7 +1083,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/mondo-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:33Z"
+          "verified_at": "2026-07-30T15:06:01Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -1071,11 +1101,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/mondo-link/settings",
-          "verified_at": "2026-07-13T17:30:34Z"
+          "verified_at": "2026-07-30T15:06:02Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -1087,7 +1118,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/mondo-link/settings/rules/18884695",
-          "verified_at": "2026-07-13T17:30:32Z"
+          "verified_at": "2026-07-30T15:06:00Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -1103,7 +1134,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/orphanet-link/settings",
-          "verified_at": "2026-07-13T17:30:36Z"
+          "verified_at": "2026-07-30T15:06:05Z"
         }
       },
       "package": {
@@ -1113,7 +1144,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/orphanet-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:36Z"
+          "verified_at": "2026-07-30T15:06:05Z"
         },
         "linked_repository": "berntpopp/orphanet-link",
         "name": "ghcr.io/berntpopp/orphanet-link",
@@ -1126,7 +1157,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/orphanet-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:35Z"
+          "verified_at": "2026-07-30T15:06:04Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -1144,11 +1175,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/orphanet-link/settings",
-          "verified_at": "2026-07-13T17:30:36Z"
+          "verified_at": "2026-07-30T15:06:05Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -1160,7 +1192,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/orphanet-link/settings/rules/18884703",
-          "verified_at": "2026-07-13T17:30:35Z"
+          "verified_at": "2026-07-30T15:06:04Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -1176,7 +1208,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/panelapp-link/settings",
-          "verified_at": "2026-07-13T17:30:38Z"
+          "verified_at": "2026-07-30T15:06:08Z"
         }
       },
       "package": {
@@ -1186,7 +1218,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/panelapp-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:39Z"
+          "verified_at": "2026-07-30T15:06:09Z"
         },
         "linked_repository": "berntpopp/panelapp-link",
         "name": "ghcr.io/berntpopp/panelapp-link",
@@ -1199,7 +1231,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/panelapp-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:38Z"
+          "verified_at": "2026-07-30T15:06:08Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -1217,11 +1249,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/panelapp-link/settings",
-          "verified_at": "2026-07-13T17:30:39Z"
+          "verified_at": "2026-07-30T15:06:09Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -1233,7 +1266,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/panelapp-link/settings/rules/18884694",
-          "verified_at": "2026-07-13T17:30:37Z"
+          "verified_at": "2026-07-30T15:06:06Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -1249,7 +1282,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/pubtator-link/settings",
-          "verified_at": "2026-07-13T17:30:41Z"
+          "verified_at": "2026-07-30T15:06:11Z"
         }
       },
       "package": {
@@ -1259,7 +1292,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/pubtator-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:42Z"
+          "verified_at": "2026-07-30T15:06:12Z"
         },
         "linked_repository": "berntpopp/pubtator-link",
         "name": "ghcr.io/berntpopp/pubtator-link",
@@ -1272,7 +1305,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/pubtator-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:41Z"
+          "verified_at": "2026-07-30T15:06:11Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -1290,11 +1323,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/pubtator-link/settings",
-          "verified_at": "2026-07-13T17:30:42Z"
+          "verified_at": "2026-07-30T15:06:12Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -1306,7 +1340,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/pubtator-link/settings/rules/18884684",
-          "verified_at": "2026-07-13T17:30:40Z"
+          "verified_at": "2026-07-30T15:06:10Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -1322,7 +1356,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/spliceailookup-link/settings",
-          "verified_at": "2026-07-13T17:30:44Z"
+          "verified_at": "2026-07-30T15:06:14Z"
         }
       },
       "package": {
@@ -1332,7 +1366,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/spliceailookup-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:44Z"
+          "verified_at": "2026-07-30T15:06:15Z"
         },
         "linked_repository": "berntpopp/spliceailookup-link",
         "name": "ghcr.io/berntpopp/spliceailookup-link",
@@ -1345,7 +1379,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/spliceailookup-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:43Z"
+          "verified_at": "2026-07-30T15:06:14Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -1363,11 +1397,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/spliceailookup-link/settings",
-          "verified_at": "2026-07-13T17:30:44Z"
+          "verified_at": "2026-07-30T15:06:15Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -1379,7 +1414,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/spliceailookup-link/settings/rules/18884681",
-          "verified_at": "2026-07-13T17:30:42Z"
+          "verified_at": "2026-07-30T15:06:13Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -1395,7 +1430,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/stringdb-link/settings",
-          "verified_at": "2026-07-13T17:30:46Z"
+          "verified_at": "2026-07-30T15:06:17Z"
         }
       },
       "package": {
@@ -1405,7 +1440,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/stringdb-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:46Z"
+          "verified_at": "2026-07-30T15:06:17Z"
         },
         "linked_repository": "berntpopp/stringdb-link",
         "name": "ghcr.io/berntpopp/stringdb-link",
@@ -1418,7 +1453,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/stringdb-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:46Z"
+          "verified_at": "2026-07-30T15:06:16Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -1436,11 +1471,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/stringdb-link/settings",
-          "verified_at": "2026-07-13T17:30:46Z"
+          "verified_at": "2026-07-30T15:06:17Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -1452,7 +1488,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/stringdb-link/settings/rules/18884677",
-          "verified_at": "2026-07-13T17:30:45Z"
+          "verified_at": "2026-07-30T15:06:15Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -1468,7 +1504,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/uniprot-link/settings",
-          "verified_at": "2026-07-13T17:30:48Z"
+          "verified_at": "2026-07-30T15:06:20Z"
         }
       },
       "package": {
@@ -1478,7 +1514,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/uniprot-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:49Z"
+          "verified_at": "2026-07-30T15:06:20Z"
         },
         "linked_repository": "berntpopp/uniprot-link",
         "name": "ghcr.io/berntpopp/uniprot-link",
@@ -1491,7 +1527,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/uniprot-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:48Z"
+          "verified_at": "2026-07-30T15:06:19Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -1509,11 +1545,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/uniprot-link/settings",
-          "verified_at": "2026-07-13T17:30:49Z"
+          "verified_at": "2026-07-30T15:06:20Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -1525,7 +1562,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/uniprot-link/settings/rules/18884668",
-          "verified_at": "2026-07-13T17:30:47Z"
+          "verified_at": "2026-07-30T15:06:18Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -1541,7 +1578,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/vep-link/settings",
-          "verified_at": "2026-07-13T17:30:51Z"
+          "verified_at": "2026-07-30T15:06:22Z"
         }
       },
       "package": {
@@ -1551,7 +1588,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://ghcr.io/v2/berntpopp/vep-link/manifests/control-bootstrap",
-          "verified_at": "2026-07-13T17:30:52Z"
+          "verified_at": "2026-07-30T15:06:23Z"
         },
         "linked_repository": "berntpopp/vep-link",
         "name": "ghcr.io/berntpopp/vep-link",
@@ -1564,7 +1601,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/vep-link/settings/environments",
-          "verified_at": "2026-07-13T17:30:50Z"
+          "verified_at": "2026-07-30T15:06:22Z"
         },
         "exact_tag_only": true,
         "protected": true,
@@ -1582,11 +1619,12 @@
           "source": "manual",
           "status": "verified",
           "url": "https://github.com/berntpopp/vep-link/settings",
-          "verified_at": "2026-07-13T17:30:52Z"
+          "verified_at": "2026-07-30T15:06:23Z"
         },
         "released_digests": true,
         "rollback_digests": true
       },
+      "role": "backend",
       "status": "verified",
       "tag_ruleset": {
         "active": true,
@@ -1598,7 +1636,7 @@
           "source": "api",
           "status": "verified",
           "url": "https://github.com/berntpopp/vep-link/settings/rules/18884692",
-          "verified_at": "2026-07-13T17:30:50Z"
+          "verified_at": "2026-07-30T15:06:21Z"
         },
         "restricts_creation": true,
         "restricts_deletion": true,
@@ -1607,6 +1645,6 @@
       }
     }
   },
-  "reviewed_at": "2026-07-13T17:29:55Z",
+  "reviewed_at": "2026-07-30T15:05:02Z",
   "schema_version": 1
 }
