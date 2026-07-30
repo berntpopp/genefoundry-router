@@ -201,7 +201,27 @@ def load_control_ledger(source: Path | dict[str, object]) -> ContainerControlLed
         )
         return ContainerControlLedger.model_validate(payload)
     except (OSError, json.JSONDecodeError, ValidationError) as exc:
-        raise ControlLedgerError("invalid control ledger") from exc
+        raise ControlLedgerError(f"invalid control ledger: {_ledger_error_detail(exc)}") from exc
+
+
+def _ledger_error_detail(exc: Exception) -> str:
+    """Summarise *why* a ledger failed, without echoing any ledger values.
+
+    The release gate and the control audit both surface only this string. Emitting the
+    bare phrase stranded a red build for ten days with nothing to act on, so name the
+    failing field paths and their pydantic error types — structure only, never values.
+    """
+    if not isinstance(exc, ValidationError):
+        return str(exc)
+    kinds: dict[str, list[str]] = {}
+    for error in exc.errors():
+        field = ".".join(str(part) for part in error["loc"][-2:]) or "<root>"
+        kinds.setdefault(error["type"], []).append(field)
+    summary = "; ".join(
+        f"{kind} at {len(fields)} field(s) e.g. {sorted(set(fields))[0]}"
+        for kind, fields in sorted(kinds.items())
+    )
+    return f"{exc.error_count()} validation error(s): {summary}"
 
 
 def _verified_row_errors(row: VerifiedRepositoryControls) -> list[str]:
