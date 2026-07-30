@@ -1,0 +1,55 @@
+{
+  "data_requirements": {
+    "digest": "sha256:8ef351827e0ac86741891af4e53d91c1793f6c6cfc278754bff107774f9dd53c",
+    "mode": "external-reference",
+    "release_tag": "data-clingen-2026-07-16",
+    "schema_compatibility": []
+  },
+  "image": {
+    "digest": "sha256:66713dc90f407d5262fd5565772aa523b94c59aed0db45fa4a852f01c53b5b34",
+    "name": "ghcr.io/berntpopp/clingen-link",
+    "platforms": [
+      {
+        "digest": "sha256:66713dc90f407d5262fd5565772aa523b94c59aed0db45fa4a852f01c53b5b34",
+        "platform": "linux/amd64"
+      }
+    ]
+  },
+  "mcp": {
+    "capture_context_sha256": "56848390ffb89de9345c6c410c8e508c4c53cf448082701bf7786f6253bb8ba6",
+    "definition_contract": "data-bound",
+    "definitions_sha256": "f3108155dcb9621becdbb3e5dc36e3e57330a4e0adef004b06c8f9e626b8bc9e"
+  },
+  "release_assets": {
+    "attestation-bundle.json": "sha256:f8a118a7371ae348c0aa061e1f86ee1a9d9976666fb719164d9957118bd5b2ea",
+    "image-manifest.json": "sha256:66713dc90f407d5262fd5565772aa523b94c59aed0db45fa4a852f01c53b5b34",
+    "mcp-capture-context.json": "sha256:56848390ffb89de9345c6c410c8e508c4c53cf448082701bf7786f6253bb8ba6",
+    "mcp-definitions.json": "sha256:f3108155dcb9621becdbb3e5dc36e3e57330a4e0adef004b06c8f9e626b8bc9e",
+    "sbom.spdx.json": "sha256:dc5640c096207545a11ac777e8895d699e3c5c719a7bbdd6e1f2b876eb38c8ea",
+    "trivy.json": "sha256:9095d4b81a9c4d69618250011d265c00692fd49210db44d9025fe68bd41c23df",
+    "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+    "verification.json": "sha256:85bd4bdcdbaeef3db469ee9a9bc6978d540a6f752155271878d92f0ac83c0ac2"
+  },
+  "repository": "berntpopp/clingen-link",
+  "schema_version": 1,
+  "security_evidence": {
+    "attestation_bundle_sha256": "f8a118a7371ae348c0aa061e1f86ee1a9d9976666fb719164d9957118bd5b2ea",
+    "database_updated_at": "2026-07-16T07:27:44.878390Z",
+    "sbom_sha256": "dc5640c096207545a11ac777e8895d699e3c5c719a7bbdd6e1f2b876eb38c8ea",
+    "scanner": "trivy",
+    "scanner_evidence_sha256": "9095d4b81a9c4d69618250011d265c00692fd49210db44d9025fe68bd41c23df",
+    "scanner_version": "0.70.0",
+    "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+    "verification_sha256": "85bd4bdcdbaeef3db469ee9a9bc6978d540a6f752155271878d92f0ac83c0ac2"
+  },
+  "source": {
+    "revision": "9c2855229fa2a2baea6f4005bd5e78c679cb8183",
+    "tag": "v4.0.1"
+  },
+  "version": "4.0.1",
+  "workflow": {
+    "caller": "berntpopp/clingen-link/.github/workflows/container-release.yml",
+    "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+    "standard_revision": "86b11f7ed062ed84dfddcbd309e34da88f3dae5b"
+  }
+}

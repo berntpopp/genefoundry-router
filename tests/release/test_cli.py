@@ -539,9 +539,14 @@ def test_assemble_manifest_success_wires_evidence_and_assets(
 def test_assemble_manifest_preserves_authentic_legacy_omission(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    releases_path = Path(__file__).parents[2] / "ci" / "fleet-application-releases.json"
-    release_set = json.loads(releases_path.read_text(encoding="utf-8"))
-    historical = release_set["backends"]["clingen"]
+    # ClinGen v4.0.1, captured verbatim from ci/fleet-application-releases.json before that
+    # file moved to fleet-2026-07-30. These are authentic released bytes, not a synthetic
+    # manifest -- the point of the test is that a real pre-adoption manifest round-trips
+    # without the assembler inventing `data_identity_contract`. It is frozen here because
+    # the live evidence file legitimately moves forward: ClinGen adopted the contract in
+    # v4.0.3, so it no longer contains any pre-adoption example to read.
+    fixture = Path(__file__).parents[1] / "fixtures" / "legacy_application_release_clingen.json"
+    historical = json.loads(fixture.read_text(encoding="utf-8"))
     requirements = historical["data_requirements"]
     assert "data_identity_contract" not in requirements
 
