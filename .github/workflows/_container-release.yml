@@ -257,7 +257,7 @@ jobs:
         run: uv sync --project .container-release-tools --group dev --frozen
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.0.0
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Prepare immutable evidence directory
         id: evidence-paths
@@ -271,7 +271,7 @@ jobs:
 
       - name: Build production OCI layout exactly once
         if: ${{ needs.prepare.outputs.build_required == 'true' }}
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.0.0
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: docker/Dockerfile
@@ -556,7 +556,7 @@ jobs:
 
       - name: Upload immutable OCI layout and evidence
         id: upload
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
@@ -583,7 +583,7 @@ jobs:
       EXPECTED_DIGEST: ${{ needs.build-gate.outputs.image_digest }}
     steps:
       - name: Download immutable build artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/release-build
@@ -621,7 +621,7 @@ jobs:
           chmod 0755 "$RUNNER_TEMP/oras"
 
       - name: Log in to GHCR
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.0.0
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -711,7 +711,7 @@ jobs:
           sha256sum ./*.json > SHA256SUMS
 
       - name: Upload attestation evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-attest-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
@@ -966,7 +966,7 @@ jobs:
           done
 
       - name: Upload published definition capture
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-capture-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
@@ -1003,19 +1003,19 @@ jobs:
           version: "0.8.7"
 
       - name: Download build evidence
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/build
 
       - name: Download attestation evidence
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-attest-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/attest
 
       - name: Download MCP capture
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-capture-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/capture
@@ -1058,7 +1058,7 @@ jobs:
 
       - name: Upload finalization artifact
         id: upload
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-final-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
@@ -1087,7 +1087,7 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - name: Download sealed finalization artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-final-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/final
@@ -1177,7 +1177,7 @@ jobs:
           done
 
       - name: Log in to GHCR
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.0.0
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

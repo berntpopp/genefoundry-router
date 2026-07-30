@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme readme-inventory lint-actions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme readme-inventory lint-actions lint-action-versions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
 
 .DEFAULT_GOAL := help
 
@@ -70,6 +70,9 @@ readme-inventory: ## Regenerate the README's federated-backend table from server
 lint-actions: ## Lint GitHub Actions workflows (actionlint if installed; CI always runs it)
 	@command -v actionlint >/dev/null 2>&1 && actionlint -color || \
 		echo "actionlint not on PATH — skipped locally (CI runs it; the YAML-parse test still gates syntax)"
+
+lint-action-versions: ## Verify each Actions SHA pin's "# vX.Y.Z" comment against the upstream tag (needs gh; skips without credentials)
+	uv run python scripts/check_action_pin_versions.py
 
 typecheck: ## Type check package
 	uv run mypy $(PKG)

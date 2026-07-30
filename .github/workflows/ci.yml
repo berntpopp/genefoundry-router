@@ -59,6 +59,14 @@ jobs:
       - name: Run CI checks (format, lint, typecheck, tests)
         run: make ci-local
 
+      # The offline guard (tests/unit/test_action_pin_comments.py) proves pin comments are
+      # self-consistent; it cannot catch one that is uniformly wrong. Resolving the claim
+      # needs the network, so it lives here rather than in ci-local. Skips without a token.
+      - name: Verify Actions SHA-pin version comments
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: make lint-action-versions
+
       # Coverage gate runs only on push to main to avoid a second full test run on
       # every PR iteration (concurrency-cancel + this split are the compute savers).
       - name: Coverage gate

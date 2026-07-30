@@ -2,6 +2,30 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.7.2] - 2026-07-30
+
+### Fixed
+
+- Correct five more SHA-pin version comments that named a tag their pin is not. Every one
+  understated the pinned release, some by three majors:
+  `actions/upload-artifact@043fb46d…` said `v4.6.2` but is **v7.0.1**;
+  `actions/download-artifact@3e5f45b2…` said `v4.3.0` but is **v8.0.1**;
+  `docker/build-push-action@53b7df96…` said `v7.0.0` but is **v7.3.0**;
+  `docker/login-action@af1e73f9…` said `v4.0.0` but is **v4.4.0**;
+  `docker/setup-buildx-action@bb05f3f5…` said `v4.0.0` but is **v4.2.0**.
+  The pins themselves were already the intended releases — only the comments lied, so this
+  is a documentation correction with no change to what CI executes.
+
+### Added
+
+- `make lint-action-versions` (`scripts/check_action_pin_versions.py`) resolves every
+  SHA pin against the upstream tag and fails when an exact-version comment names a tag its
+  SHA is not. The offline guard added in 0.7.1 proves pin comments are *self-consistent*;
+  it cannot catch one that is uniformly wrong, which is exactly how these five survived.
+  Wired into CI (needs a token) and skips cleanly on an offline checkout, so it can never
+  turn a local build red or become a reason to weaken the offline guard. Bare-major
+  comments (`# v4`) are reported as advisory, not failed — those tags legitimately move.
+
 ## [0.7.1] - 2026-07-30
 
 ### Fixed
