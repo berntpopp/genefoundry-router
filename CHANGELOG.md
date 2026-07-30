@@ -2,6 +2,30 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.7.1] - 2026-07-30
+
+### Fixed
+
+- Correct the `actions/setup-python` SHA-pin version comments in the two fleet-wide
+  reusable workflows (`_container-ci.yml`, `_container-release.yml`). The pinned SHA
+  `5fda3b95…` is tag `v7.0.0`, but five uses documented it as `v6.0.0` while the same SHA
+  was correctly labelled `v7.0.0` elsewhere. Every `-link` backend consumes these two
+  workflows, so the misleading comment was the fleet's audit surface.
+
+### Added
+
+- Guard the readable half of every SHA pin: `tests/unit/test_action_pin_comments.py`
+  fails when one SHA is documented as two different versions, and when an external
+  action is unpinned or carries no version comment. `make lint-actions` runs
+  `actionlint`, which checks workflow syntax and never reads the pin comment, so this
+  class of drift was previously invisible to CI.
+
+### Changed
+
+- Refresh locked dependencies within their declared ranges: `fastmcp` 3.4.4 → 3.4.5,
+  `mcp` 1.28.1 → 1.29.0, `fastapi` 0.140.0 → 0.141.1, `uvicorn` 0.51.0 → 0.52.0,
+  `websockets` 16.0 → 17.0, plus development tooling.
+
 ## [0.7.0] - 2026-07-19
 
 ### Added
