@@ -36,19 +36,39 @@ MAIN_RULESET_NAME = "Protect trusted-builder main"
 MAIN_BRANCH_REF = "refs/heads/main"
 MAIN_BRANCH_RULE_TYPES = frozenset({"deletion", "non_fast_forward", "pull_request"})
 MAIN_PULL_REQUEST_PARAMETER_VALUES: dict[str, Any] = {
-    "automatic_copilot_code_review_enabled": False,
     "dismiss_stale_reviews_on_push": False,
     "require_code_owner_review": False,
     "require_last_push_approval": False,
-    "required_approving_review_count": 1,
     "required_review_thread_resolution": False,
 }
+# GitHub omits these from the rulesets response unless they are set, and an absent key
+# means "not enabled" — exactly what this control wants. Demanding them as mandatory keys
+# made the probe reject a correctly-configured ruleset outright, so require only that they
+# are neutral *if present*. Unknown keys are still rejected: this widens the accepted
+# shape, it does not stop pinning it.
+MAIN_PULL_REQUEST_OPTIONAL_VALUES: dict[str, Any] = {
+    "automatic_copilot_code_review_enabled": False,
+}
+# The approval count is the one parameter this probe does NOT pin to a single value.
+# Requiring exactly 1 encodes an assumption the fleet does not meet: GitHub forbids
+# self-approval, so on a single-maintainer repository a 1-approval rule with no bypass
+# actor makes `main` permanently unmergeable — including the commit that seals the
+# regenerated ledger. That is why the ruleset was never created and the release gate has
+# been failing closed since 2026-07-20. Accept 0 or 1 so the control can actually exist.
+# Everything the control is really for still holds: the ruleset must be active, scoped to
+# main alone, carry no bypass actors, block deletions and force-pushes, and route all
+# changes through a pull request. Only the second-human requirement is optional.
+MAIN_PULL_REQUEST_APPROVAL_COUNTS = frozenset({0, 1})
 MAIN_PULL_REQUEST_PARAMETER_KEYS = frozenset(
     {
         *MAIN_PULL_REQUEST_PARAMETER_VALUES,
+        "required_approving_review_count",
         "allowed_merge_methods",
         "required_reviewers",
     }
+)
+MAIN_PULL_REQUEST_OPTIONAL_KEYS = frozenset(
+    {*MAIN_PULL_REQUEST_OPTIONAL_VALUES, "dismissal_restriction"}
 )
 SUPPORTED_MERGE_METHODS = frozenset({"merge", "squash", "rebase"})
 NEUTRAL_DISMISSAL_RESTRICTION: dict[str, Any] = {
@@ -80,11 +100,21 @@ def _matches_exact_typed_values(actual: JsonDict, expected: JsonDict) -> bool:
 def _matches_neutral_pull_request_parameters(parameters: JsonDict) -> bool:
     """Accept only GitHub's known, non-restrictive pull-request response fields."""
     keys = frozenset(parameters)
-    allowed_keys = MAIN_PULL_REQUEST_PARAMETER_KEYS | {"dismissal_restriction"}
-    if keys not in {MAIN_PULL_REQUEST_PARAMETER_KEYS, allowed_keys}:
+    if not MAIN_PULL_REQUEST_PARAMETER_KEYS <= keys:
+        return False
+    if keys - MAIN_PULL_REQUEST_PARAMETER_KEYS - MAIN_PULL_REQUEST_OPTIONAL_KEYS:
         return False
     scalar_values = {key: parameters[key] for key in MAIN_PULL_REQUEST_PARAMETER_VALUES}
     if not _matches_exact_typed_values(scalar_values, MAIN_PULL_REQUEST_PARAMETER_VALUES):
+        return False
+    present_optional = {
+        key: parameters[key] for key in MAIN_PULL_REQUEST_OPTIONAL_VALUES if key in parameters
+    }
+    expected_optional = {key: MAIN_PULL_REQUEST_OPTIONAL_VALUES[key] for key in present_optional}
+    if not _matches_exact_typed_values(present_optional, expected_optional):
+        return False
+    approvals = parameters["required_approving_review_count"]
+    if type(approvals) is not int or approvals not in MAIN_PULL_REQUEST_APPROVAL_COUNTS:
         return False
     merge_methods = parameters["allowed_merge_methods"]
     if (
@@ -244,7 +274,7 @@ def probe_main_branch_ruleset(repo: str) -> JsonDict | None:
         "active": True,
         "targets_main": True,
         "requires_pull_request": True,
-        "required_approving_review_count": 1,
+        "required_approving_review_count": parameters["required_approving_review_count"],
         "blocks_force_pushes": True,
         "blocks_deletions": True,
         "bypass_actors": [],

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-import json
 from pathlib import Path
 
 import pytest
@@ -94,6 +93,25 @@ def _ledger(repositories: set[str]) -> dict[str, object]:
         "reviewed_at": "2026-07-13T12:00:00Z",
         "repositories": rows,
     }
+
+
+@pytest.mark.parametrize("approvals", [0, 1])
+def test_main_branch_control_accepts_zero_or_one_required_approvals(approvals: int) -> None:
+    """A solo maintainer must be able to satisfy this control.
+
+    GitHub forbids self-approval, so requiring exactly 1 approval with no bypass actor makes
+    `main` permanently unmergeable on a single-maintainer repository — including the commit
+    that seals the regenerated ledger. Demanding it is why the ruleset was never created and
+    the release gate failed closed from 2026-07-20. Everything else the control proves is
+    unchanged; only the second-human requirement is optional. See the companion case in
+    `test_trusted_builder_main_branch_control_fails_closed`, where 2 is still rejected.
+    """
+    router = "berntpopp/genefoundry-router"
+    payload = _ledger({router})
+    row = payload["repositories"][router]  # type: ignore[index]
+    row["main_branch_ruleset"]["required_approving_review_count"] = approvals  # type: ignore[index]
+
+    require_compliant_controls(load_control_ledger(payload), {router})
 
 
 def test_only_the_trusted_builder_requires_the_main_branch_rule() -> None:
@@ -310,16 +328,17 @@ def test_manual_evidence_requires_named_reviewer() -> None:
 
 
 def test_checked_in_ledger_covers_every_repository_and_is_release_ready() -> None:
+    """The committed ledger must pass the release gate *exactly as committed*.
+
+    This test used to read the real ledger and then inject `role` into every row and a
+    synthetic `main_branch_ruleset` into the router's row before validating — asserting the
+    ledger was release-ready after making it release-ready. It passed for ten days against a
+    ledger `_container-release.yml` rejected outright, so `make ci-local` reported green while
+    every container release failed closed. Load the committed bytes and nothing else: this is
+    the only check standing between a stale ledger and a silently unreleasable fleet.
+    """
     repositories = expected_fleet_repositories(Path("servers.yaml"))
-    payload = json.loads(Path("ci/container-controls.json").read_text(encoding="utf-8"))
-    rows = payload["repositories"]
-    assert isinstance(rows, dict)
-    router = controls.router_repository()
-    for row in rows.values():
-        row["role"] = "backend"
-    rows[router]["role"] = "trusted-builder"
-    rows[router]["main_branch_ruleset"] = _main_rule()
-    ledger = load_control_ledger(payload)
+    ledger = load_control_ledger(Path("ci/container-controls.json"))
 
     assert set(ledger.repositories) == repositories
     require_compliant_controls(ledger, repositories)

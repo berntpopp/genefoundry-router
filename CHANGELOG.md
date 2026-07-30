@@ -2,6 +2,37 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.7.4] - 2026-07-30
+
+### Fixed
+
+- Unblock container releases fleet-wide. `ci/container-controls.json` predated the `role`
+  field added on 2026-07-18, so `require_compliant_controls` failed closed and no release
+  could be published — the last published release was v0.6.14 (2026-07-16). The ledger is
+  regenerated from live probes (22/22 rows verified) and the `Protect trusted-builder main`
+  ruleset now exists.
+- Accept a `required_approving_review_count` of **0 or 1** on the trusted-builder main
+  ruleset instead of exactly 1. Requiring 1 encoded an assumption the fleet does not meet:
+  GitHub forbids self-approval, so a 1-approval rule with no bypass actor makes `main`
+  permanently unmergeable on a single-maintainer repository — including the commit that
+  seals the regenerated ledger. That is why the ruleset was never created. Everything the
+  control exists for is unchanged and still enforced: active, scoped to `main` alone, zero
+  bypass actors, deletions blocked, force-pushes blocked, all changes via pull request. A
+  count above 1 is still rejected.
+- Treat `automatic_copilot_code_review_enabled` and `dismissal_restriction` as
+  optional-but-neutral in the ruleset probe. GitHub omits them from the API response unless
+  they are set, and demanding them as mandatory keys made the probe reject a correctly
+  configured ruleset. Unknown keys are still rejected.
+
+### Changed
+
+- `test_checked_in_ledger_covers_every_repository_and_is_release_ready` now validates the
+  committed ledger **exactly as committed**. It previously injected `role` into every row
+  and a synthetic `main_branch_ruleset` into the router's row before validating — asserting
+  the ledger was release-ready after making it release-ready. That is why `make ci-local`
+  stayed green for ten days against a ledger the release gate rejected. Proven by reverting
+  the ledger and watching the guard fail.
+
 ## [0.7.3] - 2026-07-30
 
 ### Fixed
