@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -86,6 +87,11 @@ class RouterSettings(BaseSettings):
     GF_OAUTH_BASE_URL: str | None = None
     GF_OAUTH_AUTHORIZE_URL: str | None = None
     GF_OAUTH_TOKEN_URL: str | None = None
+    # Router-issued token identity. These defaults encode the 2026-08-07 release
+    # transition and must not be calculated from process start time.
+    GF_OAUTH_CANONICAL_ISSUER: str = "https://genefoundry.org"
+    GF_OAUTH_LEGACY_ISSUERS: Annotated[list[str], NoDecode] = ["https://genefoundry.org/"]
+    GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL: datetime = datetime(2026, 9, 6, tzinfo=UTC)
     # Fixed secret for signing the router's OWN FastMCP JWT tokens (the OAuthProxy-minted
     # access/refresh tokens and the on-disk client store's encryption key). When unset,
     # fastmcp derives a (deterministic) key from GF_OAUTH_CLIENT_SECRET — stable, but it
@@ -107,13 +113,23 @@ class RouterSettings(BaseSettings):
     #   remember → show once per client, then silent          false → skip (dev-only warning)
     GF_OAUTH_REQUIRE_CONSENT: Literal["external", "remember", "true", "false"] = "external"
 
-    @field_validator("GF_ALLOWED_HOSTS", "GF_ALLOWED_ORIGINS", mode="before")
+    @field_validator(
+        "GF_ALLOWED_HOSTS", "GF_ALLOWED_ORIGINS", "GF_OAUTH_LEGACY_ISSUERS", mode="before"
+    )
     @classmethod
     def _split_csv_allowlist(cls, v: object) -> object:
         """Accept comma-separated allowlists from environment variables."""
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]
         return v
+
+    @field_validator("GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL")
+    @classmethod
+    def _utc_legacy_issuer_deadline(cls, value: datetime) -> datetime:
+        """Require one absolute instant so the compatibility window cannot slide."""
+        if value.tzinfo is None:
+            raise ValueError("GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL must include a UTC offset")
+        return value.astimezone(UTC)
 
     @field_validator("GF_ALLOWED_HOSTS")
     @classmethod

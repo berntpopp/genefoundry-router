@@ -196,7 +196,9 @@ def _build_oauth(settings: RouterSettings) -> Any:
     missing = [k for k, v in required.items() if not v]
     if missing:
         raise ConfigurationError(f"oauth mode requires: {', '.join(missing)}")
-    from fastmcp.server.auth import MultiAuth, OAuthProxy
+    from fastmcp.server.auth import MultiAuth
+
+    from genefoundry_router.oauth_proxy import GeneFoundryOAuthProxy
 
     verifier = _build_jwt_verifier(settings)  # raw TokenVerifier for OAuthProxy
     # All four are guaranteed truthy by the missing-check above; assert narrows the
@@ -207,7 +209,7 @@ def _build_oauth(settings: RouterSettings) -> Any:
     public_base = settings.GF_PUBLIC_BASE_URL
     assert authorize_url and token_url and client_id and public_base
     require_consent = _CONSENT_ARG[settings.GF_OAUTH_REQUIRE_CONSENT]
-    oauth = OAuthProxy(
+    oauth = GeneFoundryOAuthProxy(
         upstream_authorization_endpoint=authorize_url,
         upstream_token_endpoint=token_url,
         upstream_client_id=client_id,
@@ -249,6 +251,9 @@ def _build_oauth(settings: RouterSettings) -> Any:
         # Keycloak bearer token. OAuthProxy validates/refreshes upstream state separately,
         # which lets a bounded 12-hour token avoid needless interactive reauthorization.
         fastmcp_access_token_expiry_seconds=settings.GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS,
+        canonical_issuer_url=settings.GF_OAUTH_CANONICAL_ISSUER,
+        legacy_issuer_urls=settings.GF_OAUTH_LEGACY_ISSUERS,
+        legacy_issuer_accept_until=settings.GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL,
     )
     log.info("auth_mode", mode="oauth", provider=settings.GF_OAUTH_PROVIDER)
     # MultiAuth lets M2M JWT + interactive OAuth coexist (spec §9).

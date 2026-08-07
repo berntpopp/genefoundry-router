@@ -62,6 +62,7 @@ import json
 import secrets
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -216,6 +217,11 @@ class OAuthHarness:
         value and the enforced value are derived differently.
         """
         return str(self.authorization_server_metadata()["token_endpoint"])
+
+    def protected_resource_metadata(self) -> dict[str, Any]:
+        response = self.client.get("/.well-known/oauth-protected-resource/mcp")
+        assert response.status_code == 200, response.text
+        return response.json()
 
     def upstream_access_token(self) -> str:
         """A Keycloak-shaped access token the router's own JWTVerifier will accept."""
@@ -390,6 +396,9 @@ def oauth_harness(tmp_path, monkeypatch, gnomad_fake: FastMCP):
         GF_OAUTH_AUTHORIZE_URL=UPSTREAM_AUTHORIZE,
         GF_OAUTH_TOKEN_URL=UPSTREAM_TOKEN,
         GF_OAUTH_JWT_SIGNING_KEY="test-signing-key-not-a-secret",
+        GF_OAUTH_CANONICAL_ISSUER=PUBLIC_BASE,
+        GF_OAUTH_LEGACY_ISSUERS=[f"{PUBLIC_BASE}/"],
+        GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL=datetime(2026, 9, 6, tzinfo=UTC),
     )
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
     app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
@@ -448,7 +457,9 @@ def test_metadata_advertises_cimd_and_private_key_jwt(oauth_harness: OAuthHarnes
     assert "private_key_jwt" in metadata["token_endpoint_auth_methods_supported"]
     assert "S256" in metadata["code_challenge_methods_supported"]
     # The endpoint a client signs for. Single slash — this is what ChatGPT puts in `aud`.
+    assert metadata["issuer"] == PUBLIC_BASE
     assert metadata["token_endpoint"] == f"{PUBLIC_BASE}/token"
+    assert oauth_harness.protected_resource_metadata()["authorization_servers"] == [PUBLIC_BASE]
 
 
 def test_public_client_cimd_login_and_mcp_call(oauth_harness: OAuthHarness) -> None:
