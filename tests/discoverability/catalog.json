@@ -702,7 +702,7 @@
   },
   {
     "name": "genereviews_search_passages",
-    "description": "Returns ranked passages from the active GeneReviews corpus. For intervention/treatment queries, pass sections=[\"management\"]; for diagnostic-criteria queries, pass sections=[\"diagnosis\", \"clinical_features\"]. This is the biggest precision lever.\n\n**Rerank modes:**\n- `rrf` (default): RRF over three-tsquery lexical + BGE-small dense cosine. Balanced quality. Use this for general questions.\n- `lexical`: skip the dense pass; lexical scoring only. Faster - saves the embed + HNSW probe round-trip. Use for latency-critical exact-term lookups.\n- `off`: lexical-only, NO section_priority tiebreaker. Returns rows in the repository's own lexical_rank order. Debugging / diagnostic use only.\n\nUse `mode='brief'` (default) for triage - returns ~300-500-char `ts_headline` snippets with **bold** highlights around query terms. Switch to `mode='full'` once you've picked the row(s) you want to read.\n\nFilter with `gene` (HGNC symbol), `nbk_id` (single chapter), or `sections` (list; valid values in the sections JSONSchema enum). Use `exclude=score_breakdown` or `exclude=heading_path` to trim response payload further.\n\nLatency: ~27ms p50 (rerank=rrf), ~26ms p50 (rerank=lexical), ~26ms p50 (rerank=off).",
+    "description": "Search the active GeneReviews corpus. For intervention/treatment queries, pass sections=[\"management\"]; for diagnostic criteria, pass sections=[\"diagnosis\", \"clinical_features\"]. This is the main precision filter.\n\nRerank with `rrf` (default) for hybrid retrieval, `lexical` for exact terms, or `off` for raw repository order when debugging.\n\nUse `brief` (default) for triage snippets, `full` for passage text, or `ids_only` for identifiers and ranks. Filter by `gene`, `nbk_id`, or `sections`. In `brief`/`full`, use `include` and `exclude` for field projection; include/exclude do not apply to `ids_only`, and `ids_only` omits `recommended_citation`.",
     "tags": [
       "Passages",
       "literature"
@@ -714,12 +714,12 @@
       "nbk_id": "Restrict results to one chapter, e.g. 'NBK1247'.",
       "sections": "Restrict to one or more canonical sections. Values: \"summary\", \"diagnosis\", \"clinical_features\", \"management\", \"genetic_counseling\", \"molecular_genetics\", \"resources\", \"other\", \"references\".",
       "heading_path_contains": "Case-insensitive substring filter on heading_path. Applied pre-rerank.",
-      "mode": "Values: \"brief\" (default; snippet + IDs, ~3 KB), \"full\" (full text), \"ids_only\" (lean rows: `passage_id` + `rrf_score` + `lexical_rank_position` + `chapter_section`). Use ids_only for bulk-triage workflows; include/exclude flags and recommended_citation are not emitted in this mode.",
+      "mode": "Values: \"brief\" (default; snippet + IDs, ~3 KB), \"full\" (full text), \"ids_only\" (lean rows: `passage_id` + `rrf_score` + `lexical_rank_position` + `chapter_section`).",
       "limit": "Number of rows to return. Default 5 keeps the brief-mode payload <= ~3 KB.",
       "exclude": "Optional field projection. Values: \"score_breakdown\" (drops the opt-in score_breakdown field), \"heading_path\" (drops heading_path from every row). Use when you only need text + passage_id.",
       "include": "Opt into default-off response fields. Values: \"score_breakdown\" (returns raw lexical/dense ranks and populates _meta.dense_model_id + embedding_dim), \"table_data\" (for table passages: populates v1.1-fenced header + rows cells; narrative passages remain unaffected).",
       "snippet_chars": "Approximate snippet length in characters (brief mode only; ignored for full/ids_only). Default 400. Maps to ts_headline MaxFragments and MaxWords.",
-      "rerank": "Values: \"rrf\" (default; reciprocal-rank fusion of weighted lexical + dense embedding rank - best for clinical-concept queries), \"lexical\" (weighted lexical score with section-priority tiebreaker - best for exact gene-symbol or variant strings; for multi-token clinical concept queries, use \"rrf\"), \"off\" (raw repository order - debugging only; do not rely on ordering)."
+      "rerank": "Values: \"rrf\" (default; reciprocal-rank fusion), \"lexical\" (weighted lexical score), \"off\" (raw repository order; debugging only)."
     }
   },
   {
@@ -764,7 +764,7 @@
   },
   {
     "name": "gnomad_compute_gene_carrier_frequency",
-    "description": "Use this when a caller needs the GENE-level autosomal-recessive carrier frequency (all qualifying pathogenic variants summed), not a single variant. This is ONE efficient server-side computation over the whole gene (a single variants query plus, only when include_conflicting_clinvar=True, batched ClinVar submission lookups) \u2014 call it once per gene; do NOT loop over variants yourself. Pass a gene symbol (e.g. CFTR) or Ensembl gene ID (ENSG...). Mirrors the gnomad-carrier-frequency calculator: LoF-HC + missense/other with ClinVar P/LP (>= star threshold), per-population + global carrier frequency via GCR (homozygote exclusion) by default, with genetic and Bayesian prevalence. Leads with a one-line `headline` so you can answer without parsing the tree, and carries provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Toggle filters, method, penetrance, and quality exclusions. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent).",
+    "description": "Use this when a caller needs gene-level autosomal-recessive carrier frequency across qualifying pathogenic variants, not a single variant. Run this server-side computation once per gene; do not loop over variants. Returns global and per-population carrier frequency, genetic and Bayesian prevalence, a headline, provenance, and contributing variants. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent).",
     "tags": [
       "gene"
     ],
@@ -871,7 +871,7 @@
   },
   {
     "name": "gnomad_get_gene_variants",
-    "description": "Use this when a caller wants per-variant rows inside a gene. Large genes (e.g. TTN) return tens of thousands of variants upstream; this tool caps at 500 and exposes consequence/AF/AC filters. Each variant's population breakdown is trimmed (drops subcohort, sex-split, and zero-AC rows; set include_populations=False to drop the arrays entirely for a ~30% leaner scan); the projection is described once in `population_projection`. Returns a `truncated` block whenever the cap fires. Returns ~5-45kB at the default limit=100 (lower the limit or set include_populations=False to shrink).",
+    "description": "Use this when a caller wants per-variant rows for an Ensembl gene. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100.",
     "tags": [
       "gene"
     ],
@@ -3321,14 +3321,14 @@
   },
   {
     "name": "uniprot_find_proteins",
-    "description": "Search UniProtKB for the entries of a GENE and return matching entries (accession, mnemonic, recommended name, reviewed flag, organism). gene_symbol is REQUIRED; refine the hits with organism_taxon, reviewed, name_contains (matched per word, in any order, case-insensitive), or the structured filters mnemonic / ec_number / keyword. Reviewed (Swiss-Prot) hits are ranked first. UniProt SPARQL has no general full-text index; for EC-only, keyword-only, or free-text search WITHOUT a gene, use search_example_queries or search_sparql_query. Pair with get_protein for full detail. Results are ordered reviewed-first, then by mnemonic, then accession (stable across pages). Cold search can take several seconds; an identical repeat is cached (~0 ms). If you already know the accession, call get_protein directly -- it is far faster. Signature: find_proteins(gene_symbol, organism_taxon=, reviewed=, keyword=, ec_number=, mnemonic=, name_contains=, limit=, offset=).",
+    "description": "Search UniProtKB for the entries of a GENE and return matching entries (accession, mnemonic, recommended name, reviewed flag, organism). gene_symbol is REQUIRED; refine the hits with organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name), reviewed, name_contains (matched per word, in any order, case-insensitive), or the structured filters mnemonic / ec_number / keyword. Reviewed (Swiss-Prot) hits are ranked first. UniProt SPARQL has no general full-text index; for EC-only, keyword-only, or free-text search WITHOUT a gene, use search_example_queries or search_sparql_query. Pair with get_protein for full detail. Results are ordered reviewed-first, then by mnemonic, then accession (stable across pages). Cold search can take several seconds; an identical repeat is cached (~0 ms). If you already know the accession, call get_protein directly -- it is far faster. Signature: find_proteins(gene_symbol, organism_taxon=, reviewed=, keyword=, ec_number=, mnemonic=, name_contains=, limit=, offset=).",
     "tags": [
       "protein",
       "search"
     ],
     "params": {
       "gene_symbol": "Gene symbol to search for, e.g. BRCA1.",
-      "organism_taxon": "NCBI taxon id, e.g. 9606 for human.",
+      "organism_taxon": "Positive NCBI taxon id or exact common/scientific organism name, e.g. 9606, 'human', or 'Homo sapiens'.",
       "reviewed": "True = Swiss-Prot only; False = TrEMBL only.",
       "keyword": "UniProt keyword (KW-id like KW-0007, or a label).",
       "ec_number": "EC number, e.g. 2.7.11.1.",
@@ -3340,7 +3340,7 @@
   },
   {
     "name": "uniprot_find_proteins_batch",
-    "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, and unresolved_genes (a symbol that matched nothing is disclosed, never silently dropped). Optionally scope by organism_taxon and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
+    "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, and unresolved_genes (a symbol that matched nothing is disclosed, never silently dropped). Optionally scope by organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name) and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
     "tags": [
       "batch",
       "protein",
@@ -3348,7 +3348,7 @@
     ],
     "params": {
       "gene_symbols": "Gene symbols to resolve, e.g. ['PNKP','NAA10'].",
-      "organism_taxon": "NCBI taxon id, e.g. 9606 for human.",
+      "organism_taxon": "Positive NCBI taxon id or exact common/scientific organism name, e.g. 9606, 'human', or 'Homo sapiens'.",
       "reviewed": "True = Swiss-Prot only; False = TrEMBL only.",
       "limit_per_gene": "Max entries per gene (default 5)."
     }
@@ -3443,7 +3443,7 @@
   },
   {
     "name": "uniprot_get_protein_variants",
-    "description": "Return natural-variant annotations for an entry: position, wild-type residue, amino-acid substitution, an HGVS-style `notation` (e.g. `L176F`) for simple substitutions, `variant_type` (substitution|other), free-text description, structured linked `diseases`, and `dbsnp` rsIDs. Set disease_associated_only=true to keep only disease-linked variants. response_mode=compact/minimal drops the repeated free-text provenance; standard (default) preserves the existing full records. Signature: get_protein_variants(accession, limit=, disease_associated_only=, response_mode=).",
+    "description": "Return natural-variant annotations for an entry: position, wild-type residue, amino-acid substitution, an HGVS-style `notation` (e.g. `L176F`) for simple substitutions, `variant_type` (substitution|other), free-text description, structured linked `diseases`, and `dbsnp` rsIDs. Set disease_associated_only=true to keep only disease-linked variants. Set position_start and/or position_end to keep annotations that overlap that residue interval (inclusive). response_mode=compact/minimal drops the repeated free-text provenance; standard (default) preserves the existing full records. Signature: get_protein_variants(accession, limit=, disease_associated_only=, response_mode=, position_start=, position_end=).",
     "tags": [
       "protein",
       "variants"
@@ -3452,7 +3452,9 @@
       "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted).",
       "limit": "Max variants to return.",
       "disease_associated_only": "Return only variants linked to a disease.",
-      "response_mode": "Verbosity: minimal | compact | standard | full."
+      "response_mode": "Verbosity: minimal | compact | standard | full.",
+      "position_start": "First residue of an inclusive overlap interval.",
+      "position_end": "Last residue of an inclusive overlap interval."
     }
   },
   {
