@@ -17,10 +17,12 @@ if TYPE_CHECKING:
     from genefoundry_router.devtools.fakes import Manifest
 
 from genefoundry_router.config import RouterSettings, load_registry
+from genefoundry_router.refresh_cli import refresh_report_command
 from genefoundry_router.registry import MAX_QUALIFIED_NAME_LEN, BackendDef, expected_server_name
 from genefoundry_router.server import build_app
 
 app = typer.Typer(help="GeneFoundry Router — federate the -link MCP fleet.", no_args_is_help=True)
+app.command("refresh-report")(refresh_report_command)
 console = Console()
 
 DEFAULT_SERVERS = "servers.yaml"

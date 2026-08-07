@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import time
 from collections.abc import Sequence
 from contextlib import asynccontextmanager
 from typing import Any, Literal
@@ -15,7 +17,7 @@ from fastmcp.tools import Tool
 from fastmcp.tools.tool_transform import ToolTransformConfig
 
 from genefoundry_router import __version__
-from genefoundry_router.auth import build_auth
+from genefoundry_router.auth import build_auth, resolve_refresh_observability_hmac_key
 from genefoundry_router.authorization import WriteAuthorizationMiddleware
 from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
@@ -36,8 +38,11 @@ from genefoundry_router.observability import (
     namespace_tool_counts,
     register_health,
     register_metrics,
+    restore_refresh_metrics,
     set_backend_up,
 )
+from genefoundry_router.refresh_models import REFRESH_HEARTBEAT_INTERVAL_SECONDS
+from genefoundry_router.refresh_observability import RefreshLedger
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.runtime_drift import (
     definitions_from_tools,
@@ -50,11 +55,38 @@ from genefoundry_router.tool_search import apply_tool_search, resolve_entrypoint
 log = structlog.get_logger(__name__)
 
 
+async def _run_refresh_heartbeat(ledger: RefreshLedger) -> None:
+    """Keep durable writer freshness current independently of refresh volume."""
+    try:
+        while True:
+            await asyncio.sleep(REFRESH_HEARTBEAT_INTERVAL_SECONDS)
+            worker = asyncio.create_task(asyncio.to_thread(ledger.heartbeat, time.time()))
+            try:
+                await asyncio.shield(worker)
+            except asyncio.CancelledError:
+                try:
+                    await worker
+                except Exception as exc:
+                    log.error(
+                        "refresh_observability_heartbeat_failed",
+                        error_type=type(exc).__name__,
+                    )
+                return
+            except Exception as exc:
+                log.error(
+                    "refresh_observability_heartbeat_failed",
+                    error_type=type(exc).__name__,
+                )
+    except asyncio.CancelledError:
+        return
+
+
 def build_server(
     settings: RouterSettings,
     registry: list[BackendDef],
     proxy_targets: dict[str, Any] | None = None,
     enable_search: bool = True,
+    refresh_ledger: RefreshLedger | None = None,
 ) -> FastMCP:
     """Build the genefoundry FastMCP server from a resolved registry.
 
@@ -65,7 +97,13 @@ def build_server(
     before search.
     """
     proxy_targets = proxy_targets or {}
-    auth = build_auth(settings)  # caller auth at the edge; never forwarded upstream (R1.6)
+    # Keep the historical one-argument call when observability is disabled so existing
+    # auth factories and tests remain compatible.
+    auth = (
+        build_auth(settings, refresh_ledger=refresh_ledger)
+        if refresh_ledger is not None
+        else build_auth(settings)
+    )  # caller auth at the edge; never forwarded upstream (R1.6)
     # instructions: orient the host's model on the two-layer search surface so a
     # capability absent from the top-level listing isn't read as missing (issue #3).
     server: FastMCP = FastMCP(
@@ -119,9 +157,26 @@ def build_app(
     seed /health reachability -> start the polling refresher (R1.7). On shutdown: stop it.
     """
     configure_logging(settings.GF_LOG_LEVEL)
+    refresh_ledger = None
+    if settings.GF_AUTH_MODE == "oauth" and settings.GF_REFRESH_OBSERVABILITY_DB:
+        refresh_ledger = RefreshLedger(
+            settings.GF_REFRESH_OBSERVABILITY_DB,
+            hmac_key=resolve_refresh_observability_hmac_key(settings),
+        )
     # enable_search=False: the composed lifespan applies tool-search AFTER normalization
     # so the BM25 index reflects final names/tags.
-    server = build_server(settings, registry, proxy_targets=proxy_targets, enable_search=False)
+    try:
+        server = build_server(
+            settings,
+            registry,
+            proxy_targets=proxy_targets,
+            enable_search=False,
+            refresh_ledger=refresh_ledger,
+        )
+    except BaseException:
+        if refresh_ledger is not None:
+            refresh_ledger.close()
+        raise
     guard = load_runtime_guard(settings)
     applied_quarantine: set[str] = set()
     mcp_app = server.http_app(  # ASGI sub-app; its lifespan must be entered
@@ -153,22 +208,60 @@ def build_app(
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> Any:
-        async with mcp_app.lifespan(_app):
-            await _refresh_catalog("startup")
-            apply_tool_search(  # ordering: after normalization
-                server, settings, always_visible=resolve_entrypoints(registry)
-            )
-            refresher = PollingRefresher(settings.GF_POLL_INTERVAL, _relist)
-            await refresher.start()
-            try:
-                yield
-            finally:
-                await refresher.stop()
+        boot_id = None
+        teardown_complete = False
+        try:
+            async with mcp_app.lifespan(_app):
+                await _refresh_catalog("startup")
+                apply_tool_search(  # ordering: after normalization
+                    server, settings, always_visible=resolve_entrypoints(registry)
+                )
+                refresher = PollingRefresher(settings.GF_POLL_INTERVAL, _relist)
+                await refresher.start()
+                if refresh_ledger is not None:
+                    restore_refresh_metrics(
+                        refresh_ledger.counter_snapshot(),
+                        source_id=str(refresh_ledger.path.resolve()),
+                    )
+                    boot_id = refresh_ledger.record_startup(version=__version__, at=time.time())
+                    heartbeat_task = asyncio.create_task(_run_refresh_heartbeat(refresh_ledger))
+                else:
+                    heartbeat_task = None
+                try:
+                    yield
+                finally:
+                    if heartbeat_task is not None:
+                        heartbeat_task.cancel()
+                        await heartbeat_task
+                    await refresher.stop()
+            teardown_complete = True
+        finally:
+            if refresh_ledger is not None:
+                if teardown_complete and boot_id is not None:
+                    try:
+                        refresh_ledger.record_shutdown(
+                            boot_id,
+                            version=__version__,
+                            at=time.time(),
+                        )
+                    except Exception as exc:
+                        log.error(
+                            "refresh_observability_shutdown_marker_failed",
+                            error_type=type(exc).__name__,
+                        )
+                try:
+                    refresh_ledger.close()
+                except Exception as exc:
+                    log.error(
+                        "refresh_observability_close_failed",
+                        error_type=type(exc).__name__,
+                    )
 
     app = FastAPI(title="GeneFoundry Router", lifespan=lifespan)
     app.state.mcp_server = server
     app.state.runtime_drift_guard = guard
     app.state.refresh_catalog = _refresh_catalog
+    app.state.refresh_ledger = refresh_ledger
     # Correlation-id added LAST so it is the OUTERMOST middleware (Starlette wraps the
     # last-added first): every short-circuit rejection below (403 origin / 413 body /
     # 429 rate) is then produced inside the correlation context and carries X-Request-ID.

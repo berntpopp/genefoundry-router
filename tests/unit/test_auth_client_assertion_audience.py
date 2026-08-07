@@ -29,10 +29,13 @@ import jwt as pyjwt
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from mcp.server.auth.routes import build_metadata
+from mcp.server.auth.settings import ClientRegistrationOptions, RevocationOptions
 from pydantic import AnyHttpUrl
 
 from genefoundry_router.auth import _collapse_duplicate_slashes, build_auth
 from genefoundry_router.config import RouterSettings
+from genefoundry_router.oauth_proxy import CanonicalOAuthMetadata
 
 ISSUER = "https://auth.genefoundry.example/realms/genefoundry"
 PUBLIC_BASE = "https://genefoundry.example"  # ROOT origin — no path. This is the trigger.
@@ -115,6 +118,22 @@ def test_pydantic_base_url_doubles_the_slash_this_is_the_upstream_bug() -> None:
     assert str(base) == "https://genefoundry.example/"  # trailing slash added
     assert f"{base}/token" == "https://genefoundry.example//token"  # the bug
     assert f"{base}/token" != ADVERTISED_TOKEN_ENDPOINT
+
+
+def test_legacy_and_canonical_metadata_advertise_the_same_token_endpoint() -> None:
+    """Cached pre-upgrade metadata and canonical metadata keep one assertion audience."""
+    legacy = build_metadata(
+        AnyHttpUrl(PUBLIC_BASE),
+        None,
+        ClientRegistrationOptions(),
+        RevocationOptions(),
+    )
+    canonical_payload = legacy.model_dump(mode="json")
+    canonical_payload["issuer"] = PUBLIC_BASE
+    canonical = CanonicalOAuthMetadata.model_validate(canonical_payload)
+
+    assert str(legacy.token_endpoint) == ADVERTISED_TOKEN_ENDPOINT
+    assert canonical.model_dump(mode="json")["token_endpoint"] == ADVERTISED_TOKEN_ENDPOINT
 
 
 def test_expected_assertion_audience_is_the_advertised_endpoint() -> None:

@@ -483,4 +483,11 @@ def test_real_production_overlay_resets_development_build_and_ports() -> None:
     assert service["init"] is True
     assert service["expose"] == ["8000"]
     assert service["pull_policy"] == "missing"
+    assert service["environment"]["GF_REFRESH_OBSERVABILITY_DB"] == (
+        "/data/genefoundry/refresh-observability.sqlite3"
+    )
+    data_mounts = [mount for mount in service["volumes"] if mount["target"] == "/data"]
+    assert len(data_mounts) == 1
+    assert data_mounts[0]["source"] == "fastmcp_data"
+    assert set(rendered["volumes"]) == {"fastmcp_data"}
     assert validate_compose(rendered, "genefoundry-router") == ()

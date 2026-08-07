@@ -29,3 +29,23 @@ def test_server_built_with_jwt_auth(monkeypatch):
     )
     assert captured["mode"] == "jwt"
     assert server.auth is not None
+
+
+def test_server_threads_configured_refresh_ledger_to_auth(monkeypatch) -> None:
+    sentinel = object()
+    captured = {}
+
+    def fake_build_auth(settings, *, refresh_ledger=None):
+        captured["ledger"] = refresh_ledger
+        return None
+
+    monkeypatch.setattr("genefoundry_router.server.build_auth", fake_build_auth)
+    server = build_server(
+        RouterSettings(_env_file=None, GF_AUTH_MODE="none"),
+        [BackendDef(name="hgnc", url_env="X", namespace="hgnc", enabled=False)],
+        enable_search=False,
+        refresh_ledger=sentinel,
+    )
+
+    assert captured["ledger"] is sentinel
+    assert server.auth is None

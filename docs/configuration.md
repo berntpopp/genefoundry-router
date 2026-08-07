@@ -28,7 +28,12 @@ starts.
 | `GF_JWT_AUDIENCE` | _(unset)_ | jwt/oauth: required token `aud` (MUST match; audience binding) |
 | `GF_OAUTH_CLIENT_ID` / `GF_OAUTH_CLIENT_SECRET` | _(unset)_ | oauth: upstream provider client credentials |
 | `GF_OAUTH_AUTHORIZE_URL` / `GF_OAUTH_TOKEN_URL` | _(unset)_ | oauth: upstream provider authorize/token endpoints |
+| `GF_OAUTH_JWT_SIGNING_KEY` | _(unset)_ | oauth: optional stable router signing, client-store encryption, and observability HMAC key; when unset, the legacy deterministic key derived from `GF_OAUTH_CLIENT_SECRET` is retained so existing DCR state remains readable |
+| `GF_OAUTH_CANONICAL_ISSUER` | `https://genefoundry.org` | Canonical issuer for router-issued access and refresh tokens |
+| `GF_OAUTH_LEGACY_ISSUERS` | `https://genefoundry.org/` | Exact temporary trailing-slash issuer alias; empty disables compatibility and any other value is rejected |
+| `GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL` | `2026-09-06T00:00:00Z` | Absolute end of the 30-day legacy-issuer transition; it does not slide with process restarts |
 | `GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS` | `43200` | oauth: router-issued reference-token lifetime in seconds (5 min–24 h); it does not lengthen the upstream IdP bearer token |
+| `GF_REFRESH_OBSERVABILITY_DB` | _(unset)_ | oauth: durable refresh-rotation SQLite ledger. Production Compose sets `/data/genefoundry/refresh-observability.sqlite3` on the existing data volume |
 | `GF_RATE_LIMIT_RPM` | `0` | Per-client requests/min (429 over). An authenticated `GF_DEPLOYMENT_MODE=production` router **refuses to start** with `0`, even on loopback behind a proxy |
 | `GF_METRICS_TOKEN` | _(unset)_ | Bearer token for `GET /metrics`. An authenticated production router **refuses to start** without it, even on loopback behind a proxy |
 | `GF_DRIFT_MODE` | `warn` | Runtime catalog policy: `off` \| `warn` \| `enforce` |
@@ -76,7 +81,13 @@ GF_OAUTH_CLIENT_ID=genefoundry-router
 GF_OAUTH_CLIENT_SECRET=…                 # secret; set in the server env, never commit
 GF_OAUTH_AUTHORIZE_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/auth
 GF_OAUTH_TOKEN_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/token
+# Leave GF_OAUTH_JWT_SIGNING_KEY unset when upgrading an existing DCR store. A new
+# explicit value intentionally starts a new signing/store identity and must then stay stable.
+GF_OAUTH_CANONICAL_ISSUER=https://genefoundry.org
+GF_OAUTH_LEGACY_ISSUERS=https://genefoundry.org/
+GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL=2026-09-06T00:00:00Z
 GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS=43200  # router reference token; 12 h default, 24 h maximum
+GF_REFRESH_OBSERVABILITY_DB=/data/genefoundry/refresh-observability.sqlite3
 GF_JWT_ISSUER=https://auth.example.org/realms/genefoundry
 GF_JWT_JWKS_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/certs
 GF_JWT_AUDIENCE=https://genefoundry.org/mcp   # Keycloak must stamp this into the token `aud`
@@ -88,6 +99,15 @@ GF_PUBLIC_BASE_URL=https://genefoundry.org    # ROOT origin, NO path — OAuth r
 `GF_PUBLIC_BASE_URL` + `GF_MCP_PATH` (→ `https://genefoundry.org/mcp`), which is also the
 OAuth resource / token audience. Putting a path here (`…/mcp`) mis-advertises the OAuth
 endpoints as `…/mcp/authorize` and doubles the protected-resource-metadata URL.
+
+The issuer transition is deliberately narrow: new router tokens always use the canonical
+issuer without a trailing slash; only the exact historical root-slash alias is accepted,
+and only before `2026-09-06T00:00:00Z`. Remove the legacy alias after that deadline once
+live sessions have drained. Keep the effective signing identity stable throughout the
+transition: leave `GF_OAUTH_JWT_SIGNING_KEY` unset for a legacy store, or keep an already
+configured value unchanged. Setting or changing it invalidates live router tokens and
+selects a different encrypted Dynamic Client Registration store independently of issuer
+compatibility.
 
 **Verify:** an unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`; a request
 bearing a valid issuer-signed, correctly-audienced token returns `200`. See

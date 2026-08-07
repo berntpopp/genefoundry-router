@@ -22,6 +22,7 @@ def test_defaults(monkeypatch):
     assert s.GF_PUBLIC_BASE_URL is None  # R1.5 - public URL for OAuth metadata
     assert s.GF_TRUSTED_PROXY_HOPS == 1
     assert s.GF_METRICS_TOKEN is None
+    assert s.GF_REFRESH_OBSERVABILITY_DB is None
     assert s.GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS == 43_200
 
 
@@ -60,6 +61,27 @@ def test_metrics_token_blank_normalizes_to_none(monkeypatch):
     monkeypatch.setenv("GF_METRICS_TOKEN", "   ")
     s = RouterSettings(_env_file=None)
     assert s.GF_METRICS_TOKEN is None
+
+
+def test_refresh_observability_path_parses_and_blank_normalizes(monkeypatch) -> None:
+    monkeypatch.setenv("GF_REFRESH_OBSERVABILITY_DB", "   ")
+    assert RouterSettings(_env_file=None).GF_REFRESH_OBSERVABILITY_DB is None
+
+    monkeypatch.setenv("GF_REFRESH_OBSERVABILITY_DB", "/data/genefoundry/refresh.sqlite3")
+    assert RouterSettings(_env_file=None).GF_REFRESH_OBSERVABILITY_DB == (
+        "/data/genefoundry/refresh.sqlite3"
+    )
+
+
+def test_oauth_refresh_observability_accepts_legacy_secret_derived_signing_key() -> None:
+    settings = RouterSettings(
+        _env_file=None,
+        GF_AUTH_MODE="oauth",
+        GF_OAUTH_CLIENT_SECRET="legacy-client-secret",  # noqa: S106 - fixture
+        GF_REFRESH_OBSERVABILITY_DB="/data/genefoundry/refresh.sqlite3",
+    )
+
+    assert settings.GF_OAUTH_JWT_SIGNING_KEY is None
 
 
 def test_production_rejects_development_unsafe_observability_acknowledgement(monkeypatch):

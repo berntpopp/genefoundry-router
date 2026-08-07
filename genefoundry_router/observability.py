@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hmac
 import logging
+import threading
 import time
 from typing import Any, Protocol
 
@@ -20,6 +21,11 @@ from prometheus_client import (
 )
 from starlette.responses import JSONResponse, Response
 
+from genefoundry_router.refresh_observability import (
+    CLIENT_CLASSES,
+    FAILURE_REASONS,
+    CounterSnapshot,
+)
 from genefoundry_router.registry import BackendDef, is_client_safe_name
 
 
@@ -80,6 +86,160 @@ DRIFT_LAST_CHECK = Gauge(
     "Unix timestamp of the last runtime drift evaluation",
     registry=METRICS_REGISTRY,
 )
+OAUTH_REFRESH_ATTEMPTS = Counter(
+    "genefoundry_oauth_refresh_attempts_total",
+    "OAuth connector refresh attempts",
+    ["client_class"],
+    registry=METRICS_REGISTRY,
+)
+OAUTH_REFRESH_SUCCESS = Counter(
+    "genefoundry_oauth_refresh_success_total",
+    "Successful OAuth connector refresh rotations",
+    ["client_class"],
+    registry=METRICS_REGISTRY,
+)
+OAUTH_REFRESH_FAILURES = Counter(
+    "genefoundry_oauth_refresh_failures_total",
+    "Failed OAuth connector refreshes by bounded reason",
+    ["client_class", "reason"],
+    registry=METRICS_REGISTRY,
+)
+_REFRESH_RESTORE_LOCK = threading.Lock()
+_RESTORED_REFRESH_SOURCES: set[str] = set()
+
+
+def record_refresh_metrics(client_class: str, outcome: str, reason: str | None = None) -> None:
+    """Increment only closed-vocabulary refresh metrics."""
+    record_refresh_attempt(client_class)
+    record_refresh_outcome(client_class, outcome, reason)
+
+
+def record_refresh_attempt(client_class: str) -> None:
+    """Increment one bounded refresh-attempt denominator at load time."""
+    if client_class not in CLIENT_CLASSES:
+        raise ValueError("OAuth refresh client class is not bounded")
+    OAUTH_REFRESH_ATTEMPTS.labels(client_class=client_class).inc()
+
+
+def record_refresh_outcome(client_class: str, outcome: str, reason: str | None = None) -> None:
+    """Increment one terminal refresh outcome without duplicating its attempt."""
+    if client_class not in CLIENT_CLASSES:
+        raise ValueError("OAuth refresh client class is not bounded")
+    if outcome not in {"success", "failure"}:
+        raise ValueError("OAuth refresh outcome is not bounded")
+    if outcome == "failure" and reason not in FAILURE_REASONS:
+        raise ValueError("OAuth refresh failure reason is not bounded")
+    if outcome == "success" and reason is not None:
+        raise ValueError("successful OAuth refresh must not carry a failure reason")
+    if outcome == "success":
+        OAUTH_REFRESH_SUCCESS.labels(client_class=client_class).inc()
+    else:
+        assert reason is not None
+        OAUTH_REFRESH_FAILURES.labels(client_class=client_class, reason=reason).inc()
+
+
+def restore_refresh_metrics(snapshot: CounterSnapshot, *, source_id: str) -> None:
+    """Restore durable totals once for one ledger in this process."""
+    for client_class in (*snapshot.attempts, *snapshot.successes):
+        if client_class not in CLIENT_CLASSES:
+            raise ValueError("persisted OAuth refresh client class is not bounded")
+    for client_class, reason in snapshot.failures:
+        if client_class not in CLIENT_CLASSES or reason not in FAILURE_REASONS:
+            raise ValueError("persisted OAuth refresh failure labels are not bounded")
+    with _REFRESH_RESTORE_LOCK:
+        if source_id in _RESTORED_REFRESH_SOURCES:
+            return
+        for client_class, value in snapshot.attempts.items():
+            OAUTH_REFRESH_ATTEMPTS.labels(client_class=client_class).inc(value)
+        for client_class, value in snapshot.successes.items():
+            OAUTH_REFRESH_SUCCESS.labels(client_class=client_class).inc(value)
+        for (client_class, reason), value in snapshot.failures.items():
+            OAUTH_REFRESH_FAILURES.labels(client_class=client_class, reason=reason).inc(value)
+        _RESTORED_REFRESH_SOURCES.add(source_id)
+
+
+_OAUTH_SENSITIVE_MARKERS = (
+    "CIMD refresh failed for ",
+    "Client %s matched upstream client_id",
+    "Refresh token not found for client=",
+    "Refresh token client_id mismatch",
+    "FastMCP refresh token validation failed",
+    "JTI mapping not found for refresh token",
+    "Upstream token set not found",
+    "Refreshing upstream token (jti=",
+    "Upstream token refresh failed",
+    "Issued FastMCP tokens",
+    "Issued new FastMCP tokens",
+    "Authorization code not found",
+    "Authorization code expired",
+    "Authorization code client ID mismatch",
+    "Starting OAuth transaction",
+    "Resource mismatch:",
+    "Client registered with redirect_uri:",
+    "Registered client ",
+    "Stored encrypted upstream tokens",
+    "IdP token exchange failed",
+    "IdP callback error:",
+    "IdP callback with invalid transaction ID:",
+    "Blocked IdP callback error redirect",
+    "Blocked IdP callback redirect",
+    "Transaction %s missing consent_token",
+    "Consent binding cookie missing or invalid",
+    "Transparent upstream refresh failed",
+    "Token swap validation failed",
+    "Forwarding to client callback",
+    "Error in IdP callback handler:",
+    "Failed to revoke token with upstream server",
+    "Unregistered client_id=",
+    "CIMD document fetched and validated:",
+    "CIMD fetch failed for ",
+    "CIMD client resolved:",
+    "Ignoring invalid Cache-Control max-age value:",
+    "Ignoring invalid Expires header on CIMD response:",
+    "JWT assertion validated successfully for client ",
+    "Issued access token for client=",
+    "Issued refresh token for client=",
+    "Token verified successfully for subject=",
+    "Blocked consent denial redirect to disallowed URI for transaction ",
+    "Silent consent skipped for transaction ",
+    "CSRF double-submit check failed for transaction ",
+)
+_OAUTH_REDACTED_MESSAGE = "OAuth detail omitted (sensitive value redacted)."
+
+
+class OAuthProxyPrivacyFilter(logging.Filter):
+    """Redact only FastMCP OAuth records known to contain secret/high-cardinality values."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.msg if isinstance(record.msg, str) else ""
+        if any(marker in message for marker in _OAUTH_SENSITIVE_MARKERS):
+            record.msg = _OAUTH_REDACTED_MESSAGE
+            record.args = ()
+            record.exc_info = None
+            record.exc_text = None
+            record.stack_info = None
+        return True
+
+
+_OAUTH_PRIVACY_FILTER = OAuthProxyPrivacyFilter()
+
+
+def install_oauth_proxy_privacy_filter() -> None:
+    """Install the narrow source-level OAuth privacy filter idempotently."""
+    for name in (
+        "fastmcp.server.auth.oauth_proxy.proxy",
+        "fastmcp.server.auth.handlers.authorize",
+        "fastmcp.server.auth.cimd",
+        "fastmcp.server.auth.jwt_issuer",
+        "fastmcp.server.auth.oauth_proxy.consent",
+    ):
+        logger = logging.getLogger(name)
+        if not any(isinstance(item, OAuthProxyPrivacyFilter) for item in logger.filters):
+            logger.addFilter(_OAUTH_PRIVACY_FILTER)
+        for handler in logger.handlers:
+            if not any(isinstance(item, OAuthProxyPrivacyFilter) for item in handler.filters):
+                handler.addFilter(_OAUTH_PRIVACY_FILTER)
+
 
 # Cached reachability for /health, keyed by namespace. Seeded from the live tool
 # harvest at startup and refreshed by the polling relist (see server._seed_reachability):

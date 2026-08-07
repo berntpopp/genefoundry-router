@@ -8,13 +8,16 @@ the router's own connection (see composition.py). Never wire the incoming
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import structlog
 from pydantic import AnyHttpUrl
 
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.exceptions import ConfigurationError
+
+if TYPE_CHECKING:
+    from genefoundry_router.refresh_observability import RefreshLedger
 
 log = structlog.get_logger(__name__)
 
@@ -28,7 +31,54 @@ _CONSENT_ARG: dict[str, bool | Literal["remember", "external"]] = {
 }
 
 
-def build_auth(settings: RouterSettings) -> Any | None:
+def resolve_oauth_signing_key(settings: RouterSettings) -> str | bytes:
+    """Return FastMCP's effective stable key without changing legacy store identity.
+
+    Historically an unset explicit key made FastMCP derive bytes directly from the
+    upstream client secret. Passing a newly configured *string* would run a different
+    derivation and select a different encrypted DCR store. Reproduce the historical
+    derivation here and pass the resulting bytes through unchanged; explicit strings
+    retain FastMCP's documented derivation behavior.
+    """
+    if settings.GF_OAUTH_JWT_SIGNING_KEY is not None:
+        return settings.GF_OAUTH_JWT_SIGNING_KEY
+    client_secret = settings.GF_OAUTH_CLIENT_SECRET
+    if client_secret is None:
+        raise ConfigurationError(
+            "oauth mode requires GF_OAUTH_CLIENT_SECRET or GF_OAUTH_JWT_SIGNING_KEY"
+        )
+    from fastmcp.server.auth.oauth_proxy.proxy import derive_jwt_key
+
+    return derive_jwt_key(
+        high_entropy_material=client_secret,
+        salt="fastmcp-jwt-signing-key",
+    )
+
+
+def resolve_refresh_observability_hmac_key(settings: RouterSettings) -> bytes:
+    """Derive a stable ledger-only HMAC key from the effective OAuth key material.
+
+    The observability database must correlate a client across routine replacements,
+    but it must not reuse the HS256 token-signing key for a second protocol.  A
+    distinct derivation label provides domain separation while retaining the same
+    operator-managed source secret and upgrade compatibility.
+    """
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+    effective = resolve_oauth_signing_key(settings)
+    material = effective.encode() if isinstance(effective, str) else effective
+    return HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=b"genefoundry-refresh-observability-hmac",
+        info=b"client-identity-v1",
+    ).derive(material)
+
+
+def build_auth(
+    settings: RouterSettings, *, refresh_ledger: RefreshLedger | None = None
+) -> Any | None:
     """Return a FastMCP auth provider for the configured mode, or None for 'none'."""
     mode = settings.GF_AUTH_MODE
     if mode == "none":
@@ -37,7 +87,7 @@ def build_auth(settings: RouterSettings) -> Any | None:
     if mode == "jwt":
         return _build_jwt(settings)
     if mode == "oauth":
-        return _build_oauth(settings)
+        return _build_oauth(settings, refresh_ledger=refresh_ledger)
     raise ConfigurationError(f"unknown GF_AUTH_MODE: {mode!r}")  # pragma: no cover
 
 
@@ -178,7 +228,7 @@ def _install_client_assertion_audience_fix() -> None:
     _a._gf_assertion_audience_fixed = True  # type: ignore[attr-defined]
 
 
-def _build_oauth(settings: RouterSettings) -> Any:
+def _build_oauth(settings: RouterSettings, *, refresh_ledger: RefreshLedger | None = None) -> Any:
     # R1.5: OAuthProxy.token_verifier is REQUIRED — so the JWT verifier inputs are
     # mandatory in oauth mode too (no None verifier). base_url MUST be the public URL.
     _install_resource_tolerance()
@@ -196,7 +246,9 @@ def _build_oauth(settings: RouterSettings) -> Any:
     missing = [k for k, v in required.items() if not v]
     if missing:
         raise ConfigurationError(f"oauth mode requires: {', '.join(missing)}")
-    from fastmcp.server.auth import MultiAuth, OAuthProxy
+    from fastmcp.server.auth import MultiAuth
+
+    from genefoundry_router.oauth_proxy import GeneFoundryOAuthProxy
 
     verifier = _build_jwt_verifier(settings)  # raw TokenVerifier for OAuthProxy
     # All four are guaranteed truthy by the missing-check above; assert narrows the
@@ -207,7 +259,7 @@ def _build_oauth(settings: RouterSettings) -> Any:
     public_base = settings.GF_PUBLIC_BASE_URL
     assert authorize_url and token_url and client_id and public_base
     require_consent = _CONSENT_ARG[settings.GF_OAUTH_REQUIRE_CONSENT]
-    oauth = OAuthProxy(
+    oauth = GeneFoundryOAuthProxy(
         upstream_authorization_endpoint=authorize_url,
         upstream_token_endpoint=token_url,
         upstream_client_id=client_id,
@@ -236,12 +288,12 @@ def _build_oauth(settings: RouterSettings) -> Any:
         # and the OAuthProxy resource-check derive the URI the same way. Guarded by
         # tests/unit/test_auth_resource_url.py so #71 cannot silently return.
         resource_base_url=settings.GF_JWT_AUDIENCE,
-        # Fixed signing key → the OAuthProxy-minted tokens AND the encrypted on-disk client
-        # store (whose dir + Fernet key derive from this) stay valid across restarts and
-        # Keycloak client-secret rotation. None falls back to fastmcp's deterministic
-        # derive-from-client-secret. Pairs with the persistent FASTMCP_HOME volume (prod
-        # compose): without durable storage a stable key alone still loses DCR clients.
-        jwt_signing_key=settings.GF_OAUTH_JWT_SIGNING_KEY,
+        # Effective signing key → the OAuthProxy-minted tokens AND encrypted on-disk client
+        # store stay valid across restarts. An explicit value decouples them from Keycloak
+        # secret rotation; when absent, resolve_oauth_signing_key reproduces FastMCP's legacy
+        # secret-derived BYTES exactly so an upgrade does not change the DCR fingerprint.
+        # Pairs with persistent FASTMCP_HOME: a stable key alone cannot preserve DCR clients.
+        jwt_signing_key=resolve_oauth_signing_key(settings),
         # Skip fastmcp's own "Allow Access" consent page — Keycloak is the auth + login
         # gate; the proxy's redundant, unstyled interstitial breaks the branded flow.
         require_authorization_consent=require_consent,
@@ -249,6 +301,10 @@ def _build_oauth(settings: RouterSettings) -> Any:
         # Keycloak bearer token. OAuthProxy validates/refreshes upstream state separately,
         # which lets a bounded 12-hour token avoid needless interactive reauthorization.
         fastmcp_access_token_expiry_seconds=settings.GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS,
+        canonical_issuer_url=settings.GF_OAUTH_CANONICAL_ISSUER,
+        legacy_issuer_urls=settings.GF_OAUTH_LEGACY_ISSUERS,
+        legacy_issuer_accept_until=settings.GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL,
+        refresh_ledger=refresh_ledger,
     )
     log.info("auth_mode", mode="oauth", provider=settings.GF_OAUTH_PROVIDER)
     # MultiAuth lets M2M JWT + interactive OAuth coexist (spec §9).

@@ -44,5 +44,7 @@ def test_protected_resource_metadata_served(gnomad_fake):
         ):
             r = c.get(path)
             if r.status_code == 200 and "authorization_servers" in r.json():
+                # OAuth-mode canonicalization must not rewrite JWT mode's external IdP.
+                assert r.json()["authorization_servers"] == ["https://idp.example.org/"]
                 return
     pytest.fail("no Protected Resource Metadata document served")

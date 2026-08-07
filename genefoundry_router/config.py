@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Literal
 
 import yaml
-from pydantic import Field, ValidationError, field_validator, model_validator
+from pydantic import AnyHttpUrl, Field, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from genefoundry_router.exceptions import RegistryError
@@ -15,6 +16,22 @@ from genefoundry_router.registry import BackendDef
 
 AuthMode = Literal["none", "jwt", "oauth"]
 DeploymentMode = Literal["development", "production"]
+
+
+def _canonical_oauth_issuer(base_url: str) -> str:
+    """Validate an OAuth issuer URL and remove only its trailing root slash."""
+    return str(AnyHttpUrl(base_url)).rstrip("/")
+
+
+def _validate_oauth_legacy_issuers(
+    canonical: str, legacy_issuers: Sequence[str]
+) -> tuple[str, ...]:
+    """Allow only the one historical root-slash alias for this transition."""
+    configured = tuple(legacy_issuers)
+    expected = (f"{_canonical_oauth_issuer(canonical)}/",)
+    if configured not in ((), expected):
+        raise ValueError(f"legacy issuers must be empty or exactly {list(expected)!r}")
+    return configured
 
 
 class RouterSettings(BaseSettings):
@@ -51,6 +68,9 @@ class RouterSettings(BaseSettings):
     GF_RATE_LIMIT_RPM: int = 0  # per-client requests/min (429 over); 0 = off, enable in prod
     GF_TRUSTED_PROXY_HOPS: int = 1  # trusted hops at the tail of X-Forwarded-For
     GF_METRICS_TOKEN: str | None = None  # optional bearer token for GET /metrics
+    # Durable, privacy-bounded OAuth refresh-rotation measurements. Production Compose
+    # places this beside FastMCP's persistent state on the existing /data volume.
+    GF_REFRESH_OBSERVABILITY_DB: str | None = None
     # Development-only acknowledgement for an authenticated local router without the
     # production observability controls. It never weakens production checks.
     GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY: bool = False
@@ -86,6 +106,11 @@ class RouterSettings(BaseSettings):
     GF_OAUTH_BASE_URL: str | None = None
     GF_OAUTH_AUTHORIZE_URL: str | None = None
     GF_OAUTH_TOKEN_URL: str | None = None
+    # Router-issued token identity. These defaults encode the 2026-08-07 release
+    # transition and must not be calculated from process start time.
+    GF_OAUTH_CANONICAL_ISSUER: str = "https://genefoundry.org"
+    GF_OAUTH_LEGACY_ISSUERS: Annotated[list[str], NoDecode] = ["https://genefoundry.org/"]
+    GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL: datetime = datetime(2026, 9, 6, tzinfo=UTC)
     # Fixed secret for signing the router's OWN FastMCP JWT tokens (the OAuthProxy-minted
     # access/refresh tokens and the on-disk client store's encryption key). When unset,
     # fastmcp derives a (deterministic) key from GF_OAUTH_CLIENT_SECRET — stable, but it
@@ -107,13 +132,32 @@ class RouterSettings(BaseSettings):
     #   remember → show once per client, then silent          false → skip (dev-only warning)
     GF_OAUTH_REQUIRE_CONSENT: Literal["external", "remember", "true", "false"] = "external"
 
-    @field_validator("GF_ALLOWED_HOSTS", "GF_ALLOWED_ORIGINS", mode="before")
+    @field_validator(
+        "GF_ALLOWED_HOSTS", "GF_ALLOWED_ORIGINS", "GF_OAUTH_LEGACY_ISSUERS", mode="before"
+    )
     @classmethod
     def _split_csv_allowlist(cls, v: object) -> object:
         """Accept comma-separated allowlists from environment variables."""
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]
         return v
+
+    @field_validator("GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL")
+    @classmethod
+    def _utc_legacy_issuer_deadline(cls, value: datetime) -> datetime:
+        """Require one absolute instant so the compatibility window cannot slide."""
+        if value.tzinfo is None:
+            raise ValueError("GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL must include a UTC offset")
+        return value.astimezone(UTC)
+
+    @model_validator(mode="after")
+    def _legacy_issuer_is_the_exact_root_slash_alias(self) -> RouterSettings:
+        """Reject widening the temporary issuer trust set through configuration."""
+        _validate_oauth_legacy_issuers(
+            self.GF_OAUTH_CANONICAL_ISSUER,
+            self.GF_OAUTH_LEGACY_ISSUERS,
+        )
+        return self
 
     @field_validator("GF_ALLOWED_HOSTS")
     @classmethod
@@ -122,10 +166,10 @@ class RouterSettings(BaseSettings):
             raise ValueError("GF_ALLOWED_HOSTS must not contain wildcard entries")
         return value
 
-    @field_validator("GF_METRICS_TOKEN", mode="before")
+    @field_validator("GF_METRICS_TOKEN", "GF_REFRESH_OBSERVABILITY_DB", mode="before")
     @classmethod
-    def _blank_metrics_token(cls, v: object) -> object:
-        """Treat blank scrape-token env values as unset."""
+    def _blank_optional_string(cls, v: object) -> object:
+        """Treat blank optional string settings as unset."""
         if isinstance(v, str) and not v.strip():
             return None
         return v

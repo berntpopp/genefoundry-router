@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genefoundry-router"
-version = "0.7.6"
+version = "0.8.0"
 description = "A thin FastMCP 3.x aggregator federating the GeneFoundry -link MCP fleet behind one endpoint."
 readme = "README.md"
 authors = [{ name = "Bernt Popp" }]
@@ -23,6 +23,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+    "authlib>=1.7.2,<2.0.0",
     "fastmcp>=3.4.4,<4.0.0",
     "mcp[cli]>=1.28.1,<2.0.0",
     "fastapi>=0.140.0,<1.0.0",
