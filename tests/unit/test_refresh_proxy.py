@@ -409,6 +409,7 @@ async def test_framework_and_instrumentation_logs_exclude_refresh_secrets(
     raw_query_error = "raw-callback-query-never-log"
     caplog.set_level(logging.DEBUG)
     caplog.set_level(logging.DEBUG, logger="fastmcp.server.auth.oauth_proxy.proxy")
+    caplog.set_level(logging.DEBUG, logger="fastmcp.server.auth.jwt_issuer")
     try:
         assert await proxy.load_refresh_token(client, raw_token) is None
         framework_log = logging.getLogger("fastmcp.server.auth.oauth_proxy.proxy")
@@ -418,6 +419,23 @@ async def test_framework_and_instrumentation_logs_exclude_refresh_secrets(
             raw_client,
             "raw-access-jti-never-log",
             "raw-refresh-jti-never-log",
+        )
+        logging.getLogger("fastmcp.server.auth.cimd").info(
+            "CIMD document fetched and validated: %s (client_name=%s)",
+            raw_client,
+            "raw-client-name-never-log",
+        )
+        logging.getLogger("fastmcp.server.auth.jwt_issuer").debug(
+            "Issued access token for client=%s jti=%s exp=%d",
+            raw_client,
+            "raw-jti-never-log",
+            2_000_000,
+        )
+        logging.getLogger("fastmcp.server.auth.oauth_proxy.consent").info(
+            "Silent consent skipped for transaction %s: Sec-Fetch-Site=%r "
+            "(cross-site navigation; forcing explicit consent prompt)",
+            "raw-transaction-never-log",
+            "cross-site",
         )
         callback = TestClient(Starlette(routes=proxy.get_routes(""))).get(
             "/auth/callback",
@@ -448,6 +466,9 @@ async def test_framework_and_instrumentation_logs_exclude_refresh_secrets(
             "raw-state-query-never-log",
             "raw-access-jti-never-log",
             "raw-refresh-jti-never-log",
+            "raw-client-name-never-log",
+            "raw-jti-never-log",
+            "raw-transaction-never-log",
         ):
             assert forbidden not in rendered
         assert "oauth detail omitted" in rendered.lower()

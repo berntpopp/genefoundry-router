@@ -9,6 +9,7 @@ from pathlib import Path
 DAY_SECONDS = 24 * 60 * 60
 MINIMUM_ATTEMPTS = 50
 MAX_RESTART_INTERVALS = 100
+MAX_CLEAN_RESTART_GAP_SECONDS = 120
 
 
 class RefreshReportUnavailableError(RuntimeError):
@@ -139,7 +140,6 @@ def _lifecycle_intervals(
 
     latest = order[-1] if order else None
     intervals: list[RestartInterval] = []
-    consecutive = 0.0
     for boot_id in order[-MAX_RESTART_INTERVALS:]:
         started_at, version = starts[boot_id]
         ended_at = shutdowns.get(boot_id)
@@ -148,8 +148,20 @@ def _lifecycle_intervals(
         effective_end = ended_at if ended_at is not None else (now if boot_id == latest else None)
         duration = max(0.0, effective_end - started_at) if effective_end is not None else 0.0
         intervals.append(RestartInterval(started_at, ended_at, clean, duration, version))
-        if boot_id == latest and ended_at is None:
-            consecutive = duration
+    consecutive = 0.0
+    if intervals and intervals[-1].ended_at is None:
+        consecutive = intervals[-1].duration_seconds
+        next_start = intervals[-1].started_at
+        for interval in reversed(intervals[:-1]):
+            if (
+                not interval.clean_shutdown
+                or interval.ended_at is None
+                or interval.ended_at > next_start
+                or next_start - interval.ended_at > MAX_CLEAN_RESTART_GAP_SECONDS
+            ):
+                break
+            consecutive += interval.duration_seconds
+            next_start = interval.started_at
     return tuple(intervals), consecutive
 
 

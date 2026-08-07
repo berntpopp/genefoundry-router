@@ -56,7 +56,9 @@ release manifest records the multi-platform identities.
 The production overlay stores `/data/genefoundry/refresh-observability.sqlite3` on the
 existing `fastmcp_data:/data` volume. Preserve that file with the OAuth state during deploys
 and rollbacks. The ledger is mode `0600`, bounded to 64 MiB plus an 8 MiB WAL, retains at
-most 14 days/100,000 event rows, and uses `GF_OAUTH_JWT_SIGNING_KEY` to HMAC client identity.
+most 14 days/100,000 event rows, and uses the effective OAuth signing key to HMAC client
+identity. Existing deployments retain FastMCP's deterministic
+`GF_OAUTH_CLIENT_SECRET`-derived key when `GF_OAUTH_JWT_SIGNING_KEY` remains unset.
 Do not rotate that key during the observation window.
 
 After the router has run continuously for the decision window, read the aggregate report

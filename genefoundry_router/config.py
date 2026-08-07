@@ -174,19 +174,6 @@ class RouterSettings(BaseSettings):
             return None
         return v
 
-    @model_validator(mode="after")
-    def _refresh_observability_has_stable_hmac_key(self) -> RouterSettings:
-        """A durable ledger requires a stable, explicit client-identity HMAC key."""
-        if (
-            self.GF_AUTH_MODE == "oauth"
-            and self.GF_REFRESH_OBSERVABILITY_DB
-            and not self.GF_OAUTH_JWT_SIGNING_KEY
-        ):
-            raise ValueError(
-                "GF_REFRESH_OBSERVABILITY_DB in oauth mode requires GF_OAUTH_JWT_SIGNING_KEY"
-            )
-        return self
-
     @field_validator("GF_DRIFT_BASELINE", mode="before")
     @classmethod
     def _blank_drift_baseline(cls, v: object) -> object:

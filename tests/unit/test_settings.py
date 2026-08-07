@@ -73,13 +73,15 @@ def test_refresh_observability_path_parses_and_blank_normalizes(monkeypatch) -> 
     )
 
 
-def test_oauth_refresh_observability_requires_explicit_router_signing_key() -> None:
-    with pytest.raises(ValidationError, match="GF_OAUTH_JWT_SIGNING_KEY"):
-        RouterSettings(
-            _env_file=None,
-            GF_AUTH_MODE="oauth",
-            GF_REFRESH_OBSERVABILITY_DB="/data/genefoundry/refresh.sqlite3",
-        )
+def test_oauth_refresh_observability_accepts_legacy_secret_derived_signing_key() -> None:
+    settings = RouterSettings(
+        _env_file=None,
+        GF_AUTH_MODE="oauth",
+        GF_OAUTH_CLIENT_SECRET="legacy-client-secret",  # noqa: S106 - fixture
+        GF_REFRESH_OBSERVABILITY_DB="/data/genefoundry/refresh.sqlite3",
+    )
+
+    assert settings.GF_OAUTH_JWT_SIGNING_KEY is None
 
 
 def test_production_rejects_development_unsafe_observability_acknowledgement(monkeypatch):

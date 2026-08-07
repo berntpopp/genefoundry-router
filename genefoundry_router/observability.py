@@ -191,6 +191,16 @@ _OAUTH_SENSITIVE_MARKERS = (
     "Error in IdP callback handler:",
     "Failed to revoke token with upstream server",
     "Unregistered client_id=",
+    "CIMD document fetched and validated:",
+    "CIMD fetch failed for ",
+    "CIMD client resolved:",
+    "JWT assertion validated successfully for client ",
+    "Issued access token for client=",
+    "Issued refresh token for client=",
+    "Token verified successfully for subject=",
+    "Blocked consent denial redirect to disallowed URI for transaction ",
+    "Silent consent skipped for transaction ",
+    "CSRF double-submit check failed for transaction ",
 )
 _OAUTH_REDACTED_MESSAGE = "OAuth detail omitted (sensitive value redacted)."
 
@@ -217,6 +227,9 @@ def install_oauth_proxy_privacy_filter() -> None:
     for name in (
         "fastmcp.server.auth.oauth_proxy.proxy",
         "fastmcp.server.auth.handlers.authorize",
+        "fastmcp.server.auth.cimd",
+        "fastmcp.server.auth.jwt_issuer",
+        "fastmcp.server.auth.oauth_proxy.consent",
     ):
         logger = logging.getLogger(name)
         if not any(isinstance(item, OAuthProxyPrivacyFilter) for item in logger.filters):

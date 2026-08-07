@@ -28,7 +28,7 @@ starts.
 | `GF_JWT_AUDIENCE` | _(unset)_ | jwt/oauth: required token `aud` (MUST match; audience binding) |
 | `GF_OAUTH_CLIENT_ID` / `GF_OAUTH_CLIENT_SECRET` | _(unset)_ | oauth: upstream provider client credentials |
 | `GF_OAUTH_AUTHORIZE_URL` / `GF_OAUTH_TOKEN_URL` | _(unset)_ | oauth: upstream provider authorize/token endpoints |
-| `GF_OAUTH_JWT_SIGNING_KEY` | _(unset)_ | oauth: stable router signing, client-store encryption, and observability HMAC key; required when the refresh ledger is configured and must remain stable across restarts |
+| `GF_OAUTH_JWT_SIGNING_KEY` | _(unset)_ | oauth: optional stable router signing, client-store encryption, and observability HMAC key; when unset, the legacy deterministic key derived from `GF_OAUTH_CLIENT_SECRET` is retained so existing DCR state remains readable |
 | `GF_OAUTH_CANONICAL_ISSUER` | `https://genefoundry.org` | Canonical issuer for router-issued access and refresh tokens |
 | `GF_OAUTH_LEGACY_ISSUERS` | `https://genefoundry.org/` | Exact temporary trailing-slash issuer alias; empty disables compatibility and any other value is rejected |
 | `GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL` | `2026-09-06T00:00:00Z` | Absolute end of the 30-day legacy-issuer transition; it does not slide with process restarts |
@@ -81,7 +81,8 @@ GF_OAUTH_CLIENT_ID=genefoundry-router
 GF_OAUTH_CLIENT_SECRET=…                 # secret; set in the server env, never commit
 GF_OAUTH_AUTHORIZE_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/auth
 GF_OAUTH_TOKEN_URL=https://auth.example.org/realms/genefoundry/protocol/openid-connect/token
-GF_OAUTH_JWT_SIGNING_KEY=…              # stable secret; required for the durable ledger
+# Leave GF_OAUTH_JWT_SIGNING_KEY unset when upgrading an existing DCR store. A new
+# explicit value intentionally starts a new signing/store identity and must then stay stable.
 GF_OAUTH_CANONICAL_ISSUER=https://genefoundry.org
 GF_OAUTH_LEGACY_ISSUERS=https://genefoundry.org/
 GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL=2026-09-06T00:00:00Z
@@ -102,9 +103,11 @@ endpoints as `…/mcp/authorize` and doubles the protected-resource-metadata URL
 The issuer transition is deliberately narrow: new router tokens always use the canonical
 issuer without a trailing slash; only the exact historical root-slash alias is accepted,
 and only before `2026-09-06T00:00:00Z`. Remove the legacy alias after that deadline once
-live sessions have drained. Keep `GF_OAUTH_JWT_SIGNING_KEY` stable throughout the transition;
-changing it invalidates live router tokens and the encrypted Dynamic Client Registration
-store independently of issuer compatibility.
+live sessions have drained. Keep the effective signing identity stable throughout the
+transition: leave `GF_OAUTH_JWT_SIGNING_KEY` unset for a legacy store, or keep an already
+configured value unchanged. Setting or changing it invalidates live router tokens and
+selects a different encrypted Dynamic Client Registration store independently of issuer
+compatibility.
 
 **Verify:** an unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`; a request
 bearing a valid issuer-signed, correctly-audienced token returns `200`. See

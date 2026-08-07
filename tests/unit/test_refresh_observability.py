@@ -1055,3 +1055,41 @@ def test_report_exposes_restart_intervals_without_boot_identifiers(tmp_path: Pat
         assert "boot_id" not in json.dumps(report.to_dict())
     finally:
         ledger.close()
+
+
+def test_clean_container_replacement_preserves_consecutive_observation(
+    tmp_path: Path,
+) -> None:
+    now = 80 * DAY
+    replacement_gap = 30.0
+    ledger = RefreshLedger(tmp_path / "report.sqlite3", hmac_key=b"key", clock=FakeClock(now))
+    try:
+        previous = ledger.record_startup(version="0.8.0", at=now - 7 * DAY - replacement_gap)
+        ledger.record_shutdown(previous, version="0.8.0", at=now - DAY)
+        ledger.record_startup(version="0.8.0", at=now - DAY + replacement_gap)
+        _record_attempts(ledger, at=now - DAY / 2, total=50)
+
+        report = ledger.report(now)
+
+        assert report.sample_status == "ready"
+        assert report.consecutive_observation_seconds == 7 * DAY
+    finally:
+        ledger.close()
+
+
+def test_unclean_container_replacement_resets_consecutive_observation(
+    tmp_path: Path,
+) -> None:
+    now = 90 * DAY
+    ledger = RefreshLedger(tmp_path / "report.sqlite3", hmac_key=b"key", clock=FakeClock(now))
+    try:
+        ledger.record_startup(version="0.8.0", at=now - 7 * DAY)
+        ledger.record_startup(version="0.8.0", at=now - DAY)
+        _record_attempts(ledger, at=now - DAY / 2, total=50)
+
+        report = ledger.report(now)
+
+        assert report.sample_status != "ready"
+        assert report.consecutive_observation_seconds == DAY
+    finally:
+        ledger.close()

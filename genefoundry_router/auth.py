@@ -31,6 +31,30 @@ _CONSENT_ARG: dict[str, bool | Literal["remember", "external"]] = {
 }
 
 
+def resolve_oauth_signing_key(settings: RouterSettings) -> str | bytes:
+    """Return FastMCP's effective stable key without changing legacy store identity.
+
+    Historically an unset explicit key made FastMCP derive bytes directly from the
+    upstream client secret. Passing a newly configured *string* would run a different
+    derivation and select a different encrypted DCR store. Reproduce the historical
+    derivation here and pass the resulting bytes through unchanged; explicit strings
+    retain FastMCP's documented derivation behavior.
+    """
+    if settings.GF_OAUTH_JWT_SIGNING_KEY is not None:
+        return settings.GF_OAUTH_JWT_SIGNING_KEY
+    client_secret = settings.GF_OAUTH_CLIENT_SECRET
+    if client_secret is None:
+        raise ConfigurationError(
+            "oauth mode requires GF_OAUTH_CLIENT_SECRET or GF_OAUTH_JWT_SIGNING_KEY"
+        )
+    from fastmcp.server.auth.oauth_proxy.proxy import derive_jwt_key
+
+    return derive_jwt_key(
+        high_entropy_material=client_secret,
+        salt="fastmcp-jwt-signing-key",
+    )
+
+
 def build_auth(
     settings: RouterSettings, *, refresh_ledger: RefreshLedger | None = None
 ) -> Any | None:
@@ -243,12 +267,12 @@ def _build_oauth(settings: RouterSettings, *, refresh_ledger: RefreshLedger | No
         # and the OAuthProxy resource-check derive the URI the same way. Guarded by
         # tests/unit/test_auth_resource_url.py so #71 cannot silently return.
         resource_base_url=settings.GF_JWT_AUDIENCE,
-        # Fixed signing key → the OAuthProxy-minted tokens AND the encrypted on-disk client
-        # store (whose dir + Fernet key derive from this) stay valid across restarts and
-        # Keycloak client-secret rotation. None falls back to fastmcp's deterministic
-        # derive-from-client-secret. Pairs with the persistent FASTMCP_HOME volume (prod
-        # compose): without durable storage a stable key alone still loses DCR clients.
-        jwt_signing_key=settings.GF_OAUTH_JWT_SIGNING_KEY,
+        # Effective signing key → the OAuthProxy-minted tokens AND encrypted on-disk client
+        # store stay valid across restarts. An explicit value decouples them from Keycloak
+        # secret rotation; when absent, resolve_oauth_signing_key reproduces FastMCP's legacy
+        # secret-derived BYTES exactly so an upgrade does not change the DCR fingerprint.
+        # Pairs with persistent FASTMCP_HOME: a stable key alone cannot preserve DCR clients.
+        jwt_signing_key=resolve_oauth_signing_key(settings),
         # Skip fastmcp's own "Allow Access" consent page — Keycloak is the auth + login
         # gate; the proxy's redundant, unstyled interstitial breaks the branded flow.
         require_authorization_consent=require_consent,
