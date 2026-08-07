@@ -1,0 +1,605 @@
+"""Durable, privacy-bounded refresh-observability ledger contracts."""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import os
+import sqlite3
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import replace
+from pathlib import Path
+
+import pytest
+
+from genefoundry_router.refresh_observability import (
+    EVENT_RETENTION_SECONDS,
+    MAX_DATABASE_BYTES,
+    MAX_EVENT_ROWS,
+    MAX_WAL_BYTES,
+    PRUNE_INTERVAL_SECONDS,
+    SCHEMA_VERSION,
+    RefreshEvent,
+    RefreshLedger,
+    RefreshLedgerCapacityError,
+    RefreshLedgerUnavailable,
+)
+
+
+class FakeClock:
+    def __init__(self, value: float) -> None:
+        self.value = value
+
+    def __call__(self) -> float:
+        return self.value
+
+
+def _event(
+    at: float,
+    *,
+    outcome: str = "failure",
+    reason: str | None = "local_not_found",
+    request_id: str = "request-1",
+    client_class: str = "chatgpt",
+    client_hmac: str = "a" * 64,
+    token_hash_prefix: str | None = "b" * 12,
+) -> RefreshEvent:
+    return RefreshEvent(
+        at=at,
+        request_id=request_id,
+        client_class=client_class,
+        client_hmac=client_hmac,
+        event_type="refresh",
+        outcome=outcome,
+        reason=reason,
+        token_hash_prefix=token_hash_prefix,
+    )
+
+
+@contextmanager
+def _connect(path: Path) -> Iterator[sqlite3.Connection]:
+    connection = sqlite3.connect(path)
+    connection.row_factory = sqlite3.Row
+    try:
+        yield connection
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def _raw_event_count(path: Path) -> int:
+    with _connect(path) as connection:
+        return int(connection.execute("SELECT COUNT(*) FROM refresh_events").fetchone()[0])
+
+
+def _insert_raw_event(path: Path, event: RefreshEvent) -> None:
+    with _connect(path) as connection:
+        connection.execute(
+            """
+            INSERT INTO refresh_events (
+                at, request_id, client_class, client_hmac, event_type,
+                outcome, reason, token_hash_prefix, reuse_delay_seconds
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                event.at,
+                event.request_id,
+                event.client_class,
+                event.client_hmac,
+                event.event_type,
+                event.outcome,
+                event.reason,
+                event.token_hash_prefix,
+                event.reuse_delay_seconds,
+            ),
+        )
+
+
+def test_schema_uses_wal_mode_0600_and_normalized_tables(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    ledger = RefreshLedger(path, hmac_key=b"signing-key", clock=FakeClock(2_000_000.0))
+    try:
+        with _connect(path) as connection:
+            journal_mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
+            user_version = connection.execute("PRAGMA user_version").fetchone()[0]
+            tables = {
+                row[0]
+                for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                ).fetchall()
+            }
+
+        assert journal_mode == "wal"
+        assert user_version == SCHEMA_VERSION
+        # journal_size_limit is connection-local in SQLite; inspect the live ledger
+        # connection that performs all production writes.
+        assert ledger._db.execute("PRAGMA journal_size_limit").fetchone()[0] == MAX_WAL_BYTES
+        assert path.stat().st_mode & 0o777 == 0o600
+        assert {
+            "refresh_meta",
+            "refresh_counters",
+            "refresh_events",
+            "refresh_tombstones",
+            "router_lifecycle",
+        } <= tables
+    finally:
+        ledger.close()
+
+
+def test_client_identity_is_hmac_sha256_with_configured_signing_key(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    key = b"GF_OAUTH_JWT_SIGNING_KEY fixture"
+    raw_client = "https://chatgpt.example/client?private=value"
+    ledger = RefreshLedger(path, hmac_key=key, clock=FakeClock(2_000_000.0))
+    try:
+        expected = hmac.new(key, raw_client.encode(), hashlib.sha256).hexdigest()
+        assert ledger.client_hmac(raw_client) == expected
+        assert raw_client not in ledger.client_hmac(raw_client)
+    finally:
+        ledger.close()
+
+
+def test_aggregate_counters_persist_across_ledger_instances(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    clock = FakeClock(2_000_000.0)
+    first = RefreshLedger(path, hmac_key=b"key", clock=clock)
+    first.record_event(_event(clock(), outcome="failure", reason="mapping_missing"))
+    first.record_event(
+        _event(
+            clock(),
+            outcome="success",
+            reason=None,
+            client_class="claude",
+            client_hmac="c" * 64,
+        )
+    )
+    first.close()
+
+    second = RefreshLedger(path, hmac_key=b"key", clock=clock)
+    try:
+        snapshot = second.counter_snapshot()
+        assert snapshot.attempts == {"chatgpt": 1, "claude": 1}
+        assert snapshot.successes == {"claude": 1}
+        assert snapshot.failures == {("chatgpt", "mapping_missing"): 1}
+    finally:
+        second.close()
+
+
+def test_startup_prunes_events_and_tombstones_older_than_fourteen_days(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    now = 3_000_000.0
+    clock = FakeClock(now)
+    old_at = now - EVENT_RETENTION_SECONDS - 1
+    retained_at = now - EVENT_RETENTION_SECONDS + 1
+
+    first = RefreshLedger(path, hmac_key=b"key", clock=clock)
+    first.record_event(_event(old_at, request_id="old"))
+    first.record_event(_event(retained_at, request_id="retained"))
+    first.record_rotation("1" * 64, "a" * 64, old_at)
+    first.record_rotation("2" * 64, "a" * 64, retained_at)
+    first.close()
+
+    second = RefreshLedger(path, hmac_key=b"key", clock=clock)
+    try:
+        with _connect(path) as connection:
+            request_ids = {
+                row[0]
+                for row in connection.execute(
+                    "SELECT request_id FROM refresh_events ORDER BY request_id"
+                )
+            }
+            tombstones = {
+                row[0]
+                for row in connection.execute(
+                    "SELECT token_hash FROM refresh_tombstones ORDER BY token_hash"
+                )
+            }
+        assert request_ids == {"retained"}
+        assert tombstones == {"2" * 64}
+        assert second.classify_missing("1" * 64, "a" * 64, now) == "local_not_found"
+        assert second.classify_missing("2" * 64, "a" * 64, now) == "reuse_after_rotation"
+    finally:
+        second.close()
+
+
+def test_pruned_tombstone_hash_is_erased_from_sqlite_storage(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    now = 3_500_000.0
+    token_hash = "0123456789abcdef" * 4
+    first = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    first.record_rotation(token_hash, "a" * 64, now - EVENT_RETENTION_SECONDS - 1)
+    first.close()
+
+    second = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    assert second.classify_missing(token_hash, "a" * 64, now) == "local_not_found"
+    assert second._db.execute("PRAGMA secure_delete").fetchone()[0] == 1
+    second.close()
+
+    for sqlite_file in (path, Path(f"{path}-wal"), Path(f"{path}-shm")):
+        if sqlite_file.exists():
+            assert token_hash.encode() not in sqlite_file.read_bytes()
+
+
+def test_runtime_retention_pruning_is_throttled_to_once_per_hour(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    now = 4_000_000.0
+    clock = FakeClock(now)
+    ledger = RefreshLedger(path, hmac_key=b"key", clock=clock)
+    old = _event(now - EVENT_RETENTION_SECONDS - 1, request_id="old")
+    _insert_raw_event(path, old)
+
+    clock.value = now + PRUNE_INTERVAL_SECONDS - 1
+    ledger.record_event(_event(clock(), request_id="before-hour"))
+    assert _raw_event_count(path) == 2
+
+    clock.value = now + PRUNE_INTERVAL_SECONDS
+    ledger.record_event(_event(clock(), request_id="at-hour"))
+    try:
+        with _connect(path) as connection:
+            request_ids = {
+                row[0] for row in connection.execute("SELECT request_id FROM refresh_events")
+            }
+        assert request_ids == {"before-hour", "at-hour"}
+    finally:
+        ledger.close()
+
+
+def test_startup_enforces_exact_one_hundred_thousand_event_row_cap(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    now = 5_000_000.0
+    first = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    first.close()
+
+    with _connect(path) as connection:
+        connection.executemany(
+            """
+            INSERT INTO refresh_events (
+                at, request_id, client_class, client_hmac, event_type,
+                outcome, reason, token_hash_prefix, reuse_delay_seconds
+            ) VALUES (?, ?, 'other', ?, 'refresh', 'failure',
+                      'local_not_found', NULL, NULL)
+            """,
+            ((now, f"r-{index}", "d" * 64) for index in range(MAX_EVENT_ROWS + 5)),
+        )
+
+    second = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    try:
+        assert _raw_event_count(path) == MAX_EVENT_ROWS
+        with _connect(path) as connection:
+            oldest = connection.execute(
+                "SELECT request_id FROM refresh_events ORDER BY id LIMIT 1"
+            ).fetchone()[0]
+        assert oldest == "r-5"
+    finally:
+        second.close()
+
+
+def test_database_size_over_sixty_four_mib_fails_closed_without_reset(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    ledger = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(6_000_000.0))
+    ledger.close()
+    with path.open("r+b") as database_file:
+        database_file.truncate(MAX_DATABASE_BYTES + 1)
+
+    oversized = path.stat().st_size
+    with pytest.raises(RefreshLedgerCapacityError, match="64 MiB"):
+        RefreshLedger(path, hmac_key=b"key", clock=FakeClock(6_000_000.0))
+    assert path.stat().st_size == oversized
+
+
+def test_unreadable_existing_database_fails_closed_without_replacement(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    ledger = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_000_000.0))
+    ledger.close()
+    original_inode = path.stat().st_ino
+    os.chmod(path, 0)
+    try:
+        with pytest.raises(RefreshLedgerUnavailable, match="readable and writable"):
+            RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_000_000.0))
+        assert path.stat().st_ino == original_inode
+    finally:
+        os.chmod(path, 0o600)
+
+
+@pytest.mark.parametrize(
+    "event",
+    [
+        replace(_event(8_000_000.0), request_id="x" * 129),
+        replace(_event(8_000_000.0), client_class="unbounded-client"),
+        replace(_event(8_000_000.0), client_hmac="not-a-full-hmac"),
+        replace(_event(8_000_000.0), reason="raw upstream response"),
+        replace(_event(8_000_000.0), token_hash_prefix="f" * 17),
+    ],
+)
+def test_event_text_fields_are_bounded_before_sqlite_write(
+    tmp_path: Path, event: RefreshEvent
+) -> None:
+    ledger = RefreshLedger(
+        tmp_path / "refresh.sqlite3", hmac_key=b"key", clock=FakeClock(8_000_000.0)
+    )
+    try:
+        with pytest.raises(ValueError):
+            ledger.record_event(event)
+    finally:
+        ledger.close()
+
+
+def test_full_token_hash_is_confined_to_tombstones_not_event_rows(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    token_hash = "e" * 64
+    ledger = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(9_000_000.0))
+    try:
+        ledger.record_event(_event(9_000_000.0, token_hash_prefix=token_hash[:12]))
+        ledger.record_rotation(token_hash, "a" * 64, 9_000_000.0)
+        with _connect(path) as connection:
+            event_columns = {
+                row[1] for row in connection.execute("PRAGMA table_info(refresh_events)")
+            }
+            stored_prefix = connection.execute(
+                "SELECT token_hash_prefix FROM refresh_events"
+            ).fetchone()[0]
+            stored_hash = connection.execute(
+                "SELECT token_hash FROM refresh_tombstones"
+            ).fetchone()[0]
+        assert "token_hash" not in event_columns
+        assert stored_prefix == token_hash[:12]
+        assert stored_hash == token_hash
+    finally:
+        ledger.close()
+
+
+DAY = 24 * 60 * 60
+
+
+def _record_attempts(
+    ledger: RefreshLedger,
+    *,
+    at: float,
+    total: int,
+    failures: dict[int, tuple[str, str, str, float | None]] | None = None,
+) -> None:
+    """Record ``total`` attempts; indexed failures carry reason/class/HMAC/delay."""
+    failures = failures or {}
+    for index in range(total):
+        failure = failures.get(index)
+        if failure is None:
+            event = _event(
+                at + index / 1000,
+                request_id=f"attempt-{index}",
+                outcome="success",
+                reason=None,
+                client_class="other",
+                client_hmac="f" * 64,
+                token_hash_prefix=None,
+            )
+        else:
+            reason, client_class, client_hmac, delay = failure
+            event = replace(
+                _event(at + index / 1000, request_id=f"attempt-{index}"),
+                reason=reason,
+                client_class=client_class,
+                client_hmac=client_hmac,
+                reuse_delay_seconds=delay,
+            )
+        ledger.record_event(event)
+
+
+def _observed_ledger(tmp_path: Path, now: float, days: int) -> RefreshLedger:
+    ledger = RefreshLedger(tmp_path / "report.sqlite3", hmac_key=b"key", clock=FakeClock(now))
+    ledger.record_startup(version="0.8.0", at=now - days * DAY)
+    return ledger
+
+
+def test_report_is_ready_at_exactly_seven_days_and_fifty_attempts(tmp_path: Path) -> None:
+    now = 20 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    try:
+        _record_attempts(ledger, at=now - DAY, total=50)
+        report = ledger.report(now)
+        assert report.sample_status == "ready"
+        assert report.decision == "not_material"
+        assert report.window_days == 7
+        assert report.attempts == 50
+        assert report.successes == 50
+        assert report.failures == 0
+        assert report.failure_rate == 0.0
+        assert report.consecutive_observation_seconds == 7 * DAY
+    finally:
+        ledger.close()
+
+
+def test_report_extends_to_fourteen_days_when_seven_day_sample_is_small(
+    tmp_path: Path,
+) -> None:
+    now = 20 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    try:
+        _record_attempts(ledger, at=now - DAY, total=49)
+        report = ledger.report(now)
+        assert report.sample_status == "extended"
+        assert report.decision == "insufficient_sample"
+        assert report.window_days == 14
+        assert report.attempts == 49
+    finally:
+        ledger.close()
+
+
+def test_report_marks_fourteen_day_fallback_insufficient_below_fifty_attempts(
+    tmp_path: Path,
+) -> None:
+    now = 30 * DAY
+    ledger = _observed_ledger(tmp_path, now, 14)
+    try:
+        _record_attempts(ledger, at=now - 13 * DAY, total=49)
+        report = ledger.report(now)
+        assert report.sample_status == "insufficient_sample"
+        assert report.decision == "insufficient_sample"
+        assert report.window_days == 14
+        assert report.attempts == 49
+    finally:
+        ledger.close()
+
+
+def test_report_uses_ready_fourteen_day_fallback_at_fifty_attempts(tmp_path: Path) -> None:
+    now = 30 * DAY
+    ledger = _observed_ledger(tmp_path, now, 14)
+    try:
+        _record_attempts(ledger, at=now - 13 * DAY, total=50)
+        report = ledger.report(now)
+        assert report.sample_status == "ready"
+        assert report.decision == "not_material"
+        assert report.window_days == 14
+        assert report.attempts == 50
+    finally:
+        ledger.close()
+
+
+@pytest.mark.parametrize(
+    ("total", "material_failures", "expected"),
+    [
+        (300, 3, "not_material"),  # exactly 1% does not EXCEED the threshold
+        (299, 3, "material"),
+        (50, 2, "not_material"),  # rate exceeds 1%, but fewer than three events
+    ],
+)
+def test_report_applies_exact_rotation_failure_materiality_threshold(
+    tmp_path: Path,
+    total: int,
+    material_failures: int,
+    expected: str,
+) -> None:
+    now = 40 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    failures = {
+        index: (
+            "reuse_after_rotation" if index % 2 == 0 else "upstream_invalid_grant",
+            "chatgpt",
+            "a" * 64,
+            float(index + 1),
+        )
+        for index in range(material_failures)
+    }
+    try:
+        _record_attempts(ledger, at=now - DAY, total=total, failures=failures)
+        report = ledger.report(now)
+        assert report.sample_status == "ready"
+        assert report.decision == expected
+        assert report.material_rotation_failures == material_failures
+        assert report.material_rotation_rate == pytest.approx(material_failures / total)
+    finally:
+        ledger.close()
+
+
+def test_two_distinct_failed_clients_authorizing_within_fifteen_minutes_is_material(
+    tmp_path: Path,
+) -> None:
+    now = 50 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    client_a = "a" * 64
+    client_b = "b" * 64
+    failures = {
+        0: ("local_not_found", "chatgpt", client_a, None),
+        1: ("mapping_missing", "claude", client_b, None),
+    }
+    try:
+        attempt_at = now - DAY
+        _record_attempts(ledger, at=attempt_at, total=50, failures=failures)
+        ledger.record_event(
+            RefreshEvent(
+                at=attempt_at + 900,
+                request_id="authorize-a",
+                client_class="chatgpt",
+                client_hmac=client_a,
+                event_type="authorize",
+                outcome="started",
+            )
+        )
+        ledger.record_event(
+            RefreshEvent(
+                at=attempt_at + 900.001,
+                request_id="authorize-b",
+                client_class="claude",
+                client_hmac=client_b,
+                event_type="authorize",
+                outcome="started",
+            )
+        )
+
+        report = ledger.report(now)
+        assert report.decision == "material"
+        assert report.subsequent_authorizations == 2
+        assert report.forced_reauthorization_clients == 2
+    finally:
+        ledger.close()
+
+
+def test_report_groups_only_bounded_aggregate_values_and_reuse_delays(tmp_path: Path) -> None:
+    now = 60 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    hidden_hmac = "c" * 64
+    hidden_prefix = "d" * 12
+    failures = {
+        0: ("reuse_after_rotation", "chatgpt", hidden_hmac, 4.999),
+        1: ("reuse_after_rotation", "chatgpt", hidden_hmac, 5.0),
+        2: ("reuse_after_rotation", "chatgpt", hidden_hmac, 60.0),
+        3: ("reuse_after_rotation", "chatgpt", hidden_hmac, 901.0),
+    }
+    try:
+        _record_attempts(ledger, at=now - DAY, total=50, failures=failures)
+        with _connect(ledger.path) as connection:
+            connection.execute(
+                "UPDATE refresh_events SET token_hash_prefix = ? WHERE outcome = 'failure'",
+                (hidden_prefix,),
+            )
+
+        report = ledger.report(now)
+        payload = report.to_dict()
+        serialized = json.dumps(payload, sort_keys=True)
+        assert set(report.attempts_by_client_class) == {"chatgpt", "claude", "other"}
+        assert set(report.failures_by_reason) == {
+            "local_not_found",
+            "reuse_after_rotation",
+            "overlapping_attempt",
+            "client_mismatch",
+            "jwt_invalid",
+            "mapping_missing",
+            "upstream_invalid_grant",
+            "upstream_other",
+            "internal_error",
+        }
+        assert report.affected_clients == 1
+        assert report.reuse_delay_buckets == {
+            "under_5s": 1,
+            "5s_to_under_60s": 1,
+            "1m_to_15m": 1,
+            "over_15m": 1,
+        }
+        assert hidden_hmac not in serialized
+        assert hidden_prefix not in serialized
+        assert "token_hash" not in serialized
+        assert "request_id" not in serialized
+    finally:
+        ledger.close()
+
+
+def test_report_exposes_restart_intervals_without_boot_identifiers(tmp_path: Path) -> None:
+    now = 70 * DAY
+    ledger = RefreshLedger(tmp_path / "report.sqlite3", hmac_key=b"key", clock=FakeClock(now))
+    try:
+        old_boot = ledger.record_startup(version="0.8.0", at=now - 10 * DAY)
+        ledger.record_shutdown(old_boot, version="0.8.0", at=now - 9 * DAY)
+        ledger.record_startup(version="0.8.0", at=now - 7 * DAY)
+        _record_attempts(ledger, at=now - DAY, total=50)
+
+        report = ledger.report(now)
+        assert len(report.restart_intervals) == 2
+        assert report.restart_intervals[0].clean_shutdown is True
+        assert report.restart_intervals[1].clean_shutdown is False
+        assert report.consecutive_observation_seconds == 7 * DAY
+        assert "boot_id" not in json.dumps(report.to_dict())
+    finally:
+        ledger.close()

@@ -68,6 +68,9 @@ class RouterSettings(BaseSettings):
     GF_RATE_LIMIT_RPM: int = 0  # per-client requests/min (429 over); 0 = off, enable in prod
     GF_TRUSTED_PROXY_HOPS: int = 1  # trusted hops at the tail of X-Forwarded-For
     GF_METRICS_TOKEN: str | None = None  # optional bearer token for GET /metrics
+    # Durable, privacy-bounded OAuth refresh-rotation measurements. Production Compose
+    # places this beside FastMCP's persistent state on the existing /data volume.
+    GF_REFRESH_OBSERVABILITY_DB: str | None = None
     # Development-only acknowledgement for an authenticated local router without the
     # production observability controls. It never weakens production checks.
     GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY: bool = False
@@ -163,13 +166,26 @@ class RouterSettings(BaseSettings):
             raise ValueError("GF_ALLOWED_HOSTS must not contain wildcard entries")
         return value
 
-    @field_validator("GF_METRICS_TOKEN", mode="before")
+    @field_validator("GF_METRICS_TOKEN", "GF_REFRESH_OBSERVABILITY_DB", mode="before")
     @classmethod
-    def _blank_metrics_token(cls, v: object) -> object:
-        """Treat blank scrape-token env values as unset."""
+    def _blank_optional_string(cls, v: object) -> object:
+        """Treat blank optional string settings as unset."""
         if isinstance(v, str) and not v.strip():
             return None
         return v
+
+    @model_validator(mode="after")
+    def _refresh_observability_has_stable_hmac_key(self) -> RouterSettings:
+        """A durable ledger requires a stable, explicit client-identity HMAC key."""
+        if (
+            self.GF_AUTH_MODE == "oauth"
+            and self.GF_REFRESH_OBSERVABILITY_DB
+            and not self.GF_OAUTH_JWT_SIGNING_KEY
+        ):
+            raise ValueError(
+                "GF_REFRESH_OBSERVABILITY_DB in oauth mode requires GF_OAUTH_JWT_SIGNING_KEY"
+            )
+        return self
 
     @field_validator("GF_DRIFT_BASELINE", mode="before")
     @classmethod

@@ -133,7 +133,10 @@ def test_trailing_slash_access_and_refresh_tokens_validate_before_deadline() -> 
 
 @pytest.mark.parametrize(
     ("token", "expected_token_use"),
-    [(_access_token(), "access"), (_refresh_token(), "refresh")],
+    [
+        pytest.param(_access_token(), "access", id="access"),
+        pytest.param(_refresh_token(), "refresh", id="refresh"),
+    ],
 )
 def test_trailing_slash_legacy_tokens_are_rejected_after_deadline(
     token: str, expected_token_use: str
@@ -170,9 +173,17 @@ def test_settings_allow_an_empty_legacy_issuer_list() -> None:
 @pytest.mark.parametrize(
     ("token", "expected_token_use"),
     [
-        (_access_token(audience=f"{BASE_URL}/other"), "access"),
-        (_refresh_token(), "access"),
-        (_access_token(signing_key=b"different-signing-key-32-bytes!!!"), "access"),
+        pytest.param(
+            _access_token(audience=f"{BASE_URL}/other"),
+            "access",
+            id="wrong-audience",
+        ),
+        pytest.param(_refresh_token(), "access", id="wrong-token-use"),
+        pytest.param(
+            _access_token(signing_key=b"different-signing-key-32-bytes!!!"),
+            "access",
+            id="wrong-signature",
+        ),
     ],
 )
 def test_transition_preserves_audience_token_use_and_signature_checks(

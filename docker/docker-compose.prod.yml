@@ -12,6 +12,7 @@ services:
       GF_ALLOWED_HOSTS: "${GF_ALLOWED_HOSTS:?set the public router hostname}"
       GF_HEALTHCHECK_HOST: "${GF_HEALTHCHECK_HOST:?set the public health-check Host}"
       GF_DRIFT_MODE: enforce
+      GF_REFRESH_OBSERVABILITY_DB: /data/genefoundry/refresh-observability.sqlite3
       # OAuthProxy persists its DCR client registrations, auth codes, and refresh
       # tokens as an encrypted FileTreeStore under $FASTMCP_HOME. Point it at the
       # durable fastmcp_data volume (below) — NOT /tmp (tmpfs, wiped every restart,

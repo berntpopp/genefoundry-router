@@ -9,10 +9,17 @@ for a fixed migration window.
 
 from __future__ import annotations
 
+import hashlib
+import re
+import time
 from collections.abc import Callable, Sequence
+from contextvars import ContextVar
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, cast
+from urllib.parse import urlsplit
 
+import structlog
 from fastmcp.server.auth import OAuthProxy
 from fastmcp.server.auth.jwt_issuer import JWTIssuer
 from joserfc.errors import JoseError
@@ -20,16 +27,91 @@ from mcp.server.auth.handlers.metadata import (
     MetadataHandler,
     ProtectedResourceMetadataHandler,
 )
+from mcp.server.auth.provider import RefreshToken, TokenError
 from mcp.server.auth.routes import build_metadata, cors_middleware
 from mcp.server.auth.settings import ClientRegistrationOptions, RevocationOptions
-from mcp.shared.auth import OAuthMetadata, ProtectedResourceMetadata
+from mcp.shared.auth import (
+    OAuthClientInformationFull,
+    OAuthMetadata,
+    OAuthToken,
+    ProtectedResourceMetadata,
+)
 from pydantic import AnyHttpUrl, ConfigDict
+from starlette.requests import Request
 from starlette.routing import Route
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from genefoundry_router.config import (
     _canonical_oauth_issuer,
     _validate_oauth_legacy_issuers,
 )
+from genefoundry_router.observability import (
+    install_oauth_proxy_privacy_filter,
+    record_refresh_metrics,
+)
+from genefoundry_router.refresh_observability import (
+    RefreshEvent,
+    RefreshLedger,
+)
+
+log = structlog.get_logger(__name__)
+_REFRESH_INFLIGHT_TTL_SECONDS = 5 * 60
+_SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+
+
+def classify_oauth_client(client: OAuthClientInformationFull) -> str:
+    """Map client-controlled identity to one of three fixed metric classes."""
+    return _classify_oauth_client_values(client.client_id or "", client.client_name)
+
+
+def _classify_oauth_client_values(raw_id: str, client_name: str | None = None) -> str:
+    try:
+        hostname = (urlsplit(raw_id).hostname or "").lower()
+    except ValueError:
+        # OAuth client IDs may be opaque, client-controlled strings rather than URLs.
+        hostname = ""
+    name = (client_name or "").strip().lower()
+    if hostname == "chatgpt.com" or hostname.endswith(".chatgpt.com") or name.startswith("chatgpt"):
+        return "chatgpt"
+    if hostname == "claude.ai" or hostname.endswith(".claude.ai") or name.startswith("claude"):
+        return "claude"
+    return "other"
+
+
+def _safe_request_id(value: str | None) -> str:
+    return value if value is not None and _SAFE_REQUEST_ID.fullmatch(value) else "_unknown"
+
+
+@dataclass(slots=True)
+class _InFlight:
+    count: int
+    started_at: float
+
+
+@dataclass(slots=True)
+class _RefreshAttempt:
+    token_hash: str
+    client_hmac: str
+    client_class: str
+    request_id: str
+    started_at: float
+    inflight_started_at: float
+    overlapping: bool
+    tracked: bool
+
+
+class _RefreshCleanupEndpoint:
+    """ASGI-transparent token-route wrapper that clears abandoned observations."""
+
+    def __init__(self, endpoint: ASGIApp, cleanup: Callable[[], None]) -> None:
+        self._endpoint = endpoint
+        self._cleanup = cleanup
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        try:
+            await self._endpoint(scope, receive, send)
+        finally:
+            self._cleanup()
 
 
 def canonical_issuer(base_url: str) -> str:
@@ -103,14 +185,250 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         canonical_issuer_url: str,
         legacy_issuer_urls: Sequence[str],
         legacy_issuer_accept_until: datetime,
+        refresh_ledger: RefreshLedger | None = None,
+        refresh_clock: Callable[[], float] | None = None,
+        refresh_inflight_limit: int = 1024,
         **kwargs: Any,
     ) -> None:
+        if refresh_inflight_limit <= 0:
+            raise ValueError("refresh in-flight limit must be positive")
         self._canonical_issuer_url = canonical_issuer(canonical_issuer_url)
         self._legacy_issuer_urls = _validate_oauth_legacy_issuers(
             self._canonical_issuer_url, legacy_issuer_urls
         )
         self._legacy_issuer_accept_until = legacy_issuer_accept_until
+        self._refresh_ledger = refresh_ledger
+        self._refresh_clock = refresh_clock or time.time
+        self._refresh_inflight_limit = refresh_inflight_limit
+        self._refresh_inflight: dict[str, _InFlight] = {}
+        self._refresh_attempt: ContextVar[_RefreshAttempt | None] = ContextVar(
+            f"refresh_attempt_{id(self)}", default=None
+        )
+        install_oauth_proxy_privacy_filter()
         super().__init__(**kwargs)
+
+    def _begin_refresh_attempt(
+        self, client: OAuthClientInformationFull, refresh_token: str
+    ) -> _RefreshAttempt:
+        assert self._refresh_ledger is not None
+        now = self._refresh_clock()
+        stale = [
+            token_hash
+            for token_hash, entry in self._refresh_inflight.items()
+            if now - entry.started_at >= _REFRESH_INFLIGHT_TTL_SECONDS
+        ]
+        for token_hash in stale:
+            del self._refresh_inflight[token_hash]
+        token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
+        entry = self._refresh_inflight.get(token_hash)
+        overlapping = entry is not None
+        tracked = entry is not None or len(self._refresh_inflight) < self._refresh_inflight_limit
+        if entry is not None:
+            entry.count += 1
+            inflight_started_at = entry.started_at
+        elif tracked:
+            inflight_started_at = now
+            self._refresh_inflight[token_hash] = _InFlight(1, now)
+        else:
+            inflight_started_at = now
+        attempt = _RefreshAttempt(
+            token_hash=token_hash,
+            client_hmac=self._refresh_ledger.client_hmac(client.client_id or ""),
+            client_class=classify_oauth_client(client),
+            request_id=_safe_request_id(None),
+            started_at=now,
+            inflight_started_at=inflight_started_at,
+            overlapping=overlapping,
+            tracked=tracked,
+        )
+        self._refresh_attempt.set(attempt)
+        return attempt
+
+    def _finish_refresh_attempt(self, attempt: _RefreshAttempt) -> None:
+        if attempt.tracked:
+            entry = self._refresh_inflight.get(attempt.token_hash)
+            if entry is not None and entry.started_at == attempt.inflight_started_at:
+                entry.count -= 1
+                if entry.count <= 0:
+                    del self._refresh_inflight[attempt.token_hash]
+        self._refresh_attempt.set(None)
+
+    def _finish_abandoned_refresh_attempt(self) -> None:
+        """Clear a loaded attempt when the SDK returns before exchange."""
+        attempt = self._refresh_attempt.get()
+        if attempt is not None:
+            self._finish_refresh_attempt(attempt)
+
+    def _record_refresh(
+        self,
+        attempt: _RefreshAttempt,
+        outcome: str,
+        reason: str | None = None,
+        reuse_delay: float | None = None,
+    ) -> None:
+        assert self._refresh_ledger is not None
+        try:
+            event = RefreshEvent(
+                at=self._refresh_clock(),
+                request_id=attempt.request_id,
+                client_class=attempt.client_class,
+                client_hmac=attempt.client_hmac,
+                event_type="refresh",
+                outcome=outcome,
+                reason=reason,
+                token_hash_prefix=attempt.token_hash[:12],
+                reuse_delay_seconds=reuse_delay,
+            )
+            self._refresh_ledger.record_event(event)
+        except Exception as exc:
+            log.error("refresh_observability_write_failed", error_type=type(exc).__name__)
+        try:
+            record_refresh_metrics(attempt.client_class, outcome, reason)
+        except Exception as exc:
+            log.error("refresh_observability_metric_failed", error_type=type(exc).__name__)
+
+    def _classify_missing(
+        self,
+        client: OAuthClientInformationFull,
+        attempt: _RefreshAttempt,
+        refresh_token: str,
+    ) -> tuple[str, float | None]:
+        assert self._refresh_ledger is not None
+        if attempt.overlapping:
+            return "overlapping_attempt", None
+        reason = self._refresh_ledger.classify_missing(
+            attempt.token_hash, attempt.client_hmac, self._refresh_clock()
+        )
+        if reason != "local_not_found":
+            delay = (
+                self._refresh_ledger.reuse_delay_seconds(attempt.token_hash, self._refresh_clock())
+                if reason == "reuse_after_rotation"
+                else None
+            )
+            return reason, delay
+        try:
+            payload = self.jwt_issuer.verify_token(
+                # The raw token is used only for superclass-equivalent verification.
+                # It is never stored or logged.
+                refresh_token,
+                expected_token_use="refresh",  # noqa: S106 - JWT claim, not a credential
+            )
+        except Exception:
+            return "jwt_invalid", None
+        claimed_client = payload.get("client_id") or payload.get("sub")
+        if claimed_client is not None and claimed_client != client.client_id:
+            return "client_mismatch", None
+        return "local_not_found", None
+
+    async def load_refresh_token(
+        self, client: OAuthClientInformationFull, refresh_token: str
+    ) -> RefreshToken | None:
+        """Observe local misses while delegating FastMCP semantics exactly once."""
+        if self._refresh_ledger is None:
+            return await super().load_refresh_token(client, refresh_token)
+        try:
+            attempt = self._begin_refresh_attempt(client, refresh_token)
+        except Exception as exc:
+            log.error("refresh_observability_start_failed", error_type=type(exc).__name__)
+            return await super().load_refresh_token(client, refresh_token)
+        try:
+            loaded = await super().load_refresh_token(client, refresh_token)
+        except Exception:
+            try:
+                self._record_refresh(attempt, "failure", "internal_error")
+            finally:
+                self._finish_refresh_attempt(attempt)
+            raise
+        if loaded is None:
+            try:
+                try:
+                    reason, delay = self._classify_missing(client, attempt, refresh_token)
+                except Exception as exc:
+                    log.error("refresh_observability_read_failed", error_type=type(exc).__name__)
+                    reason, delay = "internal_error", None
+                self._record_refresh(attempt, "failure", reason, delay)
+            finally:
+                self._finish_refresh_attempt(attempt)
+        return loaded
+
+    @staticmethod
+    def _exchange_failure_reason(error: TokenError) -> str:
+        description = error.error_description or ""
+        if description == "Invalid refresh token":
+            return "jwt_invalid"
+        if description in {
+            "Refresh token mapping not found",
+            "Upstream token not found",
+            "Refresh not supported for this token",
+        }:
+            return "mapping_missing"
+        if description.startswith("Upstream refresh failed"):
+            cause = error.__cause__
+            code = getattr(cause, "error", None)
+            if code == "invalid_grant":
+                return "upstream_invalid_grant"
+            return "upstream_other"
+        return "internal_error"
+
+    async def exchange_refresh_token(
+        self,
+        client: OAuthClientInformationFull,
+        refresh_token: RefreshToken,
+        scopes: list[str],
+    ) -> OAuthToken:
+        """Observe the exchange result without retrying, reordering, or replacing it."""
+        if self._refresh_ledger is None:
+            return await super().exchange_refresh_token(client, refresh_token, scopes)
+        attempt = self._refresh_attempt.get()
+        expected_hash = hashlib.sha256(refresh_token.token.encode()).hexdigest()
+        if attempt is not None and attempt.token_hash != expected_hash:
+            self._finish_refresh_attempt(attempt)
+            attempt = None
+        if attempt is None:
+            try:
+                attempt = self._begin_refresh_attempt(client, refresh_token.token)
+            except Exception as exc:
+                log.error("refresh_observability_start_failed", error_type=type(exc).__name__)
+                return await super().exchange_refresh_token(client, refresh_token, scopes)
+        try:
+            result = await super().exchange_refresh_token(client, refresh_token, scopes)
+        except TokenError as exc:
+            reason = (
+                "overlapping_attempt" if attempt.overlapping else self._exchange_failure_reason(exc)
+            )
+            self._record_refresh(attempt, "failure", reason)
+            raise
+        except Exception:
+            self._record_refresh(attempt, "failure", "internal_error")
+            raise
+        else:
+            try:
+                self._refresh_ledger.record_rotation(
+                    attempt.token_hash, attempt.client_hmac, self._refresh_clock()
+                )
+            except Exception as exc:
+                log.error("refresh_observability_write_failed", error_type=type(exc).__name__)
+            self._record_refresh(attempt, "success")
+            return result
+        finally:
+            self._finish_refresh_attempt(attempt)
+
+    async def _record_authorize(self, request: Request) -> None:
+        if self._refresh_ledger is None:
+            return
+        try:
+            raw_client_id = request.query_params.get("client_id", "")
+            event = RefreshEvent(
+                at=self._refresh_clock(),
+                request_id=_safe_request_id(request.headers.get("x-request-id")),
+                client_class=_classify_oauth_client_values(raw_client_id),
+                client_hmac=self._refresh_ledger.client_hmac(raw_client_id),
+                event_type="authorize",
+                outcome="started",
+            )
+            self._refresh_ledger.record_event(event)
+        except Exception as exc:
+            log.error("refresh_observability_write_failed", error_type=type(exc).__name__)
 
     def set_mcp_path(self, mcp_path: str | None) -> None:
         """Install the router issuer after FastMCP computes the resource audience."""
@@ -162,17 +480,33 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         )
 
     def get_routes(self, mcp_path: str | None = None) -> list[Route]:
-        """Replace only authorization-server and protected-resource metadata."""
+        """Replace canonical metadata and observe the existing authorize endpoint."""
         routes = super().get_routes(mcp_path)
         authorization_handler = MetadataHandler(self._authorization_server_metadata())
         protected_handler = ProtectedResourceMetadataHandler(self._protected_resource_metadata())
         replaced: list[Route] = []
 
         for route in routes:
+            endpoint: Any
             if route.path.startswith("/.well-known/oauth-authorization-server"):
                 endpoint = cors_middleware(authorization_handler.handle, ["GET", "OPTIONS"])
             elif route.path.startswith("/.well-known/oauth-protected-resource"):
                 endpoint = cors_middleware(protected_handler.handle, ["GET", "OPTIONS"])
+            elif route.path == "/authorize" and self._refresh_ledger is not None:
+                original_endpoint = route.endpoint
+
+                async def observed_authorize(
+                    request: Request, *, _original: Any = original_endpoint
+                ) -> Any:
+                    await self._record_authorize(request)
+                    return await _original(request)
+
+                endpoint = observed_authorize
+            elif route.path == "/token" and self._refresh_ledger is not None:
+                endpoint = _RefreshCleanupEndpoint(
+                    cast(ASGIApp, route.endpoint),
+                    self._finish_abandoned_refresh_attempt,
+                )
             else:
                 replaced.append(route)
                 continue

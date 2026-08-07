@@ -8,13 +8,16 @@ the router's own connection (see composition.py). Never wire the incoming
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import structlog
 from pydantic import AnyHttpUrl
 
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.exceptions import ConfigurationError
+
+if TYPE_CHECKING:
+    from genefoundry_router.refresh_observability import RefreshLedger
 
 log = structlog.get_logger(__name__)
 
@@ -28,7 +31,9 @@ _CONSENT_ARG: dict[str, bool | Literal["remember", "external"]] = {
 }
 
 
-def build_auth(settings: RouterSettings) -> Any | None:
+def build_auth(
+    settings: RouterSettings, *, refresh_ledger: RefreshLedger | None = None
+) -> Any | None:
     """Return a FastMCP auth provider for the configured mode, or None for 'none'."""
     mode = settings.GF_AUTH_MODE
     if mode == "none":
@@ -37,7 +42,7 @@ def build_auth(settings: RouterSettings) -> Any | None:
     if mode == "jwt":
         return _build_jwt(settings)
     if mode == "oauth":
-        return _build_oauth(settings)
+        return _build_oauth(settings, refresh_ledger=refresh_ledger)
     raise ConfigurationError(f"unknown GF_AUTH_MODE: {mode!r}")  # pragma: no cover
 
 
@@ -178,7 +183,7 @@ def _install_client_assertion_audience_fix() -> None:
     _a._gf_assertion_audience_fixed = True  # type: ignore[attr-defined]
 
 
-def _build_oauth(settings: RouterSettings) -> Any:
+def _build_oauth(settings: RouterSettings, *, refresh_ledger: RefreshLedger | None = None) -> Any:
     # R1.5: OAuthProxy.token_verifier is REQUIRED — so the JWT verifier inputs are
     # mandatory in oauth mode too (no None verifier). base_url MUST be the public URL.
     _install_resource_tolerance()
@@ -254,6 +259,7 @@ def _build_oauth(settings: RouterSettings) -> Any:
         canonical_issuer_url=settings.GF_OAUTH_CANONICAL_ISSUER,
         legacy_issuer_urls=settings.GF_OAUTH_LEGACY_ISSUERS,
         legacy_issuer_accept_until=settings.GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL,
+        refresh_ledger=refresh_ledger,
     )
     log.info("auth_mode", mode="oauth", provider=settings.GF_OAUTH_PROVIDER)
     # MultiAuth lets M2M JWT + interactive OAuth coexist (spec §9).

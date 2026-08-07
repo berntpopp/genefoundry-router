@@ -1,8 +1,32 @@
+import json
+import time
+
 from typer.testing import CliRunner
 
 from genefoundry_router.cli import app, is_missing_public_host_allowlist
+from genefoundry_router.refresh_observability import RefreshEvent, RefreshLedger
 
 runner = CliRunner()
+
+
+def _write_refresh_report_ledger(path) -> None:
+    now = time.time()
+    ledger = RefreshLedger(path, hmac_key="test-router-signing-key")
+    ledger.record_startup(version="0.8.0", at=now - 7 * 24 * 60 * 60)
+    hidden_client = ledger.client_hmac("https://raw-client.example/?private=query")
+    for index in range(50):
+        ledger.record_event(
+            RefreshEvent(
+                at=now - 60 + index / 100,
+                request_id=f"report-{index}",
+                client_class="other",
+                client_hmac=hidden_client,
+                event_type="refresh",
+                outcome="success",
+                token_hash_prefix="a" * 12,
+            )
+        )
+    ledger.close()
 
 
 def _write_registry(tmp_path):
@@ -31,6 +55,45 @@ def test_run_invokes_uvicorn(monkeypatch, tmp_path):
     )
     assert result.exit_code == 0, result.output
     assert called == {"host": "0.0.0.0", "port": 8123}  # noqa: S104
+
+
+def test_refresh_report_json_is_aggregate_only_and_does_not_modify_database(
+    monkeypatch, tmp_path
+) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    _write_refresh_report_ledger(path)
+    before_mtime = path.stat().st_mtime_ns
+    monkeypatch.setenv("GF_REFRESH_OBSERVABILITY_DB", str(path))
+
+    result = runner.invoke(app, ["refresh-report", "--json"])
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["sample_status"] == "ready"
+    assert payload["attempts"] == 50
+    assert path.stat().st_mtime_ns == before_mtime
+    rendered = result.output
+    for forbidden in (
+        "raw-client",
+        "private=query",
+        "a" * 12,
+        "client_hmac",
+        "token_hash",
+        "request_id",
+    ):
+        assert forbidden not in rendered
+
+
+def test_refresh_report_refuses_missing_or_unconfigured_database(monkeypatch, tmp_path) -> None:
+    missing = tmp_path / "missing.sqlite3"
+    monkeypatch.setenv("GF_REFRESH_OBSERVABILITY_DB", str(missing))
+    configured = runner.invoke(app, ["refresh-report", "--json"])
+    assert configured.exit_code == 1
+    assert not missing.exists()
+
+    monkeypatch.delenv("GF_REFRESH_OBSERVABILITY_DB")
+    unconfigured = runner.invoke(app, ["refresh-report", "--json"])
+    assert unconfigured.exit_code == 1
 
 
 def test_run_refuses_unauthenticated_public_bind(monkeypatch, tmp_path):
