@@ -2,6 +2,35 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.7.6] - 2026-08-07
+
+### Fixed
+
+- Stop the not-found log-scrub filter blanking framework diagnostics. `NotFoundLogScrubFilter`
+  cleared `record.args` for every `fastmcp`/`mcp` record at WARNING or above, and
+  `LogRecord.getMessage()` skips `msg % args` when args is falsy — so production printed raw
+  printf templates: `Bearer token rejected for client %s: audience mismatch (got %r, expected
+  %r)`. The two values that were the entire diagnosis during the 0.7.5 ChatGPT outage were
+  invisible, and the same line interpolates correctly under pytest, so it only ever showed up
+  in the production topology.
+  The scrub is now narrowed by subsystem rather than matching the whole framework logger
+  trees. An audit of every `warning`/`error`/`exception` site in the installed `fastmcp` and
+  `mcp` found only three that reflect caller input through `%`-args, all request-dispatch
+  loggers that remain covered; every other site that echoes caller input builds its message
+  with an f-string, where `args` is already empty and clearing it protected nothing. Records
+  that are still redacted now interpolate `<redacted>` instead of leaving bare placeholders,
+  so they read as a deliberate redaction rather than a broken formatter. The marker branch is
+  untouched and still runs for every logger at every level.
+
+### Added
+
+- End-to-end integration coverage for `private_key_jwt` login: CIMD fetch → `/authorize` with
+  PKCE S256 → stubbed IdP → `/auth/callback` → `/token` with a genuinely RS256-signed RFC 7523
+  assertion → authenticated `initialize` + `tools/list`. The assertion audience is read from
+  the running app's authorization-server metadata rather than hardcoded. A Claude-shaped
+  control drives the identical harness with `token_endpoint_auth_method: none`, so a broken
+  harness turns the control red instead of silently invalidating the result.
+
 ## [0.7.5] - 2026-08-07
 
 ### Fixed
