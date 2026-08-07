@@ -15,7 +15,9 @@ from pathlib import Path
 import pytest
 
 from genefoundry_router.refresh_observability import (
+    CLIENT_CLASSES,
     EVENT_RETENTION_SECONDS,
+    FAILURE_REASONS,
     MAX_DATABASE_BYTES,
     MAX_EVENT_ROWS,
     MAX_WAL_BYTES,
@@ -26,6 +28,7 @@ from genefoundry_router.refresh_observability import (
     RefreshLedgerCapacityError,
     RefreshLedgerUnavailable,
 )
+from genefoundry_router.refresh_report import read_refresh_report
 from genefoundry_router.refresh_schema import initialize_schema
 
 
@@ -315,6 +318,31 @@ def test_aggregate_counters_persist_across_ledger_instances(tmp_path: Path) -> N
         assert snapshot.failures == {("chatgpt", "mapping_missing"): 1}
     finally:
         second.close()
+
+
+def test_read_only_report_works_while_writer_has_live_wal(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    now = 2_500_000.0
+    ledger = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    try:
+        ledger.record_startup(version="0.8.0", at=now - 7 * 24 * 60 * 60)
+        ledger.record_event(_event(now - 1, outcome="success", reason=None))
+        wal_path = Path(f"{path}-wal")
+        assert wal_path.is_file()
+        assert wal_path.stat().st_size > 0
+
+        report = read_refresh_report(
+            path,
+            now=now,
+            schema_version=SCHEMA_VERSION,
+            client_classes=CLIENT_CLASSES,
+            failure_reasons=FAILURE_REASONS,
+        )
+
+        assert report.attempts == 1
+        assert report.successes == 1
+    finally:
+        ledger.close()
 
 
 def test_startup_prunes_events_and_tombstones_older_than_fourteen_days(
@@ -748,7 +776,14 @@ def test_report_is_ready_at_exactly_seven_days_and_fifty_attempts(tmp_path: Path
     ledger = _observed_ledger(tmp_path, now, 7)
     try:
         _record_attempts(ledger, at=now - DAY, total=50)
-        report = ledger.report(now)
+        assert ledger.heartbeat(now) is True
+        report = read_refresh_report(
+            ledger.path,
+            now=now,
+            schema_version=SCHEMA_VERSION,
+            client_classes=CLIENT_CLASSES,
+            failure_reasons=FAILURE_REASONS,
+        )
         assert report.sample_status == "ready"
         assert report.decision == "not_material"
         assert report.window_days == 7
@@ -988,6 +1023,42 @@ def test_two_distinct_failed_clients_authorizing_within_fifteen_minutes_is_mater
         ledger.close()
 
 
+def test_non_rotation_rejections_do_not_trigger_forced_reauthorization_gate(
+    tmp_path: Path,
+) -> None:
+    now = 55 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    client_a = "a" * 64
+    client_b = "b" * 64
+    failures = {
+        0: ("local_rejected", "chatgpt", client_a, None),
+        1: ("jwt_invalid", "claude", client_b, None),
+    }
+    try:
+        attempt_at = now - DAY
+        _record_attempts(ledger, at=attempt_at, total=50, failures=failures)
+        for index, (client_class, client_hmac) in enumerate(
+            (("chatgpt", client_a), ("claude", client_b))
+        ):
+            ledger.record_event(
+                RefreshEvent(
+                    at=attempt_at + 60 + index,
+                    request_id=f"authorize-{index}",
+                    client_class=client_class,
+                    client_hmac=client_hmac,
+                    event_type="authorize",
+                    outcome="started",
+                )
+            )
+
+        report = ledger.report(now)
+        assert report.decision == "not_material"
+        assert report.subsequent_authorizations == 0
+        assert report.forced_reauthorization_clients == 0
+    finally:
+        ledger.close()
+
+
 def test_report_groups_only_bounded_aggregate_values_and_reuse_delays(tmp_path: Path) -> None:
     now = 60 * DAY
     ledger = _observed_ledger(tmp_path, now, 7)
@@ -1034,6 +1105,39 @@ def test_report_groups_only_bounded_aggregate_values_and_reuse_delays(tmp_path: 
         assert hidden_prefix not in serialized
         assert "token_hash" not in serialized
         assert "request_id" not in serialized
+    finally:
+        ledger.close()
+
+
+def test_report_reconciles_stale_started_attempts_as_internal_failures(tmp_path: Path) -> None:
+    now = 70 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    try:
+        ledger.begin_attempt(
+            RefreshEvent(
+                at=now - 301,
+                request_id="interrupted-refresh",
+                client_class="other",
+                client_hmac="e" * 64,
+                event_type="refresh",
+                outcome="started",
+                token_hash_prefix="f" * 12,
+            )
+        )
+
+        assert ledger.heartbeat(now) is True
+        report = read_refresh_report(
+            ledger.path,
+            now=now,
+            schema_version=SCHEMA_VERSION,
+            client_classes=CLIENT_CLASSES,
+            failure_reasons=FAILURE_REASONS,
+        )
+
+        assert report.attempts == 1
+        assert report.failures == 1
+        assert report.failures_by_reason["internal_error"] == 1
+        assert "unterminated_attempts" not in report.incomplete_reasons
     finally:
         ledger.close()
 

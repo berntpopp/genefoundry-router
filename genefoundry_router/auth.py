@@ -55,6 +55,27 @@ def resolve_oauth_signing_key(settings: RouterSettings) -> str | bytes:
     )
 
 
+def resolve_refresh_observability_hmac_key(settings: RouterSettings) -> bytes:
+    """Derive a stable ledger-only HMAC key from the effective OAuth key material.
+
+    The observability database must correlate a client across routine replacements,
+    but it must not reuse the HS256 token-signing key for a second protocol.  A
+    distinct derivation label provides domain separation while retaining the same
+    operator-managed source secret and upgrade compatibility.
+    """
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+    effective = resolve_oauth_signing_key(settings)
+    material = effective.encode() if isinstance(effective, str) else effective
+    return HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=b"genefoundry-refresh-observability-hmac",
+        info=b"client-identity-v1",
+    ).derive(material)
+
+
 def build_auth(
     settings: RouterSettings, *, refresh_ledger: RefreshLedger | None = None
 ) -> Any | None:

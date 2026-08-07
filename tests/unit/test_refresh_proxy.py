@@ -23,6 +23,7 @@ from genefoundry_router.oauth_proxy import (
     classify_oauth_client,
 )
 from genefoundry_router.observability import OAUTH_REFRESH_ATTEMPTS, OAUTH_REFRESH_FAILURES
+from genefoundry_router.refresh_contract import validate_fastmcp_refresh_contract
 from genefoundry_router.refresh_observability import (
     MAX_WAL_BYTES,
     RefreshEvent,
@@ -124,6 +125,10 @@ def test_client_classification_is_bounded(
     assert classify_oauth_client(_client(client_id, name=client_name)) == expected
 
 
+def test_installed_fastmcp_refresh_contract_matches_instrumentation_seams() -> None:
+    validate_fastmcp_refresh_contract()
+
+
 @pytest.mark.asyncio
 async def test_successful_refresh_delegates_once_then_records_rotation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -161,6 +166,70 @@ async def test_successful_refresh_delegates_once_then_records_rotation(
         assert old_token not in dump
         assert returned.access_token not in dump
         assert returned.refresh_token not in dump
+    finally:
+        ledger.close()
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_contract_mismatch_is_terminal_without_double_counting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    proxy, ledger = _proxy(tmp_path)
+    client = _client("opaque-client")
+    requested = "request-refresh-secret"
+    rewritten = _refresh("rewritten-refresh-secret", client.client_id or "")
+    calls = {"exchange": 0}
+
+    async def load_rewritten(*_args: Any, **_kwargs: Any) -> RefreshToken:
+        return rewritten
+
+    async def exchange_once(*_args: Any, **_kwargs: Any) -> OAuthToken:
+        calls["exchange"] += 1
+        return _success()
+
+    monkeypatch.setattr(OAuthProxy, "load_refresh_token", load_rewritten)
+    monkeypatch.setattr(OAuthProxy, "exchange_refresh_token", exchange_once)
+    try:
+        assert await proxy.load_refresh_token(client, requested) is rewritten
+        assert await proxy.exchange_refresh_token(client, rewritten, ["openid"]) == _success()
+        snapshot = ledger.counter_snapshot()
+        assert calls == {"exchange": 1}
+        assert snapshot.attempts == {"other": 1}
+        assert snapshot.successes == {}
+        assert snapshot.failures == {("other", "internal_error"): 1}
+        assert proxy._refresh_inflight == {}
+    finally:
+        ledger.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("phase", ["load", "exchange"])
+async def test_cancelled_refresh_attempt_is_finalized(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str
+) -> None:
+    proxy, ledger = _proxy(tmp_path)
+    client = _client("opaque-client")
+    token = "cancelled-refresh-secret"  # noqa: S105 - synthetic fixture
+    loaded = _refresh(token, client.client_id or "")
+
+    async def load(*_args: Any, **_kwargs: Any) -> RefreshToken:
+        if phase == "load":
+            raise asyncio.CancelledError
+        return loaded
+
+    async def exchange(*_args: Any, **_kwargs: Any) -> OAuthToken:
+        raise asyncio.CancelledError
+
+    monkeypatch.setattr(OAuthProxy, "load_refresh_token", load)
+    monkeypatch.setattr(OAuthProxy, "exchange_refresh_token", exchange)
+    try:
+        with pytest.raises(asyncio.CancelledError):
+            current = await proxy.load_refresh_token(client, token)
+            await proxy.exchange_refresh_token(client, current, ["openid"])
+        snapshot = ledger.counter_snapshot()
+        assert snapshot.attempts == {"other": 1}
+        assert snapshot.failures == {("other", "internal_error"): 1}
+        assert proxy._refresh_inflight == {}
     finally:
         ledger.close()
 
@@ -300,6 +369,7 @@ class UpstreamFailureError(Exception):
         ("jwt", "jwt_invalid", TokenError),
         ("mapping", "mapping_missing", TokenError),
         ("upstream_invalid", "upstream_invalid_grant", TokenError),
+        ("upstream_changed_prose", "upstream_invalid_grant", TokenError),
         ("upstream_other", "upstream_other", TokenError),
         ("internal", "internal_error", RuntimeError),
     ],
@@ -330,10 +400,17 @@ async def test_exchange_failure_classifications_reraise_unchanged(
             raise TokenError("invalid_grant", "Refresh token mapping not found")
         if case.startswith("upstream"):
             code = "invalid_grant" if case == "upstream_invalid" else "server_error"
+            if case == "upstream_changed_prose":
+                code = "invalid_grant"
             try:
                 raise UpstreamFailureError(code)
             except UpstreamFailureError as upstream:
-                raise TokenError("invalid_grant", "Upstream refresh failed") from upstream
+                description = (
+                    "Provider rejected the refresh"
+                    if case == "upstream_changed_prose"
+                    else "Upstream refresh failed"
+                )
+                raise TokenError("invalid_grant", description) from upstream
         raise RuntimeError("sensitive internal detail")
 
     monkeypatch.setattr(OAuthProxy, "load_refresh_token", load_once)

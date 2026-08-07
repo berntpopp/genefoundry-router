@@ -60,9 +60,11 @@ import base64
 import hashlib
 import json
 import secrets
+import sqlite3
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -204,6 +206,7 @@ class OAuthHarness:
     client: TestClient
     chatgpt_key: jwk.RSAKey
     idp_key: jwk.RSAKey
+    refresh_db: Path
 
     def authorization_server_metadata(self) -> dict[str, Any]:
         response = self.client.get("/.well-known/oauth-authorization-server")
@@ -399,6 +402,7 @@ def oauth_harness(tmp_path, monkeypatch, gnomad_fake: FastMCP):
         GF_OAUTH_CANONICAL_ISSUER=PUBLIC_BASE,
         GF_OAUTH_LEGACY_ISSUERS=[f"{PUBLIC_BASE}/"],
         GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL=datetime(2026, 9, 6, tzinfo=UTC),
+        GF_REFRESH_OBSERVABILITY_DB=str(tmp_path / "refresh-observability.sqlite3"),
     )
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
     app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
@@ -424,7 +428,12 @@ def oauth_harness(tmp_path, monkeypatch, gnomad_fake: FastMCP):
         mock.post(UPSTREAM_TOKEN).mock(side_effect=upstream_token_response)
         # follow_redirects=False so every hop of the flow is asserted explicitly.
         with TestClient(app, follow_redirects=False) as client:
-            harness = OAuthHarness(client=client, chatgpt_key=chatgpt_key, idp_key=idp_key)
+            harness = OAuthHarness(
+                client=client,
+                chatgpt_key=chatgpt_key,
+                idp_key=idp_key,
+                refresh_db=tmp_path / "refresh-observability.sqlite3",
+            )
             harness_holder["h"] = harness
             yield harness
 
@@ -491,6 +500,57 @@ def test_public_client_cimd_login_and_mcp_call(oauth_harness: OAuthHarness) -> N
     assert any(tool["name"] == "search_tools" for tool in tools), sorted(
         tool["name"] for tool in tools
     )
+
+
+def test_real_public_client_refresh_rotation_and_reuse_observation(
+    oauth_harness: OAuthHarness,
+) -> None:
+    """Drive the real FastMCP /token refresh seam with the durable ledger enabled."""
+    txn_id, verifier = oauth_harness.authorize(
+        client_id=PUBLIC_CLIENT_ID, redirect_uri=PUBLIC_CLIENT_REDIRECT_URI
+    )
+    code = oauth_harness.idp_callback(txn_id, redirect_uri=PUBLIC_CLIENT_REDIRECT_URI)
+    login = oauth_harness.token(
+        {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": PUBLIC_CLIENT_REDIRECT_URI,
+            "client_id": PUBLIC_CLIENT_ID,
+            "code_verifier": verifier,
+        }
+    )
+    assert login.status_code == 200, login.text[:400]
+    old_refresh = login.json()["refresh_token"]
+
+    rotated = oauth_harness.token(
+        {
+            "grant_type": "refresh_token",
+            "refresh_token": old_refresh,
+            "client_id": PUBLIC_CLIENT_ID,
+        }
+    )
+    assert rotated.status_code == 200, rotated.text[:400]
+    assert rotated.json()["refresh_token"] != old_refresh
+
+    replay = oauth_harness.token(
+        {
+            "grant_type": "refresh_token",
+            "refresh_token": old_refresh,
+            "client_id": PUBLIC_CLIENT_ID,
+        }
+    )
+    assert replay.status_code == 401, replay.text[:400]
+    assert replay.json()["error"] == "invalid_grant"
+
+    with sqlite3.connect(oauth_harness.refresh_db) as connection:
+        rows = connection.execute(
+            """
+            SELECT outcome, reason, COUNT(*)
+            FROM refresh_events WHERE event_type='refresh'
+            GROUP BY outcome, reason ORDER BY outcome, reason
+            """
+        ).fetchall()
+    assert rows == [("failure", "reuse_after_rotation", 1), ("success", None, 1)]
 
 
 @_NEEDS_FIX

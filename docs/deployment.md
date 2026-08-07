@@ -56,10 +56,16 @@ release manifest records the multi-platform identities.
 The production overlay stores `/data/genefoundry/refresh-observability.sqlite3` on the
 existing `fastmcp_data:/data` volume. Preserve that file with the OAuth state during deploys
 and rollbacks. The ledger is mode `0600`, bounded to 64 MiB plus an 8 MiB WAL, retains at
-most 14 days/100,000 event rows, and uses the effective OAuth signing key to HMAC client
-identity. Existing deployments retain FastMCP's deterministic
+most 14 days/100,000 event rows, and uses a domain-separated key derived from the
+effective OAuth signing key to HMAC client identity. Existing deployments retain FastMCP's deterministic
 `GF_OAUTH_CLIENT_SECRET`-derived key when `GF_OAUTH_JWT_SIGNING_KEY` remains unset.
 Do not rotate that key during the observation window.
+
+The configured ledger is a durability authority, so an unreadable, empty, oversized, or
+unsupported database fails startup rather than silently resetting the evidence window. To
+recover, stop the router, move the database and its `-wal`/`-shm` sidecars together to a
+private forensic backup, then start the router so it creates a fresh ledger. Record the
+reset and restart the observation window; do not replace the file while the router runs.
 
 After the router has run continuously for the decision window, read the aggregate report
 without stopping or modifying the ledger:
@@ -90,7 +96,10 @@ policy automatically.
 New router tokens use issuer `https://genefoundry.org`. The exact historical
 `https://genefoundry.org/` alias is accepted only before the immutable transition deadline
 `2026-09-06T00:00:00Z`. Remove the alias after that deadline once live sessions have drained;
-do not extend the deadline by restarting or reconfiguring the service.
+do not extend the deadline by restarting or reconfiguring the service. A connector that
+cached `https://genefoundry.org/` as the authorization-server identifier can reject the
+slashless metadata before presenting a token; if its discovery error reports an issuer
+mismatch, disconnect and re-add that connector so it discovers the canonical identifier.
 
 ## Drift detection (scheduled CI)
 

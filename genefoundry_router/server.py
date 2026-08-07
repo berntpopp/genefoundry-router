@@ -17,7 +17,7 @@ from fastmcp.tools import Tool
 from fastmcp.tools.tool_transform import ToolTransformConfig
 
 from genefoundry_router import __version__
-from genefoundry_router.auth import build_auth, resolve_oauth_signing_key
+from genefoundry_router.auth import build_auth, resolve_refresh_observability_hmac_key
 from genefoundry_router.authorization import WriteAuthorizationMiddleware
 from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
@@ -161,7 +161,7 @@ def build_app(
     if settings.GF_AUTH_MODE == "oauth" and settings.GF_REFRESH_OBSERVABILITY_DB:
         refresh_ledger = RefreshLedger(
             settings.GF_REFRESH_OBSERVABILITY_DB,
-            hmac_key=resolve_oauth_signing_key(settings),
+            hmac_key=resolve_refresh_observability_hmac_key(settings),
         )
     # enable_search=False: the composed lifespan applies tool-search AFTER normalization
     # so the BM25 index reflects final names/tags.

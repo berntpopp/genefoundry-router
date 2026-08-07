@@ -10,7 +10,11 @@ from fastmcp import settings as fastmcp_settings
 from fastmcp.server.auth import OAuthProxy
 from mcp.shared.auth import OAuthClientInformationFull
 
-from genefoundry_router.auth import build_auth
+from genefoundry_router.auth import (
+    build_auth,
+    resolve_oauth_signing_key,
+    resolve_refresh_observability_hmac_key,
+)
 from genefoundry_router.config import RouterSettings
 
 
@@ -61,3 +65,15 @@ def test_ledger_upgrade_preserves_legacy_dcr_store(
     assert upgraded._jwt_signing_key == legacy._jwt_signing_key
     assert restored is not None
     assert restored.client_id == "legacy-dcr-client"
+
+
+def test_refresh_observability_key_is_stable_and_domain_separated() -> None:
+    settings = _settings()
+
+    jwt_key = resolve_oauth_signing_key(settings)
+    first = resolve_refresh_observability_hmac_key(settings)
+    second = resolve_refresh_observability_hmac_key(settings)
+
+    assert first == second
+    assert first != jwt_key
+    assert len(first) >= 32

@@ -9,7 +9,10 @@ All notable changes to genefoundry-router are documented here.
 - Canonicalize router-issued OAuth access and refresh token issuers to
   `https://genefoundry.org`. Tokens minted by earlier releases with the historical
   trailing-slash issuer remain valid only through the fixed transition deadline
-  `2026-09-06T00:00:00Z`; no arbitrary legacy issuer is accepted.
+  `2026-09-06T00:00:00Z`; no arbitrary legacy issuer is accepted. Connectors that
+  cached the old authorization-server identifier may reject the new metadata before
+  token validation and require disconnect/re-add; an issuer-mismatch during discovery
+  is the distinguishing symptom.
 
 ### Added
 
@@ -36,6 +39,8 @@ All notable changes to genefoundry-router are documented here.
   classes, a short hash prefix, request ID, timestamp, and HMAC-derived client identity.
   Full token hashes exist only in short-lived mode-0600 tombstones and are never emitted in
   metrics, logs, or reports.
+- Domain-separate the client-identity HMAC key from the HS256 OAuth token-signing key,
+  while deriving both from the same stable operator-managed key material.
 
 ## [0.7.6] - 2026-08-07
 

@@ -148,3 +148,15 @@ def prepare_refresh_sqlite_path(path: str | Path) -> tuple[Path, bool]:
     finally:
         os.close(parent_fd)
     return absolute, created
+
+
+def secure_refresh_sqlite_files(path: Path) -> None:
+    """Keep the SQLite authority and existing sidecars private and regular."""
+    for candidate in (path, Path(f"{path}-wal"), Path(f"{path}-shm")):
+        try:
+            mode = candidate.lstat().st_mode
+        except FileNotFoundError:
+            continue
+        if not stat.S_ISREG(mode):
+            raise UnsafeRefreshPathError("refresh ledger SQLite file is not regular")
+        os.chmod(candidate, 0o600, follow_symlinks=False)

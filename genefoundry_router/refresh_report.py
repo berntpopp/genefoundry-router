@@ -319,6 +319,10 @@ def build_refresh_report(
           AND EXISTS (
             SELECT 1 FROM refresh_events AS f
             WHERE f.event_type='refresh' AND f.outcome='failure'
+              AND f.reason IN (
+                'local_not_found', 'reuse_after_rotation', 'mapping_missing',
+                'upstream_invalid_grant', 'upstream_other'
+              )
               AND f.client_hmac=a.client_hmac AND f.at >= ?
               AND f.at <= a.at AND a.at - f.at <= 900
           )

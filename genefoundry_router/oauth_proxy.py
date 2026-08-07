@@ -49,6 +49,8 @@ from genefoundry_router.observability import (
     record_refresh_attempt,
     record_refresh_outcome,
 )
+from genefoundry_router.refresh_contract import validate_fastmcp_refresh_contract
+from genefoundry_router.refresh_models import REFRESH_ATTEMPT_STALE_SECONDS
 from genefoundry_router.refresh_observability import (
     RefreshEvent,
     RefreshLedger,
@@ -56,7 +58,7 @@ from genefoundry_router.refresh_observability import (
 )
 
 log = structlog.get_logger(__name__)
-_REFRESH_INFLIGHT_TTL_SECONDS = 5 * 60
+_REFRESH_INFLIGHT_TTL_SECONDS = REFRESH_ATTEMPT_STALE_SECONDS
 _SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 
@@ -207,6 +209,8 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         self._refresh_attempt: ContextVar[_RefreshAttempt | None] = ContextVar(
             f"refresh_attempt_{id(self)}", default=None
         )
+        if refresh_ledger is not None:
+            validate_fastmcp_refresh_contract()
         install_oauth_proxy_privacy_filter()
         super().__init__(**kwargs)
 
@@ -377,7 +381,7 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         self._record_refresh_start(attempt)
         try:
             loaded = await super().load_refresh_token(client, refresh_token)
-        except Exception:
+        except BaseException:
             try:
                 self._record_refresh(attempt, "failure", "internal_error")
             finally:
@@ -407,9 +411,9 @@ class GeneFoundryOAuthProxy(OAuthProxy):
             "Refresh not supported for this token",
         }:
             return "mapping_missing"
-        if description.startswith("Upstream refresh failed"):
-            cause = error.__cause__
-            code = getattr(cause, "error", None)
+        cause = error.__cause__
+        code = getattr(cause, "error", None)
+        if code is not None or description.startswith("Upstream refresh failed"):
             if code == "invalid_grant":
                 return "upstream_invalid_grant"
             return "upstream_other"
@@ -427,8 +431,16 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         attempt = self._refresh_attempt.get()
         expected_hash = hashlib.sha256(refresh_token.token.encode()).hexdigest()
         if attempt is not None and attempt.token_hash != expected_hash:
-            self._finish_refresh_attempt(attempt)
-            attempt = None
+            # FastMCP's current contract returns the original raw token verbatim from
+            # load_refresh_token. If that ever changes, terminate the one observation
+            # already counted and preserve OAuth behavior without inventing a second
+            # attempt for the same request.
+            try:
+                self._record_refresh(attempt, "failure", "internal_error")
+                log.error("refresh_observability_token_contract_changed")
+            finally:
+                self._finish_refresh_attempt(attempt)
+            return await super().exchange_refresh_token(client, refresh_token, scopes)
         if attempt is None:
             try:
                 attempt = self._begin_refresh_attempt(client, refresh_token.token)
@@ -445,7 +457,7 @@ class GeneFoundryOAuthProxy(OAuthProxy):
             )
             self._record_refresh(attempt, "failure", reason)
             raise
-        except Exception:
+        except BaseException:
             self._record_refresh(attempt, "failure", "internal_error")
             raise
         else:

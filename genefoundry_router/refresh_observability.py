@@ -7,9 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import os
 import sqlite3
-import stat
 import threading
 import time
 from collections.abc import Callable
@@ -26,6 +24,7 @@ from genefoundry_router.refresh_models import (
     MAX_EVENT_ROWS,
     MAX_WAL_BYTES,
     PRUNE_INTERVAL_SECONDS,
+    REFRESH_ATTEMPT_STALE_SECONDS,
     REFRESH_HEARTBEAT_STALE_SECONDS,
     SCHEMA_VERSION,
     CounterSnapshot,
@@ -37,7 +36,9 @@ from genefoundry_router.refresh_models import (
 from genefoundry_router.refresh_path import (
     UnsafeRefreshPathError,
     prepare_refresh_sqlite_path,
+    secure_refresh_sqlite_files,
 )
+from genefoundry_router.refresh_reconcile import reconcile_stale_attempts as reconcile_stale
 from genefoundry_router.refresh_report import RefreshReport, build_refresh_report
 from genefoundry_router.refresh_schema import (
     RefreshSchemaError,
@@ -93,7 +94,7 @@ class RefreshLedger(RefreshLifecycleMixin):
             )
             self._prune(now=self._clock(), force=True)
             self.heartbeat(self._clock())
-            self._secure_sqlite_files()
+            secure_refresh_sqlite_files(self.path)
         except RefreshLedgerError:
             self._close_after_failed_init()
             raise
@@ -186,6 +187,12 @@ class RefreshLedger(RefreshLifecycleMixin):
     def heartbeat(self, at: float) -> bool:
         """Persist writer freshness and recover pending gaps without OAuth coupling."""
         validate_timestamp(at)
+        with self._lock:
+            try:
+                reconcile_stale(self._db, now=at, stale_seconds=REFRESH_ATTEMPT_STALE_SECONDS)
+            except (OSError, sqlite3.Error, RefreshLedgerError):
+                self.note_unavailable(at=at, reason="write_failure")
+                return False
         if self._mark_available(at, heartbeat=True):
             self._after_write()
             return True
@@ -438,6 +445,7 @@ class RefreshLedger(RefreshLifecycleMixin):
             cutoff = now - EVENT_RETENTION_SECONDS
             try:
                 with self._db:
+                    reconcile_stale(self._db, now=now, stale_seconds=REFRESH_ATTEMPT_STALE_SECONDS)
                     self._db.execute("DELETE FROM refresh_events WHERE at < ?", (cutoff,))
                     self._db.execute(
                         "DELETE FROM refresh_tombstones WHERE rotated_at < ?", (cutoff,)
@@ -522,7 +530,7 @@ class RefreshLedger(RefreshLifecycleMixin):
             if recovered and (not wal_path.exists() or wal_path.stat().st_size <= MAX_WAL_BYTES):
                 self._checkpoint_pending = False
                 self._mark_available(self._clock())
-                self._secure_sqlite_files()
+                secure_refresh_sqlite_files(self.path)
                 return
             self._checkpoint_pending = True
             self.note_unavailable(at=self._clock(), reason="wal_over_cap")
@@ -533,7 +541,7 @@ class RefreshLedger(RefreshLifecycleMixin):
             raise RefreshLedgerUnavailable("configured refresh ledger cannot be inspected") from exc
 
     def _after_write(self) -> None:
-        self._secure_sqlite_files()
+        secure_refresh_sqlite_files(self.path)
         self._check_file_capacity()
 
     def _checkpoint_truncate(self) -> bool:
@@ -560,7 +568,7 @@ class RefreshLedger(RefreshLifecycleMixin):
                 return False
             self._checkpoint_pending = False
             self._mark_available(at)
-            self._secure_sqlite_files()
+            secure_refresh_sqlite_files(self.path)
             return True
 
     @staticmethod
@@ -569,16 +577,6 @@ class RefreshLedger(RefreshLifecycleMixin):
         if "full" in text or "too big" in text:
             return RefreshLedgerCapacityError("refresh ledger reached its configured size cap")
         return RefreshLedgerUnavailable("refresh ledger write failed")
-
-    def _secure_sqlite_files(self) -> None:
-        for path in (self.path, Path(f"{self.path}-wal"), Path(f"{self.path}-shm")):
-            try:
-                mode = path.lstat().st_mode
-            except FileNotFoundError:
-                continue
-            if not stat.S_ISREG(mode):
-                raise RefreshLedgerUnavailable("refresh ledger SQLite file is not regular")
-            os.chmod(path, 0o600, follow_symlinks=False)
 
     def _close_after_failed_init(self) -> None:
         if self._connection is not None:
@@ -593,7 +591,7 @@ class RefreshLedger(RefreshLifecycleMixin):
                 return
             try:
                 self._connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-                self._secure_sqlite_files()
+                secure_refresh_sqlite_files(self.path)
             finally:
                 self._connection.close()
                 self._connection = None
