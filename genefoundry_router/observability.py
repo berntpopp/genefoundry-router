@@ -194,6 +194,8 @@ _OAUTH_SENSITIVE_MARKERS = (
     "CIMD document fetched and validated:",
     "CIMD fetch failed for ",
     "CIMD client resolved:",
+    "Ignoring invalid Cache-Control max-age value:",
+    "Ignoring invalid Expires header on CIMD response:",
     "JWT assertion validated successfully for client ",
     "Issued access token for client=",
     "Issued refresh token for client=",
