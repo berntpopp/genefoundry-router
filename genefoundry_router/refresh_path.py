@@ -6,8 +6,10 @@ import os
 import stat
 from pathlib import Path
 
+from genefoundry_router.refresh_models import RefreshLedgerUnavailable
 
-class UnsafeRefreshPathError(RuntimeError):
+
+class UnsafeRefreshPathError(RefreshLedgerUnavailable):
     """The configured database path cannot be opened without following unsafe links."""
 
 

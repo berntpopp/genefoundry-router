@@ -1112,6 +1112,7 @@ def test_report_groups_only_bounded_aggregate_values_and_reuse_delays(tmp_path: 
 def test_report_reconciles_stale_started_attempts_as_internal_failures(tmp_path: Path) -> None:
     now = 70 * DAY
     ledger = _observed_ledger(tmp_path, now, 7)
+    path = ledger.path
     try:
         ledger.begin_attempt(
             RefreshEvent(
@@ -1124,7 +1125,18 @@ def test_report_reconciles_stale_started_attempts_as_internal_failures(tmp_path:
                 token_hash_prefix="f" * 12,
             )
         )
+        # A live attempt is never reaped merely because it crosses the recovery
+        # threshold. A new ledger instance has no such in-memory ownership and
+        # therefore treats the persisted row as interrupted.
+        assert ledger.heartbeat(now) is True
+        live_report = ledger.report(now)
+        assert live_report.failures == 0
+        assert "unterminated_attempts" in live_report.incomplete_reasons
+    finally:
+        ledger.close()
 
+    ledger = RefreshLedger(path, hmac_key=b"test-observability-key", clock=FakeClock(now))
+    try:
         assert ledger.heartbeat(now) is True
         report = read_refresh_report(
             ledger.path,
@@ -1139,6 +1151,64 @@ def test_report_reconciles_stale_started_attempts_as_internal_failures(tmp_path:
         assert report.failures_by_reason["internal_error"] == 1
         assert "unterminated_attempts" not in report.incomplete_reasons
     finally:
+        ledger.close()
+
+
+def test_prune_rolls_back_stale_reconciliation_with_later_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = 70 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    try:
+        _insert_raw_event(
+            ledger.path,
+            _event(
+                at=now - 301,
+                outcome="started",
+                reason=None,
+                request_id="crashed-refresh",
+            ),
+        )
+
+        def fail_row_cap() -> None:
+            raise sqlite3.OperationalError("synthetic prune failure")
+
+        monkeypatch.setattr(ledger, "_enforce_event_row_cap", fail_row_cap)
+        with pytest.raises(RefreshLedgerUnavailable, match="write failed"):
+            ledger._prune(now=now, force=True)
+
+        with _connect(ledger.path) as connection:
+            outcome = connection.execute(
+                "SELECT outcome FROM refresh_events WHERE request_id='crashed-refresh'"
+            ).fetchone()[0]
+            failures = connection.execute(
+                "SELECT COALESCE(SUM(value), 0) FROM refresh_counters WHERE counter='failure'"
+            ).fetchone()[0]
+        assert outcome == "started"
+        assert failures == 0
+    finally:
+        ledger.close()
+
+
+def test_heartbeat_contains_runtime_sidecar_validation_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = 70 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+
+    def unsafe_sidecar(_path: Path) -> None:
+        from genefoundry_router.refresh_path import UnsafeRefreshPathError
+
+        raise UnsafeRefreshPathError("synthetic unsafe sidecar")
+
+    monkeypatch.setattr(
+        "genefoundry_router.refresh_observability.secure_refresh_sqlite_files",
+        unsafe_sidecar,
+    )
+    try:
+        assert ledger.heartbeat(now) is False
+    finally:
+        monkeypatch.undo()
         ledger.close()
 
 

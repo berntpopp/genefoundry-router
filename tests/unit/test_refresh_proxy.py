@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from authlib.integrations.base_client.errors import OAuthError
 from fastapi.testclient import TestClient
 from fastmcp.server.auth import OAuthProxy
 from key_value.aio.stores.memory import MemoryStore
@@ -371,6 +372,7 @@ class UpstreamFailureError(Exception):
         ("upstream_invalid", "upstream_invalid_grant", TokenError),
         ("upstream_changed_prose", "upstream_invalid_grant", TokenError),
         ("upstream_other", "upstream_other", TokenError),
+        ("local_chained", "internal_error", TokenError),
         ("internal", "internal_error", RuntimeError),
     ],
 )
@@ -403,14 +405,19 @@ async def test_exchange_failure_classifications_reraise_unchanged(
             if case == "upstream_changed_prose":
                 code = "invalid_grant"
             try:
-                raise UpstreamFailureError(code)
-            except UpstreamFailureError as upstream:
+                raise OAuthError(error=code, description="synthetic upstream failure")
+            except OAuthError as upstream:
                 description = (
                     "Provider rejected the refresh"
                     if case == "upstream_changed_prose"
                     else "Upstream refresh failed"
                 )
                 raise TokenError("invalid_grant", description) from upstream
+        if case == "local_chained":
+            try:
+                raise TokenError("invalid_grant", "local prerequisite")
+            except TokenError as local:
+                raise TokenError("invalid_grant", "local wrapped failure") from local
         raise RuntimeError("sensitive internal detail")
 
     monkeypatch.setattr(OAuthProxy, "load_refresh_token", load_once)

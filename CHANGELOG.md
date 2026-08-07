@@ -6,6 +6,10 @@ All notable changes to genefoundry-router are documented here.
 
 ### Fixed
 
+- Pin the attested production fleet to GTEx Link 3.1.3, PanelApp Link 0.7.0,
+  and UniProt Link 5.1.0. PanelApp 0.7.0 moves its `refresh` status from the
+  top-level response into `health.refresh`; MCP clients consuming that diagnostic
+  shape must read the nested field.
 - Canonicalize router-issued OAuth access and refresh token issuers to
   `https://genefoundry.org`. Tokens minted by earlier releases with the historical
   trailing-slash issuer remain valid only through the fixed transition deadline

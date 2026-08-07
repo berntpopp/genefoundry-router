@@ -20,6 +20,7 @@ from typing import Any, cast
 from urllib.parse import urlsplit
 
 import structlog
+from authlib.integrations.base_client.errors import OAuthError  # type: ignore[import-untyped]
 from fastmcp.server.auth import OAuthProxy
 from fastmcp.server.auth.jwt_issuer import JWTIssuer
 from joserfc.errors import JoseError
@@ -412,10 +413,12 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         }:
             return "mapping_missing"
         cause = error.__cause__
-        code = getattr(cause, "error", None)
-        if code is not None or description.startswith("Upstream refresh failed"):
+        if isinstance(cause, OAuthError):
+            code = cause.error
             if code == "invalid_grant":
                 return "upstream_invalid_grant"
+            return "upstream_other"
+        if description.startswith("Upstream refresh failed"):
             return "upstream_other"
         return "internal_error"
 

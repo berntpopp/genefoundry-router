@@ -38,7 +38,15 @@ from genefoundry_router.refresh_path import (
     prepare_refresh_sqlite_path,
     secure_refresh_sqlite_files,
 )
-from genefoundry_router.refresh_reconcile import reconcile_stale_attempts as reconcile_stale
+from genefoundry_router.refresh_reconcile import (
+    enforce_event_row_cap,
+)
+from genefoundry_router.refresh_reconcile import (
+    reconcile_stale_attempts as reconcile_stale,
+)
+from genefoundry_router.refresh_reconcile import (
+    reconcile_stale_attempts_in_transaction as reconcile_stale_in_transaction,
+)
 from genefoundry_router.refresh_report import RefreshReport, build_refresh_report
 from genefoundry_router.refresh_schema import (
     RefreshSchemaError,
@@ -71,6 +79,7 @@ class RefreshLedger(RefreshLifecycleMixin):
         self._connection: sqlite3.Connection | None = None
         self._pending_gap: tuple[float, str] | None = None
         self._checkpoint_pending = False
+        self._active_attempt_ids: set[int] = set()
 
         try:
             self.path, created = prepare_refresh_sqlite_path(self.path)
@@ -189,13 +198,21 @@ class RefreshLedger(RefreshLifecycleMixin):
         validate_timestamp(at)
         with self._lock:
             try:
-                reconcile_stale(self._db, now=at, stale_seconds=REFRESH_ATTEMPT_STALE_SECONDS)
+                reconcile_stale(
+                    self._db,
+                    now=at,
+                    stale_seconds=REFRESH_ATTEMPT_STALE_SECONDS,
+                    excluded_event_ids=self._active_attempt_ids,
+                )
             except (OSError, sqlite3.Error, RefreshLedgerError):
                 self.note_unavailable(at=at, reason="write_failure")
                 return False
         if self._mark_available(at, heartbeat=True):
-            self._after_write()
-            return True
+            try:
+                self._after_write()
+                return True
+            except (OSError, sqlite3.Error, RefreshLedgerError):
+                pass
         self.note_unavailable(at=at, reason="write_failure")
         return False
 
@@ -272,6 +289,7 @@ class RefreshLedger(RefreshLifecycleMixin):
                 raise self._bounded_sqlite_error(exc) from exc
             self._after_write()
             self._mark_available(self._clock())
+            self._active_attempt_ids.add(event_id)
             return event_id
 
     def finish_attempt(
@@ -323,9 +341,12 @@ class RefreshLedger(RefreshLifecycleMixin):
                         assert reason is not None
                         self._increment_counter("failure", client_class, reason)
             except RefreshLedgerError:
+                self._active_attempt_ids.discard(event_id)
                 raise
             except sqlite3.Error as exc:
+                self._active_attempt_ids.discard(event_id)
                 raise self._bounded_sqlite_error(exc) from exc
+            self._active_attempt_ids.discard(event_id)
             self._after_write()
             self._mark_available(self._clock())
 
@@ -445,7 +466,12 @@ class RefreshLedger(RefreshLifecycleMixin):
             cutoff = now - EVENT_RETENTION_SECONDS
             try:
                 with self._db:
-                    reconcile_stale(self._db, now=now, stale_seconds=REFRESH_ATTEMPT_STALE_SECONDS)
+                    reconcile_stale_in_transaction(
+                        self._db,
+                        now=now,
+                        stale_seconds=REFRESH_ATTEMPT_STALE_SECONDS,
+                        excluded_event_ids=self._active_attempt_ids,
+                    )
                     self._db.execute("DELETE FROM refresh_events WHERE at < ?", (cutoff,))
                     self._db.execute(
                         "DELETE FROM refresh_tombstones WHERE rotated_at < ?", (cutoff,)
@@ -477,41 +503,7 @@ class RefreshLedger(RefreshLifecycleMixin):
                 self._mark_available(now)
 
     def _enforce_event_row_cap(self) -> None:
-        excess = int(self._db.execute("SELECT COUNT(*) FROM refresh_events").fetchone()[0])
-        excess -= MAX_EVENT_ROWS
-        if excess > 0:
-            truncated = self._db.execute(
-                """
-                SELECT MAX(at) FROM (
-                    SELECT at FROM refresh_events ORDER BY id LIMIT ?
-                )
-                """,
-                (excess,),
-            ).fetchone()[0]
-            self._db.execute(
-                """
-                DELETE FROM refresh_events WHERE id IN (
-                    SELECT id FROM refresh_events ORDER BY id LIMIT ?
-                )
-                """,
-                (excess,),
-            )
-            if truncated is not None:
-                previous = self._db.execute(
-                    "SELECT value FROM refresh_meta WHERE key='events_truncated_through'"
-                ).fetchone()
-                watermark = max(
-                    float(truncated),
-                    float(previous["value"]) if previous is not None else float("-inf"),
-                )
-                self._db.execute(
-                    """
-                    INSERT INTO refresh_meta (key, value)
-                    VALUES ('events_truncated_through', ?)
-                    ON CONFLICT(key) DO UPDATE SET value=excluded.value
-                    """,
-                    (repr(watermark),),
-                )
+        enforce_event_row_cap(self._db, max_rows=MAX_EVENT_ROWS)
 
     def _check_database_capacity(self) -> None:
         try:
