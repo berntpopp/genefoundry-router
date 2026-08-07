@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sqlite3
+import threading
 import time
 
 import pytest
@@ -255,16 +256,69 @@ def test_refresh_heartbeat_advances_without_refresh_traffic(monkeypatch, tmp_pat
         GF_OAUTH_JWT_SIGNING_KEY="test-router-signing-key",
     )
     app = build_app(settings, [])
+    with sqlite3.connect(path) as connection:
+        initialized_at = float(
+            connection.execute(
+                "SELECT value FROM refresh_meta WHERE key='observer_heartbeat_at'"
+            ).fetchone()[0]
+        )
 
     with TestClient(app):
-        time.sleep(0.04)
-        with sqlite3.connect(path) as connection:
-            row = connection.execute(
-                "SELECT value FROM refresh_meta WHERE key='observer_heartbeat_at'"
-            ).fetchone()
+        deadline = time.monotonic() + 1
+        heartbeat_at = initialized_at
+        while heartbeat_at <= initialized_at and time.monotonic() < deadline:
+            time.sleep(0.01)
+            with sqlite3.connect(path) as connection:
+                heartbeat_at = float(
+                    connection.execute(
+                        "SELECT value FROM refresh_meta WHERE key='observer_heartbeat_at'"
+                    ).fetchone()[0]
+                )
 
-    assert row is not None
-    assert float(row[0]) > 0
+    assert heartbeat_at > initialized_at
+
+
+def test_refresh_heartbeat_writer_lock_does_not_block_asgi_loop(monkeypatch, tmp_path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    server = _server_with_tool()
+    monkeypatch.setattr("genefoundry_router.server.build_server", lambda *_a, **_k: server)
+    monkeypatch.setattr(
+        "genefoundry_router.server.REFRESH_HEARTBEAT_INTERVAL_SECONDS",
+        0.01,
+    )
+    settings = RouterSettings(
+        _env_file=None,
+        GF_AUTH_MODE="oauth",
+        GF_DRIFT_MODE="off",
+        GF_REFRESH_OBSERVABILITY_DB=str(path),
+        GF_OAUTH_JWT_SIGNING_KEY="test-router-signing-key",
+    )
+    app = build_app(settings, [])
+    ledger = app.state.refresh_ledger
+    ledger._db.execute("PRAGMA busy_timeout=500")
+    heartbeat_started = threading.Event()
+    real_heartbeat = ledger.heartbeat
+
+    def observed_heartbeat(at: float) -> bool:
+        heartbeat_started.set()
+        return real_heartbeat(at)
+
+    monkeypatch.setattr(ledger, "heartbeat", observed_heartbeat)
+
+    with TestClient(app) as client:
+        blocker = sqlite3.connect(path)
+        blocker.execute("BEGIN IMMEDIATE")
+        try:
+            assert heartbeat_started.wait(timeout=1)
+            started = time.monotonic()
+            response = client.get("/health")
+            elapsed = time.monotonic() - started
+        finally:
+            blocker.rollback()
+            blocker.close()
+
+    assert response.status_code == 200
+    assert elapsed < 0.2
 
 
 def test_failed_shutdown_is_not_marked_clean_and_ledger_is_closed(monkeypatch, tmp_path) -> None:

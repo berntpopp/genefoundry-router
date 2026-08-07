@@ -48,7 +48,8 @@ def initialize_schema(
         return
 
     if version == 1:
-        with db:
+        db.execute("BEGIN IMMEDIATE")
+        try:
             db.execute(
                 """
                 CREATE TABLE IF NOT EXISTS refresh_availability_gaps (
@@ -62,6 +63,11 @@ def initialize_schema(
                 """
             )
             db.execute(f"PRAGMA user_version={schema_version}")
+        except BaseException:
+            db.rollback()
+            raise
+        else:
+            db.commit()
         return
 
     with db:

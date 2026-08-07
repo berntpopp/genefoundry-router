@@ -60,8 +60,18 @@ async def _run_refresh_heartbeat(ledger: RefreshLedger) -> None:
     try:
         while True:
             await asyncio.sleep(REFRESH_HEARTBEAT_INTERVAL_SECONDS)
+            worker = asyncio.create_task(asyncio.to_thread(ledger.heartbeat, time.time()))
             try:
-                ledger.heartbeat(time.time())
+                await asyncio.shield(worker)
+            except asyncio.CancelledError:
+                try:
+                    await worker
+                except Exception as exc:
+                    log.error(
+                        "refresh_observability_heartbeat_failed",
+                        error_type=type(exc).__name__,
+                    )
+                return
             except Exception as exc:
                 log.error(
                     "refresh_observability_heartbeat_failed",

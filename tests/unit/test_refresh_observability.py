@@ -26,6 +26,7 @@ from genefoundry_router.refresh_observability import (
     RefreshLedgerCapacityError,
     RefreshLedgerUnavailable,
 )
+from genefoundry_router.refresh_schema import initialize_schema
 
 
 class FakeClock:
@@ -235,6 +236,46 @@ def test_pre_fix_schema_v1_migrates_transactionally_without_data_loss(
         assert ledger.classify_missing("c" * 64, "a" * 64, now) == "reuse_after_rotation"
     finally:
         ledger.close()
+
+
+def test_pre_fix_schema_v1_migration_rolls_back_on_intermediate_failure(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    now = 2_600_000.0
+    _write_pre_fix_schema_v1(path, now=now)
+    connection = sqlite3.connect(path)
+
+    def deny_version_write(
+        action: int,
+        first: str | None,
+        second: str | None,
+        _database: str | None,
+        _trigger: str | None,
+    ) -> int:
+        if action == sqlite3.SQLITE_PRAGMA and first == "user_version" and second is not None:
+            return sqlite3.SQLITE_DENY
+        return sqlite3.SQLITE_OK
+
+    connection.set_authorizer(deny_version_write)
+    try:
+        with pytest.raises(sqlite3.DatabaseError, match="not authorized"):
+            initialize_schema(connection, created=False, schema_version=2)
+    finally:
+        connection.set_authorizer(None)
+
+    try:
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 1
+        gap_table = connection.execute(
+            """
+            SELECT name FROM sqlite_master
+            WHERE type='table' AND name='refresh_availability_gaps'
+            """
+        ).fetchone()
+        assert gap_table is None
+        assert connection.execute("SELECT COUNT(*) FROM refresh_events").fetchone()[0] == 1
+    finally:
+        connection.close()
 
 
 def test_client_identity_is_hmac_sha256_with_configured_signing_key(tmp_path: Path) -> None:
