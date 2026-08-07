@@ -2,6 +2,41 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.8.0] - 2026-08-07
+
+### Fixed
+
+- Canonicalize router-issued OAuth access and refresh token issuers to
+  `https://genefoundry.org`. Tokens minted by earlier releases with the historical
+  trailing-slash issuer remain valid only through the fixed transition deadline
+  `2026-09-06T00:00:00Z`; no arbitrary legacy issuer is accepted.
+
+### Added
+
+- Add durable, bounded SQLite measurement of OAuth refresh rotation. The router classifies
+  successful rotations and a closed set of failure reasons, restores Prometheus counters
+  after restart, and records completed startup/clean-shutdown intervals. Production stores
+  the ledger at `/data/genefoundry/refresh-observability.sqlite3` on the existing
+  `fastmcp_data` volume.
+- Add `genefoundry-router refresh-report --json`. The read-only, aggregate-only report uses
+  a 7-day/50-attempt gate with a 14-day low-volume fallback. Rotation failure is material
+  only when `reuse_after_rotation` plus `upstream_invalid_grant` reaches at least 3 events
+  and exceeds 1% of attempts, or at least 2 distinct HMAC-derived clients reauthorize
+  within 15 minutes after a failure.
+- Export bounded refresh counters as
+  `genefoundry_oauth_refresh_attempts_total{client_class}`,
+  `genefoundry_oauth_refresh_success_total{client_class}`, and
+  `genefoundry_oauth_refresh_failures_total{client_class,reason}`. Existing `/metrics`
+  authentication remains unchanged.
+
+### Security
+
+- Keep strict one-time refresh-token rotation unchanged while evidence is collected; the
+  observer never replays or accepts a rejected token. Event rows contain only bounded
+  classes, a short hash prefix, request ID, timestamp, and HMAC-derived client identity.
+  Full token hashes exist only in short-lived mode-0600 tombstones and are never emitted in
+  metrics, logs, or reports.
+
 ## [0.7.6] - 2026-08-07
 
 ### Fixed

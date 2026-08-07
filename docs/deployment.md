@@ -51,6 +51,45 @@ ARM64 is not a v1 target; enable it only after native dependency resolution plus
 platform-specific build, content, vulnerability, runtime, MCP, and data tests pass, and the
 release manifest records the multi-platform identities.
 
+## OAuth refresh-rotation observation
+
+The production overlay stores `/data/genefoundry/refresh-observability.sqlite3` on the
+existing `fastmcp_data:/data` volume. Preserve that file with the OAuth state during deploys
+and rollbacks. The ledger is mode `0600`, bounded to 64 MiB plus an 8 MiB WAL, retains at
+most 14 days/100,000 event rows, and uses `GF_OAUTH_JWT_SIGNING_KEY` to HMAC client identity.
+Do not rotate that key during the observation window.
+
+After the router has run continuously for the decision window, read the aggregate report
+without stopping or modifying the ledger:
+
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml \
+  exec genefoundry-router genefoundry-router refresh-report --json
+```
+
+Interpret the result exactly as follows:
+
+- `ready` requires at least 7 consecutive days of observation and 50 refresh attempts in
+  that 7-day window.
+- If 7 days contain fewer than 50 attempts, observation extends to 14 consecutive days.
+  Fewer than 50 attempts after 14 days produces `insufficient_sample` rather than a policy
+  conclusion.
+- A ready sample is `material` only if the combined `reuse_after_rotation` and
+  `upstream_invalid_grant` failures number at least 3 **and** exceed 1% of all refresh
+  attempts, or at least 2 distinct HMAC-derived clients begin authorization within
+  15 minutes after a refresh failure. Otherwise it is `not_material`.
+
+The report contains aggregates and restart intervals only: it never emits client HMACs,
+token hashes/prefixes, request IDs, authorization codes, or query parameters. Strict
+one-time refresh-token rotation remains in force while measurements are collected; the
+observer does not replay or accept rejected tokens, and the report does not change runtime
+policy automatically.
+
+New router tokens use issuer `https://genefoundry.org`. The exact historical
+`https://genefoundry.org/` alias is accepted only before the immutable transition deadline
+`2026-09-06T00:00:00Z`. Remove the alias after that deadline once live sessions have drained;
+do not extend the deadline by restarting or reconfiguring the service.
+
 ## Drift detection (scheduled CI)
 
 A backend can serve a clean tool at review time and later change its definition — the
