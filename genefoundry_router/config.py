@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Literal
 
 import yaml
-from pydantic import Field, ValidationError, field_validator, model_validator
+from pydantic import AnyHttpUrl, Field, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from genefoundry_router.exceptions import RegistryError
@@ -16,6 +16,22 @@ from genefoundry_router.registry import BackendDef
 
 AuthMode = Literal["none", "jwt", "oauth"]
 DeploymentMode = Literal["development", "production"]
+
+
+def _canonical_oauth_issuer(base_url: str) -> str:
+    """Validate an OAuth issuer URL and remove only its trailing root slash."""
+    return str(AnyHttpUrl(base_url)).rstrip("/")
+
+
+def _validate_oauth_legacy_issuers(
+    canonical: str, legacy_issuers: Sequence[str]
+) -> tuple[str, ...]:
+    """Allow only the one historical root-slash alias for this transition."""
+    configured = tuple(legacy_issuers)
+    expected = (f"{_canonical_oauth_issuer(canonical)}/",)
+    if configured not in ((), expected):
+        raise ValueError(f"legacy issuers must be empty or exactly {list(expected)!r}")
+    return configured
 
 
 class RouterSettings(BaseSettings):
@@ -130,6 +146,15 @@ class RouterSettings(BaseSettings):
         if value.tzinfo is None:
             raise ValueError("GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL must include a UTC offset")
         return value.astimezone(UTC)
+
+    @model_validator(mode="after")
+    def _legacy_issuer_is_the_exact_root_slash_alias(self) -> RouterSettings:
+        """Reject widening the temporary issuer trust set through configuration."""
+        _validate_oauth_legacy_issuers(
+            self.GF_OAUTH_CANONICAL_ISSUER,
+            self.GF_OAUTH_LEGACY_ISSUERS,
+        )
+        return self
 
     @field_validator("GF_ALLOWED_HOSTS")
     @classmethod

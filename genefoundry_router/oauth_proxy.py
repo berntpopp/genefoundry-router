@@ -26,10 +26,15 @@ from mcp.shared.auth import OAuthMetadata, ProtectedResourceMetadata
 from pydantic import AnyHttpUrl, ConfigDict
 from starlette.routing import Route
 
+from genefoundry_router.config import (
+    _canonical_oauth_issuer,
+    _validate_oauth_legacy_issuers,
+)
+
 
 def canonical_issuer(base_url: str) -> str:
     """Return the validated issuer URL without a trailing root slash."""
-    return str(AnyHttpUrl(base_url)).rstrip("/")
+    return _canonical_oauth_issuer(base_url)
 
 
 class CanonicalOAuthMetadata(OAuthMetadata):
@@ -63,10 +68,10 @@ class TransitionalJWTIssuer(JWTIssuer):
             raise ValueError("legacy issuer deadline must include a UTC offset")
         self._legacy_accept_until = legacy_accept_until.astimezone(UTC)
         self._clock = clock or (lambda: datetime.now(UTC))
+        validated_legacy_issuers = _validate_oauth_legacy_issuers(canonical, legacy_issuers)
         self._legacy_verifiers = tuple(
             JWTIssuer(issuer=value, audience=audience, signing_key=signing_key)
-            for value in dict.fromkeys(legacy_issuers)
-            if value != canonical
+            for value in validated_legacy_issuers
         )
 
     def verify_token(
@@ -101,7 +106,9 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         **kwargs: Any,
     ) -> None:
         self._canonical_issuer_url = canonical_issuer(canonical_issuer_url)
-        self._legacy_issuer_urls = tuple(legacy_issuer_urls)
+        self._legacy_issuer_urls = _validate_oauth_legacy_issuers(
+            self._canonical_issuer_url, legacy_issuer_urls
+        )
         self._legacy_issuer_accept_until = legacy_issuer_accept_until
         super().__init__(**kwargs)
 
@@ -126,13 +133,14 @@ class GeneFoundryOAuthProxy(OAuthProxy):
             registration,
             revocation,
         )
-        metadata.client_id_metadata_document_supported = True
-        existing = metadata.token_endpoint_auth_methods_supported or []
-        metadata.token_endpoint_auth_methods_supported = [
-            *existing,
-            "private_key_jwt",
-            "none",
-        ]
+        if self._cimd_manager is not None:
+            metadata.client_id_metadata_document_supported = True
+            existing = metadata.token_endpoint_auth_methods_supported or []
+            metadata.token_endpoint_auth_methods_supported = [
+                *existing,
+                "private_key_jwt",
+                "none",
+            ]
         payload = metadata.model_dump(mode="json")
         payload["issuer"] = self._canonical_issuer_url
         return CanonicalOAuthMetadata.model_validate(payload)
