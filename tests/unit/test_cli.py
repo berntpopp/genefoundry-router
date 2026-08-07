@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import time
 
 from typer.testing import CliRunner
@@ -82,6 +83,31 @@ def test_refresh_report_json_is_aggregate_only_and_does_not_modify_database(
         "request_id",
     ):
         assert forbidden not in rendered
+
+
+def test_refresh_report_marks_stale_writer_heartbeat_incomplete(monkeypatch, tmp_path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    _write_refresh_report_ledger(path)
+    now = time.time()
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            """
+            INSERT INTO refresh_meta (key, value)
+            VALUES ('observer_heartbeat_at', ?)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value
+            """,
+            (repr(now - 121),),
+        )
+    monkeypatch.setenv("GF_REFRESH_OBSERVABILITY_DB", str(path))
+    monkeypatch.setattr("genefoundry_router.refresh_cli.time.time", lambda: now)
+
+    result = runner.invoke(app, ["refresh-report", "--json"])
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["sample_status"] == "incomplete"
+    assert payload["decision"] == "incomplete"
+    assert payload["incomplete_reasons"] == ["stale_observer_heartbeat"]
 
 
 def test_refresh_report_refuses_missing_or_unconfigured_database(monkeypatch, tmp_path) -> None:

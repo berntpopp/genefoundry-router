@@ -1,8 +1,6 @@
-"""Durable, aggregate-only observability for OAuth refresh rotation.
+"""Durable, aggregate-only OAuth refresh observability.
 
-The SQLite ledger is the durability authority.  It deliberately stores no token
-or token response: only a full one-way token hash in short-lived tombstones, a
-bounded prefix in event rows, and HMAC-derived client identities.
+The SQLite authority stores no token or response, only bounded one-way identities.
 """
 
 from __future__ import annotations
@@ -28,6 +26,7 @@ from genefoundry_router.refresh_models import (
     MAX_EVENT_ROWS,
     MAX_WAL_BYTES,
     PRUNE_INTERVAL_SECONDS,
+    REFRESH_HEARTBEAT_STALE_SECONDS,
     SCHEMA_VERSION,
     CounterSnapshot,
     RefreshEvent,
@@ -74,7 +73,7 @@ class RefreshLedger(RefreshLifecycleMixin):
 
         try:
             self.path, created = prepare_refresh_sqlite_path(self.path)
-            self._check_file_capacity()
+            self._check_database_capacity()
             self._connection = sqlite3.connect(
                 self.path,
                 timeout=5.0,
@@ -86,12 +85,14 @@ class RefreshLedger(RefreshLifecycleMixin):
                 max_database_bytes=MAX_DATABASE_BYTES,
                 max_wal_bytes=MAX_WAL_BYTES,
             )
+            self._check_file_capacity()
             initialize_schema(
                 self._db,
                 created=created,
                 schema_version=SCHEMA_VERSION,
             )
             self._prune(now=self._clock(), force=True)
+            self.heartbeat(self._clock())
             self._secure_sqlite_files()
         except RefreshLedgerError:
             self._close_after_failed_init()
@@ -141,9 +142,9 @@ class RefreshLedger(RefreshLifecycleMixin):
                 if self._pending_gap is None or at < self._pending_gap[0]:
                     self._pending_gap = (at, reason)
 
-    def _mark_available(self, at: float) -> None:
+    def _mark_available(self, at: float, *, heartbeat: bool = False) -> bool:
         if self._checkpoint_pending:
-            return
+            return False
         with self._lock:
             try:
                 with self._db:
@@ -168,9 +169,28 @@ class RefreshLedger(RefreshLifecycleMixin):
                             """,
                             (started_at, max(started_at, at), reason),
                         )
+                    if heartbeat:
+                        self._db.execute(
+                            """
+                            INSERT INTO refresh_meta (key, value)
+                            VALUES ('observer_heartbeat_at', ?)
+                            ON CONFLICT(key) DO UPDATE SET value=excluded.value
+                            """,
+                            (repr(at),),
+                        )
                 self._pending_gap = None
+                return True
             except (OSError, sqlite3.Error, RefreshLedgerError):
-                return
+                return False
+
+    def heartbeat(self, at: float) -> bool:
+        """Persist writer freshness and recover pending gaps without OAuth coupling."""
+        validate_timestamp(at)
+        if self._mark_available(at, heartbeat=True):
+            self._after_write()
+            return True
+        self.note_unavailable(at=at, reason="write_failure")
+        return False
 
     def record_event(self, event: RefreshEvent) -> None:
         """Persist one event and its aggregate counters in one transaction."""
@@ -403,6 +423,7 @@ class RefreshLedger(RefreshLifecycleMixin):
                 client_classes=CLIENT_CLASSES,
                 failure_reasons=FAILURE_REASONS,
                 pending_gap=self._pending_gap,
+                heartbeat_stale_seconds=REFRESH_HEARTBEAT_STALE_SECONDS,
             )
 
     def _prune(self, *, now: float, force: bool) -> None:
@@ -484,26 +505,35 @@ class RefreshLedger(RefreshLifecycleMixin):
                     (repr(watermark),),
                 )
 
-    def _check_file_capacity(self) -> None:
+    def _check_database_capacity(self) -> None:
         try:
             if self.path.exists() and self.path.stat().st_size > MAX_DATABASE_BYTES:
                 raise RefreshLedgerCapacityError("refresh ledger exceeds the 64 MiB database cap")
+        except OSError as exc:
+            raise RefreshLedgerUnavailable("configured refresh ledger cannot be inspected") from exc
+
+    def _check_file_capacity(self) -> None:
+        self._check_database_capacity()
+        try:
             wal_path = Path(f"{self.path}-wal")
-            if wal_path.exists() and wal_path.stat().st_size > MAX_WAL_BYTES:
-                raise RefreshLedgerCapacityError("refresh ledger exceeds the 8 MiB WAL cap")
+            if not wal_path.exists() or wal_path.stat().st_size <= MAX_WAL_BYTES:
+                return
+            recovered = self._connection is not None and self._checkpoint_truncate()
+            if recovered and (not wal_path.exists() or wal_path.stat().st_size <= MAX_WAL_BYTES):
+                self._checkpoint_pending = False
+                self._mark_available(self._clock())
+                self._secure_sqlite_files()
+                return
+            self._checkpoint_pending = True
+            self.note_unavailable(at=self._clock(), reason="wal_over_cap")
+            raise RefreshLedgerCapacityError("refresh ledger exceeds the 8 MiB WAL cap")
+        except RefreshLedgerError:
+            raise
         except OSError as exc:
             raise RefreshLedgerUnavailable("configured refresh ledger cannot be inspected") from exc
 
     def _after_write(self) -> None:
         self._secure_sqlite_files()
-        wal_path = Path(f"{self.path}-wal")
-        if (
-            wal_path.exists()
-            and wal_path.stat().st_size > MAX_WAL_BYTES
-            and not self._checkpoint_truncate()
-        ):
-            self._checkpoint_pending = True
-            self.note_unavailable(at=self._clock(), reason="wal_over_cap")
         self._check_file_capacity()
 
     def _checkpoint_truncate(self) -> bool:

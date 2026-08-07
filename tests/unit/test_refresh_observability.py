@@ -97,6 +97,79 @@ def _insert_raw_event(path: Path, event: RefreshEvent) -> None:
         )
 
 
+def _write_pre_fix_schema_v1(path: Path, *, now: float) -> None:
+    """Create the exact Task 7 base schema before availability gaps were added."""
+    with _connect(path) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE refresh_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+            CREATE TABLE refresh_counters (
+                counter TEXT NOT NULL,
+                client_class TEXT NOT NULL,
+                reason TEXT NOT NULL DEFAULT '',
+                value INTEGER NOT NULL CHECK(value >= 0),
+                PRIMARY KEY (counter, client_class, reason),
+                CHECK(client_class IN ('chatgpt', 'claude', 'other'))
+            );
+            CREATE TABLE refresh_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                at REAL NOT NULL,
+                request_id TEXT NOT NULL CHECK(length(request_id) <= 128),
+                client_class TEXT NOT NULL,
+                client_hmac TEXT NOT NULL CHECK(length(client_hmac) = 64),
+                event_type TEXT NOT NULL,
+                outcome TEXT NOT NULL,
+                reason TEXT,
+                token_hash_prefix TEXT CHECK(
+                    token_hash_prefix IS NULL OR length(token_hash_prefix) <= 16
+                ),
+                reuse_delay_seconds REAL,
+                CHECK(client_class IN ('chatgpt', 'claude', 'other')),
+                CHECK(event_type IN ('refresh', 'authorize')),
+                CHECK(outcome IN ('success', 'failure', 'started'))
+            );
+            CREATE INDEX refresh_events_at_idx ON refresh_events(at);
+            CREATE INDEX refresh_events_client_at_idx
+                ON refresh_events(client_hmac, at);
+            CREATE TABLE refresh_tombstones (
+                token_hash TEXT PRIMARY KEY CHECK(length(token_hash) = 64),
+                client_hmac TEXT NOT NULL CHECK(length(client_hmac) = 64),
+                rotated_at REAL NOT NULL
+            );
+            CREATE INDEX refresh_tombstones_at_idx
+                ON refresh_tombstones(rotated_at);
+            CREATE TABLE router_lifecycle (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                boot_id TEXT NOT NULL,
+                marker TEXT NOT NULL CHECK(marker IN ('startup', 'shutdown')),
+                at REAL NOT NULL,
+                version TEXT NOT NULL CHECK(length(version) <= 32)
+            );
+            PRAGMA user_version=1;
+            """
+        )
+        connection.execute("INSERT INTO refresh_meta VALUES ('legacy_marker', 'preserve-me')")
+        connection.execute("INSERT INTO refresh_counters VALUES ('attempt', 'chatgpt', '', 1)")
+        connection.execute(
+            """
+            INSERT INTO refresh_events (
+                at, request_id, client_class, client_hmac, event_type,
+                outcome, reason, token_hash_prefix, reuse_delay_seconds
+            ) VALUES (?, 'legacy-event', 'chatgpt', ?, 'refresh',
+                      'failure', 'reuse_after_rotation', 'bbbbbbbbbbbb', 2.0)
+            """,
+            (now - 10, "a" * 64),
+        )
+        connection.execute(
+            "INSERT INTO refresh_tombstones VALUES (?, ?, ?)",
+            ("c" * 64, "a" * 64, now - 5),
+        )
+        connection.execute(
+            "INSERT INTO router_lifecycle VALUES (NULL, ?, 'startup', ?, '0.8.0')",
+            ("d" * 32, now - 100),
+        )
+
+
 def test_schema_uses_wal_mode_0600_and_normalized_tables(tmp_path: Path) -> None:
     path = tmp_path / "refresh.sqlite3"
     ledger = RefreshLedger(path, hmac_key=b"signing-key", clock=FakeClock(2_000_000.0))
@@ -124,6 +197,42 @@ def test_schema_uses_wal_mode_0600_and_normalized_tables(tmp_path: Path) -> None
             "refresh_tombstones",
             "router_lifecycle",
         } <= tables
+    finally:
+        ledger.close()
+
+
+def test_pre_fix_schema_v1_migrates_transactionally_without_data_loss(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    now = 2_500_000.0
+    _write_pre_fix_schema_v1(path, now=now)
+
+    ledger = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    try:
+        with _connect(path) as connection:
+            user_version = connection.execute("PRAGMA user_version").fetchone()[0]
+            gap_table = connection.execute(
+                """
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='refresh_availability_gaps'
+                """
+            ).fetchone()
+            legacy_marker = connection.execute(
+                "SELECT value FROM refresh_meta WHERE key='legacy_marker'"
+            ).fetchone()[0]
+            request_id = connection.execute("SELECT request_id FROM refresh_events").fetchone()[0]
+            lifecycle_count = connection.execute(
+                "SELECT COUNT(*) FROM router_lifecycle"
+            ).fetchone()[0]
+
+        assert user_version == SCHEMA_VERSION == 2
+        assert gap_table is not None
+        assert legacy_marker == "preserve-me"
+        assert request_id == "legacy-event"
+        assert lifecycle_count == 1
+        assert ledger.counter_snapshot().attempts == {"chatgpt": 1}
+        assert ledger.classify_missing("c" * 64, "a" * 64, now) == "reuse_after_rotation"
     finally:
         ledger.close()
 
@@ -315,6 +424,66 @@ def test_database_size_over_sixty_four_mib_fails_closed_without_reset(tmp_path: 
     assert path.stat().st_size == oversized
 
 
+def test_runtime_write_recovers_over_cap_wal_before_capacity_rejection(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "runtime-wal.sqlite3"
+    now = 6_500_000.0
+    ledger = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    reader = sqlite3.connect(path)
+    reader.execute("BEGIN")
+    reader.execute("SELECT COUNT(*) FROM refresh_events").fetchone()
+    ledger._db.execute("PRAGMA wal_autocheckpoint=0")
+    with ledger._db:
+        ledger._db.execute("CREATE TABLE runtime_wal_fixture (payload BLOB NOT NULL)")
+        ledger._db.execute(
+            "INSERT INTO runtime_wal_fixture VALUES (zeroblob(?))",
+            (MAX_WAL_BYTES + 4096,),
+        )
+    wal_path = Path(f"{path}-wal")
+    assert wal_path.stat().st_size > MAX_WAL_BYTES
+    reader.close()
+
+    try:
+        ledger.record_event(
+            RefreshEvent(
+                at=now,
+                request_id="post-cap-recovery",
+                client_class="other",
+                client_hmac="a" * 64,
+                event_type="authorize",
+                outcome="started",
+            )
+        )
+        assert wal_path.stat().st_size <= MAX_WAL_BYTES
+    finally:
+        ledger.close()
+
+
+def test_startup_recovers_over_cap_wal_before_capacity_rejection(tmp_path: Path) -> None:
+    path = tmp_path / "startup-wal.sqlite3"
+    now = 6_600_000.0
+    first = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    first._db.execute("PRAGMA wal_autocheckpoint=0")
+    with first._db:
+        first._db.execute("CREATE TABLE startup_wal_fixture (payload BLOB NOT NULL)")
+        first._db.execute(
+            "INSERT INTO startup_wal_fixture VALUES (zeroblob(?))",
+            (MAX_WAL_BYTES + 4096,),
+        )
+    wal_path = Path(f"{path}-wal")
+    assert wal_path.stat().st_size > MAX_WAL_BYTES
+
+    second: RefreshLedger | None = None
+    try:
+        second = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now + 1))
+        assert wal_path.stat().st_size <= MAX_WAL_BYTES
+    finally:
+        if second is not None:
+            second.close()
+        first.close()
+
+
 def test_unreadable_existing_database_fails_closed_without_replacement(tmp_path: Path) -> None:
     path = tmp_path / "refresh.sqlite3"
     ledger = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_000_000.0))
@@ -347,6 +516,64 @@ def test_parent_symlink_is_rejected_before_sqlite_opens_any_path(
     with pytest.raises(RefreshLedgerUnavailable, match="symlink"):
         RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_500_000.0))
     assert not (real_parent / path.name).exists()
+
+
+def test_sticky_world_writable_final_ledger_directory_is_rejected_before_sqlite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    final_parent = tmp_path / "unsafe-final"
+    final_parent.mkdir(mode=0o700)
+    final_parent.chmod(0o1777)
+    path = final_parent / "refresh.sqlite3"
+    monkeypatch.setattr(
+        sqlite3,
+        "connect",
+        lambda *_args, **_kwargs: pytest.fail("SQLite opened an unsafe final directory"),
+    )
+
+    with pytest.raises(RefreshLedgerUnavailable, match="private"):
+        RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_500_000.0))
+
+
+def test_different_owner_final_ledger_directory_is_rejected_before_sqlite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    final_parent = tmp_path / "different-owner"
+    final_parent.mkdir(mode=0o700)
+    path = final_parent / "refresh.sqlite3"
+    current_uid = os.geteuid()
+    monkeypatch.setattr(
+        "genefoundry_router.refresh_path.os.geteuid",
+        lambda: current_uid + 1,
+    )
+    monkeypatch.setattr(
+        sqlite3,
+        "connect",
+        lambda *_args, **_kwargs: pytest.fail("SQLite opened another owner's directory"),
+    )
+
+    with pytest.raises(RefreshLedgerUnavailable, match="owner"):
+        RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_500_000.0))
+
+
+def test_private_final_directory_under_sticky_ancestor_remains_usable(
+    tmp_path: Path,
+) -> None:
+    sticky_ancestor = tmp_path / "sticky-ancestor"
+    sticky_ancestor.mkdir(mode=0o700)
+    sticky_ancestor.chmod(0o1777)
+    final_parent = sticky_ancestor / "private-ledger"
+    final_parent.mkdir(mode=0o700)
+
+    ledger = RefreshLedger(
+        final_parent / "refresh.sqlite3",
+        hmac_key=b"key",
+        clock=FakeClock(7_500_000.0),
+    )
+    try:
+        assert final_parent.stat().st_mode & 0o777 == 0o700
+    finally:
+        ledger.close()
 
 
 def test_main_file_symlink_is_rejected_before_sqlite_connect(

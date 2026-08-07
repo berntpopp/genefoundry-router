@@ -35,13 +35,20 @@ def _prepare_directory_chain(parent: Path) -> None:
             raise UnsafeRefreshPathError("configured refresh ledger directory contains a symlink")
         if not stat.S_ISDIR(details.st_mode):
             raise UnsafeRefreshPathError("configured refresh ledger parent must be a directory")
-
-    parent_details = parent.lstat()
-    unsafe_writes = parent_details.st_mode & (stat.S_IWGRP | stat.S_IWOTH)
-    if unsafe_writes and not (parent_details.st_mode & stat.S_ISVTX):
-        raise UnsafeRefreshPathError(
-            "configured refresh ledger parent must not be group/world writable"
-        )
+        unsafe_writes = details.st_mode & (stat.S_IWGRP | stat.S_IWOTH)
+        if component == parent:
+            if details.st_uid != os.geteuid():
+                raise UnsafeRefreshPathError(
+                    "configured refresh ledger final directory must have the same owner"
+                )
+            if unsafe_writes:
+                raise UnsafeRefreshPathError(
+                    "configured refresh ledger final directory must be private"
+                )
+        elif unsafe_writes and not (details.st_mode & stat.S_ISVTX):
+            raise UnsafeRefreshPathError(
+                "configured refresh ledger ancestor must not be group/world writable"
+            )
 
 
 def _open_parent(parent: Path) -> int:
@@ -50,11 +57,18 @@ def _open_parent(parent: Path) -> int:
     flags |= getattr(os, "O_CLOEXEC", 0)
     flags |= getattr(os, "O_NOFOLLOW", 0)
     try:
-        return os.open(parent, flags)
+        descriptor = os.open(parent, flags)
     except OSError as exc:
         raise UnsafeRefreshPathError(
             "configured refresh ledger parent cannot be opened without following links"
         ) from exc
+    details = os.fstat(descriptor)
+    if details.st_uid != os.geteuid() or details.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+        os.close(descriptor)
+        raise UnsafeRefreshPathError(
+            "configured refresh ledger final directory must be private and have the same owner"
+        )
+    return descriptor
 
 
 def _validate_open_file(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from collections.abc import Sequence
 from contextlib import asynccontextmanager
@@ -40,6 +41,7 @@ from genefoundry_router.observability import (
     restore_refresh_metrics,
     set_backend_up,
 )
+from genefoundry_router.refresh_models import REFRESH_HEARTBEAT_INTERVAL_SECONDS
 from genefoundry_router.refresh_observability import RefreshLedger
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.runtime_drift import (
@@ -51,6 +53,22 @@ from genefoundry_router.security import add_host_origin_validation
 from genefoundry_router.tool_search import apply_tool_search, resolve_entrypoints
 
 log = structlog.get_logger(__name__)
+
+
+async def _run_refresh_heartbeat(ledger: RefreshLedger) -> None:
+    """Keep durable writer freshness current independently of refresh volume."""
+    try:
+        while True:
+            await asyncio.sleep(REFRESH_HEARTBEAT_INTERVAL_SECONDS)
+            try:
+                ledger.heartbeat(time.time())
+            except Exception as exc:
+                log.error(
+                    "refresh_observability_heartbeat_failed",
+                    error_type=type(exc).__name__,
+                )
+    except asyncio.CancelledError:
+        return
 
 
 def build_server(
@@ -198,9 +216,15 @@ def build_app(
                         source_id=str(refresh_ledger.path.resolve()),
                     )
                     boot_id = refresh_ledger.record_startup(version=__version__, at=time.time())
+                    heartbeat_task = asyncio.create_task(_run_refresh_heartbeat(refresh_ledger))
+                else:
+                    heartbeat_task = None
                 try:
                     yield
                 finally:
+                    if heartbeat_task is not None:
+                        heartbeat_task.cancel()
+                        await heartbeat_task
                     await refresher.stop()
             teardown_complete = True
         finally:

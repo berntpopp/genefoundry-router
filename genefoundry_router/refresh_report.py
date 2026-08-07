@@ -231,6 +231,7 @@ def build_refresh_report(
     client_classes: frozenset[str],
     failure_reasons: frozenset[str],
     pending_gap: tuple[float, str] | None = None,
+    heartbeat_stale_seconds: float = 120,
 ) -> RefreshReport:
     """Build the exact 7-day/50-attempt, 14-day-fallback decision report."""
     intervals, lifecycle_consecutive = _lifecycle_intervals(connection, now)
@@ -333,6 +334,12 @@ def build_refresh_report(
         incomplete_reasons.add("event_truncation")
     if attempts != successes + failures:
         incomplete_reasons.add("unterminated_attempts")
+    heartbeat_row = connection.execute(
+        "SELECT value FROM refresh_meta WHERE key='observer_heartbeat_at'"
+    ).fetchone()
+    heartbeat_at = float(heartbeat_row["value"]) if heartbeat_row is not None else None
+    if heartbeat_at is None or now - heartbeat_at > heartbeat_stale_seconds:
+        incomplete_reasons.add("stale_observer_heartbeat")
     gap_seconds = sum(
         max(0.0, min(end if end is not None else now, now) - max(start, cutoff))
         for start, end, _reason in relevant_gaps
@@ -383,6 +390,7 @@ def read_refresh_report(
     schema_version: int,
     client_classes: frozenset[str],
     failure_reasons: frozenset[str],
+    heartbeat_stale_seconds: float = 120,
 ) -> RefreshReport:
     """Read one aggregate report without creating or modifying the ledger."""
     source = Path(path)
@@ -402,6 +410,7 @@ def read_refresh_report(
             schema_version=schema_version,
             client_classes=client_classes,
             failure_reasons=failure_reasons,
+            heartbeat_stale_seconds=heartbeat_stale_seconds,
         )
     except RefreshReportUnavailableError:
         raise

@@ -238,6 +238,35 @@ def test_refresh_ledger_is_shared_restored_and_marks_clean_lifecycle(monkeypatch
         app.state.refresh_ledger.close()
 
 
+def test_refresh_heartbeat_advances_without_refresh_traffic(monkeypatch, tmp_path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    server = _server_with_tool()
+    monkeypatch.setattr("genefoundry_router.server.build_server", lambda *_a, **_k: server)
+    monkeypatch.setattr(
+        "genefoundry_router.server.REFRESH_HEARTBEAT_INTERVAL_SECONDS",
+        0.01,
+        raising=False,
+    )
+    settings = RouterSettings(
+        _env_file=None,
+        GF_AUTH_MODE="oauth",
+        GF_DRIFT_MODE="off",
+        GF_REFRESH_OBSERVABILITY_DB=str(path),
+        GF_OAUTH_JWT_SIGNING_KEY="test-router-signing-key",
+    )
+    app = build_app(settings, [])
+
+    with TestClient(app):
+        time.sleep(0.04)
+        with sqlite3.connect(path) as connection:
+            row = connection.execute(
+                "SELECT value FROM refresh_meta WHERE key='observer_heartbeat_at'"
+            ).fetchone()
+
+    assert row is not None
+    assert float(row[0]) > 0
+
+
 def test_failed_shutdown_is_not_marked_clean_and_ledger_is_closed(monkeypatch, tmp_path) -> None:
     path = tmp_path / "refresh.sqlite3"
     server = _server_with_tool()

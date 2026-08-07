@@ -40,11 +40,28 @@ def initialize_schema(
 ) -> None:
     """Create the fixed bounded schema or validate an existing ledger."""
     version = int(db.execute("PRAGMA user_version").fetchone()[0])
-    if version not in (0, schema_version):
+    if version not in (0, 1, schema_version):
         raise RefreshSchemaError("refresh ledger schema version is unsupported")
     if version == 0 and not created:
         raise RefreshSchemaError("configured refresh ledger has no recognized schema")
     if version == schema_version:
+        return
+
+    if version == 1:
+        with db:
+            db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS refresh_availability_gaps (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    started_at REAL NOT NULL,
+                    ended_at REAL,
+                    reason TEXT NOT NULL,
+                    CHECK(ended_at IS NULL OR ended_at >= started_at),
+                    CHECK(reason IN ('write_failure', 'wal_checkpoint', 'wal_over_cap'))
+                )
+                """
+            )
+            db.execute(f"PRAGMA user_version={schema_version}")
         return
 
     with db:

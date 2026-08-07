@@ -11,6 +11,7 @@ from genefoundry_router.config import RouterSettings
 from genefoundry_router.refresh_observability import (
     CLIENT_CLASSES,
     FAILURE_REASONS,
+    REFRESH_HEARTBEAT_STALE_SECONDS,
     SCHEMA_VERSION,
 )
 from genefoundry_router.refresh_report import RefreshReportUnavailableError, read_refresh_report
@@ -31,6 +32,7 @@ def refresh_report_command(
             schema_version=SCHEMA_VERSION,
             client_classes=CLIENT_CLASSES,
             failure_reasons=FAILURE_REASONS,
+            heartbeat_stale_seconds=REFRESH_HEARTBEAT_STALE_SECONDS,
         )
     except RefreshReportUnavailableError:
         typer.echo("refresh observability database is unavailable", err=True)
