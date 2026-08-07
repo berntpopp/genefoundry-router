@@ -59,6 +59,11 @@ class RefreshReport:
     forced_reauthorization_clients: int
     material_rotation_failures: int
     material_rotation_rate: float
+    evidence_complete: bool
+    incomplete_reasons: tuple[str, ...]
+    availability_gap_count: int
+    availability_gap_seconds: float
+    truncated_through: float | None
 
     def to_dict(self) -> dict[str, object]:
         """Return JSON-ready aggregate data with no row-level fields."""
@@ -83,7 +88,36 @@ class RefreshReport:
             "forced_reauthorization_clients": self.forced_reauthorization_clients,
             "material_rotation_failures": self.material_rotation_failures,
             "material_rotation_rate": self.material_rotation_rate,
+            "evidence_complete": self.evidence_complete,
+            "incomplete_reasons": list(self.incomplete_reasons),
+            "availability_gap_count": self.availability_gap_count,
+            "availability_gap_seconds": self.availability_gap_seconds,
+            "truncated_through": self.truncated_through,
         }
+
+
+def _availability_gaps(
+    connection: sqlite3.Connection,
+    now: float,
+    pending_gap: tuple[float, str] | None,
+) -> tuple[tuple[float, float | None, str], ...]:
+    rows = connection.execute(
+        """
+        SELECT started_at, ended_at, reason
+        FROM refresh_availability_gaps ORDER BY started_at, id
+        """
+    ).fetchall()
+    gaps = [
+        (
+            float(row["started_at"]),
+            None if row["ended_at"] is None else float(row["ended_at"]),
+            str(row["reason"]),
+        )
+        for row in rows
+    ]
+    if pending_gap is not None:
+        gaps.append((pending_gap[0], None, pending_gap[1]))
+    return tuple(gaps)
 
 
 def _lifecycle_intervals(
@@ -153,7 +187,10 @@ def _select_window(
 
 
 def _observation_seconds(
-    intervals: tuple[RestartInterval, ...], cutoff: float, now: float
+    intervals: tuple[RestartInterval, ...],
+    gaps: tuple[tuple[float, float | None, str], ...],
+    cutoff: float,
+    now: float,
 ) -> float:
     observed = 0.0
     for index, interval in enumerate(intervals):
@@ -162,7 +199,28 @@ def _observation_seconds(
             end = now
         if end is not None:
             observed += max(0.0, min(end, now) - max(interval.started_at, cutoff))
-    return observed
+    unavailable = sum(
+        max(0.0, min(end if end is not None else now, now) - max(start, cutoff))
+        for start, end, _reason in gaps
+    )
+    return max(0.0, observed - unavailable)
+
+
+def _consecutive_after_gaps(
+    consecutive: float,
+    gaps: tuple[tuple[float, float | None, str], ...],
+    now: float,
+) -> float:
+    interval_start = now - consecutive
+    relevant = [
+        gap for gap in gaps if gap[0] <= now and (gap[1] is None or gap[1] >= interval_start)
+    ]
+    if not relevant:
+        return consecutive
+    if any(end is None for _start, end, _reason in relevant):
+        return 0.0
+    latest_recovery = max(end for _start, end, _reason in relevant if end is not None)
+    return max(0.0, now - latest_recovery)
 
 
 def build_refresh_report(
@@ -172,9 +230,12 @@ def build_refresh_report(
     schema_version: int,
     client_classes: frozenset[str],
     failure_reasons: frozenset[str],
+    pending_gap: tuple[float, str] | None = None,
 ) -> RefreshReport:
     """Build the exact 7-day/50-attempt, 14-day-fallback decision report."""
-    intervals, consecutive = _lifecycle_intervals(connection, now)
+    intervals, lifecycle_consecutive = _lifecycle_intervals(connection, now)
+    gaps = _availability_gaps(connection, now, pending_gap)
+    consecutive = _consecutive_after_gaps(lifecycle_consecutive, gaps, now)
     window_days, sample_status, cutoff = _select_window(connection, now, consecutive)
     params = (cutoff, now)
     event_filter = "event_type='refresh' AND at >= ? AND at <= ?"
@@ -199,7 +260,7 @@ def build_refresh_report(
         elif row["outcome"] == "failure":
             failures += count
             failures_by_reason[str(row["reason"])] += count
-    attempts = successes + failures
+    attempts = sum(attempts_by_class.values())
 
     affected_clients = int(
         connection.execute(
@@ -257,7 +318,29 @@ def build_refresh_report(
         failures_by_reason["reuse_after_rotation"] + failures_by_reason["upstream_invalid_grant"]
     )
     material_rate = material_failures / attempts if attempts else 0.0
-    if sample_status != "ready":
+    truncated_row = connection.execute(
+        "SELECT value FROM refresh_meta WHERE key='events_truncated_through'"
+    ).fetchone()
+    truncated_through = float(truncated_row["value"]) if truncated_row is not None else None
+    relevant_gaps = tuple(
+        gap for gap in gaps if gap[0] <= now and (gap[1] is None or gap[1] >= cutoff)
+    )
+    incomplete_reasons = {
+        ("availability_gap" if reason == "write_failure" else reason)
+        for _start, _end, reason in relevant_gaps
+    }
+    if truncated_through is not None and truncated_through >= cutoff:
+        incomplete_reasons.add("event_truncation")
+    if attempts != successes + failures:
+        incomplete_reasons.add("unterminated_attempts")
+    gap_seconds = sum(
+        max(0.0, min(end if end is not None else now, now) - max(start, cutoff))
+        for start, end, _reason in relevant_gaps
+    )
+    if incomplete_reasons:
+        sample_status = "incomplete"
+        decision = "incomplete"
+    elif sample_status != "ready":
         decision = "collecting" if sample_status == "collecting" else "insufficient_sample"
     elif (material_failures >= 3 and material_rate > 0.01) or forced_clients >= 2:
         decision = "material"
@@ -270,7 +353,7 @@ def build_refresh_report(
         window_days=window_days,
         sample_status=sample_status,
         decision=decision,
-        observation_seconds=_observation_seconds(intervals, cutoff, now),
+        observation_seconds=_observation_seconds(intervals, gaps, cutoff, now),
         consecutive_observation_seconds=consecutive,
         attempts=attempts,
         successes=successes,
@@ -285,6 +368,11 @@ def build_refresh_report(
         forced_reauthorization_clients=forced_clients,
         material_rotation_failures=material_failures,
         material_rotation_rate=material_rate,
+        evidence_complete=not incomplete_reasons,
+        incomplete_reasons=tuple(sorted(incomplete_reasons)),
+        availability_gap_count=len(relevant_gaps),
+        availability_gap_seconds=gap_seconds,
+        truncated_through=truncated_through,
     )
 
 

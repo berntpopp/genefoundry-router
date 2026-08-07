@@ -248,6 +248,30 @@ def test_runtime_retention_pruning_is_throttled_to_once_per_hour(tmp_path: Path)
         ledger.close()
 
 
+def test_classification_excludes_expired_tombstone_before_hourly_prune(tmp_path: Path) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    now = 4_500_000.0
+    token_hash = "9" * 64
+    client_hmac = "a" * 64
+    ledger = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    with _connect(path) as connection:
+        connection.execute(
+            """
+            INSERT INTO refresh_tombstones (token_hash, client_hmac, rotated_at)
+            VALUES (?, ?, ?)
+            """,
+            (token_hash, client_hmac, now - EVENT_RETENTION_SECONDS - 1),
+        )
+
+    try:
+        assert ledger.classify_missing(token_hash, client_hmac, now) == "local_not_found"
+        assert ledger.reuse_delay_seconds(token_hash, now) is None
+        with _connect(path) as connection:
+            assert connection.execute("SELECT COUNT(*) FROM refresh_tombstones").fetchone()[0] == 1
+    finally:
+        ledger.close()
+
+
 def test_startup_enforces_exact_one_hundred_thousand_event_row_cap(tmp_path: Path) -> None:
     path = tmp_path / "refresh.sqlite3"
     now = 5_000_000.0
@@ -303,6 +327,63 @@ def test_unreadable_existing_database_fails_closed_without_replacement(tmp_path:
         assert path.stat().st_ino == original_inode
     finally:
         os.chmod(path, 0o600)
+
+
+def test_parent_symlink_is_rejected_before_sqlite_opens_any_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real_parent = tmp_path / "real-parent"
+    real_parent.mkdir()
+    linked_parent = tmp_path / "linked-parent"
+    linked_parent.symlink_to(real_parent, target_is_directory=True)
+    path = linked_parent / "refresh.sqlite3"
+
+    monkeypatch.setattr(
+        sqlite3,
+        "connect",
+        lambda *_args, **_kwargs: pytest.fail("SQLite opened an unsafe parent path"),
+    )
+
+    with pytest.raises(RefreshLedgerUnavailable, match="symlink"):
+        RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_500_000.0))
+    assert not (real_parent / path.name).exists()
+
+
+def test_main_file_symlink_is_rejected_before_sqlite_connect(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "target.sqlite3"
+    target.write_bytes(b"do-not-open")
+    path = tmp_path / "refresh.sqlite3"
+    path.symlink_to(target)
+    monkeypatch.setattr(
+        sqlite3,
+        "connect",
+        lambda *_args, **_kwargs: pytest.fail("SQLite opened a symlinked database"),
+    )
+
+    with pytest.raises(RefreshLedgerUnavailable, match="regular file"):
+        RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_500_000.0))
+
+
+def test_preexisting_sidecar_symlink_is_rejected_before_sqlite_connect(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "refresh.sqlite3"
+    seed = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_500_000.0))
+    seed.close()
+    sidecar_target = tmp_path / "sidecar-target"
+    sidecar_target.write_bytes(b"do-not-open")
+    Path(f"{path}-wal").symlink_to(sidecar_target)
+    monkeypatch.setattr(
+        sqlite3,
+        "connect",
+        lambda *_args, **_kwargs: pytest.fail("SQLite opened an unsafe sidecar path"),
+    )
+
+    with pytest.raises(RefreshLedgerUnavailable, match="sidecar"):
+        RefreshLedger(path, hmac_key=b"key", clock=FakeClock(7_500_000.0))
+    assert sidecar_target.read_bytes() == b"do-not-open"
 
 
 @pytest.mark.parametrize(
@@ -458,6 +539,108 @@ def test_report_uses_ready_fourteen_day_fallback_at_fifty_attempts(tmp_path: Pat
         ledger.close()
 
 
+def test_in_window_event_cap_truncation_cannot_produce_exact_decision(tmp_path: Path) -> None:
+    now = 35 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    path = ledger.path
+    _record_attempts(ledger, at=now - DAY, total=60)
+    ledger.close()
+
+    with _connect(path) as connection:
+        connection.executemany(
+            """
+            INSERT INTO refresh_events (
+                at, request_id, client_class, client_hmac, event_type,
+                outcome, reason, token_hash_prefix, reuse_delay_seconds
+            ) VALUES (?, ?, 'other', ?, 'authorize', 'started', NULL, NULL, NULL)
+            """,
+            (
+                (now - DAY / 2, f"auth-{index}", f"{index:064x}")
+                for index in range(MAX_EVENT_ROWS - 50)
+            ),
+        )
+
+    reopened = RefreshLedger(path, hmac_key=b"key", clock=FakeClock(now))
+    try:
+        report = reopened.report(now)
+        assert report.attempts == 50
+        assert report.sample_status == "incomplete"
+        assert report.decision == "incomplete"
+        assert report.evidence_complete is False
+        assert report.incomplete_reasons == ("event_truncation",)
+        assert report.truncated_through is not None
+        assert report.truncated_through >= now - DAY
+    finally:
+        reopened.close()
+
+
+def test_busy_checkpoint_marks_window_incomplete_until_bounded_maintenance(
+    tmp_path: Path,
+) -> None:
+    now = 38 * DAY
+    clock = FakeClock(now)
+    path = tmp_path / "busy.sqlite3"
+    ledger = RefreshLedger(path, hmac_key=b"key", clock=clock)
+    ledger.record_startup(version="0.8.0", at=now - 7 * DAY)
+    _record_attempts(ledger, at=now - DAY, total=50)
+    token_hash = "0123456789abcdef" * 4
+    ledger.record_rotation(
+        token_hash,
+        "a" * 64,
+        now - EVENT_RETENTION_SECONDS - 1,
+    )
+
+    reader = sqlite3.connect(path)
+    reader.execute("BEGIN")
+    assert reader.execute("SELECT COUNT(*) FROM refresh_tombstones").fetchone()[0] == 1
+    ledger._db.execute("PRAGMA busy_timeout=0")
+    clock.value = now + PRUNE_INTERVAL_SECONDS
+    try:
+        ledger.record_event(
+            RefreshEvent(
+                at=clock(),
+                request_id="maintenance-trigger",
+                client_class="other",
+                client_hmac="b" * 64,
+                event_type="authorize",
+                outcome="started",
+            )
+        )
+        wal_path = Path(f"{path}-wal")
+        assert wal_path.exists()
+        assert token_hash.encode() in wal_path.read_bytes()
+        report = ledger.report(clock())
+        assert report.sample_status == "incomplete"
+        assert report.decision == "incomplete"
+        assert "wal_checkpoint" in report.incomplete_reasons
+    finally:
+        reader.close()
+
+    clock.value += PRUNE_INTERVAL_SECONDS
+    ledger.record_event(
+        RefreshEvent(
+            at=clock(),
+            request_id="bounded-maintenance-retry",
+            client_class="other",
+            client_hmac="c" * 64,
+            event_type="authorize",
+            outcome="started",
+        )
+    )
+    try:
+        assert token_hash.encode() not in Path(f"{path}-wal").read_bytes()
+        with _connect(path) as connection:
+            ended_at = connection.execute(
+                "SELECT ended_at FROM refresh_availability_gaps"
+            ).fetchone()[0]
+        assert ended_at == clock()
+        recovered = ledger.report(clock())
+        assert recovered.sample_status == "incomplete"
+        assert recovered.availability_gap_count == 1
+    finally:
+        ledger.close()
+
+
 @pytest.mark.parametrize(
     ("total", "material_failures", "expected"),
     [
@@ -562,6 +745,7 @@ def test_report_groups_only_bounded_aggregate_values_and_reuse_delays(tmp_path: 
         assert set(report.attempts_by_client_class) == {"chatgpt", "claude", "other"}
         assert set(report.failures_by_reason) == {
             "local_not_found",
+            "local_rejected",
             "reuse_after_rotation",
             "overlapping_attempt",
             "client_mismatch",

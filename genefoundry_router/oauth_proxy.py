@@ -27,7 +27,7 @@ from mcp.server.auth.handlers.metadata import (
     MetadataHandler,
     ProtectedResourceMetadataHandler,
 )
-from mcp.server.auth.provider import RefreshToken, TokenError
+from mcp.server.auth.provider import AuthorizationParams, RefreshToken, TokenError
 from mcp.server.auth.routes import build_metadata, cors_middleware
 from mcp.server.auth.settings import ClientRegistrationOptions, RevocationOptions
 from mcp.shared.auth import (
@@ -37,7 +37,6 @@ from mcp.shared.auth import (
     ProtectedResourceMetadata,
 )
 from pydantic import AnyHttpUrl, ConfigDict
-from starlette.requests import Request
 from starlette.routing import Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -47,11 +46,13 @@ from genefoundry_router.config import (
 )
 from genefoundry_router.observability import (
     install_oauth_proxy_privacy_filter,
-    record_refresh_metrics,
+    record_refresh_attempt,
+    record_refresh_outcome,
 )
 from genefoundry_router.refresh_observability import (
     RefreshEvent,
     RefreshLedger,
+    RefreshLedgerCapacityError,
 )
 
 log = structlog.get_logger(__name__)
@@ -98,6 +99,8 @@ class _RefreshAttempt:
     inflight_started_at: float
     overlapping: bool
     tracked: bool
+    ledger_event_id: int | None = None
+    metrics_started: bool = False
 
 
 class _RefreshCleanupEndpoint:
@@ -257,7 +260,49 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         """Clear a loaded attempt when the SDK returns before exchange."""
         attempt = self._refresh_attempt.get()
         if attempt is not None:
-            self._finish_refresh_attempt(attempt)
+            try:
+                self._record_refresh(attempt, "failure", "local_rejected")
+            finally:
+                self._finish_refresh_attempt(attempt)
+
+    def _note_observer_unavailable(self, reason: str = "write_failure") -> None:
+        if self._refresh_ledger is None:
+            return
+        try:
+            self._refresh_ledger.note_unavailable(at=self._refresh_clock(), reason=reason)
+        except Exception as exc:
+            log.error("refresh_observability_gap_failed", error_type=type(exc).__name__)
+
+    def _note_observer_error(self, error: Exception) -> None:
+        reason = (
+            "wal_over_cap"
+            if isinstance(error, RefreshLedgerCapacityError) and "WAL" in str(error)
+            else "write_failure"
+        )
+        self._note_observer_unavailable(reason)
+
+    def _record_refresh_start(self, attempt: _RefreshAttempt) -> None:
+        assert self._refresh_ledger is not None
+        try:
+            attempt.ledger_event_id = self._refresh_ledger.begin_attempt(
+                RefreshEvent(
+                    at=attempt.started_at,
+                    request_id=attempt.request_id,
+                    client_class=attempt.client_class,
+                    client_hmac=attempt.client_hmac,
+                    event_type="refresh",
+                    outcome="started",
+                    token_hash_prefix=attempt.token_hash[:12],
+                )
+            )
+        except Exception as exc:
+            self._note_observer_error(exc)
+            log.error("refresh_observability_write_failed", error_type=type(exc).__name__)
+        try:
+            record_refresh_attempt(attempt.client_class)
+            attempt.metrics_started = True
+        except Exception as exc:
+            log.error("refresh_observability_metric_failed", error_type=type(exc).__name__)
 
     def _record_refresh(
         self,
@@ -267,25 +312,22 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         reuse_delay: float | None = None,
     ) -> None:
         assert self._refresh_ledger is not None
-        try:
-            event = RefreshEvent(
-                at=self._refresh_clock(),
-                request_id=attempt.request_id,
-                client_class=attempt.client_class,
-                client_hmac=attempt.client_hmac,
-                event_type="refresh",
-                outcome=outcome,
-                reason=reason,
-                token_hash_prefix=attempt.token_hash[:12],
-                reuse_delay_seconds=reuse_delay,
-            )
-            self._refresh_ledger.record_event(event)
-        except Exception as exc:
-            log.error("refresh_observability_write_failed", error_type=type(exc).__name__)
-        try:
-            record_refresh_metrics(attempt.client_class, outcome, reason)
-        except Exception as exc:
-            log.error("refresh_observability_metric_failed", error_type=type(exc).__name__)
+        if attempt.ledger_event_id is not None:
+            try:
+                self._refresh_ledger.finish_attempt(
+                    attempt.ledger_event_id,
+                    outcome=outcome,
+                    reason=reason,
+                    reuse_delay_seconds=reuse_delay,
+                )
+            except Exception as exc:
+                self._note_observer_error(exc)
+                log.error("refresh_observability_write_failed", error_type=type(exc).__name__)
+        if attempt.metrics_started:
+            try:
+                record_refresh_outcome(attempt.client_class, outcome, reason)
+            except Exception as exc:
+                log.error("refresh_observability_metric_failed", error_type=type(exc).__name__)
 
     def _classify_missing(
         self,
@@ -329,8 +371,10 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         try:
             attempt = self._begin_refresh_attempt(client, refresh_token)
         except Exception as exc:
+            self._note_observer_error(exc)
             log.error("refresh_observability_start_failed", error_type=type(exc).__name__)
             return await super().load_refresh_token(client, refresh_token)
+        self._record_refresh_start(attempt)
         try:
             loaded = await super().load_refresh_token(client, refresh_token)
         except Exception:
@@ -344,6 +388,7 @@ class GeneFoundryOAuthProxy(OAuthProxy):
                 try:
                     reason, delay = self._classify_missing(client, attempt, refresh_token)
                 except Exception as exc:
+                    self._note_observer_error(exc)
                     log.error("refresh_observability_read_failed", error_type=type(exc).__name__)
                     reason, delay = "internal_error", None
                 self._record_refresh(attempt, "failure", reason, delay)
@@ -388,8 +433,10 @@ class GeneFoundryOAuthProxy(OAuthProxy):
             try:
                 attempt = self._begin_refresh_attempt(client, refresh_token.token)
             except Exception as exc:
+                self._note_observer_error(exc)
                 log.error("refresh_observability_start_failed", error_type=type(exc).__name__)
                 return await super().exchange_refresh_token(client, refresh_token, scopes)
+            self._record_refresh_start(attempt)
         try:
             result = await super().exchange_refresh_token(client, refresh_token, scopes)
         except TokenError as exc:
@@ -407,28 +454,40 @@ class GeneFoundryOAuthProxy(OAuthProxy):
                     attempt.token_hash, attempt.client_hmac, self._refresh_clock()
                 )
             except Exception as exc:
+                self._note_observer_error(exc)
                 log.error("refresh_observability_write_failed", error_type=type(exc).__name__)
             self._record_refresh(attempt, "success")
             return result
         finally:
             self._finish_refresh_attempt(attempt)
 
-    async def _record_authorize(self, request: Request) -> None:
+    async def _record_authorize(self, client: OAuthClientInformationFull) -> None:
         if self._refresh_ledger is None:
             return
         try:
-            raw_client_id = request.query_params.get("client_id", "")
+            raw_client_id = client.client_id or ""
             event = RefreshEvent(
                 at=self._refresh_clock(),
-                request_id=_safe_request_id(request.headers.get("x-request-id")),
-                client_class=_classify_oauth_client_values(raw_client_id),
+                request_id=_safe_request_id(None),
+                client_class=classify_oauth_client(client),
                 client_hmac=self._refresh_ledger.client_hmac(raw_client_id),
                 event_type="authorize",
                 outcome="started",
             )
             self._refresh_ledger.record_event(event)
         except Exception as exc:
+            self._note_observer_error(exc)
             log.error("refresh_observability_write_failed", error_type=type(exc).__name__)
+
+    async def authorize(
+        self,
+        client: OAuthClientInformationFull,
+        params: AuthorizationParams,
+    ) -> str:
+        """Record only a validated authorization that successfully starts upstream."""
+        result = await super().authorize(client, params)
+        await self._record_authorize(client)
+        return result
 
     def set_mcp_path(self, mcp_path: str | None) -> None:
         """Install the router issuer after FastMCP computes the resource audience."""
@@ -492,16 +551,6 @@ class GeneFoundryOAuthProxy(OAuthProxy):
                 endpoint = cors_middleware(authorization_handler.handle, ["GET", "OPTIONS"])
             elif route.path.startswith("/.well-known/oauth-protected-resource"):
                 endpoint = cors_middleware(protected_handler.handle, ["GET", "OPTIONS"])
-            elif route.path == "/authorize" and self._refresh_ledger is not None:
-                original_endpoint = route.endpoint
-
-                async def observed_authorize(
-                    request: Request, *, _original: Any = original_endpoint
-                ) -> Any:
-                    await self._record_authorize(request)
-                    return await _original(request)
-
-                endpoint = observed_authorize
             elif route.path == "/token" and self._refresh_ledger is not None:
                 endpoint = _RefreshCleanupEndpoint(
                     cast(ASGIApp, route.endpoint),

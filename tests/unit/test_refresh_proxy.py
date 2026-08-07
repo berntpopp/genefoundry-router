@@ -22,7 +22,12 @@ from genefoundry_router.oauth_proxy import (
     GeneFoundryOAuthProxy,
     classify_oauth_client,
 )
-from genefoundry_router.refresh_observability import RefreshLedger
+from genefoundry_router.observability import OAUTH_REFRESH_ATTEMPTS, OAUTH_REFRESH_FAILURES
+from genefoundry_router.refresh_observability import (
+    MAX_WAL_BYTES,
+    RefreshEvent,
+    RefreshLedger,
+)
 
 BASE_URL = "https://genefoundry.org"
 AUDIENCE = f"{BASE_URL}/mcp"
@@ -47,6 +52,7 @@ def _client(client_id: str, *, name: str | None = None) -> OAuthClientInformatio
         client_id=client_id,
         client_name=name,
         redirect_uris=["https://connector.example/callback"],
+        scope="openid",
         token_endpoint_auth_method="none",  # noqa: S106 - OAuth method name
         grant_types=["authorization_code", "refresh_token"],
     )
@@ -274,7 +280,7 @@ async def test_metrics_observer_failure_cannot_replace_superclass_none(
         raise PermissionError("sensitive metrics detail")
 
     monkeypatch.setattr(OAuthProxy, "load_refresh_token", missing)
-    monkeypatch.setattr("genefoundry_router.oauth_proxy.record_refresh_metrics", metrics_failure)
+    monkeypatch.setattr("genefoundry_router.oauth_proxy.record_refresh_attempt", metrics_failure)
     try:
         assert await proxy.load_refresh_token(client, "opaque-refresh") is None
         assert proxy._refresh_inflight == {}
@@ -449,28 +455,74 @@ async def test_framework_and_instrumentation_logs_exclude_refresh_secrets(
         ledger.close()
 
 
-def test_authorize_route_records_only_safe_correlation_fields(tmp_path: Path) -> None:
+def test_invalid_authorize_requests_do_not_record_forced_reauthorization(
+    tmp_path: Path,
+) -> None:
     proxy, ledger = _proxy(tmp_path)
-    raw_client = "https://chatgpt.com/oauth/client?private=raw-query"
+    raw_client = "http://chatgpt.com/oauth/client?private=raw-query"
     raw_state = "raw-state-never-store"
     raw_pkce = "raw-pkce-never-store"
     app = Starlette(routes=proxy.get_routes(""))
     client = TestClient(app)
     try:
-        response = client.get(
+        unregistered = client.get(
             "/authorize",
             params={
                 "response_type": "code",
-                "client_id": raw_client,
-                "redirect_uri": "https://connector.example/callback?raw=redirect",
+                "client_id": "http://spoofed.example/client?private=unregistered",
+                "redirect_uri": "https://connector.example/callback",
                 "scope": "openid",
                 "state": raw_state,
                 "code_challenge": raw_pkce,
                 "code_challenge_method": "S256",
             },
-            headers={"X-Request-ID": "authorize-request"},
         )
-        assert response.status_code == 400
+        assert unregistered.status_code == 400
+
+        asyncio.run(proxy.register_client(_client(raw_client)))
+        invalid_redirect = client.get(
+            "/authorize",
+            params={
+                "response_type": "code",
+                "client_id": raw_client,
+                "redirect_uri": "https://attacker.example/callback",
+                "scope": "openid",
+                "state": raw_state,
+                "code_challenge": raw_pkce,
+                "code_challenge_method": "S256",
+            },
+        )
+        assert invalid_redirect.status_code == 400
+        with sqlite3.connect(ledger.path) as connection:
+            count = connection.execute(
+                "SELECT COUNT(*) FROM refresh_events WHERE event_type='authorize'"
+            ).fetchone()[0]
+        assert count == 0
+    finally:
+        ledger.close()
+
+
+def test_validated_authorize_start_records_only_safe_correlation_fields(tmp_path: Path) -> None:
+    proxy, ledger = _proxy(tmp_path)
+    raw_client = "http://chatgpt.com/oauth/client?private=raw-query"
+    raw_state = "raw-state-never-store"
+    raw_pkce = "raw-pkce-never-store"
+    asyncio.run(proxy.register_client(_client(raw_client)))
+    try:
+        response = TestClient(Starlette(routes=proxy.get_routes(""))).get(
+            "/authorize",
+            params={
+                "response_type": "code",
+                "client_id": raw_client,
+                "redirect_uri": "https://connector.example/callback",
+                "scope": "openid",
+                "state": raw_state,
+                "code_challenge": raw_pkce,
+                "code_challenge_method": "S256",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
         with sqlite3.connect(ledger.path) as connection:
             row = connection.execute(
                 """
@@ -480,14 +532,48 @@ def test_authorize_route_records_only_safe_correlation_fields(tmp_path: Path) ->
             ).fetchone()
             dump = "\n".join(connection.iterdump())
         assert row == (
-            "authorize-request",
+            "_unknown",
             "chatgpt",
             ledger.client_hmac(raw_client),
             "authorize",
             "started",
         )
-        for forbidden in (raw_client, "raw-query", raw_state, raw_pkce, "raw=redirect"):
+        for forbidden in (raw_client, "raw-query", raw_state, raw_pkce):
             assert forbidden not in dump
+    finally:
+        ledger.close()
+
+
+def test_unregistered_authorize_client_is_redacted_from_installed_handler_log(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    proxy, ledger = _proxy(tmp_path)
+    raw_client = "http://spoofed.example/oauth/client?private=never-log"
+    caplog.set_level(logging.INFO, logger="fastmcp.server.auth.handlers.authorize")
+    try:
+        response = TestClient(Starlette(routes=proxy.get_routes(""))).get(
+            "/authorize",
+            params={
+                "response_type": "code",
+                "client_id": raw_client,
+                "redirect_uri": "https://connector.example/callback",
+                "scope": "openid",
+                "state": "opaque-state",
+                "code_challenge": "challenge",
+                "code_challenge_method": "S256",
+            },
+            headers={"Accept": "application/json"},
+        )
+        assert response.status_code == 400
+        rendered = "\n".join(
+            record.getMessage()
+            for record in caplog.records
+            if record.name == "fastmcp.server.auth.handlers.authorize"
+        )
+        assert rendered
+        assert raw_client not in rendered
+        assert "private=never-log" not in rendered
+        assert "oauth detail omitted" in rendered.lower()
     finally:
         ledger.close()
 
@@ -508,6 +594,10 @@ def test_token_handler_early_scope_rejection_cleans_inflight_state(
 
     monkeypatch.setattr(OAuthProxy, "load_refresh_token", load_once)
     monkeypatch.setattr(OAuthProxy, "exchange_refresh_token", exchange_must_not_run)
+    before_attempts = OAUTH_REFRESH_ATTEMPTS.labels(client_class="other")._value.get()
+    before_failures = OAUTH_REFRESH_FAILURES.labels(
+        client_class="other", reason="local_rejected"
+    )._value.get()
     try:
         response = TestClient(Starlette(routes=proxy.get_routes(""))).post(
             "/token",
@@ -522,5 +612,157 @@ def test_token_handler_early_scope_rejection_cleans_inflight_state(
         assert response.json()["error"] == "invalid_scope"
         assert proxy._refresh_inflight == {}
         assert proxy._refresh_attempt.get() is None
+        snapshot = ledger.counter_snapshot()
+        assert snapshot.attempts == {"other": 1}
+        assert snapshot.successes == {}
+        assert snapshot.failures == {("other", "local_rejected"): 1}
+        with sqlite3.connect(ledger.path) as connection:
+            rows = connection.execute(
+                "SELECT outcome, reason FROM refresh_events WHERE event_type='refresh'"
+            ).fetchall()
+        assert rows == [("failure", "local_rejected")]
+        assert OAUTH_REFRESH_ATTEMPTS.labels(client_class="other")._value.get() == (
+            before_attempts + 1
+        )
+        assert OAUTH_REFRESH_FAILURES.labels(
+            client_class="other", reason="local_rejected"
+        )._value.get() == (before_failures + 1)
     finally:
+        ledger.close()
+
+
+@pytest.mark.asyncio
+async def test_refresh_attempt_is_counted_at_successful_load_boundary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    proxy, ledger = _proxy(tmp_path)
+    client = _client("opaque-client")
+    loaded = _refresh("loaded-refresh", client.client_id or "")
+
+    async def load_once(*_args: Any, **_kwargs: Any) -> RefreshToken:
+        return loaded
+
+    monkeypatch.setattr(OAuthProxy, "load_refresh_token", load_once)
+    before_attempts = OAUTH_REFRESH_ATTEMPTS.labels(client_class="other")._value.get()
+    try:
+        assert await proxy.load_refresh_token(client, loaded.token) == loaded
+        snapshot = ledger.counter_snapshot()
+        assert snapshot.attempts == {"other": 1}
+        assert snapshot.successes == {}
+        assert snapshot.failures == {}
+        with sqlite3.connect(ledger.path) as connection:
+            row = connection.execute(
+                "SELECT outcome, reason FROM refresh_events WHERE event_type='refresh'"
+            ).fetchone()
+        assert row == ("started", None)
+        assert OAUTH_REFRESH_ATTEMPTS.labels(client_class="other")._value.get() == (
+            before_attempts + 1
+        )
+    finally:
+        proxy._finish_abandoned_refresh_attempt()
+        ledger.close()
+
+
+@pytest.mark.asyncio
+async def test_recovered_observer_write_outage_makes_decision_window_incomplete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = 20 * 24 * 60 * 60
+    clock = FakeClock(now)
+    proxy, ledger = _proxy(tmp_path, clock=clock)
+    ledger.record_startup(version="0.8.0", at=now - 7 * 24 * 60 * 60)
+    for index in range(50):
+        ledger.record_event(
+            RefreshEvent(
+                at=now - 60 + index / 100,
+                request_id=f"baseline-{index}",
+                client_class="other",
+                client_hmac="f" * 64,
+                event_type="refresh",
+                outcome="success",
+            )
+        )
+    client = _client("opaque-client")
+
+    async def missing(*_args: Any, **_kwargs: Any) -> None:
+        return None
+
+    original_begin = ledger.begin_attempt
+
+    def unavailable(*_args: Any, **_kwargs: Any) -> int:
+        raise PermissionError("observer unavailable")
+
+    monkeypatch.setattr(OAuthProxy, "load_refresh_token", missing)
+    monkeypatch.setattr(ledger, "begin_attempt", unavailable)
+    assert await proxy.load_refresh_token(client, "unrecorded-refresh") is None
+
+    monkeypatch.setattr(ledger, "begin_attempt", original_begin)
+    clock.value += 10
+    ledger.record_event(
+        RefreshEvent(
+            at=clock(),
+            request_id="recovery-probe",
+            client_class="other",
+            client_hmac="f" * 64,
+            event_type="authorize",
+            outcome="started",
+        )
+    )
+    try:
+        report = ledger.report(clock())
+        assert report.attempts == 50
+        assert report.sample_status == "incomplete"
+        assert report.decision == "incomplete"
+        assert report.evidence_complete is False
+        assert report.incomplete_reasons == ("availability_gap",)
+        assert report.availability_gap_count == 1
+        assert report.availability_gap_seconds == pytest.approx(10)
+    finally:
+        ledger.close()
+
+
+@pytest.mark.asyncio
+async def test_over_cap_wal_is_incomplete_without_replacing_superclass_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = 22 * 24 * 60 * 60
+    clock = FakeClock(now)
+    proxy, ledger = _proxy(tmp_path, clock=clock)
+    ledger.record_startup(version="0.8.0", at=now - 7 * 24 * 60 * 60)
+    for index in range(50):
+        ledger.record_event(
+            RefreshEvent(
+                at=now - 60 + index / 100,
+                request_id=f"baseline-{index}",
+                client_class="other",
+                client_hmac="f" * 64,
+                event_type="refresh",
+                outcome="success",
+            )
+        )
+    reader = sqlite3.connect(ledger.path)
+    reader.execute("BEGIN")
+    reader.execute("SELECT COUNT(*) FROM refresh_events").fetchone()
+    ledger._db.execute("PRAGMA wal_autocheckpoint=0")
+    with ledger._db:
+        ledger._db.execute("CREATE TABLE wal_capacity_fixture (payload BLOB NOT NULL)")
+        ledger._db.execute(
+            "INSERT INTO wal_capacity_fixture VALUES (zeroblob(?))",
+            (MAX_WAL_BYTES + 4096,),
+        )
+    assert Path(f"{ledger.path}-wal").stat().st_size > MAX_WAL_BYTES
+
+    async def missing(*_args: Any, **_kwargs: Any) -> None:
+        return None
+
+    monkeypatch.setattr(OAuthProxy, "load_refresh_token", missing)
+    try:
+        assert await proxy.load_refresh_token(_client("opaque-client"), "over-cap-refresh") is None
+        report = ledger.report(clock())
+        assert report.sample_status == "incomplete"
+        assert report.decision == "incomplete"
+        assert "wal_over_cap" in report.incomplete_reasons
+    finally:
+        reader.close()
+        ledger.maintain(clock() + 1)
         ledger.close()

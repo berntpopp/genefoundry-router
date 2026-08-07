@@ -110,6 +110,19 @@ _RESTORED_REFRESH_SOURCES: set[str] = set()
 
 def record_refresh_metrics(client_class: str, outcome: str, reason: str | None = None) -> None:
     """Increment only closed-vocabulary refresh metrics."""
+    record_refresh_attempt(client_class)
+    record_refresh_outcome(client_class, outcome, reason)
+
+
+def record_refresh_attempt(client_class: str) -> None:
+    """Increment one bounded refresh-attempt denominator at load time."""
+    if client_class not in CLIENT_CLASSES:
+        raise ValueError("OAuth refresh client class is not bounded")
+    OAUTH_REFRESH_ATTEMPTS.labels(client_class=client_class).inc()
+
+
+def record_refresh_outcome(client_class: str, outcome: str, reason: str | None = None) -> None:
+    """Increment one terminal refresh outcome without duplicating its attempt."""
     if client_class not in CLIENT_CLASSES:
         raise ValueError("OAuth refresh client class is not bounded")
     if outcome not in {"success", "failure"}:
@@ -118,7 +131,6 @@ def record_refresh_metrics(client_class: str, outcome: str, reason: str | None =
         raise ValueError("OAuth refresh failure reason is not bounded")
     if outcome == "success" and reason is not None:
         raise ValueError("successful OAuth refresh must not carry a failure reason")
-    OAUTH_REFRESH_ATTEMPTS.labels(client_class=client_class).inc()
     if outcome == "success":
         OAUTH_REFRESH_SUCCESS.labels(client_class=client_class).inc()
     else:
@@ -178,6 +190,7 @@ _OAUTH_SENSITIVE_MARKERS = (
     "Forwarding to client callback",
     "Error in IdP callback handler:",
     "Failed to revoke token with upstream server",
+    "Unregistered client_id=",
 )
 _OAUTH_REDACTED_MESSAGE = "OAuth detail omitted (sensitive value redacted)."
 
@@ -201,12 +214,16 @@ _OAUTH_PRIVACY_FILTER = OAuthProxyPrivacyFilter()
 
 def install_oauth_proxy_privacy_filter() -> None:
     """Install the narrow source-level OAuth privacy filter idempotently."""
-    logger = logging.getLogger("fastmcp.server.auth.oauth_proxy.proxy")
-    if not any(isinstance(item, OAuthProxyPrivacyFilter) for item in logger.filters):
-        logger.addFilter(_OAUTH_PRIVACY_FILTER)
-    for handler in logger.handlers:
-        if not any(isinstance(item, OAuthProxyPrivacyFilter) for item in handler.filters):
-            handler.addFilter(_OAUTH_PRIVACY_FILTER)
+    for name in (
+        "fastmcp.server.auth.oauth_proxy.proxy",
+        "fastmcp.server.auth.handlers.authorize",
+    ):
+        logger = logging.getLogger(name)
+        if not any(isinstance(item, OAuthProxyPrivacyFilter) for item in logger.filters):
+            logger.addFilter(_OAUTH_PRIVACY_FILTER)
+        for handler in logger.handlers:
+            if not any(isinstance(item, OAuthProxyPrivacyFilter) for item in handler.filters):
+                handler.addFilter(_OAUTH_PRIVACY_FILTER)
 
 
 # Cached reachability for /health, keyed by namespace. Seeded from the live tool
