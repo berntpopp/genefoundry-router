@@ -114,10 +114,75 @@ def _install_resource_tolerance() -> None:
     _p._gf_resource_tolerant = True  # type: ignore[attr-defined]
 
 
+def _collapse_duplicate_slashes(url: str) -> str:
+    """``https://host//token`` -> ``https://host/token``.
+
+    Squeezes runs of ``/`` in the PATH component only. Everything else is returned
+    byte-for-byte: scheme, userinfo, host, port, query and fragment. Parsing rather than
+    string-squeezing matters — a naive whole-URL regex also rewrites credentials and any
+    nested URL in a query value, neither of which is ours to touch. A URL with no scheme or
+    no path is returned unchanged.
+    """
+    import re
+    from urllib.parse import urlsplit, urlunsplit
+
+    parts = urlsplit(url)
+    if not parts.scheme or not parts.path:
+        return url
+    return urlunsplit(parts._replace(path=re.sub(r"/{2,}", "/", parts.path)))
+
+
+def _install_client_assertion_audience_fix() -> None:
+    """Repair the ``aud`` FastMCP expects in a ``private_key_jwt`` client assertion.
+
+    INCIDENT 2026-08-07 — every ChatGPT connector login failed with "Beim Einrichten der
+    Verbindung ist etwas schiefgegangen"; Claude was unaffected.
+
+    ChatGPT's Client ID Metadata Document declares
+    ``token_endpoint_auth_method: private_key_jwt``, so it authenticates at ``/token`` with
+    an RFC 7523 assertion whose ``aud`` is the token endpoint we advertise in
+    ``/.well-known/oauth-authorization-server`` — ``https://genefoundry.org/token``.
+
+    FastMCP builds the expected audience as ``f"{self.base_url}/token"``
+    (``oauth_proxy/proxy.py``). ``base_url`` is a pydantic ``AnyHttpUrl``, and pydantic
+    normalises a bare origin to a TRAILING SLASH — so with GF_PUBLIC_BASE_URL at the root
+    origin (which it must be; the OAuth endpoints live at root) that f-string yields
+    ``https://genefoundry.org//token``, with a doubled slash. The assertion is then verified
+    by a ``JWTVerifier(audience="https://genefoundry.org//token")`` and every correctly
+    signed assertion is rejected as an audience mismatch -> ``Invalid JWT assertion`` ->
+    HTTP 401 ``invalid_client``.
+
+    Claude declares ``token_endpoint_auth_method: none`` and never walks this path, which is
+    why the outage looked client-specific. Any deployment whose ``base_url`` carries a path
+    is also unaffected — the trailing slash only appears for a bare origin.
+
+    Normalising the expected audience to the endpoint we actually advertise is the whole
+    fix. Idempotent. Remove once FastMCP joins the URL properly (upstream bug).
+    """
+    from fastmcp.server.auth import auth as _a
+
+    if getattr(_a, "_gf_assertion_audience_fixed", False):
+        return
+    cls = _a.PrivateKeyJWTClientAuthenticator
+    _orig_init = cls.__init__
+
+    def _init(self: Any, *args: Any, **kwargs: Any) -> None:
+        if "token_endpoint_url" in kwargs:
+            kwargs["token_endpoint_url"] = _collapse_duplicate_slashes(kwargs["token_endpoint_url"])
+        elif len(args) >= 3:  # pragma: no cover - FastMCP calls this by keyword
+            args = (*args[:2], _collapse_duplicate_slashes(args[2]), *args[3:])
+        _orig_init(self, *args, **kwargs)
+
+    cls.__init__ = _init  # type: ignore[method-assign]  # deliberate shim, see docstring
+    # Marker attribute for idempotency; dynamic, so it isn't in fastmcp's stubs.
+    _a._gf_assertion_audience_fixed = True  # type: ignore[attr-defined]
+
+
 def _build_oauth(settings: RouterSettings) -> Any:
     # R1.5: OAuthProxy.token_verifier is REQUIRED — so the JWT verifier inputs are
     # mandatory in oauth mode too (no None verifier). base_url MUST be the public URL.
     _install_resource_tolerance()
+    _install_client_assertion_audience_fix()
     required = {
         "GF_OAUTH_CLIENT_ID": settings.GF_OAUTH_CLIENT_ID,
         "GF_OAUTH_CLIENT_SECRET": settings.GF_OAUTH_CLIENT_SECRET,

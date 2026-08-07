@@ -2,6 +2,40 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.7.5] - 2026-08-07
+
+### Fixed
+
+- Accept `private_key_jwt` client assertions at the token endpoint we actually advertise.
+  Every ChatGPT connector login to `https://genefoundry.org/mcp` failed with
+  "Beim Einrichten der Verbindung ist etwas schiefgegangen"; Claude was unaffected, which
+  made the outage look client-specific rather than like the server-side URL-join bug it is.
+  ChatGPT's Client ID Metadata Document declares `token_endpoint_auth_method:
+  private_key_jwt`, so it authenticates at `/token` with an RFC 7523 assertion whose `aud`
+  is the endpoint published in `/.well-known/oauth-authorization-server` —
+  `https://genefoundry.org/token`. FastMCP derives the audience it checks against as
+  `f"{self.base_url}/token"`, and `base_url` is a pydantic `AnyHttpUrl`, which normalises a
+  bare origin to a **trailing slash**. At the root origin — which this deployment requires,
+  because `/authorize`, `/token` and `/register` live at root — that yields
+  `https://genefoundry.org//token`. Every correctly signed assertion was rejected as an
+  audience mismatch → `Invalid JWT assertion` → HTTP 401 `invalid_client`.
+  Clients declaring `token_endpoint_auth_method: none` (Claude) never walk the assertion
+  path and kept working throughout, masking the failure. Deployments whose `base_url`
+  carries a path are unaffected — the trailing slash only appears for a bare origin.
+  The defect is unchanged in the newest FastMCP (3.4.6 is byte-identical to 3.4.5 at the
+  offending line), so a dependency bump does not help; the shim stays until upstream joins
+  the URL properly. It sits beside `_install_resource_tolerance()` and follows the same
+  idempotent-monkeypatch pattern. The URL normaliser parses rather than regex-squeezing, so
+  credentials, ports, IPv6 hosts, query strings and fragments are returned byte-for-byte.
+
+### Security
+
+- `cryptography` 49.0.0 → 50.0.0 (CVE-2026-69247, HIGH). This was the sole *fixable*
+  HIGH/CRITICAL finding and it failed the `fixable-high-critical-v1` container policy, so
+  no image could be published until it was bumped. The remaining HIGH/CRITICAL findings in
+  the scan are unfixable Debian base-image CVEs with no upstream fix available and do not
+  trip the policy.
+
 ## [0.7.4] - 2026-07-30
 
 ### Fixed
