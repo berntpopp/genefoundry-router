@@ -53,6 +53,13 @@ release manifest records the multi-platform identities.
 
 ## OAuth refresh-rotation observation
 
+Production runs exactly one router process (`genefoundry-router run`) as declared by
+the image `CMD`; do not add Uvicorn/Gunicorn workers or mount the same ledger into a
+second writable router. The supported `refresh-report` command opens SQLite read-only
+and may run while the router is live. This single-writer invariant keeps ownership of
+in-flight refresh attempts unambiguous; local ownership expires after twice the stale
+attempt threshold, well beyond FastMCP's bounded upstream HTTP timeout.
+
 The production overlay stores `/data/genefoundry/refresh-observability.sqlite3` on the
 existing `fastmcp_data:/data` volume. Preserve that file with the OAuth state during deploys
 and rollbacks. The ledger is mode `0600`, bounded to 64 MiB plus an 8 MiB WAL, retains at

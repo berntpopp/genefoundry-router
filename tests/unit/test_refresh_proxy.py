@@ -12,8 +12,10 @@ from typing import Any
 
 import pytest
 from authlib.integrations.base_client.errors import OAuthError
+from authlib.integrations.httpx_client import AsyncOAuth2Client
 from fastapi.testclient import TestClient
 from fastmcp.server.auth import OAuthProxy
+from httpx import Request, Response
 from key_value.aio.stores.memory import MemoryStore
 from mcp.server.auth.provider import RefreshToken, TokenError
 from mcp.shared.auth import OAuthClientInformationFull, OAuthToken
@@ -128,6 +130,22 @@ def test_client_classification_is_bounded(
 
 def test_installed_fastmcp_refresh_contract_matches_instrumentation_seams() -> None:
     validate_fastmcp_refresh_contract()
+
+
+def test_authlib_httpx_invalid_grant_uses_classified_runtime_error() -> None:
+    client = AsyncOAuth2Client(client_id="router")
+    response = Response(
+        400,
+        json={"error": "invalid_grant", "error_description": "expired upstream refresh"},
+        request=Request("POST", "https://idp.example/token"),
+    )
+
+    with pytest.raises(OAuthError) as caught:
+        client.parse_response_token(response)
+    try:
+        raise TokenError("invalid_grant", "Provider wording may change") from caught.value
+    except TokenError as wrapped:
+        assert GeneFoundryOAuthProxy._exchange_failure_reason(wrapped) == ("upstream_invalid_grant")
 
 
 @pytest.mark.asyncio

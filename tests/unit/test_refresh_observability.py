@@ -1154,6 +1154,58 @@ def test_report_reconciles_stale_started_attempts_as_internal_failures(tmp_path:
         ledger.close()
 
 
+def test_abandoned_live_ownership_expires_and_reconciles(tmp_path: Path) -> None:
+    now = 70 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    try:
+        ledger.begin_attempt(
+            RefreshEvent(
+                at=now - 601,
+                request_id="abandoned-refresh",
+                client_class="other",
+                client_hmac="e" * 64,
+                event_type="refresh",
+                outcome="started",
+                token_hash_prefix="f" * 12,
+            )
+        )
+
+        assert ledger.heartbeat(now) is True
+        report = ledger.report(now)
+        assert report.failures_by_reason["internal_error"] == 1
+        assert "unterminated_attempts" not in report.incomplete_reasons
+    finally:
+        ledger.close()
+
+
+def test_begin_registers_ownership_before_post_write_maintenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = 70 * DAY
+    ledger = _observed_ledger(tmp_path, now, 7)
+    observed: list[int] = []
+
+    def inspect_ownership() -> None:
+        observed.append(len(ledger._active_attempt_ids))
+
+    monkeypatch.setattr(ledger, "_after_write", inspect_ownership)
+    try:
+        ledger.begin_attempt(
+            RefreshEvent(
+                at=now - 301,
+                request_id="live-refresh",
+                client_class="other",
+                client_hmac="e" * 64,
+                event_type="refresh",
+                outcome="started",
+                token_hash_prefix="f" * 12,
+            )
+        )
+        assert observed == [1]
+    finally:
+        ledger.close()
+
+
 def test_prune_rolls_back_stale_reconciliation_with_later_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

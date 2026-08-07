@@ -79,7 +79,7 @@ class RefreshLedger(RefreshLifecycleMixin):
         self._connection: sqlite3.Connection | None = None
         self._pending_gap: tuple[float, str] | None = None
         self._checkpoint_pending = False
-        self._active_attempt_ids: set[int] = set()
+        self._active_attempt_ids: dict[int, float] = {}
 
         try:
             self.path, created = prepare_refresh_sqlite_path(self.path)
@@ -202,7 +202,7 @@ class RefreshLedger(RefreshLifecycleMixin):
                     self._db,
                     now=at,
                     stale_seconds=REFRESH_ATTEMPT_STALE_SECONDS,
-                    excluded_event_ids=self._active_attempt_ids,
+                    excluded_event_ids=self._owned_attempt_ids(at),
                 )
             except (OSError, sqlite3.Error, RefreshLedgerError):
                 self.note_unavailable(at=at, reason="write_failure")
@@ -287,9 +287,9 @@ class RefreshLedger(RefreshLifecycleMixin):
                     event_id = cursor.lastrowid
             except sqlite3.Error as exc:
                 raise self._bounded_sqlite_error(exc) from exc
+            self._active_attempt_ids[event_id] = event.at
             self._after_write()
             self._mark_available(self._clock())
-            self._active_attempt_ids.add(event_id)
             return event_id
 
     def finish_attempt(
@@ -341,12 +341,12 @@ class RefreshLedger(RefreshLifecycleMixin):
                         assert reason is not None
                         self._increment_counter("failure", client_class, reason)
             except RefreshLedgerError:
-                self._active_attempt_ids.discard(event_id)
+                self._active_attempt_ids.pop(event_id, None)
                 raise
             except sqlite3.Error as exc:
-                self._active_attempt_ids.discard(event_id)
+                self._active_attempt_ids.pop(event_id, None)
                 raise self._bounded_sqlite_error(exc) from exc
-            self._active_attempt_ids.discard(event_id)
+            self._active_attempt_ids.pop(event_id, None)
             self._after_write()
             self._mark_available(self._clock())
 
@@ -470,7 +470,7 @@ class RefreshLedger(RefreshLifecycleMixin):
                         self._db,
                         now=now,
                         stale_seconds=REFRESH_ATTEMPT_STALE_SECONDS,
-                        excluded_event_ids=self._active_attempt_ids,
+                        excluded_event_ids=self._owned_attempt_ids(now),
                     )
                     self._db.execute("DELETE FROM refresh_events WHERE at < ?", (cutoff,))
                     self._db.execute(
@@ -504,6 +504,13 @@ class RefreshLedger(RefreshLifecycleMixin):
 
     def _enforce_event_row_cap(self) -> None:
         enforce_event_row_cap(self._db, max_rows=MAX_EVENT_ROWS)
+
+    def _owned_attempt_ids(self, now: float) -> tuple[int, ...]:
+        cutoff = now - 2 * REFRESH_ATTEMPT_STALE_SECONDS
+        expired = [key for key, started in self._active_attempt_ids.items() if started <= cutoff]
+        for event_id in expired:
+            self._active_attempt_ids.pop(event_id, None)
+        return tuple(self._active_attempt_ids)
 
     def _check_database_capacity(self) -> None:
         try:
