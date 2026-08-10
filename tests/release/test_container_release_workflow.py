@@ -24,7 +24,7 @@ ACTION_PINS = {
     "anchore/sbom-action": "e22c389904149dbc22b58101806040fa8d37a610",
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
     "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
-    "docker/login-action": "af1e73f918a031802d376d3c8bbc3fe56130a9b0",
+    "docker/login-action": "dbcb813823bdd20940b903addbd779551569679f",
     "actions/attest-build-provenance": "0f67c3f4856b2e3261c31976d6725780e5e4c373",
     "actions/attest-sbom": "c604332985a26aa8cf1bdc465b92731239ec6b9e",
 }
