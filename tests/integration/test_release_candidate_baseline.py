@@ -13,14 +13,14 @@ RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 
-# fleet-2026-08-07-remediation. Updating these four hashes is the act of adopting a new reviewed fleet;
-# they must only ever move in the same commit that regenerates the evidence set from a live
-# fleet, never to make a failing check pass.
+# fleet-2026-08-10-dependency-remediation. Updating these four hashes is the act of adopting a new
+# reviewed fleet; they must only ever move in the same commit that regenerates the evidence set from
+# a live fleet, never to make a failing check pass.
 HISTORICAL_EVIDENCE_SHA256 = {
-    APPLICATION_RELEASES: "a77df0bdf651861425c6cbd822bdc49a9d22b0750e8b9b417583aa03f46fbb26",
-    RELEASE_INVENTORY: "496edf227550af9d17de3eb15dd2de4b6124e603948dd92fe097997b377445a1",
-    RELEASE_CANDIDATE: "72f6bd99058e6083f804e55321466fc0dfedc818c281713d51850f26fe12448f",
-    BASELINE: "72f6bd99058e6083f804e55321466fc0dfedc818c281713d51850f26fe12448f",
+    APPLICATION_RELEASES: "a21567cfd9a3ce447e1a47f782ecb92533479b4c37893a861d843c7adfd28667",
+    RELEASE_INVENTORY: "375f88eedc1bcd1e6b7e4a7c8d56e07aa6e5b7c845cdabf275ff13506a70dd53",
+    RELEASE_CANDIDATE: "09a664796739812bf103dc79460bd3dae9c02230b9971098911d2102f75dd686",
+    BASELINE: "09a664796739812bf103dc79460bd3dae9c02230b9971098911d2102f75dd686",
 }
 
 

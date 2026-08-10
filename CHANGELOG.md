@@ -2,6 +2,22 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.8.2] - 2026-08-10
+
+### Changed
+
+- Re-pin the drift baseline to `fleet-2026-08-10-dependency-remediation`. All 21
+  backends were re-released to land their accumulated Dependabot updates, so every
+  image digest and source revision moved and the packaged baseline no longer
+  described the running fleet. Regenerated the whole evidence set from the live
+  fleet with `make release-candidate` + `make snapshot-baseline`, both of which
+  fail closed on any digest mismatch, so this cannot launder a backend that was
+  not released.
+- Reviewed the tool contract rather than trusting the digests: 272 tools across 21
+  namespaces before and after, **none added, none removed, none changed**. These
+  were dependency and CI releases; they do not touch the MCP surface, which is why
+  no tool was quarantined while the backends rolled out.
+
 ## [0.8.1] - 2026-08-10
 
 ### Security
