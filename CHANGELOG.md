@@ -2,6 +2,18 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.8.1] - 2026-08-10
+
+### Security
+
+- Publish the tested dependency and CI maintenance sweep with refreshed pinned
+  CodeQL and Docker login actions and patched runtime dependencies.
+
+### Changed
+
+- Update Uvicorn, Typer, Ruff, and the locked dependency set without changing
+  the router API or fleet contract.
+
 ## [0.8.0] - 2026-08-07
 
 ### Fixed
