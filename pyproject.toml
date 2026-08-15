@@ -53,7 +53,7 @@ dev = [
     "types-pyyaml>=6.0.12.20260724,<7.0.0",
     "ruff>=0.16.1,<1.0.0",
     "mypy>=2.3.0,<3.0.0",
-    "pre-commit>=4.6.1,<5.0.0",
+    "pre-commit>=4.6.2,<5.0.0",
 ]
 
 [project.scripts]
