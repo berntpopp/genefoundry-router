@@ -39,8 +39,9 @@ MAIN_RULESET_DETAIL = {
                 "automatic_copilot_code_review_enabled": False,
                 "dismiss_stale_reviews_on_push": False,
                 "require_code_owner_review": False,
+                "require_extra_approval_for_unattributed_changes": True,
                 "require_last_push_approval": False,
-                "required_approving_review_count": 1,
+                "required_approving_review_count": 0,
                 "required_review_thread_resolution": False,
                 "required_reviewers": [],
             },
@@ -85,7 +86,7 @@ def test_row_is_verified_when_every_control_is_proven(monkeypatch: pytest.Monkey
         "active": True,
         "targets_main": True,
         "requires_pull_request": True,
-        "required_approving_review_count": 1,
+        "required_approving_review_count": 0,
         "blocks_force_pushes": True,
         "blocks_deletions": True,
         "bypass_actors": [],
@@ -178,7 +179,7 @@ def test_main_branch_ruleset_probe_returns_exact_verified_model(
 
     assert control is not None
     assert control["bypass_actors"] == []
-    assert control["required_approving_review_count"] == 1
+    assert control["required_approving_review_count"] == 0
     for field in (
         "active",
         "targets_main",
@@ -426,6 +427,55 @@ def test_main_branch_ruleset_probe_rejects_json_type_coercion(
     parameters = {
         **MAIN_RULESET_DETAIL["rules"][-1]["parameters"],
         parameter: value,
+    }
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [
+            *MAIN_RULESET_DETAIL["rules"][:-1],
+            {"type": "pull_request", "parameters": parameters},
+        ],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+@pytest.mark.parametrize(
+    ("parameter", "value"),
+    [
+        ("require_extra_approval_for_unattributed_changes", False),
+        ("require_extra_approval_for_unattributed_changes", 0),
+        ("require_extra_approval_for_unattributed_changes", 1),
+        ("require_extra_approval_for_unattributed_changes", "true"),
+        ("require_extra_approval_for_unattributed_changes", None),
+        ("unknown_unattributed_changes_parameter", True),
+    ],
+)
+def test_main_branch_ruleset_probe_rejects_weakened_or_unmodeled_unattributed_change_policy(
+    monkeypatch: pytest.MonkeyPatch, parameter: str, value: object
+) -> None:
+    parameters = {
+        **MAIN_RULESET_DETAIL["rules"][-1]["parameters"],
+        parameter: value,
+    }
+    detail = {
+        **MAIN_RULESET_DETAIL,
+        "rules": [
+            *MAIN_RULESET_DETAIL["rules"][:-1],
+            {"type": "pull_request", "parameters": parameters},
+        ],
+    }
+    _install_api(monkeypatch, {f"repos/{REPO}/rulesets/2": detail})
+
+    assert audit.probe_main_branch_ruleset(REPO) is None
+
+
+def test_main_branch_ruleset_probe_rejects_one_approval_for_one_maintainer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parameters = {
+        **MAIN_RULESET_DETAIL["rules"][-1]["parameters"],
+        "required_approving_review_count": 1,
     }
     detail = {
         **MAIN_RULESET_DETAIL,

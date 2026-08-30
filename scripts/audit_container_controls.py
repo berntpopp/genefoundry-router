@@ -38,6 +38,7 @@ MAIN_BRANCH_RULE_TYPES = frozenset({"deletion", "non_fast_forward", "pull_reques
 MAIN_PULL_REQUEST_PARAMETER_VALUES: dict[str, Any] = {
     "dismiss_stale_reviews_on_push": False,
     "require_code_owner_review": False,
+    "require_extra_approval_for_unattributed_changes": True,
     "require_last_push_approval": False,
     "required_review_thread_resolution": False,
 }
@@ -49,16 +50,9 @@ MAIN_PULL_REQUEST_PARAMETER_VALUES: dict[str, Any] = {
 MAIN_PULL_REQUEST_OPTIONAL_VALUES: dict[str, Any] = {
     "automatic_copilot_code_review_enabled": False,
 }
-# The approval count is the one parameter this probe does NOT pin to a single value.
-# Requiring exactly 1 encodes an assumption the fleet does not meet: GitHub forbids
-# self-approval, so on a single-maintainer repository a 1-approval rule with no bypass
-# actor makes `main` permanently unmergeable — including the commit that seals the
-# regenerated ledger. That is why the ruleset was never created and the release gate has
-# been failing closed since 2026-07-20. Accept 0 or 1 so the control can actually exist.
-# Everything the control is really for still holds: the ruleset must be active, scoped to
-# main alone, carry no bypass actors, block deletions and force-pushes, and route all
-# changes through a pull request. Only the second-human requirement is optional.
-MAIN_PULL_REQUEST_APPROVAL_COUNTS = frozenset({0, 1})
+# Pin the approval count to the fleet's current one-maintainer policy. GitHub forbids
+# self-approval, so requiring 1 with no bypass actor would make `main` unmergeable.
+MAIN_PULL_REQUEST_APPROVAL_COUNTS = frozenset({0})
 MAIN_PULL_REQUEST_PARAMETER_KEYS = frozenset(
     {
         *MAIN_PULL_REQUEST_PARAMETER_VALUES,

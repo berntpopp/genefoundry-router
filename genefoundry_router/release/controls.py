@@ -71,12 +71,9 @@ class MainBranchRulesetControl(_StrictModel):
     active: bool
     targets_main: bool
     requires_pull_request: bool
-    # 0 or 1 only. Requiring exactly 1 assumed two maintainers: GitHub forbids
-    # self-approval, so a 1-approval rule with no bypass actor makes `main` permanently
-    # unmergeable on a single-maintainer repository — which is why this ruleset was never
-    # created and the release gate failed closed from 2026-07-20. A higher count is still
-    # rejected, because it would be evidence of a policy this fleet does not operate.
-    required_approving_review_count: Literal[0, 1]
+    # Exactly 0 for the current one-maintainer policy. GitHub forbids self-approval, so
+    # requiring 1 with no bypass actor would make `main` unmergeable.
+    required_approving_review_count: Literal[0]
     blocks_force_pushes: bool
     blocks_deletions: bool
     bypass_actors: list[Annotated[str, Field(min_length=1, max_length=100)]]
@@ -85,8 +82,8 @@ class MainBranchRulesetControl(_StrictModel):
     @field_validator("required_approving_review_count", mode="before")
     @classmethod
     def _approval_count_is_an_integer(cls, value: object) -> object:
-        if not isinstance(value, int) or isinstance(value, bool):
-            raise ValueError("approval count must be the integer zero or one")
+        if type(value) is not int:
+            raise ValueError("approval count must be the integer zero")
         return value
 
 

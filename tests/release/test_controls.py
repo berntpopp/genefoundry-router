@@ -33,7 +33,7 @@ def _main_rule() -> dict[str, object]:
         "active": True,
         "targets_main": True,
         "requires_pull_request": True,
-        "required_approving_review_count": 1,
+        "required_approving_review_count": 0,
         "blocks_force_pushes": True,
         "blocks_deletions": True,
         "bypass_actors": [],
@@ -95,23 +95,23 @@ def _ledger(repositories: set[str]) -> dict[str, object]:
     }
 
 
-@pytest.mark.parametrize("approvals", [0, 1])
-def test_main_branch_control_accepts_zero_or_one_required_approvals(approvals: int) -> None:
-    """A solo maintainer must be able to satisfy this control.
-
-    GitHub forbids self-approval, so requiring exactly 1 approval with no bypass actor makes
-    `main` permanently unmergeable on a single-maintainer repository — including the commit
-    that seals the regenerated ledger. Demanding it is why the ruleset was never created and
-    the release gate failed closed from 2026-07-20. Everything else the control proves is
-    unchanged; only the second-human requirement is optional. See the companion case in
-    `test_trusted_builder_main_branch_control_fails_closed`, where 2 is still rejected.
-    """
+def test_main_branch_control_accepts_zero_required_approvals_for_one_maintainer() -> None:
     router = "berntpopp/genefoundry-router"
     payload = _ledger({router})
     row = payload["repositories"][router]  # type: ignore[index]
-    row["main_branch_ruleset"]["required_approving_review_count"] = approvals  # type: ignore[index]
+    row["main_branch_ruleset"]["required_approving_review_count"] = 0  # type: ignore[index]
 
     require_compliant_controls(load_control_ledger(payload), {router})
+
+
+def test_main_branch_control_rejects_one_required_approval_for_one_maintainer() -> None:
+    router = "berntpopp/genefoundry-router"
+    payload = _ledger({router})
+    row = payload["repositories"][router]  # type: ignore[index]
+    row["main_branch_ruleset"]["required_approving_review_count"] = 1  # type: ignore[index]
+
+    with pytest.raises(ControlLedgerError, match="invalid control ledger"):
+        load_control_ledger(payload)
 
 
 def test_only_the_trusted_builder_requires_the_main_branch_rule() -> None:
