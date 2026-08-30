@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from genefoundry_router.release.controls import load_control_ledger, require_compliant_controls
 from scripts import audit_container_controls as audit
 
 REPO = "berntpopp/genefoundry-router"
@@ -74,30 +74,35 @@ def _install_anonymous_pull(monkeypatch: pytest.MonkeyPatch, status: int) -> Non
     monkeypatch.setattr(audit, "_anonymous_manifest_status", lambda repo: status)
 
 
-def test_row_is_verified_when_every_control_is_proven(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_anonymous_pull_cannot_verify_unobservable_package_controls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _install_api(monkeypatch)
     _install_anonymous_pull(monkeypatch, 200)
 
     row = audit.build_row(REPO, role="trusted-builder")
 
-    assert row["status"] == "verified"
-    assert row["role"] == "trusted-builder"
-    assert row["main_branch_ruleset"] == {
-        "active": True,
-        "targets_main": True,
-        "requires_pull_request": True,
-        "required_approving_review_count": 0,
-        "blocks_force_pushes": True,
-        "blocks_deletions": True,
-        "bypass_actors": [],
-        "evidence": row["main_branch_ruleset"]["evidence"],
-    }
-    assert row["package"]["anonymous_pull"] is True
-    assert row["package"]["standing_package_pat"] is False
-    ledger = load_control_ledger(
-        {"schema_version": 1, "reviewed_at": audit._now(), "repositories": {REPO: row}}
-    )
-    require_compliant_controls(ledger, {REPO})
+    assert row["status"] == "unavailable"
+    for control in (
+        "package linkage",
+        "GITHUB_TOKEN publication",
+        "standing package PAT",
+        "retention",
+    ):
+        assert control in row["reason"]
+
+
+def test_unattended_run_does_not_manufacture_reviewer_or_retention_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_api(monkeypatch)
+    _install_anonymous_pull(monkeypatch, 200)
+
+    row = audit.build_row(REPO, role="backend")
+
+    assert row["status"] == "unavailable"
+    assert "retention" not in row
+    assert "reviewer" not in json.dumps(row)
 
 
 @pytest.mark.parametrize(
@@ -145,7 +150,9 @@ def test_unproven_control_blocks_the_release(
 
     assert row["status"] == "unavailable"
     assert control in row["reason"]
-    assert row["evidence"]["reviewer"] == audit.REVIEWER
+    assert row["evidence"]["status"] == "unavailable"
+    assert row["evidence"]["source"] == "api"
+    assert "reviewer" not in row["evidence"]
 
 
 def test_private_package_is_never_auto_passed(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -539,8 +546,7 @@ def test_backend_row_never_probes_or_includes_main_ruleset(
 
     row = audit.build_row(REPO, role="backend")
 
-    assert row["status"] == "verified"
-    assert row["role"] == "backend"
+    assert row["status"] == "unavailable"
     assert "main_branch_ruleset" not in row
 
 

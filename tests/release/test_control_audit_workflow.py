@@ -13,7 +13,8 @@ CHECKOUT_ACTION = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 SETUP_UV_ACTION = "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d"
 APP_TOKEN_ACTION = "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"  # noqa: S105 - action identifier
 UPLOAD_ACTION = "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
-LIVE_LEDGER = "$RUNNER_TEMP/container-controls.json"
+SHELL_LEDGER = "$RUNNER_TEMP/container-controls.json"
+ARTIFACT_LEDGER = "${{ runner.temp }}/container-controls.json"
 REPOSITORIES = (
     "autopvs1-link",
     "clingen-link",
@@ -118,11 +119,11 @@ def test_live_probe_is_strictly_validated_before_success_only_upload() -> None:
     assert steps[probe_index] == {
         "name": "Probe live controls",
         "env": {"GH_TOKEN": "${{ steps.app-token.outputs.token }}"},
-        "run": f'uv run python scripts/audit_container_controls.py --ledger "{LIVE_LEDGER}"',
+        "run": f'uv run python scripts/audit_container_controls.py --ledger "{SHELL_LEDGER}"',
     }
     assert steps[validate_index] == {
         "name": "Validate live ledger",
-        "run": f'uv run python scripts/validate_container_controls.py "{LIVE_LEDGER}"',
+        "run": f'uv run python scripts/validate_container_controls.py "{SHELL_LEDGER}"',
     }
     assert steps[upload_index] == {
         "name": "Upload verified live ledger",
@@ -130,7 +131,8 @@ def test_live_probe_is_strictly_validated_before_success_only_upload() -> None:
         "uses": UPLOAD_ACTION,
         "with": {
             "name": "container-controls-live",
-            "path": LIVE_LEDGER,
+            "path": ARTIFACT_LEDGER,
+            "if-no-files-found": "error",
             "retention-days": 30,
         },
     }

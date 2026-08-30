@@ -1,12 +1,15 @@
 """Probe live GitHub/GHCR release controls and emit the fleet control ledger.
 
-Every hard control is probed against the live API. A probe that cannot be proven
-emits an ``unavailable`` row naming the exact control, which keeps the release
-gate closed; no control is ever auto-passed from absence of evidence.
+Every observable repository control is probed against the live API. Any hard
+control that cannot be proven emits an ``unavailable`` row naming the exact
+control, which keeps the release gate closed; no control is ever auto-passed
+from absence of evidence.
 
-Anonymous pull is proven from an unauthenticated registry request, which is the
-strongest available evidence that a package exists and is publicly readable --
-and it needs no token scope, so the audit works from a least-privilege session.
+Anonymous pull is probed from an unauthenticated registry request. That proves
+public pullability only: it cannot establish repository linkage, which credential
+published the package, the absence of a standing package PAT, or retention. Those
+hard controls remain unavailable until separately authenticated/manual evidence is
+designed and supplied.
 """
 
 from __future__ import annotations
@@ -29,7 +32,6 @@ from genefoundry_router.release.controls import (
     router_repository,
 )
 
-REVIEWER = "bernt-popp"
 RULESET_NAME = "Protect semantic release tags"
 REQUIRED_RULES = frozenset({"creation", "update", "deletion", "non_fast_forward"})
 MAIN_RULESET_NAME = "Protect trusted-builder main"
@@ -157,17 +159,6 @@ def _api_evidence(url: str, reason: str) -> JsonDict:
         "source": "api",
         "url": url,
         "verified_at": _now(),
-        "reason": reason,
-    }
-
-
-def _manual_evidence(url: str, reason: str) -> JsonDict:
-    return {
-        "status": "verified",
-        "source": "manual",
-        "url": url,
-        "verified_at": _now(),
-        "reviewer": REVIEWER,
         "reason": reason,
     }
 
@@ -332,13 +323,13 @@ def _anonymous_manifest_status(repo: str) -> int:
     """Return the HTTP status of an unauthenticated GHCR manifest read."""
     token_url = f"https://ghcr.io/token?service=ghcr.io&scope=repository:{repo}:pull"
     try:
-        with urllib.request.urlopen(token_url, timeout=30) as response:  # noqa: S310
+        with urllib.request.urlopen(token_url, timeout=30) as response:
             token = json.loads(response.read()).get("token")
     except (urllib.error.URLError, json.JSONDecodeError, TimeoutError, OSError):
         return 0
     if not token:
         return 0
-    request = urllib.request.Request(  # noqa: S310
+    request = urllib.request.Request(
         f"https://ghcr.io/v2/{repo}/manifests/{BOOTSTRAP_TAG}",
         headers={"Authorization": f"Bearer {token}", "Accept": MANIFEST_ACCEPT},
     )
@@ -351,82 +342,44 @@ def _anonymous_manifest_status(repo: str) -> int:
         return 0
 
 
-def probe_package(repo: str) -> JsonDict | None:
-    """Prove a public, repository-linked GHCR package that pulls anonymously."""
-    status = _anonymous_manifest_status(repo)
-    if status != 200:
-        return None
-    return {
-        "name": f"ghcr.io/{repo.lower()}",
-        "visibility": "public",
-        "linked_repository": repo,
-        "anonymous_pull": True,
-        "standing_package_pat": False,
-        "evidence": _api_evidence(
-            f"https://ghcr.io/v2/{repo}/manifests/{BOOTSTRAP_TAG}",
-            (
-                "Unauthenticated GHCR token and manifest read returned 200, proving the package "
-                "exists and is publicly readable. Published by the repository GITHUB_TOKEN, which "
-                "links it to its source repository; no standing package PAT exists."
-            ),
-        ),
-    }
-
-
-def probe_retention(repo: str) -> JsonDict:
-    """Attest that no automated package deletion is configured."""
-    return {
-        "released_digests": True,
-        "deployed_digests": True,
-        "rollback_digests": True,
-        "automated_deletion": False,
-        "evidence": _manual_evidence(
-            f"https://github.com/{repo}/settings",
-            "No package retention automation is configured; released, deployed, and rollback "
-            "digests are preserved.",
-        ),
-    }
-
-
 def build_row(repo: str, role: Literal["trusted-builder", "backend"]) -> JsonDict:
-    """Return a verified row, or an unavailable row naming the exact failed control."""
+    """Return an unavailable row naming every unproven hard control.
+
+    The current App scope proves repository controls but has no authenticated package
+    evidence. Even a successful anonymous manifest read cannot complete the package or
+    retention model, so an unattended audit must remain fail-closed.
+    """
     probes = {
         "tag_ruleset": probe_tag_ruleset(repo),
         "release_environment": probe_release_environment(repo),
         "immutable_releases": probe_immutable_releases(repo),
-        "package": probe_package(repo),
     }
     if role == "trusted-builder":
         probes["main_branch_ruleset"] = probe_main_branch_ruleset(repo)
     missing = sorted(name for name, value in probes.items() if value is None)
-    if missing:
-        reason = f"unproven hard controls: {', '.join(missing)}"
-        return {
-            "status": "unavailable",
-            "repository": repo,
-            "reason": reason,
-            "evidence": {
-                "status": "unavailable",
-                "source": "manual",
-                "url": f"https://github.com/{repo}/settings",
-                "verified_at": _now(),
-                "reviewer": REVIEWER,
-                "reason": reason,
-            },
-        }
-    row = {
-        "status": "verified",
+    if _anonymous_manifest_status(repo) != 200:
+        missing.append("anonymous package pull")
+    missing.extend(
+        (
+            "package linkage",
+            "GITHUB_TOKEN publication",
+            "standing package PAT absence",
+            "retention",
+        )
+    )
+    reason = f"unproven hard controls: {', '.join(missing)}"
+    return {
+        "status": "unavailable",
         "repository": repo,
-        "role": role,
-        "tag_ruleset": probes["tag_ruleset"],
-        "release_environment": probes["release_environment"],
-        "immutable_releases": probes["immutable_releases"],
-        "package": probes["package"],
-        "retention": probe_retention(repo),
+        "reason": reason,
+        "evidence": {
+            "status": "unavailable",
+            "source": "api",
+            "url": f"https://github.com/{repo}/pkgs/container/{repo.rsplit('/', 1)[-1]}",
+            "verified_at": _now(),
+            "reason": reason,
+        },
     }
-    if role == "trusted-builder":
-        row["main_branch_ruleset"] = probes["main_branch_ruleset"]
-    return row
 
 
 def build_ledger(repositories: set[str]) -> JsonDict:

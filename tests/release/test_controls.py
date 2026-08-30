@@ -381,7 +381,7 @@ def test_validate_controls_cli_rejects_malformed_json(tmp_path: Path) -> None:
     assert "control ledger is not compliant" in completed.stderr
 
 
-def test_validate_controls_cli_rejects_noncompliant_or_inexact_fleet(tmp_path: Path) -> None:
+def test_validate_controls_cli_rejects_inexact_fleet(tmp_path: Path) -> None:
     repositories = expected_fleet_repositories(ROOT / "servers.yaml")
     payload = _ledger(repositories)
     rows = payload["repositories"]
@@ -394,6 +394,22 @@ def test_validate_controls_cli_rejects_noncompliant_or_inexact_fleet(tmp_path: P
 
     assert completed.returncode == 1
     assert "exactly cover" in completed.stderr
+
+
+def test_validate_controls_cli_rejects_exact_fleet_with_noncompliant_hard_control(
+    tmp_path: Path,
+) -> None:
+    repositories = expected_fleet_repositories(ROOT / "servers.yaml")
+    payload = _ledger(repositories)
+    row = payload["repositories"]["berntpopp/gnomad-link"]  # type: ignore[index]
+    row["package"]["standing_package_pat"] = True  # type: ignore[index]
+    ledger = tmp_path / "container-controls.json"
+    ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    completed = _run_validator(ledger)
+
+    assert completed.returncode == 1
+    assert "standing package PAT" in completed.stderr
 
 
 def test_release_candidate_make_target_requires_release_manifests() -> None:
