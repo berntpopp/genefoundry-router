@@ -125,7 +125,9 @@ A consistent, audited hardening baseline across the fleet is exactly such a meas
 25. **Logs carry no PII / no query payloads.** Log the correlation/request id, tool name, and
     timings — never the variant coordinates, phenotype text, or free-text query that may be
     patient-derived (Logging Standard §3; GDPR data-minimisation).
-26. Set an explicit `restart:` policy (`on-failure` or `unless-stopped`).
+26. Long-lived application and database serving services MUST use exactly
+    `restart: unless-stopped`; one-shot init/build roles MUST use exactly `restart: "no"` and
+    must not be turned into daemons.
 
 ### 8. Supply chain & CVE management
 

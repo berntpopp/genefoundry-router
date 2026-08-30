@@ -31,7 +31,7 @@ def rendered() -> dict[str, object]:
             "app": {
                 "image": _DIGEST,
                 "pull_policy": "missing",
-                "restart": "on-failure",
+                "restart": "unless-stopped",
                 "read_only": True,
                 "init": True,
                 "expose": ["8000"],
@@ -363,7 +363,7 @@ def test_expected_project_is_overrideable(rendered: dict[str, object]) -> None:
         ("pull_policy", None),
         ("pull_policy", "always"),
         ("restart", None),
-        ("restart", "unless-stopped"),
+        ("restart", "always"),
         ("restart", 7),
         ("restart", {}),
     ],
@@ -377,6 +377,14 @@ def test_pull_and_restart_are_closed(
         rendered["services"]["app"][field] = value
 
     assert f"services.app.{field}" in " ".join(validate_compose(rendered, "app"))
+
+
+def test_default_policy_rejects_on_failure_for_a_serving_application(
+    rendered: dict[str, object],
+) -> None:
+    rendered["services"]["app"]["restart"] = "on-failure"
+
+    assert "services.app.restart" in " ".join(validate_compose(rendered, "app"))
 
 
 @pytest.mark.parametrize(

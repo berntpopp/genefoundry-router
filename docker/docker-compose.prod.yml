@@ -36,7 +36,7 @@ services:
           memory: 1G
           cpus: "1.0"
           pids: 256
-    restart: on-failure
+    restart: unless-stopped
     logging:
       driver: json-file
       options:

@@ -30,7 +30,7 @@ def valid_render() -> dict[str, object]:
             "genefoundry": {
                 "image": IMAGE,
                 "pull_policy": "missing",
-                "restart": "on-failure",
+                "restart": "unless-stopped",
                 "read_only": True,
                 "init": True,
                 "expose": ["8000"],
@@ -481,6 +481,7 @@ def test_real_production_overlay_resets_development_build_and_ports() -> None:
     assert not service.get("ports")
     assert service["image"] == IMAGE
     assert service["init"] is True
+    assert service["restart"] == "unless-stopped"
     assert service["expose"] == ["8000"]
     assert service["pull_policy"] == "missing"
     assert service["environment"]["GF_REFRESH_OBSERVABILITY_DB"] == (

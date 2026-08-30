@@ -28,7 +28,7 @@ def rendered() -> dict[str, object]:
             "app": {
                 "image": _IMAGE,
                 "pull_policy": "missing",
-                "restart": "on-failure",
+                "restart": "unless-stopped",
                 "read_only": True,
                 "init": True,
                 "expose": ["8000"],
