@@ -2,6 +2,21 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## Unreleased
+
+### Security
+
+- Refresh both Python 3.14 container stages to the same reviewed multi-platform index and
+  consolidate the current pinned GitHub Actions updates, including paired CodeQL phases.
+- Replace the long-lived control-audit credential with a short-lived GitHub App token scoped
+  to the exact 22-repository fleet and Metadata/Administration read access. Successful live
+  ledgers are strictly validated before retention as workflow artifacts.
+
+### Changed
+
+- Update FastMCP to 3.4.7, pydantic-settings to 2.15.0, pre-commit to 4.6.2, mypy to
+  2.3.1, and Ruff to 0.16.3 in the reviewed dependency graph.
+
 ## [0.8.2] - 2026-08-10
 
 ### Changed

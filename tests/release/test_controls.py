@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import copy
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -14,6 +17,19 @@ from genefoundry_router.release.controls import (
     load_control_ledger,
     require_compliant_controls,
 )
+
+ROOT = Path(__file__).resolve().parents[2]
+VALIDATE_CONTROLS = ROOT / "scripts/validate_container_controls.py"
+
+
+def _run_validator(ledger: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(  # noqa: S603 - fixed interpreter and repository-owned script
+        [sys.executable, str(VALIDATE_CONTROLS), str(ledger)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 def _evidence(source: str = "api") -> dict[str, object]:
@@ -342,6 +358,42 @@ def test_checked_in_ledger_covers_every_repository_and_is_release_ready() -> Non
 
     assert set(ledger.repositories) == repositories
     require_compliant_controls(ledger, repositories)
+
+
+def test_validate_controls_cli_accepts_an_exact_compliant_fleet(tmp_path: Path) -> None:
+    repositories = expected_fleet_repositories(ROOT / "servers.yaml")
+    ledger = tmp_path / "container-controls.json"
+    ledger.write_text(json.dumps(_ledger(repositories)), encoding="utf-8")
+
+    completed = _run_validator(ledger)
+
+    assert completed.returncode == 0, completed.stderr
+    assert "validated 22 compliant repository controls" in completed.stdout
+
+
+def test_validate_controls_cli_rejects_malformed_json(tmp_path: Path) -> None:
+    ledger = tmp_path / "container-controls.json"
+    ledger.write_text("not json\n", encoding="utf-8")
+
+    completed = _run_validator(ledger)
+
+    assert completed.returncode == 1
+    assert "control ledger is not compliant" in completed.stderr
+
+
+def test_validate_controls_cli_rejects_noncompliant_or_inexact_fleet(tmp_path: Path) -> None:
+    repositories = expected_fleet_repositories(ROOT / "servers.yaml")
+    payload = _ledger(repositories)
+    rows = payload["repositories"]
+    assert isinstance(rows, dict)
+    rows.pop("berntpopp/gnomad-link")
+    ledger = tmp_path / "container-controls.json"
+    ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    completed = _run_validator(ledger)
+
+    assert completed.returncode == 1
+    assert "exactly cover" in completed.stderr
 
 
 def test_release_candidate_make_target_requires_release_manifests() -> None:
