@@ -489,11 +489,18 @@ def test_main_branch_ruleset_probe_rejects_one_approval_for_one_maintainer(
     assert audit.probe_main_branch_ruleset(REPO) is None
 
 
+@pytest.mark.parametrize(
+    "parameter",
+    [
+        "require_code_owner_review",
+        "require_extra_approval_for_unattributed_changes",
+    ],
+)
 def test_main_branch_ruleset_probe_rejects_missing_required_parameter(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, parameter: str
 ) -> None:
     parameters = dict(MAIN_RULESET_DETAIL["rules"][-1]["parameters"])
-    parameters.pop("require_code_owner_review")
+    parameters.pop(parameter)
     detail = {
         **MAIN_RULESET_DETAIL,
         "rules": [
