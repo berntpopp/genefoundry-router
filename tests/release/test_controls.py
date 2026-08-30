@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import copy
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -14,6 +17,19 @@ from genefoundry_router.release.controls import (
     load_control_ledger,
     require_compliant_controls,
 )
+
+ROOT = Path(__file__).resolve().parents[2]
+VALIDATE_CONTROLS = ROOT / "scripts/validate_container_controls.py"
+
+
+def _run_validator(ledger: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(  # noqa: S603 - fixed interpreter and repository-owned script
+        [sys.executable, str(VALIDATE_CONTROLS), str(ledger)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 def _evidence(source: str = "api") -> dict[str, object]:
@@ -33,7 +49,7 @@ def _main_rule() -> dict[str, object]:
         "active": True,
         "targets_main": True,
         "requires_pull_request": True,
-        "required_approving_review_count": 1,
+        "required_approving_review_count": 0,
         "blocks_force_pushes": True,
         "blocks_deletions": True,
         "bypass_actors": [],
@@ -95,23 +111,23 @@ def _ledger(repositories: set[str]) -> dict[str, object]:
     }
 
 
-@pytest.mark.parametrize("approvals", [0, 1])
-def test_main_branch_control_accepts_zero_or_one_required_approvals(approvals: int) -> None:
-    """A solo maintainer must be able to satisfy this control.
-
-    GitHub forbids self-approval, so requiring exactly 1 approval with no bypass actor makes
-    `main` permanently unmergeable on a single-maintainer repository — including the commit
-    that seals the regenerated ledger. Demanding it is why the ruleset was never created and
-    the release gate failed closed from 2026-07-20. Everything else the control proves is
-    unchanged; only the second-human requirement is optional. See the companion case in
-    `test_trusted_builder_main_branch_control_fails_closed`, where 2 is still rejected.
-    """
+def test_main_branch_control_accepts_zero_required_approvals_for_one_maintainer() -> None:
     router = "berntpopp/genefoundry-router"
     payload = _ledger({router})
     row = payload["repositories"][router]  # type: ignore[index]
-    row["main_branch_ruleset"]["required_approving_review_count"] = approvals  # type: ignore[index]
+    row["main_branch_ruleset"]["required_approving_review_count"] = 0  # type: ignore[index]
 
     require_compliant_controls(load_control_ledger(payload), {router})
+
+
+def test_main_branch_control_rejects_one_required_approval_for_one_maintainer() -> None:
+    router = "berntpopp/genefoundry-router"
+    payload = _ledger({router})
+    row = payload["repositories"][router]  # type: ignore[index]
+    row["main_branch_ruleset"]["required_approving_review_count"] = 1  # type: ignore[index]
+
+    with pytest.raises(ControlLedgerError, match="invalid control ledger"):
+        load_control_ledger(payload)
 
 
 def test_only_the_trusted_builder_requires_the_main_branch_rule() -> None:
@@ -342,6 +358,58 @@ def test_checked_in_ledger_covers_every_repository_and_is_release_ready() -> Non
 
     assert set(ledger.repositories) == repositories
     require_compliant_controls(ledger, repositories)
+
+
+def test_validate_controls_cli_accepts_an_exact_compliant_fleet(tmp_path: Path) -> None:
+    repositories = expected_fleet_repositories(ROOT / "servers.yaml")
+    ledger = tmp_path / "container-controls.json"
+    ledger.write_text(json.dumps(_ledger(repositories)), encoding="utf-8")
+
+    completed = _run_validator(ledger)
+
+    assert completed.returncode == 0, completed.stderr
+    assert "validated 22 compliant repository controls" in completed.stdout
+
+
+def test_validate_controls_cli_rejects_malformed_json(tmp_path: Path) -> None:
+    ledger = tmp_path / "container-controls.json"
+    ledger.write_text("not json\n", encoding="utf-8")
+
+    completed = _run_validator(ledger)
+
+    assert completed.returncode == 1
+    assert "control ledger is not compliant" in completed.stderr
+
+
+def test_validate_controls_cli_rejects_inexact_fleet(tmp_path: Path) -> None:
+    repositories = expected_fleet_repositories(ROOT / "servers.yaml")
+    payload = _ledger(repositories)
+    rows = payload["repositories"]
+    assert isinstance(rows, dict)
+    rows.pop("berntpopp/gnomad-link")
+    ledger = tmp_path / "container-controls.json"
+    ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    completed = _run_validator(ledger)
+
+    assert completed.returncode == 1
+    assert "exactly cover" in completed.stderr
+
+
+def test_validate_controls_cli_rejects_exact_fleet_with_noncompliant_hard_control(
+    tmp_path: Path,
+) -> None:
+    repositories = expected_fleet_repositories(ROOT / "servers.yaml")
+    payload = _ledger(repositories)
+    row = payload["repositories"]["berntpopp/gnomad-link"]  # type: ignore[index]
+    row["package"]["standing_package_pat"] = True  # type: ignore[index]
+    ledger = tmp_path / "container-controls.json"
+    ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    completed = _run_validator(ledger)
+
+    assert completed.returncode == 1
+    assert "standing package PAT" in completed.stderr
 
 
 def test_release_candidate_make_target_requires_release_manifests() -> None:

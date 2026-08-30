@@ -20,7 +20,7 @@ TRIVY_CACHE_DIR = "${{ github.workspace }}/.cache/trivy"
 
 ACTION_PINS = {
     "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-    "docker/setup-buildx-action": "bb05f3f5519dd87d3ba754cc423b652a5edd6d2c",
+    "docker/setup-buildx-action": "37fe631027851001ddb9b187196cc803df7f5f0e",
     "docker/build-push-action": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
     "aquasecurity/trivy-action": "ed142fd0673e97e23eac54620cfb913e5ce36c25",
     "anchore/sbom-action": "e22c389904149dbc22b58101806040fa8d37a610",

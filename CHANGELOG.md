@@ -2,6 +2,27 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.8.3] - 2026-08-30
+
+### Security
+
+- Refresh both Python 3.14 container stages to the same reviewed multi-platform index and
+  consolidate the current pinned GitHub Actions updates, including paired CodeQL phases.
+- Replace the long-lived control-audit credential with a short-lived GitHub App token scoped
+  to the exact 22-repository fleet and Metadata/Administration read access. Successful live
+  ledgers are strictly validated before retention as workflow artifacts.
+- Require GitHub's unattributed-change approval control and an exact zero-approval policy for
+  the single-maintainer main-branch ruleset, rejecting missing, relaxed, or mistyped values.
+- Fail closed when package linkage, standing-PAT absence, or retention controls cannot be
+  observed; anonymous GHCR pullability alone is not accepted as control evidence.
+
+### Changed
+
+- Update FastMCP to 3.4.7, pydantic-settings to 2.15.0, pre-commit to 4.6.2, mypy to
+  2.3.1, and Ruff to 0.16.3 in the reviewed dependency graph.
+- Require `unless-stopped` for long-lived application/database services while preserving exact
+  `restart: "no"` for one-shot init/build roles.
+
 ## [0.8.2] - 2026-08-10
 
 ### Changed

@@ -20,12 +20,54 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           version: "0.8.7"
       - name: Install dependencies
         run: uv sync --group dev --frozen
-      - name: Verify trusted-builder controls
+      - name: Create short-lived control-audit token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.CONTROL_AUDIT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CONTROL_AUDIT_APP_PRIVATE_KEY }}
+          owner: berntpopp
+          repositories: |
+            autopvs1-link
+            clingen-link
+            clinvar-link
+            gencc-link
+            genefoundry-router
+            genereviews-link
+            gnomad-link
+            gtex-link
+            hgnc-link
+            hpo-link
+            litvar-link
+            mavedb-link
+            metadome-link
+            mgi-link
+            mondo-link
+            orphanet-link
+            panelapp-link
+            pubtator-link
+            spliceailookup-link
+            stringdb-link
+            uniprot-link
+            vep-link
+          permission-metadata: read
+          permission-administration: read
+      - name: Probe live controls
         env:
-          GH_TOKEN: ${{ secrets.CONTROL_AUDIT_TOKEN }}
-        run: uv run python scripts/audit_container_controls.py --check
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: uv run python scripts/audit_container_controls.py --ledger "$RUNNER_TEMP/container-controls.json"
+      - name: Validate live ledger
+        run: uv run python scripts/validate_container_controls.py "$RUNNER_TEMP/container-controls.json"
+      - name: Upload verified live ledger
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: container-controls-live
+          path: ${{ runner.temp }}/container-controls.json
+          if-no-files-found: error
+          retention-days: 30

@@ -44,7 +44,7 @@ def _database_service() -> dict[str, Any]:
     return {
         "image": _DATABASE_IMAGE,
         "pull_policy": "missing",
-        "restart": "on-failure",
+        "restart": "unless-stopped",
         "read_only": True,
         "cap_drop": ["ALL"],
         "security_opt": ["no-new-privileges:true"],
@@ -70,7 +70,7 @@ def rendered() -> dict[str, Any]:
             "app": {
                 "image": _IMAGE,
                 "pull_policy": "missing",
-                "restart": "on-failure",
+                "restart": "unless-stopped",
                 "read_only": True,
                 "init": True,
                 "expose": ["8000"],
@@ -119,6 +119,7 @@ def _policy(*rules: AuxiliaryServiceRule) -> ComposePolicy:
 
 
 def test_declared_init_sidecar_validates_clean(rendered: dict[str, Any]) -> None:
+    assert rendered["services"]["app-init"]["restart"] == "no"
     assert validate_compose(rendered, "app", _policy()) == ()
 
 
@@ -447,6 +448,15 @@ def test_declared_database_sidecar_validates_clean(rendered: dict[str, Any]) -> 
     policy = _policy(_init_rule(), _database_rule())
 
     assert validate_compose(_database_rendered(rendered), "app", policy) == ()
+
+
+def test_database_sidecar_rejects_on_failure_restart(rendered: dict[str, Any]) -> None:
+    document = _database_rendered(rendered)
+    document["services"]["database"]["restart"] = "on-failure"
+
+    violations = validate_compose(document, "app", _policy(_init_rule(), _database_rule()))
+
+    assert any(violation.startswith("services.database.restart") for violation in violations)
 
 
 def test_database_sidecar_requires_a_healthcheck(rendered: dict[str, Any]) -> None:

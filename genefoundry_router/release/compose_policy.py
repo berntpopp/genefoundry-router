@@ -224,7 +224,7 @@ class ComposePolicy:
     max_tmpfs_bytes: int = 1024**3
     max_log_size_bytes: int = 256 * 1024**2
     max_log_files: int = 10
-    allowed_restart: frozenset[str] = frozenset({"on-failure"})
+    allowed_restart: frozenset[str] = frozenset({"unless-stopped"})
     pull_policy: str = "missing"
     approved_networks: frozenset[str] = frozenset({"default"})
     external_networks: tuple[ExternalNetworkRule, ...] = ()
