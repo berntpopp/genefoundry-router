@@ -93,3 +93,14 @@ def test_one_sha_maps_to_exactly_one_version_comment() -> None:
         "a SHA pin's version comment contradicts itself — one of these is wrong:\n"
         + "\n".join(conflicts)
     )
+
+
+def test_codeql_steps_use_one_release_per_workflow() -> None:
+    """CodeQL init/analyze must move atomically to one reviewed release."""
+    by_workflow: dict[Path, set[tuple[str, str | None]]] = defaultdict(set)
+    for path, _lineno, action, ref, comment in _iter_uses():
+        if action.startswith("github/codeql-action/"):
+            by_workflow[path].add((ref, comment))
+
+    conflicts = {path.name: sorted(pins) for path, pins in by_workflow.items() if len(pins) != 1}
+    assert not conflicts, f"CodeQL steps use mixed releases: {conflicts}"
