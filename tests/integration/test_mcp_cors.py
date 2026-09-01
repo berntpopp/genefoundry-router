@@ -244,3 +244,55 @@ def test_mcp_response_has_exactly_one_allow_origin_header(gnomad_fake: FastMCP) 
 
     values = response.headers.get_list("access-control-allow-origin")
     assert values == [ALLOWED], values
+
+
+def _jwt_app(gnomad_fake: FastMCP, origins: list[str]):
+    """An auth-enabled router, so the 401 + ``WWW-Authenticate`` challenge is real."""
+    settings = RouterSettings(
+        _env_file=None,
+        GF_ALLOWED_ORIGINS=origins,
+        GF_AUTH_MODE="jwt",
+        GF_JWT_ISSUER="https://idp.example.org/",
+        GF_JWT_JWKS_URL="https://idp.example.org/.well-known/jwks.json",
+        GF_JWT_AUDIENCE="https://genefoundry.example.org/mcp",
+        GF_PUBLIC_BASE_URL="https://genefoundry.example.org/mcp",
+    )
+    registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
+    return build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+
+
+def test_unauthenticated_401_challenge_is_readable_by_a_browser(gnomad_fake: FastMCP) -> None:
+    """The case the issue is actually about, on a REAL 401.
+
+    Without ``Access-Control-Allow-Origin`` the 401 never reaches browser JS, so the
+    ``WWW-Authenticate`` challenge that is supposed to START the OAuth flow is invisible and
+    the client cannot even discover that it needs to authenticate. Exposing the header is
+    necessary but not sufficient — the response carrying it must itself be readable.
+    """
+    with TestClient(_jwt_app(gnomad_fake, [ALLOWED]), follow_redirects=False) as client:
+        response = client.post(
+            "/mcp",
+            headers={
+                "origin": ALLOWED,
+                "content-type": "application/json",
+                "accept": "application/json, text/event-stream",
+            },
+            json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
+        )
+
+    assert response.status_code == 401
+    assert "www-authenticate" in {k.lower() for k in response.headers}
+    assert response.headers.get("access-control-allow-origin") == ALLOWED
+    assert "www-authenticate" in response.headers.get("access-control-expose-headers", "").lower()
+
+
+def test_preflight_precedes_auth_and_is_not_challenged(gnomad_fake: FastMCP) -> None:
+    """A CORS-preflight carries no credentials (Fetch Standard: its credentials mode is
+    always "same-origin"), so answering it with a 401 would deadlock the browser: it can
+    never attach the token the challenge asks for. The preflight must be answered before
+    authentication runs."""
+    with TestClient(_jwt_app(gnomad_fake, [ALLOWED]), follow_redirects=False) as client:
+        response = client.options("/mcp", headers=_preflight(ALLOWED))
+
+    assert response.status_code in (200, 204)
+    assert response.headers["access-control-allow-origin"] == ALLOWED
