@@ -26,6 +26,7 @@ from genefoundry_router.refresh_observability import (
     FAILURE_REASONS,
     CounterSnapshot,
 )
+from genefoundry_router.notfound_guard import redacted_message
 from genefoundry_router.registry import BackendDef, is_client_safe_name
 
 
@@ -206,18 +207,64 @@ _OAUTH_SENSITIVE_MARKERS = (
 )
 _OAUTH_REDACTED_MESSAGE = "OAuth detail omitted (sensitive value redacted)."
 
+# Source loggers the filter is installed on. Named here (not inline in the installer) so the
+# regression fence in tests/unit/test_oauth_log_privacy.py audits exactly the modules the
+# filter actually governs, and cannot silently drift from them.
+OAUTH_PRIVACY_LOGGERS: tuple[str, ...] = (
+    "fastmcp.server.auth.oauth_proxy.proxy",
+    "fastmcp.server.auth.handlers.authorize",
+    "fastmcp.server.auth.cimd",
+    "fastmcp.server.auth.jwt_issuer",
+    "fastmcp.server.auth.oauth_proxy.consent",
+)
+
 
 class OAuthProxyPrivacyFilter(logging.Filter):
-    """Redact only FastMCP OAuth records known to contain secret/high-cardinality values."""
+    """Redact the sensitive VALUE in a FastMCP OAuth record, not the diagnostic reason.
+
+    Replacing the whole ``record.msg`` (the previous behaviour) cost the operator every
+    OAuth failure mode at once: 279 identical "OAuth detail omitted" lines, and a 45-hour,
+    114-request authentication failure whose entire router-side trace was 29 copies of that
+    one sentence. The secrets were never in the prose — 43 of the 44 markers name a
+    ``%``-style call site whose template is a compile-time string literal and whose values
+    live in ``record.args``. Deleting the template threw away the only thing that said what
+    happened (`"...it was already rotated, expired, or revoked ... which forces the client
+    to re-authenticate"`) to protect data that was never in it. This is the same lesson
+    ``notfound_guard`` records for 2026-08-07, and it reuses that module's interpolation.
+
+    The two shapes are told apart by ``record.args``, which is a sound test rather than a
+    heuristic:
+
+    * **args present** -> the message is a ``%``-style template, i.e. a literal in the
+      framework's source, so it cannot contain a runtime secret. Interpolate ``<redacted>``
+      in place of every placeholder: the input-free prose survives and the line still reads
+      as a deliberate redaction rather than a broken formatter.
+    * **args empty** -> the message may have been f-string-formatted at the call site, with
+      the value already baked into ``record.msg`` (fastmcp does this at ``proxy.py:2381``).
+      Clearing args would protect nothing, so the whole message goes, exactly as before.
+
+    The one shape that would defeat the inference is an f-string template passed together
+    with lazy args. ``test_fastmcp_oauth_loggers_never_mix_fstring_and_args`` asserts the
+    framework never writes one, so a fastmcp upgrade that introduced it would fail CI rather
+    than leak. ``exc_info``/``stack_info`` are still dropped unconditionally: a traceback is
+    not a literal template and can carry anything.
+    """
 
     def filter(self, record: logging.LogRecord) -> bool:
         message = record.msg if isinstance(record.msg, str) else ""
-        if any(marker in message for marker in _OAUTH_SENSITIVE_MARKERS):
-            record.msg = _OAUTH_REDACTED_MESSAGE
-            record.args = ()
-            record.exc_info = None
-            record.exc_text = None
-            record.stack_info = None
+        if not any(marker in message for marker in _OAUTH_SENSITIVE_MARKERS):
+            return True
+        # Interpolate FIRST, then clear args: the two together are what make the record both
+        # value-free and still legible.
+        record.msg = (
+            redacted_message(record, fallback=_OAUTH_REDACTED_MESSAGE)
+            if record.args
+            else _OAUTH_REDACTED_MESSAGE
+        )
+        record.args = ()
+        record.exc_info = None
+        record.exc_text = None
+        record.stack_info = None
         return True
 
 
@@ -226,13 +273,7 @@ _OAUTH_PRIVACY_FILTER = OAuthProxyPrivacyFilter()
 
 def install_oauth_proxy_privacy_filter() -> None:
     """Install the narrow source-level OAuth privacy filter idempotently."""
-    for name in (
-        "fastmcp.server.auth.oauth_proxy.proxy",
-        "fastmcp.server.auth.handlers.authorize",
-        "fastmcp.server.auth.cimd",
-        "fastmcp.server.auth.jwt_issuer",
-        "fastmcp.server.auth.oauth_proxy.consent",
-    ):
+    for name in OAUTH_PRIVACY_LOGGERS:
         logger = logging.getLogger(name)
         if not any(isinstance(item, OAuthProxyPrivacyFilter) for item in logger.filters):
             logger.addFilter(_OAUTH_PRIVACY_FILTER)

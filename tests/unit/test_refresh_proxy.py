@@ -707,7 +707,11 @@ def test_unregistered_authorize_client_is_redacted_from_installed_handler_log(
         assert rendered
         assert raw_client not in rendered
         assert "private=never-log" not in rendered
-        assert "oauth detail omitted" in rendered.lower()
+        # The spoofed client_id is gone, but the DIAGNOSIS survives (issue #160): the
+        # record names the condition and marks the withheld value explicitly, instead of
+        # collapsing to one fixed sentence that could have been any of 44 conditions.
+        assert "Unregistered client_id" in rendered
+        assert "<redacted>" in rendered
     finally:
         ledger.close()
 
