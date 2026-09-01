@@ -114,6 +114,18 @@ actions, so alert on them differently:
 A sustained burst of one `jwt_*` reason from one client class is the signal the previous
 single bucket could not produce.
 
+**One-way once written.** The `jwt_*` reasons are new to the vocabulary, and the ledger is
+durable across deploys. Once a router has written a `jwt_expired` (or any other new reason)
+row, an **older** router started against that same ledger fails at startup:
+`restore_refresh_metrics` rejects a persisted label outside its own `FAILURE_REASONS`
+(`ValueError: persisted OAuth refresh failure labels are not bounded`), and the call sits
+unguarded in the lifespan. That is the fail-closed durability behaviour the ledger is
+designed around, not a regression — but it means a rollback past this version needs the
+ledger moved aside first, using the documented recovery procedure above (stop the router,
+move the database and its `-wal`/`-shm` sidecars together to a private forensic backup,
+start the router so it creates a fresh ledger, record the reset). Rolling **forward** needs
+nothing: existing rows stay valid, and the new reasons simply start appearing.
+
 The report contains aggregates and restart intervals only: it never emits client HMACs,
 token hashes/prefixes, request IDs, authorization codes, or query parameters. Strict
 one-time refresh-token rotation remains in force while measurements are collected; the

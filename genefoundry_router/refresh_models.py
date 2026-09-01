@@ -28,7 +28,10 @@ FAILURE_REASONS = frozenset(
         # every recorded failure), which made expiry — benign and high-volume —
         # indistinguishable from an issuer/audience misconfiguration, the class behind the
         # 2026-07-15 and 2026-08-07 incidents. See ``refresh_jwt_reasons``.
-        # Additive only: existing ledger rows and restored counters stay valid.
+        # Additive: existing ledger rows and restored counters stay valid, so rolling
+        # FORWARD needs nothing. Rolling BACK does — an older router rejects a
+        # persisted reason outside its own vocabulary and fails at startup. See
+        # docs/deployment.md, "One-way once written".
         "jwt_expired",
         "jwt_issuer_mismatch",
         "jwt_audience_mismatch",
