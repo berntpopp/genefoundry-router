@@ -94,6 +94,26 @@ Interpret the result exactly as follows:
   attempts, or at least 2 distinct HMAC-derived clients begin authorization within
   15 minutes after a refresh failure. Otherwise it is `not_material`.
 
+### Reading `refresh_failures_total{reason=...}`
+
+The reason vocabulary distinguishes the five causes that used to collapse into
+`jwt_invalid` (98% of all recorded failures before this split). They call for different
+actions, so alert on them differently:
+
+| reason | meaning | action |
+| --- | --- | --- |
+| `jwt_expired` | the refresh token aged out | **none** — expected, high-volume; the client re-authorises. Exclude it from failure alerting or every threshold fires on background noise. |
+| `jwt_issuer_mismatch` | token `iss` is not the router's issuer | **page** — configuration fault (2026-08-07 incident class) |
+| `jwt_audience_mismatch` | token `aud` is not the router's resource URL | **page** — configuration fault (2026-07-15 incident class) |
+| `jwt_signature_invalid` | signed with a different key | **investigate** — signing-key rotation, or a forged token. HS256 is symmetric, so these two are the same observation. |
+| `jwt_token_use_mismatch` | an access token was sent as a refresh token | client bug |
+| `jwt_malformed` | not a JWT at all | client bug, or an opaque token from another issuer |
+| `jwt_invalid` | an unrecognised JOSE error | investigate; also the fallback if a fastmcp upgrade rewords a claim-check message |
+| `internal_error` | the verifier itself failed | **page** — ours, not the client's |
+
+A sustained burst of one `jwt_*` reason from one client class is the signal the previous
+single bucket could not produce.
+
 The report contains aggregates and restart intervals only: it never emits client HMACs,
 token hashes/prefixes, request IDs, authorization codes, or query parameters. Strict
 one-time refresh-token rotation remains in force while measurements are collected; the

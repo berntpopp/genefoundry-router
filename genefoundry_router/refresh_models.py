@@ -24,7 +24,18 @@ FAILURE_REASONS = frozenset(
         "reuse_after_rotation",
         "overlapping_attempt",
         "client_mismatch",
-        "jwt_invalid",
+        # JWT verification outcomes. ``jwt_invalid`` used to absorb all of these (98% of
+        # every recorded failure), which made expiry — benign and high-volume —
+        # indistinguishable from an issuer/audience misconfiguration, the class behind the
+        # 2026-07-15 and 2026-08-07 incidents. See ``refresh_jwt_reasons``.
+        # Additive only: existing ledger rows and restored counters stay valid.
+        "jwt_expired",
+        "jwt_issuer_mismatch",
+        "jwt_audience_mismatch",
+        "jwt_token_use_mismatch",
+        "jwt_signature_invalid",
+        "jwt_malformed",
+        "jwt_invalid",  # residual: an unrecognised JoseError only
         "mapping_missing",
         "upstream_invalid_grant",
         "upstream_other",
