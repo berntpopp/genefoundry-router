@@ -15,6 +15,38 @@ APP_TOKEN_ACTION = "actions/create-github-app-token@bcd2ba49218906704ab6c1aa7969
 UPLOAD_ACTION = "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
 SHELL_LEDGER = "$RUNNER_TEMP/container-controls.json"
 MAIN_REF = "refs/heads/main"
+TOPIC_REF = "refs/heads/topic"
+CANONICAL_CONDITION = (
+    "${{ (vars.CONTROL_AUDIT_ENABLED == 'true' && github.event_name == 'schedule')"
+    " || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}"
+)
+# (event_name, ref, CONTROL_AUDIT_ENABLED, job runs). An unset repository variable renders as
+# the empty string, and GitHub's `==` ignores case, so 'TRUE' must behave exactly like 'true'.
+TRIGGER_MATRIX = (
+    # The daily audit stays parked until an administrator opts in.
+    ("schedule", MAIN_REF, "", False),
+    ("schedule", MAIN_REF, "false", False),
+    ("schedule", MAIN_REF, "true", True),
+    ("schedule", MAIN_REF, "TRUE", True),
+    ("schedule", TOPIC_REF, "", False),
+    ("schedule", TOPIC_REF, "false", False),
+    ("schedule", TOPIC_REF, "true", True),
+    # Manual dispatch works from main whether or not the schedule is enabled, so an admin can
+    # verify a freshly installed GitHub App *before* turning the daily run back on.
+    ("workflow_dispatch", MAIN_REF, "", True),
+    ("workflow_dispatch", MAIN_REF, "false", True),
+    ("workflow_dispatch", MAIN_REF, "true", True),
+    # Enabling the schedule must never widen manual dispatch beyond the protected branch.
+    ("workflow_dispatch", TOPIC_REF, "", False),
+    ("workflow_dispatch", TOPIC_REF, "false", False),
+    ("workflow_dispatch", TOPIC_REF, "true", False),
+    ("workflow_dispatch", TOPIC_REF, "TRUE", False),
+    # No other event may reach the control-audit environment.
+    ("push", MAIN_REF, "", False),
+    ("push", MAIN_REF, "true", False),
+    ("push", TOPIC_REF, "", False),
+    ("push", TOPIC_REF, "true", False),
+)
 ARTIFACT_LEDGER = "${{ runner.temp }}/container-controls.json"
 REPOSITORIES = (
     "autopvs1-link",
@@ -69,7 +101,10 @@ def _atom(expression: str, context: dict[str, str]) -> bool:
     assert equality, f"unsupported expression atom: {expression!r}"
     name = left.strip()
     assert name in context, f"unmodelled context reference: {name!r}"
-    return context[name] == right.strip().strip("'")
+    # GitHub Actions compares strings case-insensitively, so 'TRUE' == 'true' is true. Modelling
+    # this case-sensitively hid a variant that allowed off-main dispatch via a 'WORKFLOW_DISPATCH'
+    # disjunct, and it errs safe: it makes more conditions evaluate true, never fewer.
+    return context[name].casefold() == right.strip().strip("'").casefold()
 
 
 def _evaluate(condition: str, context: dict[str, str]) -> bool:
@@ -105,21 +140,29 @@ def test_manual_audit_is_confined_to_main_and_protected_environment() -> None:
     assert isinstance(job_permissions, dict)
     assert all(access != "write" for access in job_permissions.values())
     assert job["environment"] == "control-audit"
-    condition = job["if"]
-    assert _evaluate(condition, _context(event_name="workflow_dispatch"))
-    assert not _evaluate(
-        condition, _context(event_name="workflow_dispatch", ref="refs/heads/not-main")
-    )
+    # Pin the exact expression. This is a security condition, so any edit must be looked at by a
+    # human rather than merely satisfying a property test. The pin also rejects the malformed
+    # variants -- a missing `}}`, unbalanced parentheses -- that the truth table's parser below
+    # cannot model, though CI's pinned actionlint catches those independently.
+    assert job["if"] == CANONICAL_CONDITION
 
 
-def test_scheduled_audit_stays_opt_in_until_the_control_audit_app_exists() -> None:
-    # The control-audit GitHub App is a deferred admin prerequisite, so the daily schedule must
-    # stay parked until CONTROL_AUDIT_ENABLED is set; enabling it must then restore the run.
+def test_audit_runs_only_for_an_opted_in_schedule_or_a_main_branch_dispatch() -> None:
+    """Enumerate event x ref x variable, so the pinned string above has a stated meaning.
+
+    Asserting only a few points let semantically broken conditions pass: exercising manual
+    dispatch solely with the variable unset hid both an extra `enabled && dispatch` disjunct
+    (off-main dispatch once enabled) and an `enabled == ''` guard (main dispatch disabled once
+    enabled). The full cross-product is what makes this test worth having.
+    """
     condition = _load()["jobs"]["audit"]["if"]
 
-    assert not _evaluate(condition, _context(event_name="schedule"))
-    assert not _evaluate(condition, _context(event_name="schedule", enabled="false"))
-    assert _evaluate(condition, _context(event_name="schedule", enabled="true"))
+    for event_name, ref, enabled, expected in TRIGGER_MATRIX:
+        actual = _evaluate(condition, _context(event_name=event_name, ref=ref, enabled=enabled))
+        assert actual is expected, (
+            f"{event_name} on {ref} with CONTROL_AUDIT_ENABLED={enabled!r} "
+            f"should {'run' if expected else 'not run'}"
+        )
 
 
 def test_app_token_is_exactly_scoped_to_the_fleet_and_two_read_permissions() -> None:
