@@ -14,6 +14,7 @@ SETUP_UV_ACTION = "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d"
 APP_TOKEN_ACTION = "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"  # noqa: S105 - action identifier
 UPLOAD_ACTION = "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
 SHELL_LEDGER = "$RUNNER_TEMP/container-controls.json"
+MAIN_REF = "refs/heads/main"
 ARTIFACT_LEDGER = "${{ runner.temp }}/container-controls.json"
 REPOSITORIES = (
     "autopvs1-link",
@@ -54,6 +55,41 @@ def _on(document: dict[str, Any]) -> dict[str, Any]:
     return trigger
 
 
+def _context(*, event_name: str, ref: str = MAIN_REF, enabled: str = "") -> dict[str, str]:
+    # An unset repository variable renders as the empty string in a GitHub expression.
+    return {
+        "github.event_name": event_name,
+        "github.ref": ref,
+        "vars.CONTROL_AUDIT_ENABLED": enabled,
+    }
+
+
+def _atom(expression: str, context: dict[str, str]) -> bool:
+    left, equality, right = expression.strip().partition("==")
+    assert equality, f"unsupported expression atom: {expression!r}"
+    name = left.strip()
+    assert name in context, f"unmodelled context reference: {name!r}"
+    return context[name] == right.strip().strip("'")
+
+
+def _evaluate(condition: str, context: dict[str, str]) -> bool:
+    """Evaluate the job's ``if`` expression for one trigger context.
+
+    Only the flat ``==`` / ``&&`` / ``||`` shape this workflow uses is supported, and every
+    atom is evaluated (no short-circuit) so a rewrite into some other shape fails loudly
+    instead of quietly degrading into a test that always passes.
+    """
+    condition = condition.strip()
+    if condition.startswith("${{"):
+        condition = condition.removeprefix("${{").removesuffix("}}").strip()
+    disjuncts: list[bool] = []
+    for clause in condition.split("||"):
+        conjunction = clause.strip().removeprefix("(").removesuffix(")")
+        atoms = [_atom(atom, context) for atom in conjunction.split("&&")]
+        disjuncts.append(all(atoms))
+    return any(disjuncts)
+
+
 def test_manual_audit_is_confined_to_main_and_protected_environment() -> None:
     workflow = _load()
     trigger = _on(workflow)
@@ -69,7 +105,21 @@ def test_manual_audit_is_confined_to_main_and_protected_environment() -> None:
     assert isinstance(job_permissions, dict)
     assert all(access != "write" for access in job_permissions.values())
     assert job["environment"] == "control-audit"
-    assert job["if"] == "github.event_name == 'schedule' || github.ref == 'refs/heads/main'"
+    condition = job["if"]
+    assert _evaluate(condition, _context(event_name="workflow_dispatch"))
+    assert not _evaluate(
+        condition, _context(event_name="workflow_dispatch", ref="refs/heads/not-main")
+    )
+
+
+def test_scheduled_audit_stays_opt_in_until_the_control_audit_app_exists() -> None:
+    # The control-audit GitHub App is a deferred admin prerequisite, so the daily schedule must
+    # stay parked until CONTROL_AUDIT_ENABLED is set; enabling it must then restore the run.
+    condition = _load()["jobs"]["audit"]["if"]
+
+    assert not _evaluate(condition, _context(event_name="schedule"))
+    assert not _evaluate(condition, _context(event_name="schedule", enabled="false"))
+    assert _evaluate(condition, _context(event_name="schedule", enabled="true"))
 
 
 def test_app_token_is_exactly_scoped_to_the_fleet_and_two_read_permissions() -> None:
