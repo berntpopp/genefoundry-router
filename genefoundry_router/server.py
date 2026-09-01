@@ -49,7 +49,7 @@ from genefoundry_router.runtime_drift import (
     fingerprint_definitions,
     load_runtime_guard,
 )
-from genefoundry_router.security import add_host_origin_validation
+from genefoundry_router.security import add_host_origin_validation, wrap_mcp_cors
 from genefoundry_router.tool_search import apply_tool_search, resolve_entrypoints
 
 log = structlog.get_logger(__name__)
@@ -287,7 +287,10 @@ def build_app(
     if auth_provider is not None:
         app.router.routes.extend(auth_provider.get_routes())
     # Root mount: baked GF_MCP_PATH owns /mcp; /health and /metrics registered first.
-    app.mount("/", mcp_app)
+    # The CORS wrapper is applied to the MOUNTED app only (issue #162), so /mcp answers a
+    # browser preflight while the OAuth routes above keep the MCP SDK's own cors_middleware
+    # as their single ACAO source. It sits INSIDE the Host/Origin guard, which is unchanged.
+    app.mount("/", wrap_mcp_cors(mcp_app, settings.GF_ALLOWED_ORIGINS, settings.GF_MCP_PATH))
     return app
 
 

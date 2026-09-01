@@ -399,7 +399,7 @@ _SCRUBBED_MESSAGE = "MCP request detail omitted (caller input redacted)."
 _REDACTED_ARG = "<redacted>"
 
 
-def _redacted_message(record: logging.LogRecord) -> str:
+def redacted_message(record: logging.LogRecord, *, fallback: str = _SCRUBBED_MESSAGE) -> str:
     """Render ``record``'s message with a fixed token IN PLACE OF every ``%``-placeholder.
 
     Redaction must leave a READABLE line. Dropping ``record.args`` alone does not:
@@ -409,8 +409,10 @@ def _redacted_message(record: logging.LogRecord) -> str:
     keeps the template's own (input-free) prose, which is the only remaining clue as to
     what happened, and states that something was withheld.
 
-    Falls back to the fixed message when the template cannot accept a string token (e.g. a
-    ``%d`` conversion): a redaction may never raise inside a logging handler.
+    Falls back to ``fallback`` when the template cannot accept a string token (e.g. a
+    ``%d`` conversion): a redaction may never raise inside a logging handler. Callers pass
+    their own subsystem's fixed message so the fallback line still says which guard fired
+    (the OAuth privacy filter reuses this — see ``observability.OAuthProxyPrivacyFilter``).
     """
     template = str(record.msg)
     args = record.args
@@ -425,7 +427,7 @@ def _redacted_message(record: logging.LogRecord) -> str:
     try:
         return template % tokens
     except (TypeError, ValueError, KeyError):
-        return _SCRUBBED_MESSAGE
+        return fallback
 
 
 class NotFoundLogScrubFilter(logging.Filter):
@@ -462,7 +464,7 @@ class NotFoundLogScrubFilter(logging.Filter):
             return True
         if not record.name.startswith(_SCRUBBED_LOGGER_PREFIXES):
             return True
-        record.msg = _redacted_message(record)
+        record.msg = redacted_message(record)
         record.args = ()
         record.exc_info = None
         record.exc_text = None

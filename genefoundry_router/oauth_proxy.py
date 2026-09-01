@@ -51,6 +51,7 @@ from genefoundry_router.observability import (
     record_refresh_outcome,
 )
 from genefoundry_router.refresh_contract import validate_fastmcp_refresh_contract
+from genefoundry_router.refresh_jwt_reasons import classify_jwt_failure
 from genefoundry_router.refresh_models import REFRESH_ATTEMPT_STALE_SECONDS
 from genefoundry_router.refresh_observability import (
     RefreshEvent,
@@ -360,8 +361,12 @@ class GeneFoundryOAuthProxy(OAuthProxy):
                 refresh_token,
                 expected_token_use="refresh",  # noqa: S106 - JWT claim, not a credential
             )
-        except Exception:
-            return "jwt_invalid", None
+        except Exception as exc:
+            # Bounded, caller-data-free reason: expiry, issuer/audience mismatch, wrong
+            # token_use, bad signature and a malformed token are five different operator
+            # actions and must not share one label (issue #161). A non-JoseError is OUR
+            # fault, not a bad client token, and reports as internal_error.
+            return classify_jwt_failure(exc), None
         claimed_client = payload.get("client_id") or payload.get("sub")
         if claimed_client is not None and claimed_client != client.client_id:
             return "client_mismatch", None

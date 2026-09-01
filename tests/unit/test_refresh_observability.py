@@ -1082,18 +1082,30 @@ def test_report_groups_only_bounded_aggregate_values_and_reuse_delays(tmp_path: 
         payload = report.to_dict()
         serialized = json.dumps(payload, sort_keys=True)
         assert set(report.attempts_by_client_class) == {"chatgpt", "claude", "other"}
-        assert set(report.failures_by_reason) == {
+        # Every bounded reason gets a row, present or zero, so a reason that never fired
+        # is visibly zero rather than absent. Derived from the vocabulary so adding a
+        # reason cannot silently go unreported; the explicit subset below keeps the
+        # assertion from being vacuous if the vocabulary itself were ever emptied.
+        assert set(report.failures_by_reason) == set(FAILURE_REASONS)
+        assert {
             "local_not_found",
             "local_rejected",
             "reuse_after_rotation",
             "overlapping_attempt",
             "client_mismatch",
-            "jwt_invalid",
             "mapping_missing",
             "upstream_invalid_grant",
             "upstream_other",
             "internal_error",
-        }
+            # issue #161: the five causes that used to collapse into jwt_invalid
+            "jwt_expired",
+            "jwt_issuer_mismatch",
+            "jwt_audience_mismatch",
+            "jwt_token_use_mismatch",
+            "jwt_signature_invalid",
+            "jwt_malformed",
+            "jwt_invalid",
+        } <= set(report.failures_by_reason)
         assert report.affected_clients == 1
         assert report.reuse_delay_buckets == {
             "under_5s": 1,

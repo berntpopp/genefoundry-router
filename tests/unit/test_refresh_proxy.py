@@ -15,6 +15,7 @@ from authlib.integrations.base_client.errors import OAuthError
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from fastapi.testclient import TestClient
 from fastmcp.server.auth import OAuthProxy
+from fastmcp.server.auth.jwt_issuer import JWTIssuer
 from httpx import Request, Response
 from key_value.aio.stores.memory import MemoryStore
 from mcp.server.auth.provider import RefreshToken, TokenError
@@ -253,13 +254,51 @@ async def test_cancelled_refresh_attempt_is_finalized(
         ledger.close()
 
 
+def _classification_token(proxy: GeneFoundryOAuthProxy, case: str, token_client: str) -> str:
+    """Mint the exact token shape each classification case is about.
+
+    Every JWT case uses a REAL ``JWTIssuer`` differing from the router's in one dimension
+    only, so the resulting reason isolates that one defect (issue #161).
+    """
+    if case == "malformed":
+        return "raw-invalid-refresh-secret"  # not a JWT at all, by design
+    if case in {"issuer", "audience", "signature"}:
+        foreign = JWTIssuer(
+            issuer="https://evil.example" if case == "issuer" else BASE_URL,
+            audience="https://evil.example/mcp" if case == "audience" else AUDIENCE,
+            signing_key=b"a-different-signing-key-32-bytes!"
+            if case == "signature"
+            else SIGNING_KEY,
+        )
+        return foreign.issue_refresh_token(
+            client_id=token_client, scopes=["openid"], jti=f"jti-{case}", expires_in=3600
+        )
+    if case == "token_use":
+        return proxy.jwt_issuer.issue_access_token(
+            client_id=token_client, scopes=["openid"], jti=f"jti-{case}", expires_in=3600
+        )
+    return proxy.jwt_issuer.issue_refresh_token(
+        client_id=token_client,
+        scopes=["openid"],
+        jti=f"jti-{case}",
+        expires_in=-10 if case == "expired" else 3600,
+    )
+
+
 @pytest.mark.parametrize(
     ("case", "expected"),
     [
         ("local", "local_not_found"),
         ("reuse", "reuse_after_rotation"),
         ("mismatch", "client_mismatch"),
-        ("invalid", "jwt_invalid"),
+        # Issue #161: these five all reported "jwt_invalid" before, which is where 98% of
+        # every recorded refresh failure landed. They are five different operator actions.
+        ("expired", "jwt_expired"),
+        ("issuer", "jwt_issuer_mismatch"),
+        ("audience", "jwt_audience_mismatch"),
+        ("token_use", "jwt_token_use_mismatch"),
+        ("signature", "jwt_signature_invalid"),
+        ("malformed", "jwt_malformed"),
     ],
 )
 @pytest.mark.asyncio
@@ -272,16 +311,7 @@ async def test_missing_refresh_classifications_preserve_none(
     proxy, ledger = _proxy(tmp_path)
     client = _client("https://chatgpt.com/.well-known/oauth-client/app")
     token_client = "different-client" if case == "mismatch" else client.client_id or ""
-    token = (
-        "raw-invalid-refresh-secret"
-        if case == "invalid"
-        else proxy.jwt_issuer.issue_refresh_token(
-            client_id=token_client,
-            scopes=["openid"],
-            jti=f"jti-{case}",
-            expires_in=3600,
-        )
-    )
+    token = _classification_token(proxy, case, token_client)
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     if case == "reuse":
         ledger.record_rotation(token_hash, ledger.client_hmac(client.client_id or ""), 1_999_999)
@@ -707,7 +737,11 @@ def test_unregistered_authorize_client_is_redacted_from_installed_handler_log(
         assert rendered
         assert raw_client not in rendered
         assert "private=never-log" not in rendered
-        assert "oauth detail omitted" in rendered.lower()
+        # The spoofed client_id is gone, but the DIAGNOSIS survives (issue #160): the
+        # record names the condition and marks the withheld value explicitly, instead of
+        # collapsing to one fixed sentence that could have been any of 44 conditions.
+        assert "Unregistered client_id" in rendered
+        assert "<redacted>" in rendered
     finally:
         ledger.close()
 

@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from genefoundry_router.audit_identity import safe_log_identity
 from genefoundry_router.observability import (
     BACKEND_STATUS,
     BACKEND_TOOL_COUNT,
     configure_logging,
     namespace_tool_counts,
     register_health,
-    safe_log_identity,
     set_backend_up,
 )
 from genefoundry_router.registry import BackendDef

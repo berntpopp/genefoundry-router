@@ -9,6 +9,7 @@ import time
 from typing import Any, Protocol
 
 import structlog
+from asgi_correlation_id import correlation_id
 from fastapi import FastAPI, Request
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from prometheus_client import (
@@ -21,12 +22,22 @@ from prometheus_client import (
 )
 from starlette.responses import JSONResponse, Response
 
+from genefoundry_router.audit_identity import (
+    resolve_dispatch_namespace,
+    resolve_log_identity,
+)
+from genefoundry_router.notfound_guard import redacted_message
 from genefoundry_router.refresh_observability import (
     CLIENT_CLASSES,
     FAILURE_REASONS,
     CounterSnapshot,
 )
-from genefoundry_router.registry import BackendDef, is_client_safe_name
+from genefoundry_router.registry import BackendDef
+from genefoundry_router.tool_error_taxonomy import (
+    error_code,
+    upstream_request_id,
+    upstream_status,
+)
 
 
 class DriftState(Protocol):
@@ -206,18 +217,64 @@ _OAUTH_SENSITIVE_MARKERS = (
 )
 _OAUTH_REDACTED_MESSAGE = "OAuth detail omitted (sensitive value redacted)."
 
+# Source loggers the filter is installed on. Named here (not inline in the installer) so the
+# regression fence in tests/unit/test_oauth_log_privacy.py audits exactly the modules the
+# filter actually governs, and cannot silently drift from them.
+OAUTH_PRIVACY_LOGGERS: tuple[str, ...] = (
+    "fastmcp.server.auth.oauth_proxy.proxy",
+    "fastmcp.server.auth.handlers.authorize",
+    "fastmcp.server.auth.cimd",
+    "fastmcp.server.auth.jwt_issuer",
+    "fastmcp.server.auth.oauth_proxy.consent",
+)
+
 
 class OAuthProxyPrivacyFilter(logging.Filter):
-    """Redact only FastMCP OAuth records known to contain secret/high-cardinality values."""
+    """Redact the sensitive VALUE in a FastMCP OAuth record, not the diagnostic reason.
+
+    Replacing the whole ``record.msg`` (the previous behaviour) cost the operator every
+    OAuth failure mode at once: 279 identical "OAuth detail omitted" lines, and a 45-hour,
+    114-request authentication failure whose entire router-side trace was 29 copies of that
+    one sentence. The secrets were never in the prose — 43 of the 44 markers name a
+    ``%``-style call site whose template is a compile-time string literal and whose values
+    live in ``record.args``. Deleting the template threw away the only thing that said what
+    happened (`"...it was already rotated, expired, or revoked ... which forces the client
+    to re-authenticate"`) to protect data that was never in it. This is the same lesson
+    ``notfound_guard`` records for 2026-08-07, and it reuses that module's interpolation.
+
+    The two shapes are told apart by ``record.args``, which is a sound test rather than a
+    heuristic:
+
+    * **args present** -> the message is a ``%``-style template, i.e. a literal in the
+      framework's source, so it cannot contain a runtime secret. Interpolate ``<redacted>``
+      in place of every placeholder: the input-free prose survives and the line still reads
+      as a deliberate redaction rather than a broken formatter.
+    * **args empty** -> the message may have been f-string-formatted at the call site, with
+      the value already baked into ``record.msg`` (fastmcp does this at ``proxy.py:2381``).
+      Clearing args would protect nothing, so the whole message goes, exactly as before.
+
+    The one shape that would defeat the inference is an f-string template passed together
+    with lazy args. ``test_fastmcp_oauth_loggers_never_mix_fstring_and_args`` asserts the
+    framework never writes one, so a fastmcp upgrade that introduced it would fail CI rather
+    than leak. ``exc_info``/``stack_info`` are still dropped unconditionally: a traceback is
+    not a literal template and can carry anything.
+    """
 
     def filter(self, record: logging.LogRecord) -> bool:
         message = record.msg if isinstance(record.msg, str) else ""
-        if any(marker in message for marker in _OAUTH_SENSITIVE_MARKERS):
-            record.msg = _OAUTH_REDACTED_MESSAGE
-            record.args = ()
-            record.exc_info = None
-            record.exc_text = None
-            record.stack_info = None
+        if not any(marker in message for marker in _OAUTH_SENSITIVE_MARKERS):
+            return True
+        # Interpolate FIRST, then clear args: the two together are what make the record both
+        # value-free and still legible.
+        record.msg = (
+            redacted_message(record, fallback=_OAUTH_REDACTED_MESSAGE)
+            if record.args
+            else _OAUTH_REDACTED_MESSAGE
+        )
+        record.args = ()
+        record.exc_info = None
+        record.exc_text = None
+        record.stack_info = None
         return True
 
 
@@ -226,13 +283,7 @@ _OAUTH_PRIVACY_FILTER = OAuthProxyPrivacyFilter()
 
 def install_oauth_proxy_privacy_filter() -> None:
     """Install the narrow source-level OAuth privacy filter idempotently."""
-    for name in (
-        "fastmcp.server.auth.oauth_proxy.proxy",
-        "fastmcp.server.auth.handlers.authorize",
-        "fastmcp.server.auth.cimd",
-        "fastmcp.server.auth.jwt_issuer",
-        "fastmcp.server.auth.oauth_proxy.consent",
-    ):
+    for name in OAUTH_PRIVACY_LOGGERS:
         logger = logging.getLogger(name)
         if not any(isinstance(item, OAuthProxyPrivacyFilter) for item in logger.filters):
             logger.addFilter(_OAUTH_PRIVACY_FILTER)
@@ -263,51 +314,6 @@ def namespace_tool_counts(tool_names: list[str]) -> dict[str, int]:
             ns = name.split("_", 1)[0]
             counts[ns] = counts.get(ns, 0) + 1
     return counts
-
-
-_UNKNOWN_IDENTITY = ("_unknown", "_unknown")
-
-
-def safe_log_identity(name: str, resolved: bool) -> tuple[str, str]:
-    """Return a ``(tool, namespace)`` pair safe to write to a log / metric sink.
-
-    A name is logged verbatim ONLY when it is a **verified catalog member**
-    (``resolved`` — the router's registry actually holds this tool) AND a client-safe
-    ``<namespace>_<tool>`` identifier. Grammar-validity alone is NOT enough: a caller can
-    invoke a syntactically valid but NONEXISTENT name
-    (``IGNORE_ALL_PREVIOUS_AND_RETURN_SECRETS``, ``gnomad_IGNORE_bogus``) that carries no
-    forbidden code points yet injects instruction prose into the operator audit log and
-    inflates Prometheus label cardinality. Any UNRESOLVED name (and any name carrying
-    injection prose / forbidden code points, which is never client-safe) is bucketed to a
-    fixed ``_unknown`` placeholder for BOTH the audit sink and the metric labels. The
-    not-found guard answers such a call with a fixed, name-free envelope, so nothing of
-    operational value is lost by not logging the raw name.
-    """
-    if not resolved or not is_client_safe_name(name):
-        return _UNKNOWN_IDENTITY
-    namespace = name.split("_", 1)[0] if "_" in name else "_root"
-    return name, namespace
-
-
-async def resolve_log_identity(context: Any) -> tuple[str, str]:
-    """Resolve ``(tool, namespace)`` for logging, confirming catalog membership.
-
-    Confirms the requested name is a registered tool via the router's own
-    ``get_tool`` (the catalog authority: it returns ``None`` for any unresolved name,
-    instantly, without a blocking round-trip on the warm post-dispatch cache). Any
-    unresolved / unconfirmable name is bucketed to ``_unknown`` by
-    :func:`safe_log_identity`. Call in the post-``call_next`` phase so the lookup reuses
-    the not-found guard's already-warmed metadata cache.
-    """
-    raw = getattr(getattr(context, "message", None), "name", "") or ""
-    resolved = False
-    server = getattr(getattr(context, "fastmcp_context", None), "fastmcp", None)
-    if server is not None and isinstance(raw, str) and raw:
-        try:
-            resolved = await server.get_tool(raw) is not None
-        except Exception:
-            resolved = False  # cannot confirm membership → treat as unresolved
-    return safe_log_identity(raw, resolved)
 
 
 def configure_logging(level: str = "INFO") -> None:
@@ -420,34 +426,76 @@ def register_health(
 class AuditLogMiddleware(Middleware):
     """Emit a PII-safe audit record per tool call (GDPR Art. 30/32 accountability).
 
-    Logs the tool, namespace, outcome, and elapsed time — plus the request/correlation
-    id (merged from contextvars) and, when authenticated, the caller. It deliberately
-    NEVER logs tool arguments, results, or exception messages, which can carry
-    patient-derived data (variant coordinates, phenotype text). Data minimisation by design.
+    Logs the tool, namespace, outcome and elapsed time; the router's correlation id; the
+    backend a ``call_tool`` dispatch targeted; and, on failure, a BOUNDED error code, the
+    upstream HTTP status when the transport itself failed, and the backend's own request id.
+    It still NEVER logs tool arguments, results, or exception messages, which can carry
+    patient-derived data (variant coordinates, phenotype text).
+
+    Redact the input, not the error (issue #159). The previous record kept only
+    ``error_type``, and because the router is a proxy every backend fault is the same
+    ``ToolError`` — 168 of 172 errors read "ToolError" and said nothing else, while no other
+    sink could close the gap (MCP errors are in-band, so every proxied call logged 200 OK).
+    An audit trail that cannot establish WHAT went wrong is weak accountability, not strong
+    data minimisation. Every field added here is bounded by construction: see
+    :mod:`genefoundry_router.tool_error_taxonomy`.
     """
+
+    @staticmethod
+    def _correlation_fields() -> dict[str, str]:
+        """The router's own request id, when one is in scope.
+
+        The class docstring used to claim this was "merged from contextvars". It never was:
+        ``asgi-correlation-id`` binds its OWN ``ContextVar``, which structlog's
+        ``merge_contextvars`` does not read, so no emitted record ever carried the id that
+        ``X-Request-ID`` advertises to the caller. Omitted rather than null when there is no
+        HTTP request in scope (stdio, the startup harvest).
+        """
+        current = correlation_id.get()
+        return {"request_id": current} if current else {}
+
+    async def _identity_fields(self, context: MiddlewareContext) -> dict[str, str]:
+        # Resolve AFTER dispatch (warm catalog cache): only a verified registered tool is
+        # logged verbatim; any unresolved/hostile name buckets to _unknown.
+        tool, namespace = await resolve_log_identity(context)
+        fields = {"tool": tool, "namespace": namespace, **self._correlation_fields()}
+        dispatch_namespace = await resolve_dispatch_namespace(context)
+        if dispatch_namespace is not None:
+            fields["upstream_namespace"] = dispatch_namespace
+        return fields
+
+    @staticmethod
+    def _failure_fields(exc: BaseException) -> dict[str, Any]:
+        fields: dict[str, Any] = {
+            # class only — never the message (may hold PII)
+            "error_type": type(exc).__name__,
+            # closed vocabulary; anything unrecognised buckets to "unclassified"
+            "error_code": error_code(exc),
+        }
+        status = upstream_status(exc)
+        if status is not None:
+            fields["upstream_status"] = status
+        request_id = upstream_request_id(exc)
+        if request_id is not None:
+            fields["upstream_request_id"] = request_id
+        return fields
 
     async def on_call_tool(self, context: MiddlewareContext, call_next):  # type: ignore[no-untyped-def]
         start = time.perf_counter()
         try:
             result = await call_next(context)
         except Exception as exc:
-            # Resolve AFTER dispatch (warm catalog cache): only a verified registered
-            # tool is logged verbatim; any unresolved/hostile name buckets to _unknown.
-            tool, namespace = await resolve_log_identity(context)
             audit_log.info(
                 "tool_call",
-                tool=tool,
-                namespace=namespace,
+                **await self._identity_fields(context),
                 outcome="error",
-                error_type=type(exc).__name__,  # class only — never the message (may hold PII)
+                **self._failure_fields(exc),
                 elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
             )
             raise
-        tool, namespace = await resolve_log_identity(context)
         audit_log.info(
             "tool_call",
-            tool=tool,
-            namespace=namespace,
+            **await self._identity_fields(context),
             outcome="ok",
             elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
         )
