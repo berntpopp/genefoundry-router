@@ -328,6 +328,20 @@ def _evidence_timestamps(ledger: ContainerControlLedger) -> Iterator[datetime]:
             yield row.main_branch_ruleset.evidence.verified_at
 
 
+def oldest_evidence_age(ledger: ContainerControlLedger, now: datetime | None = None) -> timedelta:
+    """Return how old the ledger's oldest evidence claim is, relative to ``now``.
+
+    A passing gate is otherwise silent about *how* current its evidence is: a ledger
+    re-verified yesterday and one re-verified 89 days ago both just print "compliant".
+    Callers that report success (``validate_container_controls.py``, the release-gate
+    workflow step) should log this alongside the pass so a maintainer sees "evidence is
+    3 days old" rather than nothing — the age is exactly what ``require_compliant_controls``
+    already computed to decide whether to fail; this exposes it to a passing caller too.
+    """
+    stamps = sorted(_evidence_timestamps(ledger))
+    return (now or datetime.now(UTC)) - stamps[0]
+
+
 def _evidence_age_errors(
     ledger: ContainerControlLedger, now: datetime, max_evidence_age: timedelta
 ) -> list[str]:
@@ -389,6 +403,7 @@ __all__ = [
     "ControlLedgerError",
     "expected_fleet_repositories",
     "load_control_ledger",
+    "oldest_evidence_age",
     "require_compliant_controls",
     "router_repository",
 ]

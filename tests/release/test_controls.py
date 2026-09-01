@@ -17,6 +17,7 @@ from genefoundry_router.release.controls import (
     ControlLedgerError,
     expected_fleet_repositories,
     load_control_ledger,
+    oldest_evidence_age,
     require_compliant_controls,
 )
 
@@ -418,6 +419,47 @@ def test_release_gate_tolerates_small_clock_skew_between_runners() -> None:
     require_compliant_controls(ledger, repositories, now=FIXTURE_MOMENT - timedelta(minutes=1))
 
 
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        "not-a-timestamp",
+        "2026-07-30",  # date only: not RFC 3339, no time component
+        "2026-07-30T15:05:02",  # missing UTC offset: AwareDatetime requires tz-aware
+        "2026-13-40T99:99:99Z",  # syntactically timestamp-shaped, calendrically impossible
+        "",
+    ],
+)
+def test_load_control_ledger_rejects_malformed_verified_at(malformed: str) -> None:
+    """A hand-edited or corrupted `verified_at` must fail closed at parse time.
+
+    This is parse-time rejection (`load_control_ledger`), distinct from the age checks
+    above (`require_compliant_controls`): a malformed timestamp can never be compared to
+    `now`, so it must never reach that comparison in the first place.
+    """
+    repositories = {"berntpopp/genefoundry-router"}
+    payload = _ledger(repositories)
+    row = payload["repositories"]["berntpopp/genefoundry-router"]  # type: ignore[index]
+    row["retention"]["evidence"]["verified_at"] = malformed  # type: ignore[index]
+
+    with pytest.raises(ControlLedgerError, match="invalid control ledger"):
+        load_control_ledger(payload)
+
+
+def test_oldest_evidence_age_reports_the_minimum_claim_age() -> None:
+    """A passing gate can still report freshness -- it is not only an internal fail bound."""
+    repositories = {"berntpopp/genefoundry-router"}
+    payload = _ledger(repositories)
+    row = payload["repositories"]["berntpopp/genefoundry-router"]  # type: ignore[index]
+    older = (FIXTURE_MOMENT - timedelta(days=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    row["retention"]["evidence"]["verified_at"] = older  # type: ignore[index]
+    ledger = load_control_ledger(payload)
+
+    age = oldest_evidence_age(ledger, now=FIXTURE_MOMENT)
+
+    assert age >= timedelta(days=5)
+    assert age < timedelta(days=6)
+
+
 def test_validate_controls_cli_accepts_an_exact_compliant_fleet(tmp_path: Path) -> None:
     repositories = expected_fleet_repositories(ROOT / "servers.yaml")
     ledger = tmp_path / "container-controls.json"
@@ -427,6 +469,7 @@ def test_validate_controls_cli_accepts_an_exact_compliant_fleet(tmp_path: Path) 
 
     assert completed.returncode == 0, completed.stderr
     assert "validated 22 compliant repository controls" in completed.stdout
+    assert "day(s) old" in completed.stdout  # evidence age is reported on success, not silent
 
 
 def test_validate_controls_cli_rejects_malformed_json(tmp_path: Path) -> None:
