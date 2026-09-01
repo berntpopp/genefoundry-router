@@ -6,12 +6,14 @@ import copy
 import json
 import subprocess
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
 from genefoundry_router.release import controls
 from genefoundry_router.release.controls import (
+    MAX_CONTROL_EVIDENCE_AGE,
     ControlLedgerError,
     expected_fleet_repositories,
     load_control_ledger,
@@ -20,6 +22,12 @@ from genefoundry_router.release.controls import (
 
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATE_CONTROLS = ROOT / "scripts/validate_container_controls.py"
+# Synthetic fixtures must be dated relative to now. `require_compliant_controls` bounds
+# evidence age against the wall clock, so a hard-coded stamp would turn every ledger test into
+# a time bomb that goes red on a calendar date with no code change. Staleness has its own
+# tests below, and those pass an explicit `now` instead of relying on the clock.
+FIXTURE_MOMENT = datetime.now(UTC).replace(microsecond=0) - timedelta(minutes=1)
+FIXTURE_VERIFIED_AT = FIXTURE_MOMENT.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _run_validator(ledger: Path) -> subprocess.CompletedProcess[str]:
@@ -37,7 +45,7 @@ def _evidence(source: str = "api") -> dict[str, object]:
         "status": "verified",
         "source": source,
         "url": "https://github.com/berntpopp/example/settings",
-        "verified_at": "2026-07-13T12:00:00Z",
+        "verified_at": FIXTURE_VERIFIED_AT,
     }
     if source == "manual":
         value["reviewer"] = "bernt-popp"
@@ -106,7 +114,7 @@ def _ledger(repositories: set[str]) -> dict[str, object]:
         rows[router]["main_branch_ruleset"] = _main_rule()
     return {
         "schema_version": 1,
-        "reviewed_at": "2026-07-13T12:00:00Z",
+        "reviewed_at": FIXTURE_VERIFIED_AT,
         "repositories": rows,
     }
 
@@ -322,7 +330,7 @@ def test_unavailable_evidence_never_auto_passes() -> None:
         "status": "unavailable",
         "source": "manual",
         "url": "https://github.com/berntpopp/genefoundry-router/settings",
-        "verified_at": "2026-07-13T12:00:00Z",
+        "verified_at": FIXTURE_VERIFIED_AT,
         "reviewer": "bernt-popp",
         "reason": "setting is not available through the current API",
     }
@@ -352,12 +360,62 @@ def test_checked_in_ledger_covers_every_repository_and_is_release_ready() -> Non
     ledger `_container-release.yml` rejected outright, so `make ci-local` reported green while
     every container release failed closed. Load the committed bytes and nothing else: this is
     the only check standing between a stale ledger and a silently unreleasable fleet.
+
+    This now also asserts freshness against the real clock, deliberately: it must use the same
+    bound as the release gate, or `make ci-local` goes green while `_container-release.yml`
+    fails closed -- exactly the divergence described above. The committed ledger is dated
+    2026-07-30, so this starts failing around 2026-10-28 unless the control audit runs and the
+    refreshed ledger is committed.
     """
     repositories = expected_fleet_repositories(Path("servers.yaml"))
     ledger = load_control_ledger(Path("ci/container-controls.json"))
 
     assert set(ledger.repositories) == repositories
     require_compliant_controls(ledger, repositories)
+
+
+def test_release_gate_accepts_evidence_exactly_at_the_age_limit() -> None:
+    repositories = {"berntpopp/genefoundry-router"}
+    ledger = load_control_ledger(_ledger(repositories))
+
+    require_compliant_controls(ledger, repositories, now=FIXTURE_MOMENT + MAX_CONTROL_EVIDENCE_AGE)
+
+
+def test_release_gate_rejects_evidence_past_the_age_limit() -> None:
+    repositories = {"berntpopp/genefoundry-router"}
+    ledger = load_control_ledger(_ledger(repositories))
+    expired = FIXTURE_MOMENT + MAX_CONTROL_EVIDENCE_AGE + timedelta(seconds=1)
+
+    with pytest.raises(ControlLedgerError, match="stale"):
+        require_compliant_controls(ledger, repositories, now=expired)
+
+
+def test_evidence_age_is_measured_from_the_oldest_claim_not_the_review_stamp() -> None:
+    """A fresh `reviewed_at` must not launder a control whose own evidence is ancient."""
+    repositories = {"berntpopp/genefoundry-router"}
+    payload = _ledger(repositories)
+    row = payload["repositories"]["berntpopp/genefoundry-router"]  # type: ignore[index]
+    stale = FIXTURE_MOMENT - MAX_CONTROL_EVIDENCE_AGE - timedelta(days=1)
+    row["retention"]["evidence"]["verified_at"] = stale.strftime("%Y-%m-%dT%H:%M:%SZ")  # type: ignore[index]
+
+    with pytest.raises(ControlLedgerError, match="stale"):
+        require_compliant_controls(load_control_ledger(payload), repositories, now=FIXTURE_MOMENT)
+
+
+def test_release_gate_rejects_post_dated_evidence() -> None:
+    """Evidence dated in the future would otherwise defeat the age bound outright."""
+    repositories = {"berntpopp/genefoundry-router"}
+    ledger = load_control_ledger(_ledger(repositories))
+
+    with pytest.raises(ControlLedgerError, match="in the future"):
+        require_compliant_controls(ledger, repositories, now=FIXTURE_MOMENT - timedelta(days=1))
+
+
+def test_release_gate_tolerates_small_clock_skew_between_runners() -> None:
+    repositories = {"berntpopp/genefoundry-router"}
+    ledger = load_control_ledger(_ledger(repositories))
+
+    require_compliant_controls(ledger, repositories, now=FIXTURE_MOMENT - timedelta(minutes=1))
 
 
 def test_validate_controls_cli_accepts_an_exact_compliant_fleet(tmp_path: Path) -> None:
