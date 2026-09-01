@@ -522,6 +522,37 @@ Expected: 22/22 verified. Download the ledger artifact, replace `ci/container-co
 with that live probe output, run `make ci-local` against its exact contents in a new evidence-only
 branch, and merge it only through a reviewed PR. Never hand-edit a control result to passing.
 
+- [ ] **Step 5: Activate the scheduled audit and record its rollback**
+
+`control-audit.yml` gates its scheduled run on the `CONTROL_AUDIT_ENABLED` repository variable,
+opt-in exactly like the drift and fleet probes in Step 1. Step 3's secrets and Step 4's green
+manual dispatch are therefore necessary but **not sufficient**: while the variable is unset every
+scheduled run is skipped, and GitHub reports a skipped job as a *successful* workflow. Following
+this plan without this step yields a green control audit that has never actually audited anything
+-- the precise failure the audit exists to detect. Do this only after Step 4 has genuinely passed.
+
+First capture the typed API response or exact 404 for the variable in the mutation ledger. Record
+the rollback as restoring its prior value or deleting only the newly created variable. Then run:
+
+```bash
+gh variable set CONTROL_AUDIT_ENABLED --repo berntpopp/genefoundry-router --body true
+gh variable list --repo berntpopp/genefoundry-router
+```
+
+Rollback re-parks the schedule without touching the App, its installation, or its secrets:
+
+```bash
+gh variable delete CONTROL_AUDIT_ENABLED --repo berntpopp/genefoundry-router
+```
+
+Expected: within a day, `gh run list --repo berntpopp/genefoundry-router --workflow
+control-audit.yml --json event,conclusion` shows a run whose `event` is `schedule` and whose
+`conclusion` is `success`. Verify that a scheduled run exists at all; absence of runs, not a red
+run, is this step's failure mode. Then refresh `ci/container-controls.json` from that live probe
+per Step 4, so the release gate's evidence-age bound (`MAX_CONTROL_EVIDENCE_AGE` in
+`genefoundry_router/release/controls.py`) is measured against a current capture rather than the
+2026-07-30 one.
+
 ### Task 7: Harden and release the public `genefoundry` website repository
 
 **Files:**
