@@ -48,7 +48,7 @@ def _issuer(*, issuer: str = ISSUER, audience: str = AUDIENCE, key: bytes = KEY)
 
 def _verify_failure(token: str, verifier: JWTIssuer | None = None) -> BaseException:
     """Run the REAL verify_token and hand back whatever it raised."""
-    with pytest.raises(BaseException) as excinfo:  # noqa: B017,PT011 - the exception IS the subject
+    with pytest.raises(BaseException) as excinfo:  # the exception IS the subject here
         (verifier or _issuer()).verify_token(token, expected_token_use="refresh")  # noqa: S106
     return excinfo.value
 

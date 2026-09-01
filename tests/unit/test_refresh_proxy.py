@@ -261,12 +261,14 @@ def _classification_token(proxy: GeneFoundryOAuthProxy, case: str, token_client:
     only, so the resulting reason isolates that one defect (issue #161).
     """
     if case == "malformed":
-        return "raw-invalid-refresh-secret"  # noqa: S106 - not a JWT at all, by design
+        return "raw-invalid-refresh-secret"  # not a JWT at all, by design
     if case in {"issuer", "audience", "signature"}:
         foreign = JWTIssuer(
             issuer="https://evil.example" if case == "issuer" else BASE_URL,
             audience="https://evil.example/mcp" if case == "audience" else AUDIENCE,
-            signing_key=b"a-different-signing-key-32-bytes!" if case == "signature" else SIGNING_KEY,
+            signing_key=b"a-different-signing-key-32-bytes!"
+            if case == "signature"
+            else SIGNING_KEY,
         )
         return foreign.issue_refresh_token(
             client_id=token_client, scopes=["openid"], jti=f"jti-{case}", expires_in=3600

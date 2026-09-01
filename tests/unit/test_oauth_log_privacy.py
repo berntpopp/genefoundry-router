@@ -2,11 +2,11 @@
 
 ``OAuthProxyPrivacyFilter`` replaced the entire ``record.msg`` with one fixed sentence for
 every one of its 44 markers. In production that produced 279 identical, information-free
-lines. The decisive case: during the 2026-08-26 21:00–23:59Z burst (67 of 114 consecutive
+lines. The decisive case: during the 2026-08-26 21:00-23:59Z burst (67 of 114 consecutive
 ``POST /token`` 401s from one client) the ENTIRE router-side log for the window was
 
-    29 × "OAuth detail omitted (sensitive value redacted)."   proxy.py:1391
-     2 × "Bearer token rejected for client"                   jwt.py:506
+    29 x "OAuth detail omitted (sensitive value redacted)."   proxy.py:1391
+     2 x "Bearer token rejected for client"                   jwt.py:506
 
 ``proxy.py:1391`` is fastmcp's::
 
@@ -55,7 +55,7 @@ from genefoundry_router.observability import (
 
 # A value that must never reach a sink: it stands in for a client_id, a token hash, a
 # redirect URI, or an upstream error body.
-SECRET = "SECRET-c0ffee-VALUE"
+SENSITIVE_VALUE = "sensitive-c0ffee-value"
 
 # The exact production call site from the 2026-08-26 incident (fastmcp proxy.py:1391).
 REFRESH_MISS_TEMPLATE = (
@@ -104,7 +104,7 @@ def _emit(template: str, *args: object, level: int = logging.WARNING) -> None:
 
 def test_oauth_filter_keeps_template_prose(oauth_logs: Callable[[], str]) -> None:
     """THE regression. The refresh-miss diagnostic must survive redaction and stay readable."""
-    _emit(REFRESH_MISS_TEMPLATE, "client-abc", SECRET)
+    _emit(REFRESH_MISS_TEMPLATE, "client-abc", SENSITIVE_VALUE)
     out = oauth_logs()
 
     # Non-vacuity first: a dropped record would satisfy every "not in" below.
@@ -113,7 +113,7 @@ def test_oauth_filter_keeps_template_prose(oauth_logs: Callable[[], str]) -> Non
     assert "re-authenticate" in out
     assert "already rotated, expired, or revoked" in out
     # ...and none of the values.
-    assert SECRET not in out
+    assert SENSITIVE_VALUE not in out
     assert "client-abc" not in out
     # A redacted record must READ as one, not as a broken formatter.
     assert "%s" not in out
@@ -122,8 +122,8 @@ def test_oauth_filter_keeps_template_prose(oauth_logs: Callable[[], str]) -> Non
 @pytest.mark.parametrize("marker", _OAUTH_SENSITIVE_MARKERS)
 def test_oauth_filter_redacts_every_arg(marker: str, oauth_logs: Callable[[], str]) -> None:
     """No marker may let an arg value through, whatever the template looks like."""
-    _emit(f"{marker} %s", SECRET)
-    assert SECRET not in oauth_logs()
+    _emit(f"{marker} %s", SENSITIVE_VALUE)
+    assert SENSITIVE_VALUE not in oauth_logs()
 
 
 def test_oauth_filter_never_raises_on_unformattable_template(
@@ -131,11 +131,11 @@ def test_oauth_filter_never_raises_on_unformattable_template(
 ) -> None:
     """A redaction may never raise inside a logging handler. ``%d`` cannot take the string
     redaction token, so such a record degrades to the fixed message instead of erroring."""
-    _emit("Refresh token not found for client=%s after %d seconds", SECRET, 12)
+    _emit("Refresh token not found for client=%s after %d seconds", SENSITIVE_VALUE, 12)
     out = oauth_logs()
 
     assert _OAUTH_REDACTED_MESSAGE in out
-    assert SECRET not in out
+    assert SENSITIVE_VALUE not in out
     assert "%d" not in out
 
 
@@ -146,11 +146,11 @@ def test_oauth_filter_replaces_wholesale_when_the_value_is_in_the_message(
     the value into ``record.msg`` (args is empty), so clearing args protects nothing and the
     WHOLE message must go. fastmcp does this at proxy.py:2381 ("Forwarding to client
     callback for transaction {tid}")."""
-    _emit(f"Forwarding to client callback for transaction {SECRET}")
+    _emit(f"Forwarding to client callback for transaction {SENSITIVE_VALUE}")
     out = oauth_logs()
 
     assert _OAUTH_REDACTED_MESSAGE in out
-    assert SECRET not in out
+    assert SENSITIVE_VALUE not in out
 
 
 def test_non_marker_oauth_record_is_untouched(oauth_logs: Callable[[], str]) -> None:

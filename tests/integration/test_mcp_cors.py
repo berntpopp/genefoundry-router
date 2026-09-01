@@ -176,9 +176,7 @@ def test_non_preflight_options_still_405(gnomad_fake: FastMCP) -> None:
 def test_preflight_from_disallowed_host_is_still_421(gnomad_fake: FastMCP) -> None:
     """The DNS-rebinding guard is not weakened: Host is validated before CORS is reached."""
     with TestClient(_app(gnomad_fake, [ALLOWED], hosts=["genefoundry.test"])) as client:
-        response = client.options(
-            "/mcp", headers={**_preflight(ALLOWED), "host": "rebind.example"}
-        )
+        response = client.options("/mcp", headers={**_preflight(ALLOWED), "host": "rebind.example"})
 
     assert response.status_code == 421
     assert "access-control-allow-origin" not in response.headers
