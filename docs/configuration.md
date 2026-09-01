@@ -22,7 +22,7 @@ starts.
 | `GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY` | `false` | Explicit, warning-emitting acknowledgement required for an authenticated development router without the production controls; valid only on loopback and rejected in production/non-loopback use |
 | `GF_PUBLIC_BASE_URL` | _(unset)_ | Router's canonical public URL — OAuth resource URI + Protected-Resource-Metadata |
 | `GF_ALLOWED_HOSTS` | _(empty)_ | CSV Host allowlist; required for every non-loopback bind |
-| `GF_ALLOWED_ORIGINS` | _(empty)_ | CSV `Origin` allowlist (DNS-rebinding defence) |
+| `GF_ALLOWED_ORIGINS` | _(empty)_ | CSV browser `Origin` allowlist. Rejects any other present `Origin` with 403 (DNS-rebinding defence) **and** serves CORS for `/mcp` — the listed origins are reflected in `Access-Control-Allow-Origin` and may preflight. Empty = reject every present `Origin` and grant no CORS. |
 | `GF_JWT_ISSUER` | _(unset)_ | jwt/oauth: token issuer URL |
 | `GF_JWT_JWKS_URL` | _(unset)_ | jwt/oauth: issuer JWKS endpoint (signature verification keys) |
 | `GF_JWT_AUDIENCE` | _(unset)_ | jwt/oauth: required token `aud` (MUST match; audience binding) |
