@@ -10,7 +10,15 @@ permissions:
 
 jobs:
   audit:
-    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
+    # Opt-in: scheduled runs only when CONTROL_AUDIT_ENABLED=true; manual dispatch stays on main.
+    # The control-audit GitHub App and its environment secrets do not exist yet, so the daily run
+    # is parked until an administrator creates them (Task 6 Step 3) AND sets the variable
+    # (Task 6 Step 5) in docs/superpowers/plans/2026-08-30-control-plane-security-remediation.md.
+    # A skipped job reports as success, so while this is parked the only real signal that the
+    # control is live is a `schedule` run appearing in the run list -- not a green checkmark.
+    # NB: 'refs/heads/main' is hard-coded, so renaming the default branch silently disables
+    # manual dispatch here (github.event.repository.default_branch is not available in `if:`).
+    if: ${{ (vars.CONTROL_AUDIT_ENABLED == 'true' && github.event_name == 'schedule') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}
     # Admin prerequisite: restrict to protected main/default-branch runs and gate the token here.
     environment: control-audit
     runs-on: ubuntu-24.04

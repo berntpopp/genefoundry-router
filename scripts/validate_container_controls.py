@@ -10,6 +10,7 @@ from genefoundry_router.release.controls import (
     ControlLedgerError,
     expected_fleet_repositories,
     load_control_ledger,
+    oldest_evidence_age,
     require_compliant_controls,
 )
 
@@ -29,7 +30,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"control ledger is not compliant: {exc}", file=sys.stderr)
         return 1
 
-    print(f"validated {len(ledger.repositories)} compliant repository controls")
+    age_days = oldest_evidence_age(ledger).days
+    print(
+        f"validated {len(ledger.repositories)} compliant repository controls "
+        f"(oldest evidence is {age_days} day(s) old)"
+    )
     return 0
 
 

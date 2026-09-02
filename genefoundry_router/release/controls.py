@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import re
 import tomllib
+from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -16,6 +18,23 @@ from genefoundry_router.release.models import GhcrImageName, RepositoryName, Rfc
 
 class ControlLedgerError(ValueError):
     """The control ledger is invalid, incomplete, or not release-ready."""
+
+
+# The control audit re-proves these settings daily, so an age bound is really "how many
+# consecutive audit failures do we accept before refusing to release". Until 2026-09-01 there
+# was no bound at all: `verified_at` was parsed and never compared to anything, so evidence of
+# any age passed silently. 90 days is the outer edge of "plausibly current" for repository
+# configuration — rulesets, release environments, retention policy — which changes rarely and
+# is itself ruleset-protected, i.e. a quarterly re-attestation cadence.
+#
+# It is deliberately loose. The defect being fixed is that the age was *unbounded*, and a
+# tighter bound would fail the ledger committed today and block every fleet release with no
+# remedy available until the control-audit GitHub App exists. Tighten this to ~7-14 days once
+# the audit actually runs daily; it is one reviewed constant.
+MAX_CONTROL_EVIDENCE_AGE = timedelta(days=90)
+# Tolerate small clock skew between the auditing runner and the release runner, but never
+# accept evidence dated far in the future — that would defeat the age bound entirely.
+_MAX_CONTROL_EVIDENCE_SKEW = timedelta(minutes=5)
 
 
 class _StrictModel(BaseModel):
@@ -284,16 +303,80 @@ def _verified_row_errors(row: VerifiedRepositoryControls) -> list[str]:
     return errors
 
 
+def _evidence_timestamps(ledger: ContainerControlLedger) -> Iterator[datetime]:
+    """Yield every moment the ledger claims something was verified.
+
+    The ledger is only as fresh as its *oldest* claim, so every control's evidence counts,
+    not just the top-level review stamp.
+    """
+    yield ledger.reviewed_at
+    for row in ledger.repositories.values():
+        if row.status == "unavailable":
+            yield row.evidence.verified_at
+            continue
+        yield from (
+            control.evidence.verified_at
+            for control in (
+                row.tag_ruleset,
+                row.release_environment,
+                row.immutable_releases,
+                row.package,
+                row.retention,
+            )
+        )
+        if row.main_branch_ruleset is not None:
+            yield row.main_branch_ruleset.evidence.verified_at
+
+
+def oldest_evidence_age(ledger: ContainerControlLedger, now: datetime | None = None) -> timedelta:
+    """Return how old the ledger's oldest evidence claim is, relative to ``now``.
+
+    A passing gate is otherwise silent about *how* current its evidence is: a ledger
+    re-verified yesterday and one re-verified 89 days ago both just print "compliant".
+    Callers that report success (``validate_container_controls.py``, the release-gate
+    workflow step) should log this alongside the pass so a maintainer sees "evidence is
+    3 days old" rather than nothing — the age is exactly what ``require_compliant_controls``
+    already computed to decide whether to fail; this exposes it to a passing caller too.
+    """
+    stamps = sorted(_evidence_timestamps(ledger))
+    return (now or datetime.now(UTC)) - stamps[0]
+
+
+def _evidence_age_errors(
+    ledger: ContainerControlLedger, now: datetime, max_evidence_age: timedelta
+) -> list[str]:
+    """Reject control evidence that is too old to still describe live settings."""
+    stamps = sorted(_evidence_timestamps(ledger))
+    errors: list[str] = []
+    if stamps[-1] - now > _MAX_CONTROL_EVIDENCE_SKEW:
+        errors.append(
+            f"control evidence is dated {stamps[-1].isoformat()}, in the future; "
+            "post-dated evidence would defeat the staleness bound"
+        )
+    age = now - stamps[0]
+    if age > max_evidence_age:
+        errors.append(
+            f"control evidence is stale: the oldest claim is {age.days} days old "
+            f"({stamps[0].isoformat()}), limit {max_evidence_age.days} days. "
+            "Re-run the trusted-builder control audit and commit the refreshed ledger"
+        )
+    return errors
+
+
 def require_compliant_controls(
-    ledger: ContainerControlLedger, expected_repositories: set[str]
+    ledger: ContainerControlLedger,
+    expected_repositories: set[str],
+    *,
+    now: datetime | None = None,
+    max_evidence_age: timedelta = MAX_CONTROL_EVIDENCE_AGE,
 ) -> None:
-    """Fail unless every expected repository has all hard controls verified."""
+    """Fail unless every expected repository has all hard controls verified *and* current."""
     actual = set(ledger.repositories)
     if actual != expected_repositories:
         raise ControlLedgerError(
             "control ledger must exactly cover the router and registered backend repositories"
         )
-    errors: list[str] = []
+    errors = _evidence_age_errors(ledger, now or datetime.now(UTC), max_evidence_age)
     router = router_repository()
     trusted_builders = {
         repository
@@ -315,10 +398,12 @@ def require_compliant_controls(
 
 
 __all__ = [
+    "MAX_CONTROL_EVIDENCE_AGE",
     "ContainerControlLedger",
     "ControlLedgerError",
     "expected_fleet_repositories",
     "load_control_ledger",
+    "oldest_evidence_age",
     "require_compliant_controls",
     "router_repository",
 ]
