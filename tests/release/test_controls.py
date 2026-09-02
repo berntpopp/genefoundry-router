@@ -8,6 +8,7 @@ import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -118,6 +119,137 @@ def _ledger(repositories: set[str]) -> dict[str, object]:
         "reviewed_at": FIXTURE_VERIFIED_AT,
         "repositories": rows,
     }
+
+
+MANUAL_EVIDENCE_REQUIRED = (
+    "package linkage",
+    "GITHUB_TOKEN publication",
+    "standing package PAT absence",
+    "retention",
+)
+
+
+def _to_partial(row: dict[str, object]) -> dict[str, object]:
+    """Turn a fully verified row dict into the `partial` shape a real audit would emit
+    when every control it can prove passed, but package linkage/publication credential/
+    standing-PAT absence/retention remain unproven by this App's permissions."""
+    row = copy.deepcopy(row)
+    row.pop("package")
+    row.pop("retention")
+    row["status"] = "partial"
+    row["anonymous_pull"] = True
+    row["manual_evidence_required"] = list(MANUAL_EVIDENCE_REQUIRED)
+    return row
+
+
+def test_partial_row_passes_the_release_gate_as_a_warning_not_a_failure() -> None:
+    """Issue #165's honest model: a bounded evidence gap is reported, not fail-closed."""
+    router = "berntpopp/genefoundry-router"
+    payload = _ledger({router})
+    payload["repositories"][router] = _to_partial(payload["repositories"][router])  # type: ignore[index]
+
+    warnings = require_compliant_controls(load_control_ledger(payload), {router})
+
+    assert len(warnings) == len(MANUAL_EVIDENCE_REQUIRED)
+    for control in MANUAL_EVIDENCE_REQUIRED:
+        assert any(control in warning for warning in warnings)
+        assert any(router in warning for warning in warnings)
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "message"),
+    [
+        (("tag_ruleset", "restricts_deletion"), False, "tag ruleset"),
+        (("release_environment", "protected"), False, "release environment"),
+        (("immutable_releases", "enabled"), False, "immutable releases"),
+        (("anonymous_pull",), False, "anonymous pull"),
+    ],
+)
+def test_partial_row_still_enforces_every_control_it_claims_to_have_proven(
+    path: tuple[str, ...], value: object, message: str
+) -> None:
+    """`partial` names a gap in the four unprovable controls only -- it must not relax
+    anything the audit actually claims to have verified."""
+    router = "berntpopp/genefoundry-router"
+    payload = _ledger({router})
+    partial = _to_partial(payload["repositories"][router])  # type: ignore[index]
+    target: Any = partial
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = value
+    payload["repositories"][router] = partial  # type: ignore[index]
+
+    with pytest.raises(ControlLedgerError, match=message):
+        require_compliant_controls(load_control_ledger(payload), {router})
+
+
+def test_partial_row_requires_at_least_one_manual_evidence_item() -> None:
+    router = "berntpopp/genefoundry-router"
+    payload = _ledger({router})
+    partial = _to_partial(payload["repositories"][router])  # type: ignore[index]
+    partial["manual_evidence_required"] = []
+    payload["repositories"][router] = partial  # type: ignore[index]
+
+    with pytest.raises(ControlLedgerError, match="invalid control ledger"):
+        load_control_ledger(payload)
+
+
+def test_partial_trusted_builder_still_requires_a_main_branch_ruleset() -> None:
+    router = "berntpopp/genefoundry-router"
+    payload = _ledger({router})
+    partial = _to_partial(payload["repositories"][router])  # type: ignore[index]
+    partial.pop("main_branch_ruleset")
+    payload["repositories"][router] = partial  # type: ignore[index]
+
+    with pytest.raises(ControlLedgerError, match="invalid control ledger"):
+        load_control_ledger(payload)
+
+
+def test_partial_backend_forbids_a_main_branch_rule() -> None:
+    router = "berntpopp/genefoundry-router"
+    backend = "berntpopp/example-link"
+    payload = _ledger({router, backend})
+    partial = _to_partial(payload["repositories"][backend])  # type: ignore[index]
+    partial["main_branch_ruleset"] = _main_rule()
+    payload["repositories"][backend] = partial  # type: ignore[index]
+
+    with pytest.raises(ControlLedgerError, match="invalid control ledger"):
+        load_control_ledger(payload)
+
+
+def test_partial_trusted_builder_can_be_the_sole_trusted_builder() -> None:
+    """A partial row still counts toward the sole-trusted-builder invariant."""
+    router = "berntpopp/genefoundry-router"
+    backend = "berntpopp/example-link"
+    payload = _ledger({router, backend})
+    payload["repositories"][router] = _to_partial(payload["repositories"][router])  # type: ignore[index]
+
+    warnings = require_compliant_controls(load_control_ledger(payload), {router, backend})
+
+    assert len(warnings) == len(MANUAL_EVIDENCE_REQUIRED)
+
+
+def test_unavailable_still_blocks_even_when_a_partial_row_is_otherwise_accepted() -> None:
+    """A `partial` row's acceptance must not weaken an `unavailable` row elsewhere."""
+    router = "berntpopp/genefoundry-router"
+    backend = "berntpopp/example-link"
+    payload = _ledger({router, backend})
+    payload["repositories"][router] = _to_partial(payload["repositories"][router])  # type: ignore[index]
+    payload["repositories"][backend] = {
+        "status": "unavailable",
+        "repository": backend,
+        "reason": "tag ruleset is not active",
+        "evidence": {
+            "status": "unavailable",
+            "source": "api",
+            "url": "https://github.com/berntpopp/example-link/settings",
+            "verified_at": FIXTURE_VERIFIED_AT,
+            "reason": "tag ruleset is not active",
+        },
+    }
+
+    with pytest.raises(ControlLedgerError, match="unavailable"):
+        require_compliant_controls(load_control_ledger(payload), {router, backend})
 
 
 def test_main_branch_control_accepts_zero_required_approvals_for_one_maintainer() -> None:

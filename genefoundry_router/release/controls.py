@@ -155,6 +155,47 @@ class VerifiedRepositoryControls(_StrictModel):
         return self
 
 
+class PartialRepositoryControls(_StrictModel):
+    """A row where every control this App's permissions can prove already passed, and
+    what remains is a *named*, bounded evidence gap rather than a live failure.
+
+    This is deliberately distinct from ``unavailable``: an unavailable row means a
+    control this App CAN observe was probed and did not verify (fail closed, as
+    before). A partial row means the tag ruleset, release environment, immutable
+    releases, main-branch policy (for the trusted builder), and anonymous package pull
+    all verified — and the four controls in ``manual_evidence_required`` (package
+    linkage, which credential published the package, absence of a standing package
+    PAT, and retention) are unproven *because the control-audit GitHub App's declared
+    permissions* (``metadata: read``, ``administration: read``) cannot reach the
+    ``packages``- and ``attestations``-scoped endpoints those controls need — not
+    because anything failed. See the module docstring of
+    ``scripts/audit_container_controls.py`` for exactly which control needs which
+    permission. Supplying documented, human-attested manual evidence for these four
+    (the existing ``source: "manual"`` evidence type already used elsewhere in this
+    schema) is what would move a row from ``partial`` to fully ``verified``.
+    """
+
+    status: Literal["partial"]
+    repository: RepositoryName
+    role: RepositoryRole
+    tag_ruleset: TagRulesetControl
+    main_branch_ruleset: MainBranchRulesetControl | None = None
+    release_environment: ReleaseEnvironmentControl
+    immutable_releases: ImmutableReleaseControl
+    anonymous_pull: bool
+    manual_evidence_required: Annotated[
+        tuple[Annotated[str, Field(min_length=1, max_length=200)], ...], Field(min_length=1)
+    ]
+
+    @model_validator(mode="after")
+    def _role_controls_are_exact(self) -> PartialRepositoryControls:
+        if self.role == "trusted-builder" and self.main_branch_ruleset is None:
+            raise ValueError("trusted builder requires a main branch ruleset")
+        if self.role == "backend" and self.main_branch_ruleset is not None:
+            raise ValueError("backend must not carry a main branch ruleset")
+        return self
+
+
 class UnavailableRepositoryControls(_StrictModel):
     status: Literal["unavailable"]
     repository: RepositoryName
@@ -163,7 +204,7 @@ class UnavailableRepositoryControls(_StrictModel):
 
 
 RepositoryControls = Annotated[
-    VerifiedRepositoryControls | UnavailableRepositoryControls,
+    VerifiedRepositoryControls | PartialRepositoryControls | UnavailableRepositoryControls,
     Field(discriminator="status"),
 ]
 
@@ -245,7 +286,12 @@ def _ledger_error_detail(exc: Exception) -> str:
     return f"{exc.error_count()} validation error(s): {summary}"
 
 
-def _verified_row_errors(row: VerifiedRepositoryControls) -> list[str]:
+def _common_row_errors(row: VerifiedRepositoryControls | PartialRepositoryControls) -> list[str]:
+    """Checks shared by ``verified`` and ``partial`` rows: everything either can prove.
+
+    ``partial`` names a gap in the four package/retention controls only; it must not
+    relax anything else a row claims to have proven.
+    """
     errors: list[str] = []
     if row.role == "trusted-builder":
         main_rule = row.main_branch_ruleset
@@ -276,6 +322,11 @@ def _verified_row_errors(row: VerifiedRepositoryControls) -> list[str]:
         errors.append("release environment is not protected for exact tags")
     if not row.immutable_releases.enabled:
         errors.append("immutable releases are not enabled")
+    return errors
+
+
+def _verified_row_errors(row: VerifiedRepositoryControls) -> list[str]:
+    errors = _common_row_errors(row)
     package = row.package
     if package.visibility != "public" or package.linked_repository != row.repository:
         errors.append("public package is not linked to its source repository")
@@ -292,8 +343,8 @@ def _verified_row_errors(row: VerifiedRepositoryControls) -> list[str]:
     ):
         errors.append("retention does not preserve released, deployed, and rollback digests")
     evidence = (
-        rules.evidence,
-        environment.evidence,
+        row.tag_ruleset.evidence,
+        row.release_environment.evidence,
         row.immutable_releases.evidence,
         package.evidence,
         retention.evidence,
@@ -301,6 +352,30 @@ def _verified_row_errors(row: VerifiedRepositoryControls) -> list[str]:
     if any(item.status == "unavailable" for item in evidence):
         errors.append("a hard prerequisite has unavailable evidence")
     return errors
+
+
+def _partial_row_findings(row: PartialRepositoryControls) -> tuple[list[str], list[str]]:
+    """Return ``(errors, warnings)`` for a partial row.
+
+    Every control this function CAN evaluate (tag ruleset, release environment,
+    immutable releases, main-branch policy, anonymous pull) is held to the exact same
+    bar as a fully verified row — ``partial`` names an evidence gap in the four
+    controls the App cannot prove, it does not relax anything the App CAN prove.
+    """
+    errors = _common_row_errors(row)
+    if not row.anonymous_pull:
+        errors.append("anonymous pull is not verified")
+    evidence: list[ControlEvidence] = [
+        row.tag_ruleset.evidence,
+        row.release_environment.evidence,
+        row.immutable_releases.evidence,
+    ]
+    if row.main_branch_ruleset is not None:
+        evidence.append(row.main_branch_ruleset.evidence)
+    if any(item.status == "unavailable" for item in evidence):
+        errors.append("a hard prerequisite has unavailable evidence")
+    warnings = [f"manual evidence required: {item}" for item in row.manual_evidence_required]
+    return errors, warnings
 
 
 def _evidence_timestamps(ledger: ContainerControlLedger) -> Iterator[datetime]:
@@ -313,6 +388,14 @@ def _evidence_timestamps(ledger: ContainerControlLedger) -> Iterator[datetime]:
     for row in ledger.repositories.values():
         if row.status == "unavailable":
             yield row.evidence.verified_at
+            continue
+        if row.status == "partial":
+            yield from (
+                control.evidence.verified_at
+                for control in (row.tag_ruleset, row.release_environment, row.immutable_releases)
+            )
+            if row.main_branch_ruleset is not None:
+                yield row.main_branch_ruleset.evidence.verified_at
             continue
         yield from (
             control.evidence.verified_at
@@ -369,38 +452,54 @@ def require_compliant_controls(
     *,
     now: datetime | None = None,
     max_evidence_age: timedelta = MAX_CONTROL_EVIDENCE_AGE,
-) -> None:
-    """Fail unless every expected repository has all hard controls verified *and* current."""
+) -> list[str]:
+    """Fail unless every expected repository has all hard controls verified *and* current.
+
+    Returns a list of non-fatal warnings on success (empty when there are none). A
+    ``partial`` row — every control the control-audit App can prove already passed,
+    with a named gap in the four it cannot (see ``PartialRepositoryControls``) — is
+    reported here as a warning, not a hard failure: accepting a bounded, honestly-named
+    evidence gap is a deliberate decision, not silence. An ``unavailable`` row (a
+    control the App CAN observe failed to verify) still fails closed exactly as before.
+    """
     actual = set(ledger.repositories)
     if actual != expected_repositories:
         raise ControlLedgerError(
             "control ledger must exactly cover the router and registered backend repositories"
         )
     errors = _evidence_age_errors(ledger, now or datetime.now(UTC), max_evidence_age)
+    warnings: list[str] = []
     router = router_repository()
     trusted_builders = {
         repository
         for repository, row in ledger.repositories.items()
-        if row.status == "verified" and row.role == "trusted-builder"
+        if row.status in ("verified", "partial") and row.role == "trusted-builder"
     }
     if trusted_builders != {router}:
         errors.append(f"the sole trusted builder must be the router repository {router}")
     for repository, row in sorted(ledger.repositories.items()):
         if row.status == "unavailable":
             errors.append(f"{repository}: hard controls unavailable: {row.reason}")
+            continue
+        expected_role: RepositoryRole = "trusted-builder" if repository == router else "backend"
+        if row.role != expected_role:
+            errors.append(f"{repository}: expected repository role {expected_role}")
+        if row.status == "partial":
+            row_errors, row_warnings = _partial_row_findings(row)
+            errors.extend(f"{repository}: {error}" for error in row_errors)
+            warnings.extend(f"{repository}: {warning}" for warning in row_warnings)
         else:
-            expected_role: RepositoryRole = "trusted-builder" if repository == router else "backend"
-            if row.role != expected_role:
-                errors.append(f"{repository}: expected repository role {expected_role}")
             errors.extend(f"{repository}: {error}" for error in _verified_row_errors(row))
     if errors:
         raise ControlLedgerError("; ".join(errors))
+    return warnings
 
 
 __all__ = [
     "MAX_CONTROL_EVIDENCE_AGE",
     "ContainerControlLedger",
     "ControlLedgerError",
+    "PartialRepositoryControls",
     "expected_fleet_repositories",
     "load_control_ledger",
     "oldest_evidence_age",

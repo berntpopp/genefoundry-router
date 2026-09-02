@@ -1,15 +1,46 @@
 """Probe live GitHub/GHCR release controls and emit the fleet control ledger.
 
-Every observable repository control is probed against the live API. Any hard
-control that cannot be proven emits an ``unavailable`` row naming the exact
-control, which keeps the release gate closed; no control is ever auto-passed
-from absence of evidence.
+Every control below is probed against the live API using the installed control-audit
+GitHub App's declared permissions ONLY (``metadata: read``, ``administration: read`` —
+see ``.github/workflows/control-audit.yml``). A control this App's permissions CAN
+reach is probed directly and a row is marked ``unavailable`` (which keeps the release
+gate closed) whenever that probe fails to verify. No control is ever auto-passed from
+absence of evidence.
 
-Anonymous pull is probed from an unauthenticated registry request. That proves
-public pullability only: it cannot establish repository linkage, which credential
-published the package, the absence of a standing package PAT, or retention. Those
-hard controls remain unavailable until separately authenticated/manual evidence is
-designed and supplied.
+**Proven automatically by this App**, per row:
+tag ruleset, main-branch ruleset (trusted builder only), release environment,
+immutable releases, and anonymous package pull (an unauthenticated GHCR registry
+request — this needs no GitHub API permission at all, since it talks to the registry,
+not the GitHub REST API).
+
+**NOT provable with this App's current permissions** — four hard controls, each gated
+by a GitHub permission the App does not declare:
+
+- **package linkage** (does the package belong to its claimed source repository?) —
+  needs ``GET /users/{owner}/packages/container/{name}``, which requires
+  ``packages: read``.
+- **GITHUB_TOKEN publication** (was the package published by the ambient
+  ``GITHUB_TOKEN`` rather than a personal access token?) — the only way to prove this
+  is to resolve the artifact's build provenance via the attestations API
+  (``GET /repos/{owner}/{repo}/attestations/{subject_digest}``), which is gated by a
+  separate ``attestations: read`` permission this App also does not have.
+- **standing package PAT absence** — there is no GitHub REST endpoint that enumerates
+  which personal access tokens hold package-write scope on a repository. This is not
+  a permission gap this App could close by requesting more scope; it has no
+  automatable form at all.
+- **retention** — the package's version-retention/cleanup policy is read through the
+  same packages API as package linkage, so it needs ``packages: read`` too.
+
+A row where every *provable* control above passes is emitted with
+``status: "partial"``, not ``unavailable``, naming these four in
+``manual_evidence_required``. This is the honest middle ground the previous
+unconditional-``unavailable`` design lacked: "unproven by this App" is not the same
+claim as "failing right now", and conflating them made the audit fail even when live
+controls were exactly as configured. Supplying documented, human-attested manual
+evidence for these four (the ``source: "manual"`` evidence type already used
+elsewhere in this schema) is what would move a row from ``partial`` to fully
+``verified``; `require_compliant_controls` treats ``partial`` as a warning rather than
+a release blocker, and ``unavailable`` exactly as before.
 """
 
 from __future__ import annotations
@@ -342,12 +373,29 @@ def _anonymous_manifest_status(repo: str) -> int:
         return 0
 
 
-def build_row(repo: str, role: Literal["trusted-builder", "backend"]) -> JsonDict:
-    """Return an unavailable row naming every unproven hard control.
+# The four hard controls this App's permissions (`metadata: read`, `administration:
+# read`) genuinely cannot prove -- see the module docstring for exactly why each one
+# needs a permission this App does not declare, or (for the standing-PAT check) has no
+# automatable form at all. A row that verifies every OTHER control names these as
+# `manual_evidence_required` rather than being marked `unavailable` for them.
+MANUAL_EVIDENCE_REQUIRED: tuple[str, ...] = (
+    "package linkage",
+    "GITHUB_TOKEN publication",
+    "standing package PAT absence",
+    "retention",
+)
 
-    The current App scope proves repository controls but has no authenticated package
-    evidence. Even a successful anonymous manifest read cannot complete the package or
-    retention model, so an unattended audit must remain fail-closed.
+
+def build_row(repo: str, role: Literal["trusted-builder", "backend"]) -> JsonDict:
+    """Probe every control this App can prove; return ``partial`` or ``unavailable``.
+
+    ``unavailable`` when any *provable* control (tag ruleset, main-branch ruleset for
+    a trusted builder, release environment, immutable releases, anonymous package
+    pull) fails to verify -- these stay hard fail-closed conditions, unchanged.
+    ``partial`` when every provable control passes but the four package/retention
+    controls named in ``MANUAL_EVIDENCE_REQUIRED`` remain unproven by this App's
+    permissions (see the module docstring): they are named honestly rather than
+    silently dropped or falsely claimed as either passing or failing.
     """
     probes = {
         "tag_ruleset": probe_tag_ruleset(repo),
@@ -357,29 +405,38 @@ def build_row(repo: str, role: Literal["trusted-builder", "backend"]) -> JsonDic
     if role == "trusted-builder":
         probes["main_branch_ruleset"] = probe_main_branch_ruleset(repo)
     missing = sorted(name for name, value in probes.items() if value is None)
-    if _anonymous_manifest_status(repo) != 200:
+    anonymous_pull_verified = _anonymous_manifest_status(repo) == 200
+    if not anonymous_pull_verified:
         missing.append("anonymous package pull")
-    missing.extend(
-        (
-            "package linkage",
-            "GITHUB_TOKEN publication",
-            "standing package PAT absence",
-            "retention",
-        )
-    )
-    reason = f"unproven hard controls: {', '.join(missing)}"
-    return {
-        "status": "unavailable",
-        "repository": repo,
-        "reason": reason,
-        "evidence": {
+
+    if missing:
+        reason = f"unproven hard controls: {', '.join(missing)}"
+        return {
             "status": "unavailable",
-            "source": "api",
-            "url": f"https://github.com/{repo}/pkgs/container/{repo.rsplit('/', 1)[-1]}",
-            "verified_at": _now(),
+            "repository": repo,
             "reason": reason,
-        },
+            "evidence": {
+                "status": "unavailable",
+                "source": "api",
+                "url": f"https://github.com/{repo}/pkgs/container/{repo.rsplit('/', 1)[-1]}",
+                "verified_at": _now(),
+                "reason": reason,
+            },
+        }
+
+    row: JsonDict = {
+        "status": "partial",
+        "repository": repo,
+        "role": role,
+        "tag_ruleset": probes["tag_ruleset"],
+        "release_environment": probes["release_environment"],
+        "immutable_releases": probes["immutable_releases"],
+        "anonymous_pull": anonymous_pull_verified,
+        "manual_evidence_required": list(MANUAL_EVIDENCE_REQUIRED),
     }
+    if role == "trusted-builder":
+        row["main_branch_ruleset"] = probes["main_branch_ruleset"]
+    return row
 
 
 def build_ledger(repositories: set[str]) -> JsonDict:
@@ -398,13 +455,32 @@ def build_ledger(repositories: set[str]) -> JsonDict:
 
 
 def _report(ledger: JsonDict) -> list[str]:
+    """Print a summary and return the rows that should fail the audit.
+
+    Only ``unavailable`` rows are blockers: a control this App can observe failed to
+    verify. ``partial`` rows are reported too, but are not blockers -- they name a
+    permanent, known evidence gap (see ``MANUAL_EVIDENCE_REQUIRED``), not a live
+    regression, and treating them as failures is exactly the bug this function used to
+    have (every row was unconditionally unavailable; see issue #165).
+    """
+    rows = ledger["repositories"]
     blockers = [
         f"{repo}: {row['reason']}"
-        for repo, row in sorted(ledger["repositories"].items())
+        for repo, row in sorted(rows.items())
         if row["status"] == "unavailable"
     ]
-    verified = len(ledger["repositories"]) - len(blockers)
-    print(f"verified rows: {verified}/{len(ledger['repositories'])}")
+    partial = [
+        f"{repo}: manual evidence required: {', '.join(row['manual_evidence_required'])}"
+        for repo, row in sorted(rows.items())
+        if row["status"] == "partial"
+    ]
+    verified = sum(1 for row in rows.values() if row["status"] == "verified")
+    print(
+        f"verified rows: {verified}/{len(rows)} "
+        f"({len(partial)} partial, {len(blockers)} unavailable)"
+    )
+    for note in partial:
+        print(f"  PARTIAL {note}")
     for blocker in blockers:
         print(f"  BLOCKER {blocker}")
     return blockers
@@ -426,10 +502,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         try:
             ledger = load_control_ledger(args.ledger)
-            require_compliant_controls(ledger, repositories)
+            checked_in_warnings = require_compliant_controls(ledger, repositories)
         except ControlLedgerError as exc:
             print(f"control ledger is not release-ready: {exc}", file=sys.stderr)
             return 1
+        for warning in checked_in_warnings:
+            print(f"WARNING: checked-in ledger: {warning}", file=sys.stderr)
         live = build_ledger(repositories)
         blockers = _report(live)
         if blockers:

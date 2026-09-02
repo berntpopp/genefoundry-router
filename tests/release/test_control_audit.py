@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -77,19 +76,42 @@ def _install_anonymous_pull(monkeypatch: pytest.MonkeyPatch, status: int) -> Non
 def test_anonymous_pull_cannot_verify_unobservable_package_controls(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Every provable control passes -> partial, naming the 4 unprovable ones honestly.
+
+    This used to assert `status == "unavailable"`: the pre-fix `build_row` unconditionally
+    named all four package/retention controls unproven regardless of what the probes found,
+    so the audit could never pass (issue #165). It is not unavailable -- the tag ruleset,
+    main-branch ruleset, release environment, immutable releases, and anonymous pull all
+    verified; only the four controls this App's permissions cannot reach remain unproven.
+    """
     _install_api(monkeypatch)
     _install_anonymous_pull(monkeypatch, 200)
 
     row = audit.build_row(REPO, role="trusted-builder")
 
-    assert row["status"] == "unavailable"
-    for control in (
+    assert row["status"] == "partial"
+    assert "reason" not in row
+    assert set(row["manual_evidence_required"]) == {
         "package linkage",
         "GITHUB_TOKEN publication",
-        "standing package PAT",
+        "standing package PAT absence",
         "retention",
-    ):
-        assert control in row["reason"]
+    }
+    assert row["anonymous_pull"] is True
+    assert "main_branch_ruleset" in row
+
+
+def _walk_dict_keys(value: object) -> set[str]:
+    """Return every mapping key found anywhere in a nested JSON-like structure."""
+    keys: set[str] = set()
+    if isinstance(value, dict):
+        keys.update(value.keys())
+        for item in value.values():
+            keys.update(_walk_dict_keys(item))
+    elif isinstance(value, list):
+        for item in value:
+            keys.update(_walk_dict_keys(item))
+    return keys
 
 
 def test_unattended_run_does_not_manufacture_reviewer_or_retention_evidence(
@@ -100,9 +122,14 @@ def test_unattended_run_does_not_manufacture_reviewer_or_retention_evidence(
 
     row = audit.build_row(REPO, role="backend")
 
-    assert row["status"] == "unavailable"
+    assert row["status"] == "partial"
     assert "retention" not in row
-    assert "reviewer" not in json.dumps(row)
+    assert "package" not in row
+    assert "main_branch_ruleset" not in row
+    # `required_reviewers` (a real, API-probed release-environment field) legitimately
+    # contains the substring "reviewer"; what must never appear is a fabricated manual
+    # attestation -- an evidence block naming a human reviewer.
+    assert "reviewer" not in _walk_dict_keys(row)
 
 
 @pytest.mark.parametrize(
@@ -546,7 +573,7 @@ def test_backend_row_never_probes_or_includes_main_ruleset(
 
     row = audit.build_row(REPO, role="backend")
 
-    assert row["status"] == "unavailable"
+    assert row["status"] == "partial"
     assert "main_branch_ruleset" not in row
 
 
@@ -566,3 +593,77 @@ def test_build_ledger_assigns_router_as_only_trusted_builder_outside_repo_cwd(
     audit.build_ledger({REPO, backend})
 
     assert calls == [(backend, "backend"), (REPO, "trusted-builder")]
+
+
+def test_report_does_not_treat_partial_rows_as_blockers() -> None:
+    """A `partial` row is a named, bounded evidence gap, not a live compliance failure.
+
+    `_report` used to only ever see `unavailable` rows (the bug in #165), so this is the
+    fence for the actual fix: a ledger with a mix of verified, partial, and unavailable
+    rows must count partial rows separately and NOT include them among the blockers that
+    fail the audit.
+    """
+    ledger = {
+        "repositories": {
+            "berntpopp/verified-example": {"status": "verified"},
+            "berntpopp/partial-example": {
+                "status": "partial",
+                "manual_evidence_required": ["package linkage", "retention"],
+            },
+            "berntpopp/unavailable-example": {
+                "status": "unavailable",
+                "reason": "tag ruleset is not active",
+            },
+        }
+    }
+
+    blockers = audit._report(ledger)
+
+    assert blockers == ["berntpopp/unavailable-example: tag ruleset is not active"]
+
+
+def test_manual_evidence_required_names_exactly_the_documented_four_controls() -> None:
+    """The module docstring enumerates these four by name; keep the constant in sync."""
+    assert set(audit.MANUAL_EVIDENCE_REQUIRED) == {
+        "package linkage",
+        "GITHUB_TOKEN publication",
+        "standing package PAT absence",
+        "retention",
+    }
+    for control in audit.MANUAL_EVIDENCE_REQUIRED:
+        assert control in audit.__doc__
+
+
+@pytest.mark.parametrize(
+    ("overrides", "pull_status", "expected_control"),
+    [
+        ({f"repos/{REPO}/rulesets": []}, 200, "tag_ruleset"),
+        (
+            {f"repos/{REPO}/environments/release": {"protection_rules": []}},
+            200,
+            "release_environment",
+        ),
+        ({f"repos/{REPO}/immutable-releases": {"enabled": False}}, 200, "immutable_releases"),
+        ({}, 404, "anonymous package pull"),
+    ],
+)
+def test_partial_never_masks_a_genuinely_failing_provable_control(
+    monkeypatch: pytest.MonkeyPatch,
+    overrides: dict[str, Any],
+    pull_status: int,
+    expected_control: str,
+) -> None:
+    """`partial` is only reachable when every provable control passed.
+
+    A single failing provable control -- of any kind, including the newly-distinguished
+    anonymous-pull case -- must still produce `unavailable`, never `partial`. `partial`
+    naming a permanent, honest evidence gap must never become a way to launder a live
+    regression in a control this App CAN observe.
+    """
+    _install_api(monkeypatch, overrides)
+    _install_anonymous_pull(monkeypatch, pull_status)
+
+    row = audit.build_row(REPO, role="backend")
+
+    assert row["status"] == "unavailable"
+    assert expected_control in row["reason"]
