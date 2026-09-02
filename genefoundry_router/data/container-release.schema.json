@@ -142,6 +142,16 @@
           "title": "Image Allowlist",
           "type": "array"
         },
+        "schema_compatibility": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Schema Compatibility",
+          "type": "array"
+        },
         "release_tag": {
           "anyOf": [
             {
@@ -207,6 +217,16 @@
           },
           "title": "Image Allowlist",
           "type": "array"
+        },
+        "schema_compatibility": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Schema Compatibility",
+          "type": "array"
         }
       },
       "required": [
@@ -234,6 +254,16 @@
             "type": "string"
           },
           "title": "Image Allowlist",
+          "type": "array"
+        },
+        "schema_compatibility": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Schema Compatibility",
           "type": "array"
         },
         "release_tag": {
@@ -470,6 +500,16 @@
             "type": "string"
           },
           "title": "Image Allowlist",
+          "type": "array"
+        },
+        "schema_compatibility": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Schema Compatibility",
           "type": "array"
         },
         "release_tag": {

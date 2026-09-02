@@ -68,6 +68,10 @@ Rfc3339Timestamp = Annotated[
     WithJsonSchema({"type": "string", "format": "date-time", "pattern": RFC3339_PATTERN}),
 ]
 SafeIdentifier = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")]
+# The data schema versions one application build can serve. Each entry is a fleet
+# identifier so a reviewed data attestation's own schema version can be compared to
+# it verbatim; range expressions are refused because nothing downstream evaluates them.
+SchemaCompatibility = Annotated[tuple[SafeIdentifier, ...], Field(max_length=32)]
 ThirdPartyImageReference = Annotated[
     str,
     Field(
@@ -231,6 +235,7 @@ class NoAuthoritativeData(StrictModel):
 
     mode: Literal["none"]
     image_allowlist: tuple[ImageLayerPath, ...] = ()
+    schema_compatibility: SchemaCompatibility = ()
 
 
 class OptionalReleaseDataIdentity(StrictModel):
@@ -243,6 +248,7 @@ class OptionalReleaseDataIdentity(StrictModel):
     )
 
     image_allowlist: tuple[ImageLayerPath, ...] = ()
+    schema_compatibility: SchemaCompatibility = ()
     release_tag: DataReleaseTag | None = None
     digest: Sha256Digest | None = None
 
@@ -430,7 +436,7 @@ class NoDataRequirements(StrictModel):
     """A released application with no authoritative data identity."""
 
     mode: Literal["none"]
-    schema_compatibility: tuple[str, ...] = ()
+    schema_compatibility: SchemaCompatibility = ()
 
 
 class ExactDataRequirements(StrictModel):
@@ -438,7 +444,7 @@ class ExactDataRequirements(StrictModel):
 
     release_tag: DataReleaseTag
     digest: Sha256Digest
-    schema_compatibility: tuple[str, ...] = ()
+    schema_compatibility: SchemaCompatibility = ()
     data_identity_contract: DataIdentityAdoption | None = None
 
 

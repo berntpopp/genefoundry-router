@@ -2,6 +2,27 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.8.6] - 2026-09-02
+
+### Added
+
+- Release configuration: optional `data.schema_compatibility` in `container-release.json` —
+  the data schema versions the application can serve, declared in every `data` mode as fleet
+  identifiers (`"4"`, `"5.1"`, `"schema-6"`). The release workflow already projected the field
+  into the published manifest, but `ReleaseConfig`'s data models forbid extra keys, so a
+  repository that declared it failed `validate-config` with "Extra inputs are not permitted"
+  and every data-bearing manifest in the fleet published `"schema_compatibility": []`. The
+  fleet controller's data attestation requires the attested schema version to be a member of
+  that list and refuses an empty one, so no data release could be activated. Omitting the
+  field still publishes `[]`; existing repositories are unaffected. Documented under
+  "`data.schema_compatibility`" in `docs/deployment.md`.
+
+### Changed
+
+- `data_requirements.schema_compatibility` in the application release manifest is now
+  validated as a bounded list of fleet identifiers rather than free-form strings, so a range
+  expression that no consumer evaluates can no longer be published as if it were a version.
+
 ## [0.8.5] - 2026-09-02
 
 ### Added
