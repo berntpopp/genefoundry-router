@@ -25,10 +25,17 @@ def main(argv: list[str] | None = None) -> int:
     try:
         repositories = expected_fleet_repositories(ROOT / "servers.yaml")
         ledger = load_control_ledger(args.ledger)
-        require_compliant_controls(ledger, repositories)
+        warnings = require_compliant_controls(ledger, repositories)
     except ControlLedgerError as exc:
         print(f"control ledger is not compliant: {exc}", file=sys.stderr)
         return 1
+
+    # `partial` rows (see PartialRepositoryControls) surface here as warnings, not a
+    # hard failure: a bounded, honestly-named evidence gap accepted on purpose is not
+    # silence, but it also is not a reason to fail a release gate that never claimed to
+    # prove those controls in the first place.
+    for warning in warnings:
+        print(f"WARNING: {warning}", file=sys.stderr)
 
     age_days = oldest_evidence_age(ledger).days
     print(
