@@ -6,6 +6,37 @@ runtime configuration and auth live in [`configuration.md`](configuration.md).
 > **Research use only. Not clinical decision support.** Provenance proves origin and
 > integrity, not clinical validity or biomedical correctness.
 
+## Fleet controller deploy contract
+
+The fleet controller (`strato_v6_docker_npm`, `scripts/utils/deployment_preflight.py`)
+deploys `docker/docker-compose.yml` + `docker/docker-compose.prod.yml` +
+`docker/docker-compose.npm.yml` as one stack, and its `canonical_projection` accepts a
+declared `user` only as numeric non-root — the runtime observer separately proves the
+effective uid from `/proc`. `docker/docker-compose.npm.yml` therefore declares
+`user: "10001:10001"`, this image's own uid:gid from `docker/Dockerfile`'s
+`useradd --uid 10001` / `USER 10001:10001` — never copied from a sibling `-link` repo,
+which may use a different uid. `user` must NOT appear in `docker/docker-compose.yml` or
+`docker/docker-compose.prod.yml`: those are the Compose files gated by
+`container-release.json`, and the release validator (`container_release.py
+validate-compose`) forbids `user` there. `tests/unit/docker/test_compose.py` guards both
+halves of this split.
+
+Self-check the rendered stack against the controller's own projection before deploying:
+
+```bash
+export GENEFOUNDRY_IMAGE="ghcr.io/berntpopp/genefoundry-router@sha256:<digest>"
+export GF_ALLOWED_HOSTS="genefoundry.org" GF_HEALTHCHECK_HOST="genefoundry.org"
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml \
+  -f docker/docker-compose.npm.yml config --format json > /tmp/genefoundry-router-rendered.json
+# from the strato_v6_docker_npm checkout:
+uv run python -c "
+import sys, json; sys.path.insert(0, 'scripts')
+from utils.deployment_preflight import canonical_projection
+p = canonical_projection(json.load(open('/tmp/genefoundry-router-rendered.json')), project='genefoundry-router')
+for n, s in p['services'].items(): print(n, 'user=', s.get('user'))
+print('PROJECTION OK')"
+```
+
 ## Container release
 
 The public application image is code-only and AMD64-only in release standard v1. A

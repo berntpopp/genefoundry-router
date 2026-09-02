@@ -1,8 +1,11 @@
+import json
+import re
 from pathlib import Path
 
 import yaml
 
 DOCKER = Path(__file__).resolve().parents[3] / "docker"
+ROOT = Path(__file__).resolve().parents[3]
 
 
 class _ComposeLoader(yaml.SafeLoader):
@@ -87,3 +90,27 @@ def test_npm_overlay_resets_host_ports():
     svc = data["services"]["genefoundry-router"]
     assert svc["ports"] == []
     assert svc["expose"] == ["8000"]
+
+
+def test_npm_overlay_declares_numeric_deploy_user():
+    # The fleet controller (strato_v6_docker_npm, scripts/utils/deployment_preflight.py)
+    # accepts a declared `user` only as numeric non-root in the deployed overlay; the
+    # release Compose files below must NOT declare it (see the paired assertion).
+    data = _load("docker-compose.npm.yml")
+    for name, svc in data["services"].items():
+        user = svc.get("user")
+        assert user is not None, f"service {name} missing numeric user in npm overlay"
+        assert re.fullmatch(r"[1-9][0-9]*:[1-9][0-9]*", str(user)), (
+            f"service {name} user {user!r} is not numeric uid:gid"
+        )
+
+
+def test_release_compose_files_omit_user():
+    release = json.loads((ROOT / "container-release.json").read_text())
+    for rel_path in release["service"]["compose_files"]:
+        data = _load(Path(rel_path).name)
+        for name, svc in data["services"].items():
+            assert "user" not in svc, (
+                f"{rel_path} service {name} must not declare user "
+                "(release gate forbids it; the fleet deploy overlay owns it)"
+            )
