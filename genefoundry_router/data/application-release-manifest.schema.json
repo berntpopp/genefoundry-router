@@ -28,8 +28,10 @@
         "schema_compatibility": {
           "default": [],
           "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
             "type": "string"
           },
+          "maxItems": 32,
           "title": "Schema Compatibility",
           "type": "array"
         },
@@ -138,8 +140,10 @@
         "schema_compatibility": {
           "default": [],
           "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
             "type": "string"
           },
+          "maxItems": 32,
           "title": "Schema Compatibility",
           "type": "array"
         }
@@ -257,8 +261,10 @@
         "schema_compatibility": {
           "default": [],
           "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
             "type": "string"
           },
+          "maxItems": 32,
           "title": "Schema Compatibility",
           "type": "array"
         },
@@ -401,8 +407,10 @@
         "schema_compatibility": {
           "default": [],
           "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
             "type": "string"
           },
+          "maxItems": 32,
           "title": "Schema Compatibility",
           "type": "array"
         },

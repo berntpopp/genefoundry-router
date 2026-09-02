@@ -140,14 +140,14 @@ def test_manifest_allows_standard_workflow_from_router_repository() -> None:
             "mode": "external-reference",
             "release_tag": "data-2026.07.13",
             "digest": f"sha256:{'6' * 64}",
-            "schema_compatibility": [">=1,<2"],
+            "schema_compatibility": ["4"],
             "data_identity_contract": None,
         },
         {
             "mode": "restored-database",
             "release_tag": "data-2026.07.13",
             "digest": f"sha256:{'6' * 64}",
-            "schema_compatibility": [">=1,<2"],
+            "schema_compatibility": ["4"],
             "data_identity_contract": None,
         },
         {

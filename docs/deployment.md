@@ -110,6 +110,25 @@ Example, for a stack with a Postgres sidecar and a seed bind:
 }
 ```
 
+### `data.schema_compatibility`
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `schema_compatibility` | `[]` | The data schema versions this application build can serve, as fleet identifiers (`"4"`, `"5.1"`, `"schema-6"`); the fleet controller's data attestation binds a data release to one member of this list and refuses an empty one, so a data-bearing repository that omits it can never activate a data release. |
+
+It is declared inside `data`, in every mode, and the release workflow projects it verbatim
+into the published manifest's `data_requirements.schema_compatibility`. Omitting it publishes
+`[]`, which is what a code-only service wants.
+
+```json
+"data": {
+  "mode": "restored-database",
+  "release_tag": "data-2026.09.01",
+  "digest": "sha256:<64 lowercase hex>",
+  "schema_compatibility": ["4"]
+}
+```
+
 ### Opting out
 
 The reusable workflow input `validate_deployed_overlay` defaults to `true`. A repository that
