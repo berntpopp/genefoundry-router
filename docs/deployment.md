@@ -37,6 +37,86 @@ for n, s in p['services'].items(): print(n, 'user=', s.get('user'))
 print('PROJECTION OK')"
 ```
 
+## Fleet Compose Contract
+
+`docker/docker-compose.npm.yml` is the file the fleet controller deploys, and it is **not**
+gated by `validate-compose` (that gate covers the release Compose files listed in
+`container-release.json` `service.compose_files`, where `user` is forbidden). The deployed
+overlay is gated separately, by `container_release.py validate-deployed-overlay`, which the
+shared reusable release workflow runs in `prepare` — before any image is built — for every
+repository that calls it. Enforcing it centrally is what keeps the 21 `-link` backends on
+one contract without 21 hand-written pull requests.
+
+The command renders the deployed file set with `docker compose config --format json`,
+substituting an inert, shape-correct placeholder for every required `${X:?...}` variable,
+and prints one line per violation:
+
+```
+<service>: <rule> — <what to change>
+```
+
+```bash
+uv run python scripts/container_release.py validate-deployed-overlay \
+  --config container-release.json --project-dir .
+```
+
+### The rules, and the failure each one prevents
+
+| Rule | Requirement | Failure it prevents |
+| --- | --- | --- |
+| `deployed-file-set` | An overlay using `!reset`/`!override` must declare every file the controller deploys | Gating an overlay alone when it is deployed layered validates a stack nobody runs, and silently passes the one that is deployed. |
+| `numeric-user` | `user: "<uid>:<gid>"`, this image's own numeric ids | A named or absent user cannot be proven non-root from `/proc`; the controller refuses to deploy it. |
+| `restart-policy` | `restart: unless-stopped` on every long-running service, `restart: "no"` on run-once ones | An `on-failure` container does not come back after a host reboot or a Docker upgrade. |
+| `no-deploy-restart-policy` | No `deploy.restart_policy`, anywhere | Compose applies `deploy.restart_policy` *instead of* `restart`, silently swapping a reboot-surviving container onto `on-failure`; the runtime observer then reports `restart policy differs from Compose`. |
+| `healthcheck-start-period` | A healthcheck with an explicit `start_period` on every non-init service | Without one the deploy cannot wait for readiness, and a slow first start is reported UNHEALTHY and rolled back. |
+| `application-image` | `image: ${<PROJECT>_IMAGE:?...}` (a digest reference at deploy) | A tag or a literal image lets the deploy run code no one pinned; the required variable makes a missing or wrong digest a hard error. |
+| `sidecar-image` | A declared sidecar runs exactly its declared third-party image | An undeclared third-party image makes the stack ambiguous, so the controller keys on the wrong service. |
+| `single-application-image` | Exactly one image variable across the application services | A two-image stack is refused with `target Compose projection does not name one application image`. |
+| `volumes` | Named volumes or tmpfs only; a bind only if `read_only: true` and listed in `deployed_seed_binds` | Host state the release does not carry, or an image-declared `VOLUME`, surfaces as `container mounts are invalid`. |
+| `expose` | No published `ports`; every `expose` entry a bare container port, including `container_port` | A published port exposes an unauthenticated backend on the public IP; an undeclared container port reads as `exposed ports differ from Compose`. |
+| `cap-drop` | `cap_drop: [ALL]` | Retained capabilities widen a container escape into a host compromise. |
+| `read-only-rootfs` | `read_only: true` | A writable root filesystem lets a compromised process persist across restarts. |
+| `no-new-privileges` | `security_opt: [no-new-privileges:true]` | Without it a setuid binary inside the image can regain privilege. |
+| `no-extension-keys` | No top-level `x-*` key survives the render | `docker compose config` echoes `x-*` back even when it is only a YAML anchor, and the controller's projection rejects any unsupported top-level field. |
+| `declared-sidecar-present` | Every declared sidecar exists in the render | A stale declaration no longer describes what is deployed. |
+
+A run-once service is recognised from the render itself: it is *init* if some other service
+waits on it with `condition: service_completed_successfully`. Init services are exempt from
+`restart: unless-stopped`, from the healthcheck rule, and from the `expose` port requirement.
+
+### `container-release.json` fields
+
+All three are optional and live under `service`:
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `deployed_compose_files` | `["docker/docker-compose.npm.yml"]` | Every Compose file the fleet controller deploys, in overlay order. Declare the full list when the overlay is layered on the base files rather than deployed standalone. |
+| `deployed_seed_binds` | `[]` | Container paths that may be `read_only: true` bind mounts (a seed directory staged on the host). Any other bind is refused. |
+| `deployed_sidecars` | `[]` | `{"name": ..., "image": ...}` for each service running a third-party image, so the controller can key on the application service. |
+
+Example, for a stack with a Postgres sidecar and a seed bind:
+
+```json
+"service": {
+  "name": "example-link",
+  "compose_files": ["docker/docker-compose.yml", "docker/docker-compose.prod.yml"],
+  "deployed_compose_files": [
+    "docker/docker-compose.yml",
+    "docker/docker-compose.prod.yml",
+    "docker/docker-compose.npm.yml"
+  ],
+  "deployed_seed_binds": ["/seed"],
+  "deployed_sidecars": [{"name": "postgres", "image": "postgres:16-alpine"}]
+}
+```
+
+### Opting out
+
+The reusable workflow input `validate_deployed_overlay` defaults to `true`. A repository that
+cannot yet meet the contract may call the workflow with `validate_deployed_overlay: false`
+**and** a non-empty `deployed_overlay_waiver` stating why; the waiver is required and is
+recorded in the run log. There is no silent opt-out.
+
 ## Container release
 
 The public application image is code-only and AMD64-only in release standard v1. A

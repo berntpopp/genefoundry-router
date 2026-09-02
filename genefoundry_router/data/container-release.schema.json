@@ -99,6 +99,28 @@
       "title": "DefinitionsConfig",
       "type": "object"
     },
+    "DeployedSidecarConfig": {
+      "additionalProperties": false,
+      "description": "A service in the deployed overlay that runs a third-party image, not the release.\n\nDeclaring it is what lets the fleet controller key on the application service: an\nundeclared second image makes the stack ambiguous and the deploy is refused.",
+      "properties": {
+        "name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "image": {
+          "pattern": "^[a-z0-9](?:[a-z0-9._/-]{0,199})(?::[A-Za-z0-9_][A-Za-z0-9._-]{0,127})?(?:@sha256:[0-9a-f]{64})?$",
+          "title": "Image",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "image"
+      ],
+      "title": "DeployedSidecarConfig",
+      "type": "object"
+    },
     "ExternalReferenceData": {
       "additionalProperties": false,
       "dependentRequired": {
@@ -305,6 +327,38 @@
           },
           "minItems": 1,
           "title": "Compose Files",
+          "type": "array"
+        },
+        "deployed_compose_files": {
+          "default": [
+            "docker/docker-compose.npm.yml"
+          ],
+          "items": {
+            "pattern": "^(?!/)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Deployed Compose Files",
+          "type": "array"
+        },
+        "deployed_seed_binds": {
+          "default": [],
+          "items": {
+            "pattern": "^/(?!/)(?!$)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f\\u007f])[^/]+(?:/[^/]+)*$",
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Deployed Seed Binds",
+          "type": "array"
+        },
+        "deployed_sidecars": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DeployedSidecarConfig"
+          },
+          "maxItems": 4,
+          "title": "Deployed Sidecars",
           "type": "array"
         },
         "name": {

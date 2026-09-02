@@ -13,6 +13,7 @@ from typing import Any, Literal
 import typer
 from pydantic import ValidationError
 
+from genefoundry_router.release import cli_deployed
 from genefoundry_router.release.compose import (
     AuxiliaryServiceRule,
     ComposePolicy,
@@ -529,5 +530,13 @@ def verify_deployment_command(
 
     _execute("verify-deployment", operation)
 
+
+cli_deployed.register(
+    app,
+    execute=_execute,
+    result=_CliResult,
+    read_object=_object,
+    verdict=_verdict,
+)
 
 __all__ = ["app"]

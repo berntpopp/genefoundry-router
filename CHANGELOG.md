@@ -2,6 +2,31 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.8.5] - 2026-09-02
+
+### Added
+
+- Release: gate the deployed Compose overlay (`docker/docker-compose.npm.yml`) centrally, in
+  the shared reusable release workflow, so every fleet repository inherits the same deploy
+  contract on its next release. `container_release.py validate-deployed-overlay` renders the
+  file set the fleet controller actually deploys and checks numeric `user`, `restart:
+  unless-stopped` with no `deploy.restart_policy`, a healthcheck with `start_period`, a
+  required `${<PROJECT>_IMAGE:?...}` digest variable, exactly one application image, named
+  volumes or tmpfs only, declared container ports with no published host ports, `cap_drop:
+  [ALL]`, `read_only`, `no-new-privileges`, and no surviving top-level `x-*` keys. The gate
+  runs in `prepare`, before any image is built, and is toggled by the new
+  `validate_deployed_overlay` workflow input (default `true`; opting out requires a recorded
+  `deployed_overlay_waiver` reason).
+- Release configuration: optional `service.deployed_compose_files`,
+  `service.deployed_seed_binds` and `service.deployed_sidecars` in `container-release.json`,
+  documented under "Fleet Compose Contract" in `docs/deployment.md`.
+
+### Changed
+
+- Split the release model field validators and path patterns into
+  `genefoundry_router/release/model_fields.py`, keeping `models.py` inside the 600-line
+  module budget. No exported name changed.
+
 ## [0.8.4] - 2026-09-02
 
 ### Fixed

@@ -59,6 +59,12 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
   forbids it there.
 - Guard test: `tests/unit/docker/test_compose.py`
   (`test_npm_overlay_declares_numeric_deploy_user`, `test_release_compose_files_omit_user`).
+- The deployed overlay is gated centrally: `container_release.py
+  validate-deployed-overlay` runs in the shared release workflow's `prepare` job, before
+  any image is built, for every repository that calls it. The rules, the
+  `container-release.json` fields (`service.deployed_compose_files`,
+  `deployed_seed_binds`, `deployed_sidecars`) and the waiver path are documented in
+  [`docs/deployment.md`](docs/deployment.md#fleet-compose-contract).
 - Release checklist this repo enforces: bump `pyproject.toml`, `uv lock`, `CHANGELOG.md`
   heading `## [x.y.z] - YYYY-MM-DD`, `CITATION.cff` `version:` (generated file — this repo's
   `date-released` is release-driven, set by `scripts/gen_citation_cff.py --write` from the
