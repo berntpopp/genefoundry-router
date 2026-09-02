@@ -8,6 +8,11 @@
       "docker/docker-compose.yml",
       "docker/docker-compose.prod.yml"
     ],
+    "deployed_compose_files": [
+      "docker/docker-compose.yml",
+      "docker/docker-compose.prod.yml",
+      "docker/docker-compose.npm.yml"
+    ],
     "name": "genefoundry-router",
     "container_port": 8000,
     "health_path": "/health",

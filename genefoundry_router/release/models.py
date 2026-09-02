@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-from pathlib import PurePosixPath
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -19,162 +17,67 @@ from pydantic import (
 )
 
 from genefoundry_router.release import schema_metadata as schemas
-
-
-def _require_exact_schema_version(value: object) -> object:
-    if type(value) is not int or value != 1:
-        raise ValueError("schema_version must be the integer 1")
-    return value
-
-
-def _require_exact_false(value: object) -> object:
-    if type(value) is not bool or value is not False:
-        raise ValueError("reproducible_rollback must be the boolean false")
-    return value
-
-
-def _require_exact_true(value: object) -> object:
-    if type(value) is not bool or value is not True:
-        raise ValueError("cache deletability must be the boolean true")
-    return value
-
-
-def _require_rfc3339_string(value: object) -> object:
-    if not isinstance(value, str) or not re.fullmatch(RFC3339_PATTERN, value):
-        raise ValueError("timestamp must be an RFC3339 string with an explicit timezone")
-    return value
-
-
-def _has_control_character(value: str) -> bool:
-    return any(ord(character) < 32 or ord(character) == 127 for character in value)
-
-
-def _require_normalized_relative_path(value: str) -> str:
-    parts = value.split("/")
-    if (
-        not value
-        or value.startswith("/")
-        or "\\" in value
-        or _has_control_character(value)
-        or any(part in {"", ".", ".."} for part in parts)
-        or PurePosixPath(value).as_posix() != value
-    ):
-        raise ValueError("path must be a normalized nonempty relative POSIX path")
-    return value
-
-
-def _require_normalized_absolute_path(value: str) -> str:
-    parts = value.split("/")[1:]
-    if (
-        value == "/"
-        or not value.startswith("/")
-        or value.startswith("//")
-        or "\\" in value
-        or _has_control_character(value)
-        or any(part in {"", ".", ".."} for part in parts)
-        or PurePosixPath(value).as_posix() != value
-    ):
-        raise ValueError("path must be a normalized absolute non-root POSIX path")
-    return value
-
-
-def _require_local_http_path(value: str) -> str:
-    _require_normalized_absolute_path(value)
-    if "?" in value or "#" in value:
-        raise ValueError("local HTTP path must not contain a query or fragment")
-    return value
-
-
-def _require_dns_endpoint(value: str) -> str:
-    if (
-        not value
-        or _has_control_character(value)
-        or any(character.isspace() for character in value)
-    ):
-        raise ValueError("egress entry must be a DNS hostname with an optional numeric port")
-    if value.count(":") > 1:
-        raise ValueError("egress entry must not use an IPv6 literal")
-    hostname, separator, port_text = value.partition(":")
-    if separator and (
-        not port_text.isascii()
-        or not port_text.isdigit()
-        or not 1 <= int(port_text) <= 65535
-        or port_text != str(int(port_text))
-    ):
-        raise ValueError("egress port must be an integer from 1 through 65535")
-    labels = hostname.split(".")
-    if len(hostname) > 253 or any(
-        not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", label)
-        for label in labels
-    ):
-        raise ValueError("egress entry must contain only explicit DNS hostname labels")
-    return value
-
-
-def _require_immutable_data_release_tag(value: str) -> str:
-    if value.lower() in {"latest", "main", "master", "head", "stable", "current"}:
-        raise ValueError("data release tag must be immutable")
-    return value
-
-
-RELATIVE_PATH_PATTERN = (
-    r"^(?!/)(?!\.{1,2}(?:/|$))(?!.*\/\.{1,2}(?:/|$))(?!.*//)(?!.*\\)"
-    r"(?!.*[\u0000-\u001f\u007f])[^/]+(?:/[^/]+)*$"
+from genefoundry_router.release.model_fields import (
+    ABSOLUTE_PATH_PATTERN,
+    DNS_ENDPOINT_PATTERN,
+    LOCAL_HTTP_PATH_PATTERN,
+    RELATIVE_PATH_PATTERN,
+    RFC3339_PATTERN,
+    require_dns_endpoint,
+    require_exact_false,
+    require_exact_schema_version,
+    require_exact_true,
+    require_immutable_data_release_tag,
+    require_local_http_path,
+    require_normalized_absolute_path,
+    require_normalized_relative_path,
+    require_rfc3339_string,
 )
-ABSOLUTE_PATH_PATTERN = (
-    r"^/(?!/)(?!$)(?!\.{1,2}(?:/|$))(?!.*\/\.{1,2}(?:/|$))(?!.*//)(?!.*\\)"
-    r"(?!.*[\u0000-\u001f\u007f])[^/]+(?:/[^/]+)*$"
-)
-LOCAL_HTTP_PATH_PATTERN = (
-    r"^/(?!/)(?!$)(?!\.{1,2}(?:/|$))(?!.*\/\.{1,2}(?:/|$))(?!.*//)(?!.*\\)"
-    r"(?!.*[?#\u0000-\u001f\u007f])[^/?#]+(?:/[^/?#]+)*$"
-)
-DNS_LABEL_PATTERN = r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
-DNS_PORT_PATTERN = (
-    r"(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|"
-    r"65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])"
-)
-DNS_ENDPOINT_PATTERN = (
-    rf"^(?:{DNS_LABEL_PATTERN})(?:\.(?:{DNS_LABEL_PATTERN}))*(?::{DNS_PORT_PATTERN})?$"
-)
-RFC3339_PATTERN = (
-    r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
-    r"(?:\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})$"
-)
-SchemaVersion = Annotated[Literal[1], BeforeValidator(_require_exact_schema_version)]
-FalseOnly = Annotated[Literal[False], BeforeValidator(_require_exact_false)]
-TrueOnly = Annotated[Literal[True], BeforeValidator(_require_exact_true)]
+
+SchemaVersion = Annotated[Literal[1], BeforeValidator(require_exact_schema_version)]
+FalseOnly = Annotated[Literal[False], BeforeValidator(require_exact_false)]
+TrueOnly = Annotated[Literal[True], BeforeValidator(require_exact_true)]
 RepositoryRelativePath = Annotated[
     str,
-    AfterValidator(_require_normalized_relative_path),
+    AfterValidator(require_normalized_relative_path),
     WithJsonSchema({"type": "string", "pattern": RELATIVE_PATH_PATTERN}),
 ]
 ImageLayerPath = Annotated[
     str,
-    AfterValidator(_require_normalized_relative_path),
+    AfterValidator(require_normalized_relative_path),
     WithJsonSchema({"type": "string", "pattern": RELATIVE_PATH_PATTERN}),
 ]
 AbsoluteRuntimePath = Annotated[
     str,
-    AfterValidator(_require_normalized_absolute_path),
+    AfterValidator(require_normalized_absolute_path),
     WithJsonSchema({"type": "string", "pattern": ABSOLUTE_PATH_PATTERN}),
 ]
 LocalHttpPath = Annotated[
     str,
-    AfterValidator(_require_local_http_path),
+    AfterValidator(require_local_http_path),
     WithJsonSchema({"type": "string", "pattern": LOCAL_HTTP_PATH_PATTERN}),
 ]
 DnsEndpoint = Annotated[
     str,
-    AfterValidator(_require_dns_endpoint),
+    AfterValidator(require_dns_endpoint),
     WithJsonSchema({"type": "string", "pattern": DNS_ENDPOINT_PATTERN}),
 ]
 Rfc3339Timestamp = Annotated[
     AwareDatetime,
-    BeforeValidator(_require_rfc3339_string),
+    BeforeValidator(require_rfc3339_string),
     WithJsonSchema({"type": "string", "format": "date-time", "pattern": RFC3339_PATTERN}),
 ]
 SafeIdentifier = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")]
+ThirdPartyImageReference = Annotated[
+    str,
+    Field(
+        pattern=(
+            r"^[a-z0-9](?:[a-z0-9._/-]{0,199})"
+            r"(?::[A-Za-z0-9_][A-Za-z0-9._-]{0,127})?"
+            r"(?:@sha256:[0-9a-f]{64})?$"
+        )
+    ),
+]
 StableVersion = Annotated[
     str,
     Field(pattern=r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$"),
@@ -188,7 +91,7 @@ MUTABLE_DATA_RELEASE_TAGS = ("latest", "main", "master", "head", "stable", "curr
 DataReleaseTag = Annotated[
     str,
     Field(pattern=DATA_RELEASE_TAG_PATTERN),
-    AfterValidator(_require_immutable_data_release_tag),
+    AfterValidator(require_immutable_data_release_tag),
     WithJsonSchema(
         {
             "type": "string",
@@ -267,12 +170,28 @@ class AuxiliaryServiceConfig(StrictModel):
         return self
 
 
+class DeployedSidecarConfig(StrictModel):
+    """A service in the deployed overlay that runs a third-party image, not the release.
+
+    Declaring it is what lets the fleet controller key on the application service: an
+    undeclared second image makes the stack ambiguous and the deploy is refused.
+    """
+
+    name: SafeIdentifier
+    image: ThirdPartyImageReference
+
+
 class ServiceConfig(StrictModel):
     """Runtime endpoint and Compose facts needed by standard smoke gates."""
 
     compose_files: Annotated[tuple[RepositoryRelativePath, ...], Field(min_length=1)] = (
         "docker/docker-compose.yml",
     )
+    deployed_compose_files: Annotated[
+        tuple[RepositoryRelativePath, ...], Field(min_length=1, max_length=8)
+    ] = ("docker/docker-compose.npm.yml",)
+    deployed_seed_binds: Annotated[tuple[AbsoluteRuntimePath, ...], Field(max_length=4)] = ()
+    deployed_sidecars: Annotated[tuple[DeployedSidecarConfig, ...], Field(max_length=4)] = ()
     name: SafeIdentifier
     container_port: Annotated[StrictInt, Field(ge=1, le=65535)] = 8000
     health_path: LocalHttpPath = "/health"
@@ -289,6 +208,13 @@ class ServiceConfig(StrictModel):
         names = [auxiliary.name for auxiliary in self.auxiliary]
         if len(set(names)) != len(names):
             raise ValueError("each auxiliary service may be declared only once")
+        deployed = [sidecar.name for sidecar in self.deployed_sidecars]
+        if len(set(deployed)) != len(deployed):
+            raise ValueError("each deployed sidecar may be declared only once")
+        if len(set(self.deployed_compose_files)) != len(self.deployed_compose_files):
+            raise ValueError("each deployed Compose file may be listed only once")
+        if len(set(self.deployed_seed_binds)) != len(self.deployed_seed_binds):
+            raise ValueError("each deployed seed bind may be listed only once")
         if self.name in names:
             raise ValueError("an auxiliary service must not name the application service")
         if not set(self.internal_networks).issubset(self.networks):

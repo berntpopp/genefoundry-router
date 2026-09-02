@@ -1,7 +1,22 @@
 name: Reusable container release
 
 on:
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      validate_deployed_overlay:
+        description: >-
+          Gate docker/docker-compose.npm.yml (the file the fleet controller deploys)
+          against the fleet Compose contract before the image is built.
+        type: boolean
+        required: false
+        default: true
+      deployed_overlay_waiver:
+        description: >-
+          Why this repository cannot yet meet the deployed Compose contract. Required,
+          and recorded in the run log, whenever validate_deployed_overlay is false.
+        type: string
+        required: false
+        default: ""
 
 permissions: {}
 
@@ -115,6 +130,29 @@ jobs:
             python .container-release-tools/scripts/container_release.py validate-source \
             --event-name "$GITHUB_EVENT_NAME" --event-ref "$EVENT_REF" \
             --event-sha "$EVENT_SHA" --changelog CHANGELOG.md
+
+      - name: Gate the deployed Compose overlay against the fleet contract
+        if: ${{ inputs.validate_deployed_overlay }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The release Compose files gated by `validate-compose` are NOT what the fleet
+          # controller deploys; docker/docker-compose.npm.yml is. Gate it here, before the
+          # image is built, so a release can never publish an undeployable stack.
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py \
+            validate-deployed-overlay --config container-release.json --project-dir .
+
+      - name: Record the deployed Compose overlay waiver
+        if: ${{ !inputs.validate_deployed_overlay }}
+        shell: bash
+        env:
+          WAIVER: ${{ inputs.deployed_overlay_waiver }}
+        run: |
+          set -euo pipefail
+          # Opting out is allowed, but never silently: the reason is required and logged.
+          test -n "${WAIVER//[[:space:]]/}"
+          echo "deployed Compose overlay gate waived: $WAIVER"
 
       - name: Enforce fleet release controls before publication
         shell: bash

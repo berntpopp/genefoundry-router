@@ -586,7 +586,11 @@ def test_caller_accepts_tag_push_only_with_release_permission_ceiling() -> None:
 
 def test_reusable_has_six_jobs_with_job_scoped_least_privilege() -> None:
     workflow = _load(REUSABLE)
-    assert _on(workflow) == {"workflow_call": {}}
+    assert set(_on(workflow)) == {"workflow_call"}
+    assert set(_on(workflow)["workflow_call"]["inputs"]) == {
+        "deployed_overlay_waiver",
+        "validate_deployed_overlay",
+    }
     assert workflow["permissions"] == {}
     assert set(workflow["jobs"]) == READ_JOBS | PRIVILEGED_JOBS
     expected = {
@@ -1346,3 +1350,37 @@ def test_assemble_evidence_consumes_only_sealed_artifacts() -> None:
 
     assert not caller_checkout, "assemble-evidence must not check out the caller source"
     assert "container-release.json" not in _run_text(job)
+
+
+def test_deployed_overlay_gate_runs_before_any_image_is_built() -> None:
+    workflow = _load(REUSABLE)
+    prepare = workflow["jobs"]["prepare"]
+    inputs = _on(workflow)["workflow_call"]["inputs"]
+
+    assert inputs["validate_deployed_overlay"] == {
+        "description": inputs["validate_deployed_overlay"]["description"],
+        "type": "boolean",
+        "required": False,
+        "default": True,
+    }
+    gate = _step_run(prepare, "validate-deployed-overlay")
+    assert "--config container-release.json" in gate
+    assert "--project-dir ." in gate
+    # The gate lives in `prepare`, which every build job depends on, so no image can be
+    # built for a repository whose deployed overlay does not meet the contract.
+    assert workflow["jobs"]["build-gate"]["needs"] == "prepare"
+    index = _step_index(prepare, "Gate the deployed Compose overlay")
+    assert index < _step_index(prepare, "Resolve idempotent release state")
+
+
+def test_opting_out_of_the_deployed_overlay_gate_requires_a_recorded_reason() -> None:
+    workflow = _load(REUSABLE)
+    prepare = workflow["jobs"]["prepare"]
+    steps = _steps(prepare)
+
+    gate = steps[_step_index(prepare, "Gate the deployed Compose overlay")]
+    waiver = steps[_step_index(prepare, "Record the deployed Compose overlay waiver")]
+    assert gate["if"] == "${{ inputs.validate_deployed_overlay }}"
+    assert waiver["if"] == "${{ !inputs.validate_deployed_overlay }}"
+    assert waiver["env"] == {"WAIVER": "${{ inputs.deployed_overlay_waiver }}"}
+    assert 'test -n "${WAIVER//[[:space:]]/}"' in waiver["run"]
