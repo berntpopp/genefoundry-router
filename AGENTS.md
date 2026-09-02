@@ -48,6 +48,26 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
 - **Backends are unauthenticated by design** (the router owns edge auth at the trust boundary) —
   they MUST be reachable only through the router/reverse proxy, never published directly.
 
+## Fleet deploy contract
+
+- `docker/docker-compose.npm.yml` is the file the fleet controller
+  (`strato_v6_docker_npm`, `scripts/utils/deployment_preflight.py`) deploys and validates.
+  Every service there declares `user: "<uid>:<gid>"` numerically — this image's own value
+  from `docker/Dockerfile` (`10001:10001`), never copied from a sibling `-link` repo.
+- `user` must NOT appear in the Compose files listed in `container-release.json`
+  (`docker/docker-compose.yml`, `docker/docker-compose.prod.yml`) — the shared release gate
+  forbids it there.
+- Guard test: `tests/unit/docker/test_compose.py`
+  (`test_npm_overlay_declares_numeric_deploy_user`, `test_release_compose_files_omit_user`).
+- Release checklist this repo enforces: bump `pyproject.toml`, `uv lock`, `CHANGELOG.md`
+  heading `## [x.y.z] - YYYY-MM-DD`, `CITATION.cff` `version:` (generated file — this repo's
+  `date-released` is release-driven, set by `scripts/gen_citation_cff.py --write` from the
+  repo's actual latest GitHub release date, not from the CHANGELOG; leave it alone in a PR
+  and let the fleet-level `make citation-write` refresh it after the tag lands), tag
+  `vx.y.z`, then approve the `release` environment gate via
+  `gh api repos/berntpopp/genefoundry-router/actions/runs/<id>/pending_deployments` (it can
+  gate twice; `status: waiting` is the gate, not a slow build).
+
 ## Fleet standards (apply repo-wide; each `-link` repo has a tracking issue)
 
 - Tool-Naming & Normalization — `docs/TOOL-NAMING-STANDARD-v1.md`

@@ -14,6 +14,11 @@ services:
     expose:
       - "8000"
     pull_policy: missing
+    # GeneFoundry deploy contract: the fleet controller (strato_v6_docker_npm,
+    # scripts/utils/deployment_preflight.py) accepts a declared user only as numeric
+    # non-root, and its runtime observer proves the effective uid from /proc.
+    # This is THIS image's own uid:gid (docker/Dockerfile) -- sibling -link images differ.
+    user: "10001:10001"
     networks:
       - npm-network
 
