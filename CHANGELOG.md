@@ -2,6 +2,16 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.8.7] - 2026-09-02
+
+### Changed
+
+- Regenerated the fleet release-evidence set (`ci/fleet-application-releases.json`,
+  `ci/release-candidate-inventory.json`, `genefoundry_router/data/fleet-baseline.json`,
+  `ci/release-candidate-fleet.json`) at identity `fleet-2026-09-02-contract-remediation`,
+  captured against the live fleet (all 21 `-link` backends on their current releases) after
+  the controller contract-remediation deploy/activation campaign. Closes #170.
+
 ## [0.8.6] - 2026-09-02
 
 ### Added
