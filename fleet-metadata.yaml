@@ -99,6 +99,9 @@ vocabulary:
     - model-organism
     - gateway
     - api-gateway
+    - pharmacogenomics
+    - gene-drug
+    - dosing-guideline
   # Source tier — the upstream's proper noun. These are near-empty topic pages
   # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
   source:
@@ -129,6 +132,9 @@ vocabulary:
     - human-phenotype-ontology
     - metadome
     - orphanet
+    - clinpgx
+    - cpic
+    - pharmgkb
 
 # Official MCP Registry (registry.modelcontextprotocol.io) — ROUTER ONLY.
 #
@@ -316,3 +322,10 @@ backends:
       associations, phenotypes, epidemiology and cross-references, from the Orphadata
       scientific knowledge files.
     topics: [orphanet, rare-disease, ontology, disease-ontology, epidemiology]
+
+  - namespace: clinpgx
+    description: >-
+      MCP server for ClinPGx (aggregating CPIC, PharmGKB and PharmCAT evidence): curated
+      gene-drug interactions, clinical guidelines, dosing recommendations, and variant
+      annotations for LLM agents.
+    topics: [clinpgx, pharmacogenomics, gene-drug, clinical-genetics, cpic]

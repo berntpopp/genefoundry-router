@@ -55,6 +55,7 @@ PACKAGED_CODE_ASSETS = tuple(
         "container-release.schema.json",
         "data-release-manifest.schema.json",
         "fleet-baseline.json",
+        "fleet-provenance.json",
         "image-content-policy-v1.json",
     )
 )

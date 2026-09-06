@@ -41,6 +41,7 @@ from genefoundry_router.observability import (
     restore_refresh_metrics,
     set_backend_up,
 )
+from genefoundry_router.provenance import register_provenance
 from genefoundry_router.refresh_models import REFRESH_HEARTBEAT_INTERVAL_SECONDS
 from genefoundry_router.refresh_observability import RefreshLedger
 from genefoundry_router.registry import BackendDef
@@ -279,6 +280,7 @@ def build_app(
     app.add_middleware(CorrelationIdMiddleware)
     register_health(app, registry, drift_guard=guard)
     register_metrics(app, token=settings.GF_METRICS_TOKEN)  # R1.7 — /metrics
+    register_provenance(app)  # GET /provenance and GET /api/fleet/provenance
     # R1.5 — serve the auth provider's well-known routes (Protected-Resource-Metadata,
     # RFC 9728) on the OUTER app at root, matching the resource_metadata URL advertised
     # in WWW-Authenticate. The MCP app is sub-mounted at GF_MCP_PATH, so its own routes

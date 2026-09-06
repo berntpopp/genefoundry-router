@@ -8,6 +8,7 @@ INVENTORY = Path("docs/conformance/untrusted-text-inventory.yml")
 EXPECTED_BACKENDS = {
     "autopvs1",
     "clingen",
+    "clinpgx",
     "clinvar",
     "gencc",
     "genereviews",
