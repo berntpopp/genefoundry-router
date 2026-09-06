@@ -8,9 +8,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_real_servers_yaml_parses():
     backends = load_registry(ROOT / "servers.yaml", {})
     by_name = {b.name: b for b in backends}
-    # 21 backends: the deployed fleet plus the four newest staged/ready backends
-    # (hpo, mavedb, metadome, orphanet).
-    assert len(backends) == 21
+    # 22 backends: the deployed fleet plus clinpgx
+    assert len(backends) == 22
     # hgnc deployed 2026-06-16 (hgnc-link.genefoundry.org); now enabled
     assert by_name["hgnc"].enabled is True
     # the 4 newest backends are now deployed (<name>-link.genefoundry.org) and enabled.

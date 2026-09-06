@@ -246,6 +246,16 @@ tasks:
     query: canonical Orphanet term for a rare disease label or ORPHAcode
     expected: [orphanet_resolve_disease]
 
+  # --- ClinPGx: pharmacogenomics, gene-drug interactions, CPIC guidelines ---
+  - id: clinpgx-gene-drug-interactions
+    category: gene_disease
+    query: ClinPGx CPIC clinical dosing guidelines and gene-drug interactions
+    expected: [clinpgx_search_records, clinpgx_get_related_records]
+  - id: clinpgx-datasets
+    category: gene_disease
+    query: search ClinPGx snapshot datasets for pharmacogenomics evidence
+    expected: [clinpgx_search_dataset, clinpgx_list_datasets]
+
   # --- cross-cutting first-step resolvers ---
   - id: resolve-gene-generic
     category: nomenclature

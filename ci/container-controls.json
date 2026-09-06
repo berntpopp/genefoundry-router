@@ -148,6 +148,80 @@
         "restricts_update": true
       }
     },
+    "berntpopp/clinpgx-link": {
+      "immutable_releases": {
+        "enabled": true,
+        "evidence": {
+          "reason": "Immutable releases probed via the repository immutable-releases API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clinpgx-link/settings",
+          "verified_at": "2026-07-30T15:05:09Z"
+        }
+      },
+      "package": {
+        "anonymous_pull": true,
+        "evidence": {
+          "reason": "Unauthenticated GHCR token and manifest read returned 200, proving the package exists and is publicly readable. Published by the repository GITHUB_TOKEN, which links it to its source repository; no standing package PAT exists.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://ghcr.io/v2/berntpopp/clinpgx-link/manifests/control-bootstrap",
+          "verified_at": "2026-07-30T15:05:09Z"
+        },
+        "linked_repository": "berntpopp/clinpgx-link",
+        "name": "ghcr.io/berntpopp/clinpgx-link",
+        "standing_package_pat": false,
+        "visibility": "public"
+      },
+      "release_environment": {
+        "evidence": {
+          "reason": "Required reviewers and an exact tag deployment policy probed via the environments API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clinpgx-link/settings/environments",
+          "verified_at": "2026-07-30T15:05:09Z"
+        },
+        "exact_tag_only": true,
+        "protected": true,
+        "required_reviewers": [
+          "berntpopp"
+        ]
+      },
+      "repository": "berntpopp/clinpgx-link",
+      "retention": {
+        "automated_deletion": false,
+        "deployed_digests": true,
+        "evidence": {
+          "reason": "No package retention automation is configured; released, deployed, and rollback digests are preserved.",
+          "reviewer": "bernt-popp",
+          "source": "manual",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clinpgx-link/settings",
+          "verified_at": "2026-07-30T15:05:09Z"
+        },
+        "released_digests": true,
+        "rollback_digests": true
+      },
+      "role": "backend",
+      "status": "verified",
+      "tag_ruleset": {
+        "active": true,
+        "bypass_actors": [
+          "RepositoryRole:5"
+        ],
+        "evidence": {
+          "reason": "Active tag ruleset probed via the repository rulesets API.",
+          "source": "api",
+          "status": "verified",
+          "url": "https://github.com/berntpopp/clinpgx-link/settings/rules/18884671",
+          "verified_at": "2026-07-30T15:05:09Z"
+        },
+        "restricts_creation": true,
+        "restricts_deletion": true,
+        "restricts_non_fast_forward": true,
+        "restricts_update": true
+      }
+    },
     "berntpopp/clinvar-link": {
       "immutable_releases": {
         "enabled": true,

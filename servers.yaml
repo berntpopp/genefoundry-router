@@ -229,3 +229,14 @@ servers:
     source_url: https://www.orphadata.com/
     tags: [disease, ontology, rare-disease, epidemiology, gene, phenotype]
     entrypoints: [resolve_disease]
+
+  # deployed (clinpgx-link.genefoundry.org); CPIC/PharmGKB/PharmCAT evidence, 120 curated snapshot datasets
+  - name: clinpgx
+    repo: berntpopp/clinpgx-link
+    url_env: GF_CLINPGX_URL
+    namespace: clinpgx
+    description: Pharmacogenomics / gene-drug guidelines
+    source_name: ClinPGx
+    source_url: https://clinpgx.org/
+    tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
+    entrypoints: [search_records, get_record, get_related_records, search_dataset]

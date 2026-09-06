@@ -321,6 +321,219 @@
     }
   },
   {
+    "name": "clinpgx_get_api_data",
+    "description": "Read one allowlisted API operation; paginate its response without refetching.",
+    "tags": [
+      "source"
+    ],
+    "params": {
+      "operation": "Exact API operation from get_api_schema.",
+      "path_parameters": "Declared path fields only.",
+      "query_parameters": "Declared query fields only.",
+      "form_parameters": "Verified Infobutton form only.",
+      "representation": "Verified source representation.",
+      "pointer": "RFC 6901 pointer in decoded source data.",
+      "pointers": "Ordered scalar RFC 6901 pointers for JSON data.",
+      "limit": "Maximum returned rows.",
+      "offset": "Offset in this retained response, not upstream corpus.",
+      "cursor": "Immutable previous-page cursor.",
+      "response_mode": "Detail mode; source content stays reachable."
+    }
+  },
+  {
+    "name": "clinpgx_get_api_schema",
+    "description": "Discover exact allowlisted contracts; inventory-only routes are not callable.",
+    "tags": [
+      "metadata"
+    ],
+    "params": {
+      "operation": "Exact operation ID; omit to list.",
+      "namespace": "Website includes linked CPIC reference routes.",
+      "limit": "Maximum operation entries.",
+      "offset": "Zero-based entry offset.",
+      "cursor": "Previous page cursor.",
+      "response_mode": "Detail mode; schemas remain reachable."
+    }
+  },
+  {
+    "name": "clinpgx_get_dataset",
+    "description": "Inspect one installed dataset snapshot record. Member items include member_sha256.",
+    "tags": [
+      "catalog"
+    ],
+    "params": {
+      "dataset_id": "Exact installed dataset identifier.",
+      "member": "Exact installed member path to scope inspection.",
+      "limit": "Maximum members to return.",
+      "offset": "Zero-based member offset.",
+      "cursor": "Snapshot-bound continuation cursor.",
+      "response_mode": "Response detail mode."
+    }
+  },
+  {
+    "name": "clinpgx_get_dataset_record",
+    "description": "",
+    "tags": [
+      "dataset",
+      "record"
+    ],
+    "params": {
+      "record_id": "Snapshot-bound record identity discovered with search_dataset.",
+      "pointer": "RFC 6901 pointer in the normalized record.",
+      "pointers": "Ordered scalar RFC 6901 pointers.",
+      "response_mode": "Response detail mode.",
+      "include_fields": "Ordered profiled source fields to return.",
+      "parent_fields": "Ordered enclosing PharmCAT parent fields: gene and/or version."
+    }
+  },
+  {
+    "name": "clinpgx_get_diagnostics",
+    "description": "Inspect source configuration and pinned data without revealing local paths or secrets.",
+    "tags": [
+      "metadata"
+    ],
+    "params": {
+      "probe_upstream": "Request fixed gene evidence; cached hits are identified.",
+      "response_mode": "Response detail mode."
+    }
+  },
+  {
+    "name": "clinpgx_get_record",
+    "description": "Get one exact entity without changing source; use source='website' for guideline URLs.",
+    "tags": [
+      "entity",
+      "record"
+    ],
+    "params": {
+      "entity_type": "Entity family owning the requested identifier.",
+      "record_id": "Exact ClinPGx identifier or returned local record_id; numeric-detail families reuse the decimal id returned by search_records.",
+      "source": "Exact source to query; this tool never silently switches.",
+      "view": "ClinPGx upstream projection for live API reads.",
+      "pointer": "RFC 6901 pointer in decoded API data or the normalized local record.",
+      "pointers": "Ordered scalar RFC 6901 pointers; mutually exclusive with pointer.",
+      "response_mode": "Response detail preference; does not change source identity."
+    }
+  },
+  {
+    "name": "clinpgx_get_related_records",
+    "description": "Use known IDs for live reports or joins. Guideline URLs live under source='website'.",
+    "tags": [
+      "entity",
+      "relationship"
+    ],
+    "params": {
+      "record_id": "Exact ClinPGx identifier or returned local record_id; numeric-detail families reuse the decimal id returned by search_records.",
+      "result_type": "Use relationship without other_id for API connected-object mode; API pair mode requires other_id and a mapped result type published by capabilities.",
+      "other_id": "Second exact ClinPGx ID; when supplied, selects live API pair mode.",
+      "entity_type": "Object class owning record_id; documentation-only and cursor-bound, not sent upstream as a pair filter.",
+      "other_type": "Target connected-object type sent upstream without other_id; documentation-only and cursor-bound in pair mode, not an upstream pair filter.",
+      "source": "Exact live connected/pair or installed join source.",
+      "view": "API pair upstream projection; not sent upstream in connected-object mode, but remains cursor-bound.",
+      "limit": "Maximum rows returned on this page.",
+      "offset": "Zero-based offset; cannot accompany cursor.",
+      "cursor": "Opaque continuation returned for the same selectors and source identity.",
+      "response_mode": "Response detail preference; does not change source identity."
+    }
+  },
+  {
+    "name": "clinpgx_get_server_capabilities",
+    "description": "Discover tools and source limits; non-full modes use api_contract_defaults, while full expands every API row.",
+    "tags": [
+      "metadata"
+    ],
+    "params": {
+      "response_mode": "Response detail mode; full expands shared API-row defaults."
+    }
+  },
+  {
+    "name": "clinpgx_get_source_content",
+    "description": "Read retained source content in digest-bound, progressing chunks.",
+    "tags": [
+      "source"
+    ],
+    "params": {
+      "content_ref": "Opaque reference returned by a source tool; pass it unchanged. content: identifies retained source or derived content, while asset: identifies snapshot-retained archive/member bytes. A pointer addresses JSON within that referenced content, not another representation.",
+      "pointer": "RFC 6901 pointer for JSON reads; base64 requires an empty pointer.",
+      "representation": "Structure discovers JSON values and includes short scalar values through 256 UTF-8 bytes; text reads strings; base64 returns exact original bytes.",
+      "start": "Zero-based character, byte or child offset.",
+      "length": "Maximum units to return; structure may use a smaller bounded page.",
+      "response_mode": "Response detail mode; provenance and all selected content remain reachable."
+    }
+  },
+  {
+    "name": "clinpgx_get_website_data",
+    "description": "Read verified site and linked CPIC reference routes with distinct provenance.",
+    "tags": [
+      "source"
+    ],
+    "params": {
+      "operation": "Website or CPIC operation from get_api_schema.",
+      "path_parameters": "Declared path fields only.",
+      "query_parameters": "Declared query fields only.",
+      "pointer": "RFC 6901 pointer in decoded source data.",
+      "pointers": "Ordered scalar RFC 6901 pointers for JSON data.",
+      "limit": "Maximum returned rows.",
+      "offset": "Offset in this retained response, not upstream corpus.",
+      "cursor": "Immutable previous-page cursor.",
+      "response_mode": "Detail mode; source content stays reachable."
+    }
+  },
+  {
+    "name": "clinpgx_list_datasets",
+    "description": "List datasets available in the installed snapshot catalog. Use response_mode='minimal' for concise overview.",
+    "tags": [
+      "catalog"
+    ],
+    "params": {
+      "query": "Case-insensitive dataset ID or file-name filter.",
+      "include_legacy": "Include datasets marked legacy or deprecated.",
+      "limit": "Maximum datasets to return.",
+      "offset": "Zero-based dataset offset.",
+      "cursor": "Snapshot-bound continuation cursor.",
+      "response_mode": "Response detail mode."
+    }
+  },
+  {
+    "name": "clinpgx_search_dataset",
+    "description": "Search indexed rows within an installed snapshot dataset. Rows include member_sha256.",
+    "tags": [
+      "dataset",
+      "search"
+    ],
+    "params": {
+      "dataset_id": "Exact installed dataset identifier.",
+      "member": "Exact installed member path.",
+      "query": "Literal token query.",
+      "filters": "ANDed filters: reserved lowercase canonical keys, or exact advertised source fields when member is explicit. For PharmCAT diplotype children, combine exact canonical gene and name (the diplotype string) filters.",
+      "match": "Exact cells or declared member tokenization.",
+      "limit": "Maximum rows to return.",
+      "offset": "Zero-based row offset.",
+      "cursor": "Snapshot-bound continuation cursor.",
+      "response_mode": "Response detail mode.",
+      "include_fields": "Ordered profiled source fields to return.",
+      "parent_fields": "Ordered enclosing PharmCAT parent fields: gene and/or version."
+    }
+  },
+  {
+    "name": "clinpgx_search_records",
+    "description": "Search exact live fields or installed dataset memberships.",
+    "tags": [
+      "entity",
+      "search"
+    ],
+    "params": {
+      "entity_type": "Entity family to search in the selected source.",
+      "query": "Literal AND-token local text query; unavailable for API searches.",
+      "filters": "ANDed canonical filters (annotation_id, chemical, gene, id, name, resource_id, source, variant); API choices vary by entity.",
+      "source": "Source policy: auto routes exact filters to API and broad queries locally.",
+      "view": "ClinPGx upstream projection for live API reads.",
+      "limit": "Maximum rows returned on this page.",
+      "offset": "Zero-based offset; cannot accompany cursor.",
+      "cursor": "Opaque continuation returned for the same selectors and source identity.",
+      "response_mode": "Response detail preference; does not change source identity."
+    }
+  },
+  {
     "name": "clinvar_get_gene_clinvar_summary",
     "description": "Summarize a gene's ClinVar variant landscape: counts by clinical significance (pathogenic, likely pathogenic, VUS, benign, conflicting) and by review-status star rating, plus top associated traits. Use this for a gene-level overview before drilling into individual variants with get_variants_by_gene. Returns a recommended_citation.",
     "tags": [

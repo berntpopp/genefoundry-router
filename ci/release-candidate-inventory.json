@@ -117,6 +117,62 @@
       },
       "endpoint": "https://clingen-link.genefoundry.org/mcp"
     },
+    "clinpgx": {
+      "application_release": {
+        "data_requirements": {
+          "mode": "none",
+          "schema_compatibility": []
+        },
+        "image": {
+          "digest": "sha256:29300d3229685997d7429db2b8dbf76a6d87ed099ad9d399725b4e2b3937fc4b",
+          "name": "ghcr.io/berntpopp/clinpgx-link",
+          "platforms": [
+            {
+              "digest": "sha256:29300d3229685997d7429db2b8dbf76a6d87ed099ad9d399725b4e2b3937fc4b",
+              "platform": "linux/amd64"
+            }
+          ]
+        },
+        "mcp": {
+          "capture_context_sha256": "c49fe92053bb90bfa854b71321d186f6f1e463bd4c1c1b4d74b9b667e978b618",
+          "definition_contract": "data-independent",
+          "definitions_sha256": "43005c4e51345461c35679024d8a84d4dadc75b26d6a07d1eb960f59ee93201e"
+        },
+        "release_assets": {
+          "attestation-bundle.json": "sha256:d7894b3fc3477885aa8a4a673ad706306c62315c119fea1bd80e8f7f775565e4",
+          "image-manifest.json": "sha256:29300d3229685997d7429db2b8dbf76a6d87ed099ad9d399725b4e2b3937fc4b",
+          "mcp-capture-context.json": "sha256:c49fe92053bb90bfa854b71321d186f6f1e463bd4c1c1b4d74b9b667e978b618",
+          "mcp-definitions.json": "sha256:43005c4e51345461c35679024d8a84d4dadc75b26d6a07d1eb960f59ee93201e",
+          "sbom.spdx.json": "sha256:c34ce432f1cf91081ed60b6389a1cc297f60558560d48b7be44e23a8f6c3abe8",
+          "trivy.json": "sha256:0cf5660e33f608cf83edc28966123e3af56f123223be889deb0d1d46cb5b7e90",
+          "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+          "verification.json": "sha256:ba0a4f858e1d24fda571a220c902523bc3d221f470220ed54146f7fed2485db7"
+        },
+        "repository": "berntpopp/clinpgx-link",
+        "schema_version": 1,
+        "security_evidence": {
+          "attestation_bundle_sha256": "d7894b3fc3477885aa8a4a673ad706306c62315c119fea1bd80e8f7f775565e4",
+          "database_updated_at": "2026-09-06T07:00:11.537152Z",
+          "sbom_sha256": "c34ce432f1cf91081ed60b6389a1cc297f60558560d48b7be44e23a8f6c3abe8",
+          "scanner": "trivy",
+          "scanner_evidence_sha256": "0cf5660e33f608cf83edc28966123e3af56f123223be889deb0d1d46cb5b7e90",
+          "scanner_version": "0.70.0",
+          "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+          "verification_sha256": "ba0a4f858e1d24fda571a220c902523bc3d221f470220ed54146f7fed2485db7"
+        },
+        "source": {
+          "revision": "55ce516f61ada74504e36e2f4b08009b53b3ef75",
+          "tag": "v0.1.0"
+        },
+        "version": "0.1.0",
+        "workflow": {
+          "caller": "berntpopp/clinpgx-link/.github/workflows/container-release.yml",
+          "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+          "standard_revision": "31ea81cee5475fc3655c047c63a89739948f99a9"
+        }
+      },
+      "endpoint": "https://clinpgx-link.genefoundry.org/mcp"
+    },
     "clinvar": {
       "application_release": {
         "data_requirements": {

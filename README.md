@@ -69,7 +69,7 @@ bite MCP clients.
 ### Federated backends
 
 <!-- BEGIN GENERATED: fleet-inventory -->
-**21 backends, 272 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
+**22 backends, 285 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
 
 | Namespace | Domain | Data source | Tools | Repo |
 |-----------|--------|-------------|------:|------|
@@ -80,6 +80,7 @@ bite MCP clients.
 | `hpo` | Phenotype ontology & associations | [Human Phenotype Ontology](https://hpo.jax.org/) | 17 | [hpo-link](https://github.com/berntpopp/hpo-link) |
 | `mavedb` | Variant-effect assay scores | [MaveDB](https://www.mavedb.org/) | 15 | [mavedb-link](https://github.com/berntpopp/mavedb-link) |
 | `uniprot` | Protein function | [UniProt](https://www.uniprot.org/) | 15 | [uniprot-link](https://github.com/berntpopp/uniprot-link) |
+| `clinpgx` | Pharmacogenomics / gene-drug guidelines | [ClinPGx](https://clinpgx.org/) | 13 | [clinpgx-link](https://github.com/berntpopp/clinpgx-link) |
 | `genereviews` | Gene–disease literature | [GeneReviews](https://www.ncbi.nlm.nih.gov/books/NBK1116/) | 13 | [genereviews-link](https://github.com/berntpopp/genereviews-link) |
 | `mgi` | Mouse phenotype & models | [MGI](https://www.informatics.jax.org/) | 13 | [mgi-link](https://github.com/berntpopp/mgi-link) |
 | `mondo` | Disease ontology / cross-references | [Mondo](https://mondo.monarchinitiative.org/) | 13 | [mondo-link](https://github.com/berntpopp/mondo-link) |
