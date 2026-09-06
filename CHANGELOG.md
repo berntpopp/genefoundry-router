@@ -2,6 +2,15 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.9.0] - 2026-09-06
+
+### Added
+
+- Added `clinpgx-link` backend (pharmacogenomics: CPIC, PharmGKB, PharmCAT) as the 22nd backend in `servers.yaml`.
+- Added canonical fleet provenance endpoints (`GET /provenance` and `GET /api/fleet/provenance`) serving verified database and release provenance for all 22 backends and 285 tools.
+- Generated `ci/fleet-provenance.json` and bundled `genefoundry_router/data/fleet-provenance.json`.
+- Added generator script `scripts/gen_fleet_provenance.py` and unit tests in `tests/unit/test_provenance.py`.
+
 ## [0.8.7] - 2026-09-02
 
 ### Changed
