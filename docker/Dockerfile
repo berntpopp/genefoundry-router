@@ -41,7 +41,7 @@ WORKDIR /home/app/web
 COPY --from=builder /build/.venv /build/.venv
 COPY servers.yaml pyproject.toml README.md ./
 RUN /build/.venv/bin/python -c \
-      "from importlib.resources import files; assert files('genefoundry_router.data').joinpath('fleet-baseline.json').is_file()" \
+      "from importlib.resources import files; assert files('genefoundry_router.data').joinpath('fleet-baseline.json').is_file(); assert files('genefoundry_router.data').joinpath('fleet-provenance.json').is_file()" \
     # Bytecode is runtime cache, not release content. The final read-only image
     # must not carry interpreter caches inherited from the base or build steps.
     && find /usr/local/lib/python3.14 -type d -name __pycache__ -prune -exec rm -rf '{}' +
