@@ -2,6 +2,14 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.9.1] - 2026-09-18
+
+### Changed
+
+- Consolidated dependency and action updates: bumped `authlib` to 1.8.0, `pydantic` to 2.13.5, `typer` to 0.27.2, `ruff` to 0.16.8, `types-pyyaml` to 6.0.12.20260906.
+- Bumped `anchore/sbom-action` to v0.24.2 and `github/codeql-action` to v4.38.0 across reusable container workflows.
+- Enabled Dependabot grouping for GitHub Actions and uv dependencies in `.github/dependabot.yml`.
+
 ## [0.9.0] - 2026-09-06
 
 ### Added
