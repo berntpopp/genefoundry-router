@@ -17,9 +17,9 @@ TRIVY_CACHE_DIR = "${{ github.workspace }}/.cache/trivy"
 ACTION_PINS = {
     "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
     "actions/setup-python": "5fda3b95a4ea91299a34e894583c3862153e4b97",
-    "astral-sh/setup-uv": "20cfd1bf945f4377ade1205e4dbc17946fc9a30d",
-    "docker/setup-buildx-action": "37fe631027851001ddb9b187196cc803df7f5f0e",
-    "docker/build-push-action": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+    "astral-sh/setup-uv": "bec219d24cd3e171d82865faccec33120bb574f4",
+    "docker/setup-buildx-action": "594f3bf4285d9ea8dc53c9a0c9c4092420091003",
+    "docker/build-push-action": "c3c9e263c25d99ce0380d002d59b67737d91b0dc",
     "aquasecurity/trivy-action": "ed142fd0673e97e23eac54620cfb913e5ce36c25",
     "anchore/sbom-action": "3ad7283483fc7af8ff2b4ea19663c2d5ca935e26",
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
@@ -30,7 +30,7 @@ ACTION_PINS = {
 }
 
 ACTION_PIN_VERSIONS = {
-    "astral-sh/setup-uv": "v10.0.1",
+    "astral-sh/setup-uv": "v10.1.0",
     "aquasecurity/trivy-action": "v0.36.0",
     "actions/attest-build-provenance": "v4.2.2",
     "actions/attest-sbom": "v4.1.0",

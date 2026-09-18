@@ -13,11 +13,11 @@ RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 
-# fleet-2026-09-06-clinpgx-adoption. Updating these four hashes is the act of adopting a new
+# fleet-2026-09-18-fleet-consolidation. Updating these four hashes is the act of adopting a new
 # reviewed fleet; they must only ever move in the same commit that regenerates the evidence set from
 # a live fleet, never to make a failing check pass.
 HISTORICAL_EVIDENCE_SHA256 = {
-    APPLICATION_RELEASES: "816f8dd00e37d0a54da3d95bc9a699b42769b879897d434e2e7b69b34a7d3efa",
+    APPLICATION_RELEASES: "77719974881a0c741c90e1bfa2848732736b93ede4963b92e443f5d11a8c85ca",
     RELEASE_INVENTORY: "e8fba1ea9e257708a00d9f8833df1d7bb70305b99518f8c123b7d1db4408aaf0",
     RELEASE_CANDIDATE: "dcda4c9be92e49dfdf147412eaf58932c8ba9c4245a2832e28c5636a4ae7de00",
     BASELINE: "dcda4c9be92e49dfdf147412eaf58932c8ba9c4245a2832e28c5636a4ae7de00",
