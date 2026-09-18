@@ -16,11 +16,11 @@
       "name": "autopvs1",
       "namespace": "autopvs1",
       "release": {
-        "commit": "cc024044f002277eb5bc48ba815ead503a8ba8d1",
+        "commit": "c05b46032d135cc48625ecf9b593531e608ad6a4",
         "definitions_sha256": "778255b227295db4e572a1cb322f62424edd0a0e712aba7c8cf4090405cb2881",
-        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:ef1f997313f4b45f2f8bebf20fa87e956fc6ab6d3ae57dcd3e761d8fd7d592f0",
-        "tag": "v4.1.6",
-        "version": "4.1.6"
+        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:90f44d467b1e2a1f2abfdce2b55ab59c72af98a794ee52e96481d742ffb04bf7",
+        "tag": "v4.1.7",
+        "version": "4.1.7"
       },
       "repository": "berntpopp/autopvs1-link",
       "repository_url": "https://github.com/berntpopp/autopvs1-link",
@@ -538,15 +538,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:74dc6e1a82f773b17303d33ff82b63c96e9aed0b16fa5f3020b13fd69ffdf789",
+        "asset_sha256": "sha256:38ff5ebb9b299f313ff23fa8def48ca5a97284c5fea85db21fe3ae06734a2c5b",
         "data_identity_contract": "runtime-v1",
         "mode": "external-reference",
-        "release_tag": "data-clingen-de5f403028d2e1e1",
+        "release_tag": "data-clingen-83dcb565417a23bd",
         "schema_compatibility": [
           "2"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-09-02T07:08:42.639995Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -555,11 +555,11 @@
       "name": "clingen",
       "namespace": "clingen",
       "release": {
-        "commit": "5f18e78ae12f38c42eb95ee9c6d5fc1096ffc078",
+        "commit": "5af388a5c28c330bef7a5593b4307dc3f519b903",
         "definitions_sha256": "f3108155dcb9621becdbb3e5dc36e3e57330a4e0adef004b06c8f9e626b8bc9e",
-        "image": "ghcr.io/berntpopp/clingen-link@sha256:c1c1466f89b4b222dd151c315a4847e88e97ed700409e69fbedf6bdb17bb7998",
-        "tag": "v4.0.9",
-        "version": "4.0.9"
+        "image": "ghcr.io/berntpopp/clingen-link@sha256:c729996a887194153cc3222b457fbf76b28e41505043ece1227e72a973df11d9",
+        "tag": "v4.0.13",
+        "version": "4.0.13"
       },
       "repository": "berntpopp/clingen-link",
       "repository_url": "https://github.com/berntpopp/clingen-link",
@@ -3345,7 +3345,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-09-02T07:08:42.639995Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Variant clinical significance",
       "entrypoints": [
@@ -3354,11 +3354,11 @@
       "name": "clinvar",
       "namespace": "clinvar",
       "release": {
-        "commit": "b16f6ffd336fda734f6d58cf0b0603107a787fe8",
+        "commit": "0bd322193f279c1f72844cd28b4924b0218e3798",
         "definitions_sha256": "0e75adbad4f3389d918f9e9719b7e4eb21e3e046f27455ef859e52ef6f66c54c",
-        "image": "ghcr.io/berntpopp/clinvar-link@sha256:0c8c0e64a6d91ca21a8c9ecfdc24381ca9a09539a40cffb0b6f65091a6062ccf",
-        "tag": "v0.5.9",
-        "version": "0.5.9"
+        "image": "ghcr.io/berntpopp/clinvar-link@sha256:27c523f5f6a7769ea6255e62139324ca55e4161b069045a74cb78606322bcfd2",
+        "tag": "v0.5.10",
+        "version": "0.5.10"
       },
       "repository": "berntpopp/clinvar-link",
       "repository_url": "https://github.com/berntpopp/clinvar-link",
@@ -3992,7 +3992,7 @@
         "release_tag": "observed-2026.08.30",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-09-01T19:20:44.271377Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -4001,11 +4001,11 @@
       "name": "gencc",
       "namespace": "gencc",
       "release": {
-        "commit": "d00b73e115bb0945958760bc439b953ecd548b23",
-        "definitions_sha256": "0c6011c65381846770f415d15668617280d6fe72e1d56e8e3cf3e54351fe0df6",
-        "image": "ghcr.io/berntpopp/gencc-link@sha256:50ff9c1413cc66974817ae5d5e7afb2d55f3c661b3ff28b49ec8ec70e54a2086",
-        "tag": "v0.8.6",
-        "version": "0.8.6"
+        "commit": "614fad3ebc311a9da151f6ce446fd6b0ad6b575e",
+        "definitions_sha256": "cc545a6857602d56e3b042d2ac7a511c6652e6fbfd88f322b5a6ae3267e8ead3",
+        "image": "ghcr.io/berntpopp/gencc-link@sha256:79f4a03b3c9eb0a686a72c16cd998a7b7eb6017f606cae68ff7145d951698dd5",
+        "tag": "v0.8.7",
+        "version": "0.8.7"
       },
       "repository": "berntpopp/gencc-link",
       "repository_url": "https://github.com/berntpopp/gencc-link",
@@ -4848,15 +4848,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:4486e499337e9f816a2aa0741f2a0e51ca38cda52f96fb57564cfc36f4b3c5bc",
+        "asset_sha256": "sha256:9e76402893b51ca6597ad434aef1feb71542a03c7566e43865081fbbff3fdca2",
         "data_identity_contract": "runtime-v1",
         "mode": "restored-database",
-        "release_tag": "corpus-data-2026-07-13-r1",
+        "release_tag": "corpus-data-2026-09-01-r1",
         "schema_compatibility": [
           "0007_embedding_run_identity"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-09-02T07:08:42.639995Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Gene\u2013disease literature",
       "entrypoints": [
@@ -4866,11 +4866,11 @@
       "name": "genereviews",
       "namespace": "genereviews",
       "release": {
-        "commit": "c4c1fabf89165ca097d4a618b15e0b52bb0110d4",
+        "commit": "101e18ea1c4c5399692d623e94e5e89ebe246005",
         "definitions_sha256": "eec51191f4873538677a01a767143fe5476c7cf1ecce62542e897e77451e7764",
-        "image": "ghcr.io/berntpopp/genereviews-link@sha256:49e5156f6de85fb59ecf8efdbad0982057a6bbe91fa3a6b3ee78088b269b314c",
-        "tag": "v5.2.4",
-        "version": "5.2.4"
+        "image": "ghcr.io/berntpopp/genereviews-link@sha256:176050e1e22c6d6c6e324bb5fc76bcdf2f1b7abecc2e1b27b360fb8ada5f6ba1",
+        "tag": "v5.2.7",
+        "version": "5.2.7"
       },
       "repository": "berntpopp/genereviews-link",
       "repository_url": "https://github.com/berntpopp/genereviews-link",
@@ -5876,11 +5876,11 @@
       "name": "gnomad",
       "namespace": "gnomad",
       "release": {
-        "commit": "bb210dad7851a9f85883663c7ce3c97641154618",
+        "commit": "f5593f0c05df1767ec8505f129e998f281a0cf28",
         "definitions_sha256": "b30ddbfb94f1aef69a4092f0112d01ffe5bcae33818cc22de7bcd9dfff02cc44",
-        "image": "ghcr.io/berntpopp/gnomad-link@sha256:a098bbbb7cc82b9f75177f902d6f5efe6a2f5b115ea068897b010497976a922a",
-        "tag": "v9.0.5",
-        "version": "9.0.5"
+        "image": "ghcr.io/berntpopp/gnomad-link@sha256:f39a77812e5c2e5413628ff6ad12ac21b0aa20bd26f639d5ee1fa585813f6940",
+        "tag": "v9.0.6",
+        "version": "9.0.6"
       },
       "repository": "berntpopp/gnomad-link",
       "repository_url": "https://github.com/berntpopp/gnomad-link",
@@ -7541,11 +7541,11 @@
       "name": "gtex",
       "namespace": "gtex",
       "release": {
-        "commit": "a3f8ef79dfc63ba3104466bd63c201d3cf5d1917",
+        "commit": "76c3b7f05ae59b60bb3960a7c5383a918449d2ba",
         "definitions_sha256": "3f763d85c4fb812af42f570fb4b54a64d8aeb233efd0ec1a6aba76517a46a429",
-        "image": "ghcr.io/berntpopp/gtex-link@sha256:388995ec34c12ce6a3dfe004bad535337c95ea1c8a8c3f92e47ba668ea695556",
-        "tag": "v3.1.6",
-        "version": "3.1.6"
+        "image": "ghcr.io/berntpopp/gtex-link@sha256:77424be0adbc18dfeb80e4df6ccd7070dae7a8c41176a2e1ecffc6dbc34ee51f",
+        "tag": "v3.1.7",
+        "version": "3.1.7"
       },
       "repository": "berntpopp/gtex-link",
       "repository_url": "https://github.com/berntpopp/gtex-link",
@@ -8333,7 +8333,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-09-01T19:20:44.271377Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Gene nomenclature",
       "entrypoints": [
@@ -8342,11 +8342,11 @@
       "name": "hgnc",
       "namespace": "hgnc",
       "release": {
-        "commit": "5e89dbce63b1bb59e74808f44890926e1b5a5fc4",
+        "commit": "d3773b0d9cc38086bd1d87fabe43607817e1040c",
         "definitions_sha256": "bcc5612d7f8435048bb4f9169abd520a05c91583c8ccb0391a63c18b4a8177c9",
-        "image": "ghcr.io/berntpopp/hgnc-link@sha256:40d78db7c6c95b7943698e18672b5909b8225f73cb2800bac1b0c39748514fba",
-        "tag": "v2.1.6",
-        "version": "2.1.6"
+        "image": "ghcr.io/berntpopp/hgnc-link@sha256:af75f004008dc4a96038dc15bf402fd7175419465e4d60adf77351c7f1d733c1",
+        "tag": "v2.1.7",
+        "version": "2.1.7"
       },
       "repository": "berntpopp/hgnc-link",
       "repository_url": "https://github.com/berntpopp/hgnc-link",
@@ -8881,13 +8881,13 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:d677a96efd8c274045241934c33b25dfb6fc9a6414c27bed7ae3334d05d4c9f6",
+        "asset_sha256": "sha256:be9e693abf9eabb06ad501e360084cc3fb039eef90ffe02912bfe83256af3999",
         "data_identity_contract": "unadopted",
         "mode": "external-reference",
-        "release_tag": "db-v2026-06-23",
+        "release_tag": "db-v2026-09-01",
         "schema_compatibility": [],
         "status": "attested-reference",
-        "updated_at": "2026-09-01T01:14:10.330329Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Phenotype ontology & associations",
       "entrypoints": [
@@ -8898,11 +8898,11 @@
       "name": "hpo",
       "namespace": "hpo",
       "release": {
-        "commit": "e2b24a3a2c36e80ebb9deab3fb69a97029b66efc",
+        "commit": "462161b26cd60dbf27457e17f20222c39cefc24e",
         "definitions_sha256": "71b81906ece974d4391ecccf775e78a2dee9f9f742437f6b760f73174823552f",
-        "image": "ghcr.io/berntpopp/hpo-link@sha256:ecd703a96a43737b2b601b1de14561d79ae56bf8125a9ff9cabe63999feaff5d",
-        "tag": "v0.4.6",
-        "version": "0.4.6"
+        "image": "ghcr.io/berntpopp/hpo-link@sha256:2160e64d5fcfd46e1390540bcbec21251c09115bdf624d0eb381d3d6b5b23739",
+        "tag": "v0.4.7",
+        "version": "0.4.7"
       },
       "repository": "berntpopp/hpo-link",
       "repository_url": "https://github.com/berntpopp/hpo-link",
@@ -9942,11 +9942,11 @@
       "name": "litvar",
       "namespace": "litvar",
       "release": {
-        "commit": "fe1d82810d23fd3a9a204ed8c15741adb6237ec0",
+        "commit": "8a561b298781e56de6f211a40dbd3a42789e8e28",
         "definitions_sha256": "7fed6228dd4eee633c599500cf4f6ec06c2242ae30d74d7690970d9145469821",
-        "image": "ghcr.io/berntpopp/litvar-link@sha256:60d43c200b225e134191e5d54f810bad686cca80daa9d8c186b0a3e879c69f11",
-        "tag": "v6.0.7",
-        "version": "6.0.7"
+        "image": "ghcr.io/berntpopp/litvar-link@sha256:84a696018df5e3ce4f1598aa23f3b7dcb8023d302e2f90c45e62f87392eb43f5",
+        "tag": "v6.0.8",
+        "version": "6.0.8"
       },
       "repository": "berntpopp/litvar-link",
       "repository_url": "https://github.com/berntpopp/litvar-link",
@@ -10247,7 +10247,7 @@
         "release_tag": "data-2026-06-24",
         "schema_compatibility": [],
         "status": "attested-reference",
-        "updated_at": "2026-09-01T19:20:44.271377Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Variant-effect assay scores",
       "entrypoints": [
@@ -10256,11 +10256,11 @@
       "name": "mavedb",
       "namespace": "mavedb",
       "release": {
-        "commit": "035d36ea29c0afeb0112d208a6ac9fd38a27b807",
+        "commit": "1ae150ff3f041045708001403be13f908d58d077",
         "definitions_sha256": "7163a135521e80bbe1ba28070b8c41d356c779c2ebdf4c71b7acbcf282f1c7f6",
-        "image": "ghcr.io/berntpopp/mavedb-link@sha256:b44082ff3ae18415c61fdc07c9d5e41b0e07b22de38c2ad7d68d04490fd20b79",
-        "tag": "v0.5.6",
-        "version": "0.5.6"
+        "image": "ghcr.io/berntpopp/mavedb-link@sha256:7553b3ec1e37cf1c7f46f6c2fb4fa7c36bbc4024c5843d8b6879e0fdea127780",
+        "tag": "v0.5.7",
+        "version": "0.5.7"
       },
       "repository": "berntpopp/mavedb-link",
       "repository_url": "https://github.com/berntpopp/mavedb-link",
@@ -11429,11 +11429,11 @@
       "name": "metadome",
       "namespace": "metadome",
       "release": {
-        "commit": "a701d27082e964b57925807f00fdad05ed457377",
+        "commit": "e78f6ef37fb6737e1a4d5bc788c089ca550df4d4",
         "definitions_sha256": "2fa791b88ad64448b826cd068c3a39bbb3d882086e65fdb261ded35399dfd696",
-        "image": "ghcr.io/berntpopp/metadome-link@sha256:9a9cfe6fb02d2b8b374983687f882e7f7fffe575f959355df5cab7dc671f9e80",
-        "tag": "v0.3.7",
-        "version": "0.3.7"
+        "image": "ghcr.io/berntpopp/metadome-link@sha256:918caa987441c53f552b7c75534df30bcd7b02cc9dbc120ec6c5f2207ac81aa8",
+        "tag": "v0.3.8",
+        "version": "0.3.8"
       },
       "repository": "berntpopp/metadome-link",
       "repository_url": "https://github.com/berntpopp/metadome-link",
@@ -14962,7 +14962,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-09-01T19:20:44.271377Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Mouse phenotype & models",
       "entrypoints": [
@@ -14971,11 +14971,11 @@
       "name": "mgi",
       "namespace": "mgi",
       "release": {
-        "commit": "d6421fa59d5b5a35f76ad789f9b4edb65afbcb54",
+        "commit": "bf400c8bfa61289b7fa9fc64aca6edb0c9180de6",
         "definitions_sha256": "6f0cbd449985078f74b2fadfab101fbfef830bce8eb042c2ebbcb043ca1e7283",
-        "image": "ghcr.io/berntpopp/mgi-link@sha256:1390d453e047b172d0530c7b3ca8c24193adb90b8bfa3edb0f1fba368431ee73",
-        "tag": "v0.6.5",
-        "version": "0.6.5"
+        "image": "ghcr.io/berntpopp/mgi-link@sha256:b4c804dbd2c6a06b84efb836e3cfa27b953e64f486c7dba39a881a9e097710e2",
+        "tag": "v0.6.6",
+        "version": "0.6.6"
       },
       "repository": "berntpopp/mgi-link",
       "repository_url": "https://github.com/berntpopp/mgi-link",
@@ -15676,7 +15676,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-09-01T19:20:44.271377Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Disease ontology / cross-references",
       "entrypoints": [
@@ -15685,11 +15685,11 @@
       "name": "mondo",
       "namespace": "mondo",
       "release": {
-        "commit": "8f2be36c892670ec39b24d52f64118149f8e77fc",
+        "commit": "924a688fbbd71d4ea383bc7bb63138c0642ff1c7",
         "definitions_sha256": "179f9225ffd41cb8551e11b75604f20cf96e4b4fd7af5e338846602740a331ca",
-        "image": "ghcr.io/berntpopp/mondo-link@sha256:7ade14a2432b00c9a52749e0e4ef7d3d048b7044be6dcff6562b2ebe96845975",
-        "tag": "v0.4.5",
-        "version": "0.4.5"
+        "image": "ghcr.io/berntpopp/mondo-link@sha256:2bb25a8517d5a3dce636acc79c1087676247a94b9f13187194259db7e3673b31",
+        "tag": "v0.4.7",
+        "version": "0.4.7"
       },
       "repository": "berntpopp/mondo-link",
       "repository_url": "https://github.com/berntpopp/mondo-link",
@@ -16443,7 +16443,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-09-02T01:09:54.983119Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Rare disease ontology & associations",
       "entrypoints": [
@@ -16452,11 +16452,11 @@
       "name": "orphanet",
       "namespace": "orphanet",
       "release": {
-        "commit": "7e18cfb7292befede2a1929f888ec8134ea7ee5e",
+        "commit": "cb4dd9021c0c4915f6b786923ddae2d45b9baf79",
         "definitions_sha256": "e48c67610afd134796521ce8e0ebca4c641ad8042882b4c0aff98330713ef632",
-        "image": "ghcr.io/berntpopp/orphanet-link@sha256:f812b7db0ef824beb2691b9f83466d84e3115265ad714f3b1f55288f770d277a",
-        "tag": "v0.4.7",
-        "version": "0.4.7"
+        "image": "ghcr.io/berntpopp/orphanet-link@sha256:b04257e6e9dd0fff97ba9c763f1e90d0a048918b8afc3dfae356fe58dc1545da",
+        "tag": "v0.4.8",
+        "version": "0.4.8"
       },
       "repository": "berntpopp/orphanet-link",
       "repository_url": "https://github.com/berntpopp/orphanet-link",
@@ -17677,11 +17677,11 @@
       "name": "panelapp",
       "namespace": "panelapp",
       "release": {
-        "commit": "fe5bf71ffcf5174d00f80b60c6234b59bb6aa8d0",
+        "commit": "9e3664fd323de554c4c691f1e8fa8bac735401bc",
         "definitions_sha256": "04f72aebcb0ef65d0ed0fb802342a5edcfc827a107d5960bf2db1d991428cc8e",
-        "image": "ghcr.io/berntpopp/panelapp-link@sha256:a106a79ef1e14e15164c1559354cb2fddabb32a3242faf50c9df834c3afee351",
-        "tag": "v0.7.3",
-        "version": "0.7.3"
+        "image": "ghcr.io/berntpopp/panelapp-link@sha256:fe9b37d6eab237796a2d8cc824ddc4a5707a17398252c7b16ddd77a285ed09b4",
+        "tag": "v0.7.4",
+        "version": "0.7.4"
       },
       "repository": "berntpopp/panelapp-link",
       "repository_url": "https://github.com/berntpopp/panelapp-link",
@@ -18611,7 +18611,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "attested-reference",
-        "updated_at": "2026-09-01T06:57:09.526069Z"
+        "updated_at": "2026-09-17T19:08:59.467565Z"
       },
       "domain": "Literature & entity annotation",
       "entrypoints": [
@@ -18620,11 +18620,11 @@
       "name": "pubtator",
       "namespace": "pubtator",
       "release": {
-        "commit": "2c513a49653a477d71c8aa870871759023392033",
+        "commit": "eb850ef5ad06e43882e7f375ad4b8119f20ceb24",
         "definitions_sha256": "512f5c1dc2fe8e7e9fa383ba5e88e568933125e6143434d0b1f09614230b3441",
-        "image": "ghcr.io/berntpopp/pubtator-link@sha256:b2ab9657e9a7a3e4818ad58b3f183a205a5aba2c8f2117e964f4228a431064ca",
-        "tag": "v7.1.10",
-        "version": "7.1.10"
+        "image": "ghcr.io/berntpopp/pubtator-link@sha256:fbf1d84d42f3e88e7d52020cb80d85d193c578feb40daa00b208477396f6e20d",
+        "tag": "v7.1.11",
+        "version": "7.1.11"
       },
       "repository": "berntpopp/pubtator-link",
       "repository_url": "https://github.com/berntpopp/pubtator-link",
@@ -22030,11 +22030,11 @@
       "name": "stringdb",
       "namespace": "stringdb",
       "release": {
-        "commit": "728482b5ea96945bb18bd0fdbce2b4e6406e0ee2",
+        "commit": "c3c04cf3ddef0ab3461cf150c6c62b6475dc70d1",
         "definitions_sha256": "62a8908b84685b727d28bf5a79b0fa241cdeb4e963768989c58a3e17334e8dde",
-        "image": "ghcr.io/berntpopp/stringdb-link@sha256:86cff15b3c3e3364f1920a1fa9ce7e7c91d934072135cc03cddf6b860ec2d67d",
-        "tag": "v4.1.6",
-        "version": "4.1.6"
+        "image": "ghcr.io/berntpopp/stringdb-link@sha256:c4fa8712c6c068bb57a7f3f255d3c80c15775064d8a0953826066cf4eedecbbb",
+        "tag": "v4.1.7",
+        "version": "4.1.7"
       },
       "repository": "berntpopp/stringdb-link",
       "repository_url": "https://github.com/berntpopp/stringdb-link",
@@ -22978,11 +22978,11 @@
       "name": "uniprot",
       "namespace": "uniprot",
       "release": {
-        "commit": "a82b733bfcb47aeb9d25e52d8481020dba99af6e",
+        "commit": "fe6832c06a872615bbdf46a1517f80f3fa2ea9f0",
         "definitions_sha256": "5d94f620dabf0a33e8b93f8df64ded825468e088806ed737be7daeff96cf0321",
-        "image": "ghcr.io/berntpopp/uniprot-link@sha256:d64cc760dbd8b3b190b051beecf984bb7f2495c1b4b48e49b43a093e60891efb",
-        "tag": "v5.1.3",
-        "version": "5.1.3"
+        "image": "ghcr.io/berntpopp/uniprot-link@sha256:75b5388792da81ad67372c40ce939484b89867e11d82b2044bae5cbb770471cd",
+        "tag": "v5.1.4",
+        "version": "5.1.4"
       },
       "repository": "berntpopp/uniprot-link",
       "repository_url": "https://github.com/berntpopp/uniprot-link",
@@ -23985,11 +23985,11 @@
       "name": "vep",
       "namespace": "vep",
       "release": {
-        "commit": "7c0a67b60f05a1576c9923fbb39b1a480ec5855c",
+        "commit": "532bcb6f234f0d1ec74a265553e69cfdceb48c67",
         "definitions_sha256": "68dc33bdc4d7e76c685b05aa4a321af68b318df39474af66352eeb34a53c99f8",
-        "image": "ghcr.io/berntpopp/vep-link@sha256:75c626d0f9404dec46bde9b8683ff8e95fcffba9857ee8c07d0e8d2fc173e2d0",
-        "tag": "v1.1.5",
-        "version": "1.1.5"
+        "image": "ghcr.io/berntpopp/vep-link@sha256:b5ef0dfd8aeebaa108c1d467d40a76f2c643c0a8f4688083605028b59a592462",
+        "tag": "v1.1.6",
+        "version": "1.1.6"
       },
       "repository": "berntpopp/vep-link",
       "repository_url": "https://github.com/berntpopp/vep-link",

@@ -10,7 +10,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/control-audit.yml"
 CHECKOUT_ACTION = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
-SETUP_UV_ACTION = "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d"
+SETUP_UV_ACTION = "astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4"
 APP_TOKEN_ACTION = "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"  # noqa: S105 - action identifier
 UPLOAD_ACTION = "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
 SHELL_LEDGER = "$RUNNER_TEMP/container-controls.json"
@@ -260,7 +260,7 @@ def test_workflow_has_no_long_lived_or_failure_suppressing_escape_hatches() -> N
 
 def test_reviewed_action_version_comments_match_pins() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
-    assert f"uses: {SETUP_UV_ACTION} # v10.0.1" in text
+    assert f"uses: {SETUP_UV_ACTION} # v10.1.0" in text
     assert f"uses: {APP_TOKEN_ACTION} # v3.2.0" in text
     assert f"uses: {UPLOAD_ACTION} # v7.0.1" in text
 
