@@ -2,6 +2,14 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.9.2] - 2026-09-18
+
+### Changed
+
+- Synchronized fleet application releases and canonical fleet provenance across all 22 federated backends following the fleet-wide Dependabot and security remediation campaign.
+- Consolidated runtime and dev dependencies (`gunicorn` 26.2.0, `orjson` 3.12.0, `ruff` 0.16.8, `mypy` 2.3.1).
+- Updated GitHub Actions pins across reusable and caller workflows (`astral-sh/setup-uv` v10.1.0, `docker/setup-buildx-action` v4.4.0, `docker/build-push-action` v7.4.0).
+
 ## [0.9.1] - 2026-09-18
 
 ### Changed
