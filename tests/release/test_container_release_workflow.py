@@ -21,7 +21,7 @@ ACTION_PINS = {
     "docker/setup-buildx-action": "37fe631027851001ddb9b187196cc803df7f5f0e",
     "docker/build-push-action": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
     "aquasecurity/trivy-action": "ed142fd0673e97e23eac54620cfb913e5ce36c25",
-    "anchore/sbom-action": "e22c389904149dbc22b58101806040fa8d37a610",
+    "anchore/sbom-action": "3ad7283483fc7af8ff2b4ea19663c2d5ca935e26",
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
     "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
     "docker/login-action": "dbcb813823bdd20940b903addbd779551569679f",
