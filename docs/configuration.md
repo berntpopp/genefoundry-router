@@ -36,6 +36,16 @@ starts.
 | `GF_REFRESH_OBSERVABILITY_DB` | _(unset)_ | oauth: durable refresh-rotation SQLite ledger. Production Compose sets `/data/genefoundry/refresh-observability.sqlite3` on the existing data volume |
 | `GF_RATE_LIMIT_RPM` | `0` | Per-client requests/min (429 over). An authenticated `GF_DEPLOYMENT_MODE=production` router **refuses to start** with `0`, even on loopback behind a proxy |
 | `GF_METRICS_TOKEN` | _(unset)_ | Bearer token for `GET /metrics`. An authenticated production router **refuses to start** without it, even on loopback behind a proxy |
+| `GF_SEARCH_MAX_RESULTS` | `5` | Hits `search_tools` returns |
+| `GF_SEARCH_EXPANSIONS` | `builtin` | Offline BM25 document expansion: `builtin` (packaged `data/tool-expansions.json`), `off`, or a path to a file in the same format. Index-only; see [discovery](discovery.md#search-ranking-stages) |
+| `GF_SEARCH_RERANK` | `off` | `off` \| `systemone`: optional reranker over the BM25 shortlist (hosted Jev or self-hosted OneJev). **Sends each search query to `GF_SEARCH_RERANK_URL`.** Fails open to BM25 |
+| `GF_SEARCH_RERANK_URL` | _(unset)_ | Full System One endpoint, e.g. `https://openrouter.ai/api/v1/systemone`, `https://api.typesafe.ai/v1/systemone`, or `http://onejev:8000/v1/systemone` |
+| `GF_SEARCH_RERANK_MODEL` | `jev-latest` | Model route (`typesafe/jev-1.13` on OpenRouter; ignored by a single-model OneJev server) |
+| `GF_SEARCH_RERANK_API_KEY` | _(unset)_ | The router's own endpoint key (never the caller's token); blank for a keyless self-hosted server |
+| `GF_SEARCH_RERANK_QUESTION` | `noul` | `noul` (independent P(yes) per candidate; supports abstention) \| `choice` (one relative choice; best top-1 on OneJev-4B, no threshold) |
+| `GF_SEARCH_RERANK_POOL` | `20` | BM25 candidates scored per search (`GF_SEARCH_MAX_RESULTS`–255) |
+| `GF_SEARCH_RERANK_MIN_SCORE` | `0.0` | `noul` only: drop hits below this P(yes); an all-dropped search returns `[]` ("nothing fits"). `0.3` is the measured sweet spot |
+| `GF_SEARCH_RERANK_TIMEOUT` | `3.0` | Seconds for the whole rerank round-trip; on timeout/error the BM25 order is served and the stage cools down for 30 s |
 | `GF_DRIFT_MODE` | `warn` | Runtime catalog policy: `off` \| `warn` \| `enforce` |
 | `GF_DRIFT_BASELINE` | _(packaged)_ | Optional path override for the reviewed packaged baseline |
 | `GF_<NAME>_URL` | _(unset)_ | Per-backend `/mcp` URL (e.g. `GF_GNOMAD_URL`) |
