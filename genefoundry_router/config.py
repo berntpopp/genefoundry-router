@@ -8,11 +8,21 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 import yaml
-from pydantic import AnyHttpUrl, Field, ValidationError, field_validator, model_validator
+from pydantic import (
+    AnyHttpUrl,
+    Field,
+    SecretStr,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from genefoundry_router.exceptions import RegistryError
 from genefoundry_router.registry import BackendDef
+from genefoundry_router.search_expansion import BUILTIN as BUILTIN_EXPANSIONS
+from genefoundry_router.search_expansion import load_expansion_file
+from genefoundry_router.search_rerank import MAX_CHOICE_OPTIONS, rerank_config
 
 AuthMode = Literal["none", "jwt", "oauth"]
 DeploymentMode = Literal["development", "production"]
@@ -42,6 +52,9 @@ class RouterSettings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=True,
+        # Validation errors must never echo raw settings: they can hold secrets (rerank
+        # API key, OAuth client secret) and startup errors land in container logs.
+        hide_input_in_errors=True,
     )
 
     # Transport / server
@@ -58,6 +71,20 @@ class RouterSettings(BaseSettings):
 
     # Tool search
     GF_SEARCH_MAX_RESULTS: int = 5
+    # Offline document expansion folded into the BM25 index: "builtin" (packaged
+    # data/tool-expansions.json), "off", or a path to a file in the same format.
+    GF_SEARCH_EXPANSIONS: str = "builtin"
+    # Optional second-stage reranker over the BM25 shortlist via the System One API
+    # (hosted Jev through TypeSafe/OpenRouter, or a self-hosted OneJev). Off by default;
+    # when on, the search query is sent to GF_SEARCH_RERANK_URL. Fails open to BM25.
+    GF_SEARCH_RERANK: Literal["off", "systemone"] = "off"
+    GF_SEARCH_RERANK_URL: str | None = None  # full endpoint, e.g. .../api/v1/systemone
+    GF_SEARCH_RERANK_MODEL: str = "jev-latest"
+    GF_SEARCH_RERANK_API_KEY: SecretStr | None = None  # the router's own key, never the caller's
+    GF_SEARCH_RERANK_QUESTION: Literal["noul", "choice"] = "noul"
+    GF_SEARCH_RERANK_POOL: int = 20  # BM25 candidates scored per search
+    GF_SEARCH_RERANK_MIN_SCORE: float = 0.0  # noul P(yes) floor; 0 keeps every candidate
+    GF_SEARCH_RERANK_TIMEOUT: float = 3.0  # seconds for the whole round-trip
 
     # Outbound timeout (seconds) for calls to backends. Generous so slow backends
     # (e.g. spliceai cold ~60s) aren't cut off, while still bounding a hung backend.
@@ -181,6 +208,41 @@ class RouterSettings(BaseSettings):
         if isinstance(v, str) and not v.strip():
             return None
         return v
+
+    @field_validator("GF_SEARCH_RERANK_URL", "GF_SEARCH_RERANK_API_KEY", mode="before")
+    @classmethod
+    def _blank_rerank_optional(cls, v: object) -> object:
+        """Blank URL/key in an env profile means unset (e.g. a keyless self-hosted OneJev)."""
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
+    @field_validator("GF_SEARCH_EXPANSIONS")
+    @classmethod
+    def _expansion_source_is_loadable(cls, v: str) -> str:
+        """Fail at startup, not at the first search, on an unusable expansion file."""
+        choice = v.strip()
+        if choice.lower() not in {"", "off", BUILTIN_EXPANSIONS}:
+            load_expansion_file(Path(choice))
+        return v
+
+    @model_validator(mode="after")
+    def _rerank_settings_are_usable(self) -> RouterSettings:
+        """Validate the reranker only when enabled, so a half-filled profile can stay off."""
+        if self.GF_SEARCH_RERANK == "off":
+            return self
+        if not self.GF_SEARCH_RERANK_URL:
+            raise ValueError("GF_SEARCH_RERANK=systemone requires GF_SEARCH_RERANK_URL")
+        if not self.GF_SEARCH_MAX_RESULTS <= self.GF_SEARCH_RERANK_POOL <= MAX_CHOICE_OPTIONS:
+            raise ValueError(
+                "GF_SEARCH_RERANK_POOL must be between GF_SEARCH_MAX_RESULTS and "
+                f"{MAX_CHOICE_OPTIONS}"
+            )
+        try:
+            rerank_config(self)
+        except ValidationError as exc:
+            raise ValueError(f"invalid GF_SEARCH_RERANK_* settings: {exc}") from exc
+        return self
 
     @field_validator("GF_TRUSTED_PROXY_HOPS")
     @classmethod

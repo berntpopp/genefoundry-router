@@ -15,11 +15,13 @@ from pathlib import Path
 from genefoundry_router.config import load_registry
 from genefoundry_router.devtools.discoverability import (
     DEFAULT_MAX_RESULTS,
+    HELDOUT_TASKS,
     evaluate,
     format_report,
     load_catalog,
     load_tasks,
 )
+from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.tool_search import resolve_entrypoints
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -57,10 +59,15 @@ def test_every_enabled_backend_has_a_discoverability_task() -> None:
     assert not missing, f"enabled backends with no discoverability task: {missing}"
 
 
+def _served_pins() -> list[str]:
+    return resolve_entrypoints(load_registry(ROOT / "servers.yaml", {}))
+
+
 async def test_discoverability_meets_bar() -> None:
-    registry = load_registry(ROOT / "servers.yaml", {})
-    surfaced = resolve_entrypoints(registry)
-    report = await evaluate(load_catalog(), load_tasks(), surfaced)
+    # The served surface: pins + BM25 over tool text AND the packaged expansions.
+    report = await evaluate(
+        load_catalog(), load_tasks(), _served_pins(), expansions=expansion_texts("builtin")
+    )
     detail = "\n" + format_report(report)
     assert report.score_out_of_10 >= 9.0, detail
     assert report.discoverable_rate >= 0.95, detail  # every use case reachable in top-K
@@ -83,3 +90,52 @@ async def test_pubtator_search_is_reachable_without_pins() -> None:
 
     assert report.results[0].search_rank is not None
     assert report.results[0].search_rank <= DEFAULT_MAX_RESULTS
+
+
+async def test_bm25_without_expansion_still_meets_the_golden_bar() -> None:
+    # GF_SEARCH_EXPANSIONS=off must remain a safe fallback, not a cliff.
+    report = await evaluate(load_catalog(), load_tasks(), _served_pins())
+    assert report.score_out_of_10 >= 9.0, "\n" + format_report(report)
+    assert report.hit_at(5) >= 0.95
+
+
+def test_heldout_set_is_broad_and_targets_real_tools() -> None:
+    catalog = {t.name for t in load_catalog()}
+    positives = load_tasks(HELDOUT_TASKS)
+    everything = load_tasks(HELDOUT_TASKS, include_negatives=True)
+    assert len(positives) >= 150
+    assert len(everything) - len(positives) >= 20  # abstention probes stay in the file
+    for task in everything:
+        for tool in task.expected:
+            assert tool in catalog, f"held-out task {task.id} targets unknown tool {tool!r}"
+    styles = {t.style for t in positives}
+    assert {"lay", "jargon", "paraphrase", "crosslingual", "concrete"} <= styles
+
+
+async def test_heldout_discoverability_meets_bar() -> None:
+    # Measured 2026-09-28: BM25 alone reached 0.877; with expansions 0.990 (score 9.32).
+    # Bars leave headroom for a regenerated (temperature > 0) expansion file.
+    report = await evaluate(
+        load_catalog(),
+        load_tasks(HELDOUT_TASKS),
+        _served_pins(),
+        expansions=expansion_texts("builtin"),
+    )
+    detail = "\n" + format_report(report) + f"\nby style: {report.by_style()}"
+    assert report.score_out_of_10 >= 9.0, detail
+    assert report.hit_at(5) >= 0.95, detail
+    assert min(report.by_style().values()) >= 0.80, detail  # no phrasing style left behind
+    assert min(report.by_category().values()) >= 7.0, detail
+
+
+async def test_expansion_lift_on_pure_search_is_real() -> None:
+    # Guards the mechanism itself: without pins, expansion must keep a large lift over
+    # plain BM25 on the held-out phrasing (0.682 -> 0.944 hit@5 when introduced).
+    tasks = load_tasks(HELDOUT_TASKS)
+    plain = await evaluate(load_catalog(), tasks, surfaced=[])
+    expanded = await evaluate(
+        load_catalog(), tasks, surfaced=[], expansions=expansion_texts("builtin")
+    )
+    assert expanded.hit_at(5) >= 0.90
+    assert expanded.hit_at(5) - plain.hit_at(5) >= 0.20
+    assert expanded.by_style()["lay"] >= 0.80  # plain BM25: 0.06

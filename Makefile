@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme readme-inventory provenance lint-provenance lint-actions lint-action-versions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme readme-inventory provenance lint-provenance lint-actions lint-action-versions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog bench-rerank expansions ci-full
 
 .DEFAULT_GOAL := help
 
@@ -136,6 +136,12 @@ list-tools: ## Enumerate federated tools
 
 bench-discoverability: ## Benchmark tool discoverability over the catalog snapshot (offline)
 	uv run python scripts/discoverability_report.py --min-score 9.0
+
+bench-rerank: ## Measure the configured GF_SEARCH_RERANK endpoint on the held-out set (online)
+	set -a; [ -f .env ] && . ./.env; set +a; uv run python scripts/search_rerank_report.py
+
+expansions: ## Regenerate stale BM25 document expansions after snapshot-catalog (online, OPENROUTER_API_KEY)
+	uv run python scripts/gen_tool_expansions.py
 
 docker-build: ## Build Docker image
 	$(DOCKER_COMPOSE) -f docker/docker-compose.yml build

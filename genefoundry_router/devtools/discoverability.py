@@ -16,6 +16,7 @@ real hit. Tasks live in ``tasks.yaml`` (intent -> acceptable canonical target to
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,9 @@ _HERE = Path(__file__).resolve()
 DATA_DIR = _HERE.parents[2] / "tests" / "discoverability"
 DEFAULT_CATALOG = DATA_DIR / "catalog.json"
 DEFAULT_TASKS = DATA_DIR / "tasks.yaml"
+# Held-out set written blind to the search code (lay, jargon, crosslingual, ambiguous, …).
+# It exposed what tasks.yaml could not: BM25 alone reached only 0.68 hit@5 here.
+HELDOUT_TASKS = DATA_DIR / "heldout_tasks.yaml"
 DEFAULT_MAX_RESULTS = 5  # mirrors GF_SEARCH_MAX_RESULTS — the model only sees the top-K
 PROBE_DEPTH = 10  # search depth used to compute rank metrics beyond the served cutoff
 
@@ -42,6 +46,7 @@ class Task:
     category: str
     query: str
     expected: tuple[str, ...]  # any one of these counts as discovered
+    style: str = ""  # held-out phrasing style (lay, jargon, crosslingual, …); "" if unset
 
 
 @dataclass
@@ -80,6 +85,14 @@ class Report:
     def misses(self) -> list[TaskResult]:
         """Tasks not reachable through the served surface (the iteration work-list)."""
         return [r for r in self.results if r.score == 0]
+
+    def by_style(self, k: int = DEFAULT_MAX_RESULTS) -> dict[str, float]:
+        """hit@k per phrasing style (held-out set) — where a regression actually lands."""
+        styles: dict[str, list[float]] = {}
+        for r in self.results:
+            reached = r.pinned or (r.search_rank is not None and r.search_rank <= k)
+            styles.setdefault(r.task.style or "-", []).append(1.0 if reached else 0.0)
+        return {s: round(sum(v) / len(v), 3) for s, v in sorted(styles.items())}
 
     def by_category(self) -> dict[str, float]:
         cats: dict[str, list[float]] = {}
@@ -120,7 +133,9 @@ def load_catalog(path: Path = DEFAULT_CATALOG) -> list[Tool]:
     return tools
 
 
-def load_tasks(path: Path = DEFAULT_TASKS) -> list[Task]:
+def load_tasks(path: Path = DEFAULT_TASKS, *, include_negatives: bool = False) -> list[Task]:
+    """Load a task set. Negatives (``expected: []`` — no tool should match) only matter to
+    abstention experiments, so they are skipped unless ``include_negatives``."""
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     return [
         Task(
@@ -128,8 +143,10 @@ def load_tasks(path: Path = DEFAULT_TASKS) -> list[Task]:
             category=t["category"],
             query=t["query"],
             expected=tuple(t["expected"]),
+            style=t.get("style", ""),
         )
         for t in raw["tasks"]
+        if include_negatives or t["expected"]
     ]
 
 
@@ -148,14 +165,16 @@ async def evaluate(
     tasks: list[Task],
     surfaced: list[str],
     max_results: int = DEFAULT_MAX_RESULTS,
+    expansions: Mapping[str, str] | None = None,
 ) -> Report:
     """Score every task against the surface. ``surfaced`` = tools reachable without a
-    search (pins + instruction entry points); everything else must rank in BM25 search.
+    search (pins + instruction entry points); everything else must rank in BM25 search,
+    whose index includes ``expansions`` exactly as the served transform folds them in.
     """
     surfaced_set = set(surfaced)
     # Pinned tools are excluded from the searchable set, exactly as the live router does.
     hidden = [t for t in catalog if t.name not in surfaced_set]
-    transform = CompactBM25SearchTransform(max_results=PROBE_DEPTH)
+    transform = CompactBM25SearchTransform(max_results=PROBE_DEPTH, expansions=expansions)
 
     report = Report()
     for task in tasks:

@@ -57,6 +57,7 @@ PACKAGED_CODE_ASSETS = tuple(
         "fleet-baseline.json",
         "fleet-provenance.json",
         "image-content-policy-v1.json",
+        "tool-expansions.json",
     )
 )
 TMPFS = "/tmp:rw,noexec,nosuid,size=64m,mode=1777"  # noqa: S108 - container mount

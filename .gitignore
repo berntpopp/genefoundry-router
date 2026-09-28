@@ -23,3 +23,6 @@ uv.lock.bak
 
 # SDD isolated worktrees
 .worktrees/
+
+# LLM response cache for scripts/gen_tool_expansions.py
+.cache/
