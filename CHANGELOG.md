@@ -2,6 +2,13 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.9.4] - 2026-10-03
+
+### Changed
+
+- Refresh the digest-pinned Python 3.14 runtime base and pin the Dockerfile frontend to a verified immutable digest.
+- Update paired CodeQL action pins to v4.38.2.
+
 ## [0.9.3] - 2026-10-03
 
 ### Security
