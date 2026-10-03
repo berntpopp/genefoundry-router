@@ -2,6 +2,17 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.9.3] - 2026-10-03
+
+### Security
+
+- Upgrade PyJWT to 2.15.0 and virtualenv to 21.7.13 to resolve the current dependency security advisories.
+
+### Changed
+
+- Consolidate FastAPI 0.142.2, pytest-mock 3.16.0, and Ruff 0.16.9 updates.
+- Update immutable setup-uv v10.2.0 and paired CodeQL v4.38.1 action pins and their reviewed contract fixtures.
+
 ## [0.9.2] - 2026-09-18
 
 ### Changed
