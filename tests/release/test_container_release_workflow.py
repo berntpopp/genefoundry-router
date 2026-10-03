@@ -17,7 +17,7 @@ TRIVY_CACHE_DIR = "${{ github.workspace }}/.cache/trivy"
 ACTION_PINS = {
     "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
     "actions/setup-python": "5fda3b95a4ea91299a34e894583c3862153e4b97",
-    "astral-sh/setup-uv": "bec219d24cd3e171d82865faccec33120bb574f4",
+    "astral-sh/setup-uv": "c18668ad3cf93ea998bef934396af7bb5c839dc7",
     "docker/setup-buildx-action": "594f3bf4285d9ea8dc53c9a0c9c4092420091003",
     "docker/build-push-action": "c3c9e263c25d99ce0380d002d59b67737d91b0dc",
     "aquasecurity/trivy-action": "ed142fd0673e97e23eac54620cfb913e5ce36c25",
@@ -30,7 +30,7 @@ ACTION_PINS = {
 }
 
 ACTION_PIN_VERSIONS = {
-    "astral-sh/setup-uv": "v10.1.0",
+    "astral-sh/setup-uv": "v10.2.0",
     "aquasecurity/trivy-action": "v0.36.0",
     "actions/attest-build-provenance": "v4.2.2",
     "actions/attest-sbom": "v4.1.0",
