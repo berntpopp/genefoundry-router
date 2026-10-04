@@ -55,6 +55,8 @@ class BackendDef(BaseModel):
     server_name: str | None = None
     enabled: bool = True
     cache_ttl: int = 300
+    tool_cache_ttl: int | None = None
+    tool_cache_ttls: dict[str, int] = Field(default_factory=dict)
     transport: Literal["http"] = "http"  # R1.1: present in servers.yaml defaults; SSE not offered
     transform: TransformConfig | None = None
     url: str | None = None  # resolved from os.environ[url_env] at load time
