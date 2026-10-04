@@ -21,6 +21,29 @@ which may use a different uid. `user` must NOT appear in `docker/docker-compose.
 validate-compose`) forbids `user` there. `tests/unit/docker/test_compose.py` guards both
 halves of this split.
 
+## Private scheduled drift probe
+
+The scheduled drift check reaches private fleet services from the controller's existing
+`npm_default` Docker network. GitHub Actions does not receive the backend URLs or
+`GF_PUBTATOR_TOKEN`; a main-only job in the `drift-probe` environment authenticates with
+`DRIFT_SSH_PRIVATE_KEY` and the public host-key pin in `ci/drift_known_hosts`. The SSH
+client sends no remote command, disables forwarding and TTY allocation, and requires the
+pinned host key. The matching server-side key must be restricted to the root-owned
+`scripts/readonly_drift_probe.py` installation as its forced command, reject a nonempty
+`SSH_ORIGINAL_COMMAND`, and have no general shell or sudo rule attached to that key.
+
+The forced command selects only the fixed allowlist of 22 production `GF_*_URL` values and
+the single PubTator service token from the running router container's Docker metadata.
+It validates those URLs against the registry's reviewed public endpoints, then runs
+`genefoundry-router drift` using that container's exact cached release digest. The verifier
+has no mounts or published ports, runs as uid 10001 with a read-only rootfs, dropped
+capabilities, `no-new-privileges`, and CPU, memory, PID, output, and time limits. The
+workflow updates the existing drift issue on native exit 1; native exit 2 and SSH,
+preflight, or timeout failures fail the job. Only native exit 0 sends the dead-man's-switch
+heartbeat, so an unavailable probe cannot report a healthy monitor. Installing the forced
+command key and configuring the `drift-probe` environment are host/operator prerequisites;
+the workflow must remain disabled until those controls are in place.
+
 Self-check the rendered stack against the controller's own projection before deploying:
 
 ```bash

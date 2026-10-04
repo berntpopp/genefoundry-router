@@ -1,0 +1,249 @@
+"""The private drift probe accepts only reviewed runtime inputs and bounds its Docker run."""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).parents[2]
+SCRIPT = ROOT / "scripts" / "readonly_drift_probe.py"
+SPEC = importlib.util.spec_from_file_location("readonly_drift_probe", SCRIPT)
+assert SPEC is not None and SPEC.loader is not None
+probe = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(probe)
+
+
+def _environment() -> list[str]:
+    urls = [
+        line.split("=", 1)
+        for line in (ROOT / "ci" / "fleet-urls.env").read_text().splitlines()
+        if line.startswith("GF_")
+    ]
+    return [f"{name}={value}" for name, value in urls] + [
+        "GF_OAUTH_CLIENT_SECRET=must-not-be-forwarded",
+        "HF_TOKEN=must-not-be-forwarded",
+        f"{probe.TOKEN_KEY}=opaque-test-value",
+    ]
+
+
+def _container_inspect(image: str, image_id: str) -> dict[str, object]:
+    return {
+        "config_image": image,
+        "image_id": image_id,
+        "config_user": "10001:10001",
+        "source": "https://github.com/berntpopp/genefoundry-router",
+        "revision": "a" * 40,
+    }
+
+
+def _image_inspect(image_id: str, image: str) -> dict[str, object]:
+    return {
+        "id": image_id,
+        "repo_digests": [image],
+        "config_user": "10001:10001",
+        "source": "https://github.com/berntpopp/genefoundry-router",
+        "revision": "a" * 40,
+        "os": "linux",
+        "architecture": "amd64",
+    }
+
+
+def test_environment_selects_only_closed_reviewed_urls_and_pubtator_token() -> None:
+    selected = probe.select_probe_environment(_environment())
+
+    assert set(selected) == set(probe.EXPECTED_URLS) | {probe.TOKEN_KEY}
+    assert selected[probe.TOKEN_KEY] == "opaque-test-value"
+    configured_urls = dict(
+        line.split("=", 1)
+        for line in (ROOT / "ci" / "fleet-urls.env").read_text().splitlines()
+        if line.startswith("GF_")
+    )
+    assert configured_urls == probe.EXPECTED_URLS
+
+
+def test_environment_rejects_missing_duplicate_or_changed_public_url() -> None:
+    values = _environment()
+    with pytest.raises(probe.ProbeError):
+        probe.select_probe_environment(values[:-1])
+    with pytest.raises(probe.ProbeError):
+        probe.select_probe_environment([*values, values[0]])
+    with pytest.raises(probe.ProbeError):
+        probe.select_probe_environment(["GF_GNOMAD_URL=https://attacker.invalid/mcp", *values[1:]])
+
+
+@pytest.mark.parametrize(
+    ("container", "image"),
+    [
+        (
+            _container_inspect("latest", "sha256:" + "a" * 64),
+            _image_inspect("sha256:" + "a" * 64, "latest"),
+        ),
+        (
+            _container_inspect("ghcr.io/berntpopp/genefoundry-router:tag", "sha256:" + "a" * 64),
+            _image_inspect("sha256:" + "a" * 64, "ghcr.io/berntpopp/genefoundry-router:tag"),
+        ),
+        (
+            _container_inspect(
+                "ghcr.io/berntpopp/genefoundry-router@sha256:" + "b" * 64, "sha256:" + "a" * 64
+            ),
+            _image_inspect(
+                "sha256:" + "a" * 64, "ghcr.io/berntpopp/genefoundry-router@sha256:" + "c" * 64
+            ),
+        ),
+    ],
+)
+def test_image_selection_rejects_mutable_or_mismatched_runtime(container, image) -> None:
+    with pytest.raises(probe.ProbeError):
+        probe.validate_current_image(container, image)
+
+
+def test_drift_container_is_digest_pinned_non_root_and_has_no_host_mounts() -> None:
+    image_ref = "ghcr.io/berntpopp/genefoundry-router@sha256:" + "a" * 64
+    args = probe.drift_container_argv(image_ref)
+
+    assert args[0:3] == ["docker", "run", "--rm"]
+    assert "--pull=never" in args
+    assert "--network=npm_default" in args
+    assert "--user=10001:10001" in args
+    assert "--read-only" in args
+    assert "--cap-drop=ALL" in args
+    assert "--security-opt=no-new-privileges" in args
+    assert "--cpus=0.5" in args
+    assert "--memory=512m" in args
+    assert "--memory-swap=512m" in args
+    assert "--pids-limit=128" in args
+    assert not any(arg in {"-v", "--volume", "-p", "--publish", "--mount"} for arg in args)
+    assert args[-2:] == [image_ref, "drift"]
+    assert not any("opaque-test-value" in arg for arg in args)
+    env_names = [args[index + 1] for index, arg in enumerate(args[:-1]) if arg == "--env"]
+    assert set(env_names) == set(probe.EXPECTED_URLS) | {probe.TOKEN_KEY}
+
+
+def test_nonempty_ssh_original_command_is_refused_without_docker(monkeypatch) -> None:
+    monkeypatch.setenv("SSH_ORIGINAL_COMMAND", "docker run anything")
+
+    assert probe.main(run=lambda *args, **kwargs: pytest.fail("docker must not run")) == 2
+
+
+@pytest.mark.parametrize(
+    ("probe_exit", "stdout", "stderr", "expected"),
+    [
+        (0, "OK no tool-definition drift\n", "", "OK no tool-definition drift"),
+        (1, "CHANGED pubtator.search_literature\n", "", "CHANGED pubtator.search_literature"),
+        (2, "UNREACHABLE: pubtator\n", "", "UNREACHABLE: pubtator"),
+        (
+            125,
+            "opaque-test-value leaked?\n",
+            "stack trace",
+            "drift probe completed; details omitted",
+        ),
+    ],
+)
+def test_pipeline_selects_exact_image_env_and_exit_code(
+    probe_exit, stdout, stderr, expected
+) -> None:
+    image_ref = "ghcr.io/berntpopp/genefoundry-router@sha256:" + "a" * 64
+    image_id = "sha256:" + "b" * 64
+    env_entries = _environment()
+    observed: list[tuple[list[str], dict[str, str]]] = []
+
+    def fake_run(args, *, env, **kwargs):
+        observed.append((args, env))
+        if args[0] == "/usr/bin/docker" and "inspect" in args:
+            if args[-1] == probe.ROUTER_CONTAINER and args[6] == "{{json .Config.Env}}":
+                return probe.subprocess.CompletedProcess(args, 0, json.dumps(env_entries), "")
+            if args[-1] == probe.ROUTER_CONTAINER:
+                output = "\t".join(
+                    [
+                        image_ref,
+                        image_id,
+                        "10001:10001",
+                        probe.ROUTER_SOURCE,
+                        "a" * 40,
+                    ]
+                )
+            else:
+                output = "\t".join(
+                    [
+                        image_id,
+                        json.dumps([image_ref]),
+                        "10001:10001",
+                        probe.ROUTER_SOURCE,
+                        "a" * 40,
+                        "linux",
+                        "amd64",
+                    ]
+                )
+            return probe.subprocess.CompletedProcess(args, 0, output, "")
+        assert args[0:3] == ["/usr/bin/docker", "--host=unix:///var/run/docker.sock", "run"]
+        assert args[-2:] == [image_ref, "drift"]
+        assert set(env) == {"HOME", "PATH", "LC_ALL", "NO_COLOR", "TERM"} | set(
+            probe.EXPECTED_URLS
+        ) | {probe.TOKEN_KEY}
+        assert env[probe.TOKEN_KEY] == "opaque-test-value"
+        assert "HF_TOKEN" not in env
+        assert "GF_OAUTH_CLIENT_SECRET" not in env
+        return probe.subprocess.CompletedProcess(args, probe_exit, stdout, stderr)
+
+    code, output = probe.execute_probe(run=fake_run)
+
+    assert code == probe_exit
+    assert output == expected
+    run_args = observed[-1][0]
+    assert "--pull=never" in run_args
+    assert "--network=npm_default" in run_args
+    assert not any(
+        value in {"--env-file", "--mount", "--volume", "--publish"} for value in run_args
+    )
+
+
+def test_bounded_runner_stops_when_output_limit_is_exceeded() -> None:
+    with pytest.raises(probe.ProbeError):
+        probe._run_bounded(
+            probe.subprocess.run,
+            [probe.sys.executable, "-c", "print('x' * 10000)"],
+            env=probe._host_environment(),
+            timeout=5,
+            output_limit=128,
+        )
+
+
+def test_bounded_runner_enforces_timeout() -> None:
+    with pytest.raises(probe.subprocess.TimeoutExpired):
+        probe._run_bounded(
+            probe.subprocess.run,
+            [probe.sys.executable, "-c", "import time; time.sleep(2)"],
+            env=probe._host_environment(),
+            timeout=0,
+            output_limit=128,
+        )
+
+
+def test_drift_output_redacts_token_and_discards_unrecognized_lines() -> None:
+    output = probe._safe_output(
+        "CHANGED pubtator.search_literature\nignored opaque-test-value detail\n",
+        "",
+        "opaque-test-value",
+    )
+
+    assert output == "CHANGED pubtator.search_literature"
+    assert "opaque-test-value" not in output
+
+
+def test_workflow_only_heartbeats_success_and_fails_on_drift_or_unreachable() -> None:
+    text = (ROOT / ".github" / "workflows" / "drift.yml").read_text()
+
+    assert "github.ref == 'refs/heads/main'" in text
+    assert "DRIFT_SSH_PRIVATE_KEY" in text
+    assert "StrictHostKeyChecking=yes" in text
+    assert "IdentitiesOnly=yes" in text
+    assert "-nT" in text
+    assert "ssh" in text and "bernt@217.154.76.71" in text
+    assert "if: ${{ steps.drift.outputs.exit_code == '1'" in text
+    assert "steps.drift.outputs.exit_code == '0'" in text
+    assert "steps.drift.outputs.exit_code != '0'" in text
+    assert "always() && env.DRIFT_HEARTBEAT_URL" not in text
+    assert "uv run genefoundry-router drift" not in text
