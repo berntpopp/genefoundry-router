@@ -17,10 +17,16 @@ from genefoundry_router.registry import BackendDef
 
 
 def test_canonicalize_arguments_ordering_and_nesting() -> None:
-    arg1 = {"b": 2, "a": 1, "nested": {"y": [1, 2], "x": "val"}}
-    arg2 = {"a": 1, "nested": {"x": "val", "y": [1, 2]}, "b": 2}
+    arg1 = {"b": 2, "a": 1, "nested": {"y": [1, 2], "x": "val", "tuple": (3, {"k": "v"})}}
+    arg2 = {"a": 1, "nested": {"x": "val", "tuple": [3, {"k": "v"}], "y": [1, 2]}, "b": 2}
     assert canonicalize_arguments(arg1) == canonicalize_arguments(arg2)
     assert make_cache_key("test_tool", arg1) == make_cache_key("test_tool", arg2)
+
+    # Sets and negative zero canonicalization
+    assert canonicalize_arguments({"tags": {"b", "a"}}) == canonicalize_arguments(
+        {"tags": {"a", "b"}}
+    )
+    assert canonicalize_arguments({"val": -0.0}) == canonicalize_arguments({"val": 0.0})
 
 
 def test_canonicalize_arguments_empty() -> None:
@@ -98,8 +104,9 @@ def test_cache_set_get_and_meta_injection() -> None:
     assert cached is not None
     assert isinstance(cached, ToolResult)
     assert cached.structured_content["gene"] == "BRCA1"
-    # _meta should have cached=True injected
+    # _meta inside structured_content AND protocol-level meta should have cached=True injected
     assert cached.structured_content["_meta"]["cached"] is True
+    assert cached.meta.get("cached") is True
     # Original stored copy was not corrupted
     assert cache.stats["hits"] == 1
 
@@ -130,18 +137,46 @@ def test_cache_expiration() -> None:
 
 
 def test_cache_does_not_cache_errors() -> None:
+    from mcp.types import CallToolResult
+
     cache = ToolResponseCache()
-    error_result = ToolResult(
+
+    # 1. ToolResult with is_error=True
+    res1 = ToolResult(
         structured_content={"success": False, "error_code": "not_found"},
         content=[TextContent(type="text", text="Not found")],
         is_error=True,
     )
-    cache.set("vep_recode_variant", {"v": "bad"}, error_result)
-    assert cache.get("vep_recode_variant", {"v": "bad"}) is None
+    cache.set("vep_recode_variant", {"v": "bad1"}, res1)
+    assert cache.get("vep_recode_variant", {"v": "bad1"}) is None
 
-    error_dict = {"success": False, "isError": True, "message": "fail"}
-    cache.set("vep_recode_variant", {"v": "bad2"}, error_dict)
+    # 2. ToolResult with is_error=False but structured_content success=False (FastMCP envelope convention)
+    res2 = ToolResult(
+        structured_content={"success": False, "error_code": "upstream_timeout", "message": "504"},
+        content=[TextContent(type="text", text="Timeout")],
+        is_error=False,
+    )
+    cache.set("vep_recode_variant", {"v": "bad2"}, res2)
     assert cache.get("vep_recode_variant", {"v": "bad2"}) is None
+
+    # 3. ToolResult with wrapped result {"result": {"success": False}}
+    res3 = ToolResult(
+        structured_content={"result": {"success": False, "error_code": "upstream_503"}},
+        content=[],
+        is_error=False,
+    )
+    cache.set("vep_recode_variant", {"v": "bad3"}, res3)
+    assert cache.get("vep_recode_variant", {"v": "bad3"}) is None
+
+    # 4. Raw dict error
+    res4 = {"success": False, "isError": True, "message": "fail"}
+    cache.set("vep_recode_variant", {"v": "bad4"}, res4)
+    assert cache.get("vep_recode_variant", {"v": "bad4"}) is None
+
+    # 5. MCP CallToolResult with isError=True
+    res5 = CallToolResult(content=[TextContent(type="text", text="Error")], isError=True)
+    cache.set("vep_recode_variant", {"v": "bad5"}, res5)
+    assert cache.get("vep_recode_variant", {"v": "bad5"}) is None
 
 
 def test_cache_invalidation() -> None:
@@ -179,6 +214,30 @@ def test_cache_max_size_eviction() -> None:
     for i in range(5):
         cache.set("vep_tool", {"i": i}, ToolResult(structured_content={"i": i}, content=[]))
     assert cache.stats["size"] <= 3
+
+
+def test_cache_lru_eviction() -> None:
+    cache = ToolResponseCache(max_size=2)
+    cache.set("vep_tool", {"i": 1}, ToolResult(structured_content={"i": 1}, content=[]))
+    cache.set("vep_tool", {"i": 2}, ToolResult(structured_content={"i": 2}, content=[]))
+
+    # Access item 1 to make it most recently used
+    assert cache.get("vep_tool", {"i": 1}) is not None
+
+    # Insert item 3 -> should evict item 2 (least recently used), keeping item 1
+    cache.set("vep_tool", {"i": 3}, ToolResult(structured_content={"i": 3}, content=[]))
+
+    assert cache.get("vep_tool", {"i": 1}) is not None
+    assert cache.get("vep_tool", {"i": 2}) is None
+    assert cache.get("vep_tool", {"i": 3}) is not None
+
+    # Updating existing item 1 should not cause another eviction
+    cache.set(
+        "vep_tool", {"i": 1}, ToolResult(structured_content={"i": 1, "updated": True}, content=[])
+    )
+    assert cache.stats["size"] == 2
+    assert cache.get("vep_tool", {"i": 1}) is not None
+    assert cache.get("vep_tool", {"i": 3}) is not None
 
 
 @pytest.mark.asyncio

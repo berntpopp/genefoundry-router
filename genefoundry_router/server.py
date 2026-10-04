@@ -36,6 +36,7 @@ from genefoundry_router.notfound_guard import (
 from genefoundry_router.observability import (
     AuditLogMiddleware,
     MetricsMiddleware,
+    _metrics_authorized,
     configure_logging,
     namespace_tool_counts,
     register_health,
@@ -273,8 +274,26 @@ def build_app(
     app.state.refresh_ledger = refresh_ledger
     app.state.tool_cache = getattr(server, "tool_cache", None)
 
+    def _verify_cache_admin_auth(request: Request) -> bool:
+        if settings.GF_METRICS_TOKEN is None:
+            return True
+        return _metrics_authorized(request.headers.get("authorization"), settings.GF_METRICS_TOKEN)
+
     @app.get(settings.GF_MCP_PATH)
     async def mcp_discovery(request: Request) -> JSONResponse:
+        accept = request.headers.get("accept", "")
+        # MCP Streamable HTTP transport: if client strictly requests SSE event-stream, answer 405
+        if (
+            "text/event-stream" in accept
+            and "application/json" not in accept
+            and "*/*" not in accept
+        ):
+            return JSONResponse(
+                {"error": "SSE transport is not offered; use Streamable HTTP POST /mcp"},
+                status_code=405,
+                headers={"allow": "POST"},
+            )
+
         origin = request.headers.get("origin")
         headers: dict[str, str] = {}
         if origin and origin in settings.GF_ALLOWED_ORIGINS:
@@ -308,20 +327,50 @@ def build_app(
 
     @app.post("/api/cache/invalidate")
     async def invalidate_cache(
+        request: Request,
         key: str | None = None,
         tool: str | None = None,
         namespace: str | None = None,
     ) -> JSONResponse:
+        if not _verify_cache_admin_auth(request):
+            return JSONResponse(
+                {"error": "unauthorized"},
+                status_code=401,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         cache: ToolResponseCache | None = getattr(app.state, "tool_cache", None)
         if cache is None:
             return JSONResponse(
                 {"status": "error", "message": "cache not configured"}, status_code=500
             )
-        invalidated = cache.invalidate(key=key, tool_name=tool, namespace=namespace)
+
+        target_key = key
+        target_tool = tool
+        target_namespace = namespace
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            try:
+                body = await request.json()
+                if isinstance(body, dict):
+                    target_key = target_key or body.get("key")
+                    target_tool = target_tool or body.get("tool") or body.get("tool_name")
+                    target_namespace = target_namespace or body.get("namespace")
+            except Exception as exc:
+                log.debug("cache_invalidate_body_parse_failed", error=str(exc))
+
+        invalidated = cache.invalidate(
+            key=target_key, tool_name=target_tool, namespace=target_namespace
+        )
         return JSONResponse({"status": "ok", "invalidated": invalidated, "stats": cache.stats})
 
     @app.post("/api/cache/clear")
-    async def clear_cache() -> JSONResponse:
+    async def clear_cache(request: Request) -> JSONResponse:
+        if not _verify_cache_admin_auth(request):
+            return JSONResponse(
+                {"error": "unauthorized"},
+                status_code=401,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         cache: ToolResponseCache | None = getattr(app.state, "tool_cache", None)
         if cache is None:
             return JSONResponse(

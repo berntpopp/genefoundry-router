@@ -91,3 +91,12 @@ def test_mcp_discovery_rejects_disallowed_origin() -> None:
         response = client.get("/mcp", headers={"origin": "https://attacker.example"})
 
     assert response.status_code == 403
+
+
+def test_mcp_discovery_sse_accept_returns_405() -> None:
+    app = _create_app()
+    with TestClient(app) as client:
+        response = client.get("/mcp", headers={"accept": "text/event-stream"})
+
+    assert response.status_code == 405
+    assert "POST" in response.headers.get("allow", "")

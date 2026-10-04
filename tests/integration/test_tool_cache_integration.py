@@ -103,7 +103,7 @@ def test_cache_invalidation_api_endpoints(slow_backend_fakes) -> None:
         cache.set("vep_recode_variant", {"v": "2"}, {"ok": True})
         assert cache.stats["size"] == 2
 
-        # Invalidate by tool
+        # Invalidate by tool via query params
         resp = client.post("/api/cache/invalidate", params={"tool": "vep_recode_variant"})
         assert resp.status_code == 200
         data = resp.json()
@@ -111,9 +111,54 @@ def test_cache_invalidation_api_endpoints(slow_backend_fakes) -> None:
         assert data["invalidated"] == 2
         assert data["stats"]["size"] == 0
 
+        # Repopulate and invalidate by tool via JSON body
+        cache.set("vep_recode_variant", {"v": "10"}, {"ok": True})
+        assert cache.stats["size"] == 1
+        resp = client.post("/api/cache/invalidate", json={"tool": "vep_recode_variant"})
+        assert resp.status_code == 200
+        assert resp.json()["invalidated"] == 1
+        assert cache.stats["size"] == 0
+
         # Repopulate and clear
         cache.set("vep_recode_variant", {"v": "3"}, {"ok": True})
         resp = client.post("/api/cache/clear")
         assert resp.status_code == 200
         assert resp.json()["cleared"] == 1
         assert cache.stats["size"] == 0
+
+
+def test_cache_admin_endpoints_require_token_when_configured(slow_backend_fakes) -> None:
+    settings = RouterSettings(
+        _env_file=None,
+        GF_AUTH_MODE="none",
+        GF_METRICS_TOKEN="secret-ops-token",  # noqa: S106
+    )
+    registry = [
+        BackendDef(name="vep", url_env="GF_VEP_URL", namespace="vep", tool_cache_ttl=86400),
+    ]
+    app = build_app(
+        settings,
+        registry,
+        proxy_targets={"vep": slow_backend_fakes["vep"]},
+    )
+
+    with TestClient(app) as client:
+        # 1. Unauthenticated requests rejected with 401
+        res1 = client.post("/api/cache/clear")
+        assert res1.status_code == 401
+        assert res1.headers.get("www-authenticate") == "Bearer"
+
+        res2 = client.post("/api/cache/invalidate", json={"tool": "vep_recode_variant"})
+        assert res2.status_code == 401
+
+        # 2. Authenticated request with Bearer token succeeds
+        headers = {"Authorization": "Bearer secret-ops-token"}
+        res3 = client.post("/api/cache/clear", headers=headers)
+        assert res3.status_code == 200
+        assert res3.json()["status"] == "ok"
+
+        res4 = client.post(
+            "/api/cache/invalidate", json={"tool": "vep_recode_variant"}, headers=headers
+        )
+        assert res4.status_code == 200
+        assert res4.json()["status"] == "ok"

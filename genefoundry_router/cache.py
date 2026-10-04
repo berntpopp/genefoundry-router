@@ -11,6 +11,7 @@ import hashlib
 import json
 import threading
 import time
+from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -40,11 +41,17 @@ _SYNTHETIC_TOOLS = frozenset({"search_tools", "call_tool"})
 
 
 def _normalize_obj(obj: Any) -> Any:
-    """Recursively sort dictionary keys for deterministic canonical hashing."""
+    """Recursively sort dictionary keys and iterables for deterministic canonical hashing."""
     if isinstance(obj, dict):
         return {k: _normalize_obj(v) for k, v in sorted(obj.items())}
-    if isinstance(obj, list):
+    if isinstance(obj, (list, tuple)):
         return [_normalize_obj(x) for x in obj]
+    if isinstance(obj, (set, frozenset)):
+        return [_normalize_obj(x) for x in sorted(obj, key=lambda x: str(x))]
+    if hasattr(obj, "model_dump") and callable(obj.model_dump):
+        return _normalize_obj(obj.model_dump())
+    if isinstance(obj, float) and obj == 0.0:
+        return 0.0
     return obj
 
 
@@ -63,6 +70,45 @@ def make_cache_key(tool_name: str, arguments: dict[str, Any] | None) -> str:
     return f"{tool_name}:{arg_hash}" if arg_hash else f"{tool_name}:_empty"
 
 
+def is_error_response(result: Any) -> bool:
+    """True if result represents any protocol-level or envelope-level execution error."""
+    if getattr(result, "is_error", False) or getattr(result, "isError", False):
+        return True
+
+    sc = getattr(result, "structured_content", None) or getattr(result, "structuredContent", None)
+    if isinstance(sc, dict):
+        if (
+            sc.get("isError") is True
+            or sc.get("success") is False
+            or sc.get("error_code") is not None
+        ):
+            return True
+        inner = sc.get("result")
+        if isinstance(inner, dict) and (
+            inner.get("isError") is True
+            or inner.get("success") is False
+            or inner.get("error_code") is not None
+        ):
+            return True
+
+    if isinstance(result, dict):
+        if (
+            result.get("isError") is True
+            or result.get("success") is False
+            or result.get("error_code") is not None
+        ):
+            return True
+        inner = result.get("result")
+        if isinstance(inner, dict) and (
+            inner.get("isError") is True
+            or inner.get("success") is False
+            or inner.get("error_code") is not None
+        ):
+            return True
+
+    return False
+
+
 @dataclass
 class CacheEntry:
     """A cached tool execution outcome."""
@@ -75,7 +121,7 @@ class CacheEntry:
 
 
 class ToolResponseCache:
-    """In-memory TTL cache for deterministic MCP tool responses."""
+    """In-memory TTL LRU cache for deterministic MCP tool responses."""
 
     def __init__(
         self,
@@ -89,7 +135,7 @@ class ToolResponseCache:
             default_ttls if default_ttls is not None else DEFAULT_SLOW_BACKEND_TTLS
         )
         self._tool_ttls: dict[str, int] = {}
-        self._entries: dict[str, CacheEntry] = {}
+        self._entries: OrderedDict[str, CacheEntry] = OrderedDict()
         self._lock = threading.Lock()
         self._hits: int = 0
         self._misses: int = 0
@@ -133,6 +179,7 @@ class ToolResponseCache:
             if time.time() >= entry.expires_at:
                 del self._entries[key]
                 return None
+            self._entries.move_to_end(key)
             self._hits += 1
 
         TOOL_CACHE_HITS.labels(namespace=entry.namespace).inc()
@@ -140,11 +187,24 @@ class ToolResponseCache:
 
         if isinstance(entry.result, ToolResult):
             copied = entry.result.model_copy(deep=True)
+            if copied.meta is None:
+                copied.meta = {}
+            copied.meta["cached"] = True
             if isinstance(copied.structured_content, dict):
                 meta = copied.structured_content.get("_meta")
                 if isinstance(meta, dict):
                     meta["cached"] = True
             return copied
+
+        if hasattr(entry.result, "model_copy"):
+            copied_obj = entry.result.model_copy(deep=True)
+            if getattr(copied_obj, "meta", None) is None:
+                copied_obj.meta = {}
+            copied_obj.meta["cached"] = True
+            sc = getattr(copied_obj, "structuredContent", None)
+            if isinstance(sc, dict) and isinstance(sc.get("_meta"), dict):
+                sc["_meta"]["cached"] = True
+            return copied_obj
 
         copied_dict = copy.deepcopy(entry.result)
         if isinstance(copied_dict, dict):
@@ -173,30 +233,23 @@ class ToolResponseCache:
             return
 
         # Do not cache error responses
-        if isinstance(result, ToolResult) and result.is_error:
-            return
-        if isinstance(result, dict) and (
-            result.get("isError") is True or result.get("success") is False
-        ):
+        if is_error_response(result):
             return
 
         key = make_cache_key(tool_name, arguments)
         now = time.time()
         ns = tool_name.split("_", 1)[0]
         stored = (
-            result.model_copy(deep=True)
-            if isinstance(result, ToolResult)
-            else copy.deepcopy(result)
+            result.model_copy(deep=True) if hasattr(result, "model_copy") else copy.deepcopy(result)
         )
 
         with self._lock:
-            if len(self._entries) >= self.max_size:
+            if key not in self._entries and len(self._entries) >= self.max_size:
                 expired = [k for k, v in self._entries.items() if now >= v.expires_at]
                 for k in expired:
                     del self._entries[k]
                 if len(self._entries) >= self.max_size:
-                    oldest_key = next(iter(self._entries))
-                    del self._entries[oldest_key]
+                    self._entries.popitem(last=False)
 
             self._entries[key] = CacheEntry(
                 result=stored,
@@ -205,6 +258,7 @@ class ToolResponseCache:
                 tool_name=tool_name,
                 namespace=ns,
             )
+            self._entries.move_to_end(key)
         log.debug("tool_cache_set", tool=tool_name, ttl=ttl)
 
     def invalidate(
@@ -220,7 +274,13 @@ class ToolResponseCache:
             for k, entry in self._entries.items():
                 if (
                     (key is not None and k == key)
-                    or (tool_name is not None and entry.tool_name == tool_name)
+                    or (
+                        tool_name is not None
+                        and (
+                            entry.tool_name == tool_name
+                            or entry.tool_name.split("_", 1)[-1] == tool_name
+                        )
+                    )
                     or (namespace is not None and entry.namespace == namespace)
                 ):
                     to_delete.append(k)
