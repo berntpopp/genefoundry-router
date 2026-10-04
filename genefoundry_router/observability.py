@@ -77,6 +77,18 @@ TOOL_LATENCY = Histogram(
     ["namespace"],
     registry=METRICS_REGISTRY,
 )
+TOOL_CACHE_HITS = Counter(
+    "genefoundry_tool_cache_hits_total",
+    "Tool response cache hits",
+    ["namespace"],
+    registry=METRICS_REGISTRY,
+)
+TOOL_CACHE_MISSES = Counter(
+    "genefoundry_tool_cache_misses_total",
+    "Tool response cache misses",
+    ["namespace"],
+    registry=METRICS_REGISTRY,
+)
 DRIFT_CHANGED = Gauge(
     "genefoundry_drift_changed",
     "Changed normalized tool definitions in the last runtime check",

@@ -109,6 +109,7 @@ servers:
     source_url: https://autopvs1.bgi.com/
     tags: [variant, acmg, pvs1]
     entrypoints: [get_variant_pvs1_data]
+    tool_cache_ttl: 86400
 
   # namespace aliased to 'spliceai'; the backend's ratified serverInfo.name is
   # 'spliceailookup-link' (asserted by its own conformance CI: CONFORMANCE_NAME).
@@ -122,6 +123,7 @@ servers:
     source_url: https://spliceailookup.broadinstitute.org/
     tags: [variant, splicing, prediction]
     entrypoints: [predict_splicing]
+    tool_cache_ttl: 86400
 
   # two front doors: gene->chapter resolver + ranked passage/text search
   - name: genereviews
@@ -156,6 +158,7 @@ servers:
     source_url: https://www.ncbi.nlm.nih.gov/clinvar/
     tags: [variant, clinical-significance, classification]
     entrypoints: [get_variant]
+    tool_cache_ttl: 86400
 
   # action server: annotate/recode/liftover verbs (Standard v1.1-pending), still unprefixed
   - name: vep
@@ -167,6 +170,7 @@ servers:
     source_url: https://rest.ensembl.org/
     tags: [variant, annotation, consequence]
     entrypoints: [annotate_variant]
+    tool_cache_ttl: 86400
 
   - name: panelapp
     repo: berntpopp/panelapp-link

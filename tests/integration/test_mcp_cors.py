@@ -154,14 +154,21 @@ def test_mcp_exposes_session_and_challenge_headers(gnomad_fake: FastMCP) -> None
     assert response.status_code in (200, 204)
 
 
-def test_get_mcp_still_returns_405(gnomad_fake: FastMCP) -> None:
-    """Regression fence. The MCP Streamable HTTP transport REQUIRES a server that does not
-    offer an SSE stream on GET to answer 405; adding CORS must not turn that into a 200."""
+def test_get_mcp_returns_discovery_metadata(gnomad_fake: FastMCP) -> None:
+    """GET /mcp returns informative server metadata rather than 405 (issue #213)."""
     with TestClient(_app(gnomad_fake, [ALLOWED])) as client:
         response = client.get("/mcp", headers={"origin": ALLOWED})
 
-    assert response.status_code == 405
-    assert "POST" in response.headers.get("allow", "")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "genefoundry"
+    assert "version" in data
+    assert data["protocol_version"] == "2024-11-05"
+    assert "capabilities" in data
+    assert "endpoints" in data
+    assert data["endpoints"]["mcp"] == "/mcp"
+    assert "docs" in data
+    assert response.headers["access-control-allow-origin"] == ALLOWED
 
 
 def test_non_preflight_options_still_405(gnomad_fake: FastMCP) -> None:

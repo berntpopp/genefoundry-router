@@ -10,15 +10,17 @@ from typing import Any, Literal
 
 import structlog
 from asgi_correlation_id import CorrelationIdMiddleware
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastmcp import FastMCP
 from fastmcp.server.transforms.tool_transform import ToolTransform
 from fastmcp.tools import Tool
 from fastmcp.tools.tool_transform import ToolTransformConfig
+from starlette.responses import JSONResponse
 
 from genefoundry_router import __version__
 from genefoundry_router.auth import build_auth, resolve_refresh_observability_hmac_key
 from genefoundry_router.authorization import WriteAuthorizationMiddleware
+from genefoundry_router.cache import ToolResponseCache, ToolResponseCacheMiddleware
 from genefoundry_router.composition import register_backend
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
@@ -125,6 +127,9 @@ def build_server(
     # dispatch, and (because the call_tool meta-tool re-enters the chain) also covers a
     # bogus meta-tool target. Layers 3 + 5 are installed below, after tools are mounted.
     server.add_middleware(NotFoundGuard())
+    tool_cache = ToolResponseCache(registry)
+    server.add_middleware(ToolResponseCacheMiddleware(tool_cache))
+    server.tool_cache = tool_cache  # type: ignore[attr-defined]
     for backend in registry:
         if not backend.enabled:
             log.info("backend_skipped", backend=backend.name, reason="disabled")
@@ -266,6 +271,65 @@ def build_app(
     app.state.runtime_drift_guard = guard
     app.state.refresh_catalog = _refresh_catalog
     app.state.refresh_ledger = refresh_ledger
+    app.state.tool_cache = getattr(server, "tool_cache", None)
+
+    @app.get(settings.GF_MCP_PATH)
+    async def mcp_discovery(request: Request) -> JSONResponse:
+        origin = request.headers.get("origin")
+        headers: dict[str, str] = {}
+        if origin and origin in settings.GF_ALLOWED_ORIGINS:
+            headers["access-control-allow-origin"] = origin
+            headers["vary"] = "Origin"
+
+        endpoints: dict[str, str] = {
+            "mcp": settings.GF_MCP_PATH,
+            "health": "/health",
+            "metrics": "/metrics",
+            "provenance": "/provenance",
+        }
+        if settings.GF_AUTH_MODE == "oauth":
+            endpoints["oauth_protected_resource"] = (
+                f"/.well-known/oauth-protected-resource{settings.GF_MCP_PATH}"
+            )
+
+        payload: dict[str, Any] = {
+            "name": "genefoundry",
+            "version": __version__,
+            "protocol_version": "2024-11-05",
+            "capabilities": {
+                "tools": {"listChanged": False},
+                "resources": {"subscribe": False, "listChanged": False},
+                "prompts": {"listChanged": False},
+            },
+            "endpoints": endpoints,
+            "docs": "https://github.com/berntpopp/genefoundry-router",
+        }
+        return JSONResponse(payload, headers=headers)
+
+    @app.post("/api/cache/invalidate")
+    async def invalidate_cache(
+        key: str | None = None,
+        tool: str | None = None,
+        namespace: str | None = None,
+    ) -> JSONResponse:
+        cache: ToolResponseCache | None = getattr(app.state, "tool_cache", None)
+        if cache is None:
+            return JSONResponse(
+                {"status": "error", "message": "cache not configured"}, status_code=500
+            )
+        invalidated = cache.invalidate(key=key, tool_name=tool, namespace=namespace)
+        return JSONResponse({"status": "ok", "invalidated": invalidated, "stats": cache.stats})
+
+    @app.post("/api/cache/clear")
+    async def clear_cache() -> JSONResponse:
+        cache: ToolResponseCache | None = getattr(app.state, "tool_cache", None)
+        if cache is None:
+            return JSONResponse(
+                {"status": "error", "message": "cache not configured"}, status_code=500
+            )
+        cleared = cache.clear()
+        return JSONResponse({"status": "ok", "cleared": cleared, "stats": cache.stats})
+
     # Correlation-id added LAST so it is the OUTERMOST middleware (Starlette wraps the
     # last-added first): every short-circuit rejection below (403 origin / 413 body /
     # 429 rate) is then produced inside the correlation context and carries X-Request-ID.
