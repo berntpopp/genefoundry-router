@@ -14,6 +14,7 @@ from pathlib import Path
 
 from genefoundry_router.config import load_registry
 from genefoundry_router.devtools.discoverability import (
+    DEFAULT_MAX_RESULTS,
     evaluate,
     format_report,
     load_catalog,
@@ -73,3 +74,12 @@ async def test_pins_alone_do_not_carry_the_score() -> None:
     report = await evaluate(load_catalog(), load_tasks(), surfaced=[])
     assert report.discoverable_rate >= 0.90
     assert report.score_out_of_10 >= 7.0
+
+
+async def test_pubtator_search_is_reachable_without_pins() -> None:
+    """Literature search should rank within the actual five-result search surface."""
+    task = next(task for task in load_tasks() if task.id == "pubtator-search")
+    report = await evaluate(load_catalog(), [task], surfaced=[])
+
+    assert report.results[0].search_rank is not None
+    assert report.results[0].search_rank <= DEFAULT_MAX_RESULTS
