@@ -124,6 +124,7 @@ class SystemOneReranker:
             headers=headers,
             transport=transport,
             follow_redirects=False,  # never replay the key to a redirect target
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=30),
         )
         self._open_until = 0.0
 
