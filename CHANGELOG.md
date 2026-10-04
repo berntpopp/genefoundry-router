@@ -2,6 +2,13 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.1] - 2026-10-04
+
+### Added
+
+- Response caching layer for deterministic slow tools (`vep_recode_variant`, `spliceai`) with TTL, size bounds, LRU eviction, and error response filtering (#213, #215).
+- Informative discovery payload on `GET /mcp` instead of HTTP 405 Method Not Allowed (#213).
+
 ## [0.10.0] - 2026-10-04
 
 ### Added
