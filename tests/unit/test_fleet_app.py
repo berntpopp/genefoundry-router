@@ -8,7 +8,8 @@ def test_fleet_app_mounts_every_backend_path():
     manifest = load_manifest("tests/fixtures/fleet_manifest.json")
     app = build_fleet_app(manifest)
     mounts = {r.path for r in app.routes if isinstance(r, Mount)}
-    assert mounts == {"/gnomad", "/gtex", "/pubtator"}
+    assert len(manifest.backends) == 22
+    assert mounts == {f"/{namespace}" for namespace in manifest.backends}
 
 
 async def test_fleet_app_lifespan_enters_all_children():
