@@ -1,16 +1,22 @@
 {
   "repositories": {
     "clingen-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/clingen-link/releases/download/v4.0.15/mcp-capture-context.json",
+      "observed_identity_sha256": "893506ba2838af6ea967004147f56dad9820dcc2fceccd549de9ebcbee6cb94c",
+      "status": "runtime-v1",
+      "verified_commit": "f96bd223622cc3abcf31860631e5653a929c60f9"
+    },
+    "clinpgx-link": {
+      "evidence": "https://github.com/berntpopp/clinpgx-link/releases/download/v0.1.3/mcp-capture-context.json",
+      "observed_identity_sha256": "142fe35534d17803ac4753722954d506c5c6cb007629cd6344560d2547653394",
+      "status": "runtime-v1",
+      "verified_commit": "b635af5bbc6a0313e2e76bbc90cd16739549f2ae"
     },
     "clinvar-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/clinvar-link/releases/download/v0.5.12/mcp-capture-context.json",
+      "observed_identity_sha256": "9c6f7220dd1de5cbfe71c5c6e85e0facdb00ded37d23acf0823239ac0ba573d6",
+      "status": "runtime-v1",
+      "verified_commit": "98871aa4c3b461401ff1bd21766f750d3371d34b"
     },
     "gencc-link": {
       "evidence": null,
@@ -19,10 +25,10 @@
       "verified_commit": null
     },
     "genereviews-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/genereviews-link/releases/download/v5.2.9/mcp-capture-context.json",
+      "observed_identity_sha256": "1bf2fa350d17fff75f9709a01afd3d03661a37dc2617b05378dc85d9e2b5d5cc",
+      "status": "runtime-v1",
+      "verified_commit": "e55ae2223d0ab33b351cb6333775d53443e75ded"
     },
     "hgnc-link": {
       "evidence": null,
@@ -31,16 +37,16 @@
       "verified_commit": null
     },
     "hpo-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/hpo-link/releases/download/v0.4.9/mcp-capture-context.json",
+      "observed_identity_sha256": "e52117df6b2bb7b44fe883a82985f426664c3a696e57510baf6594d2a0448b61",
+      "status": "runtime-v1",
+      "verified_commit": "cf9d0a1f11bf8c0a14b5b7f217511460961ef87c"
     },
     "mavedb-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/mavedb-link/releases/download/v0.5.10/mcp-capture-context.json",
+      "observed_identity_sha256": "c011991f62dd85827c98abe71536b933bd86d32cb3881a0bcc91dbf321f21386",
+      "status": "runtime-v1",
+      "verified_commit": "602d7ab6b4244ea324c326036079f3d9d058d50a"
     },
     "mgi-link": {
       "evidence": null,
@@ -55,10 +61,10 @@
       "verified_commit": null
     },
     "orphanet-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/orphanet-link/releases/download/v0.4.10/mcp-capture-context.json",
+      "observed_identity_sha256": "bcc03b90eea4b61b4c42eaf7c602d8f85dc1e8d0e88f68b6a824356888286376",
+      "status": "runtime-v1",
+      "verified_commit": "8f5b2528110cce68d886fe6b18a5aacb57fd1b99"
     },
     "pubtator-link": {
       "evidence": null,
