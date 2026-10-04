@@ -11,8 +11,9 @@ detail="full")`` restores the complete dump on demand.
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Literal
+from urllib.parse import urlsplit
 
 import structlog
 from fastmcp import FastMCP
@@ -30,6 +31,8 @@ from fastmcp.tools.base import Tool
 
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.registry import BackendDef, qualified_name
+from genefoundry_router.search_expansion import expansion_texts
+from genefoundry_router.search_rerank import Reranker, build_reranker
 
 log = structlog.get_logger(__name__)
 
@@ -164,8 +167,10 @@ def summarize_returns(schema: dict[str, Any] | None) -> str:
     return _type_label(schema)
 
 
-def _compact_entry(tool: Tool) -> dict[str, Any]:
+def _compact_entry(tool: Tool, relevance: float | None = None) -> dict[str, Any]:
     entry: dict[str, Any] = {"name": tool.name}
+    if relevance is not None:
+        entry["relevance"] = round(relevance, 3)
     if tool.description:
         entry["description"] = tool.description.strip()
     if tool.parameters:
@@ -177,9 +182,14 @@ def _compact_entry(tool: Tool) -> dict[str, Any]:
     return entry
 
 
-def serialize_tools_compact(tools: list[Tool]) -> list[dict[str, Any]]:
-    """Lean discovery payload: full inputSchema, one-line returns, no outputSchema/_meta."""
-    return [_compact_entry(t) for t in tools]
+def serialize_tools_compact(
+    tools: list[Tool], relevance: Mapping[str, float] | None = None
+) -> list[dict[str, Any]]:
+    """Lean discovery payload: full inputSchema, one-line returns, no outputSchema/_meta.
+    ``relevance`` (reranker P(yes) per tool name) is added only when a reranker scored the hits.
+    """
+    scores = relevance or {}
+    return [_compact_entry(t, scores.get(t.name)) for t in tools]
 
 
 class CompactBM25SearchTransform(BM25SearchTransform):
@@ -187,7 +197,39 @@ class CompactBM25SearchTransform(BM25SearchTransform):
 
     ``detail="full"`` returns the original full JSON dump (nested outputSchema + _meta)
     for the rare case an agent needs the complete output schema.
+
+    Ranking has up to three stages: field-weighted, stemmed BM25 over each tool's text PLUS
+    its offline ``expansions`` (index-only; see ``search_expansion``), then an optional
+    ``reranker`` over the top ``rerank_pool`` BM25 hits (see ``search_rerank``), then the
+    served cut to ``max_results``. A reranker that fails or is skipped leaves the BM25 order.
     """
+
+    def __init__(
+        self,
+        *,
+        max_results: int = 5,
+        always_visible: list[str] | None = None,
+        expansions: Mapping[str, str] | None = None,
+        reranker: Reranker | None = None,
+        rerank_pool: int = 20,
+    ) -> None:
+        depth = max(rerank_pool, max_results) if reranker is not None else max_results
+        super().__init__(max_results=depth, always_visible=always_visible)
+        self.served_results = max_results
+        self.expansions = dict(expansions or {})
+        self.reranker = reranker
+
+    async def _ranked(
+        self, tools: Sequence[Tool], query: str
+    ) -> tuple[list[Tool], dict[str, float] | None]:
+        """Served hits plus reranker scores (``None`` when the BM25 order stands)."""
+        shortlist = list(await self._search(tools, query))
+        if self.reranker is not None:
+            ranked = await self.reranker.rerank(query, shortlist)
+            if ranked is not None:
+                top = ranked[: self.served_results]
+                return [t for t, _ in top], {t.name: score for t, score in top}
+        return shortlist[: self.served_results], None
 
     def _make_search_tool(self) -> Tool:
         transform = self
@@ -211,13 +253,14 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             concluding it is missing. Hits are ranked by BM25 relevance; each hit's
             ``name`` is the ``<namespace>_<tool>`` you then pass to ``call_tool``.
             Defaults to a compact form (full inputSchema + one-line ``returns``); pass
-            ``detail="full"`` for the complete output schema.
+            ``detail="full"`` for the complete output schema. An empty list means no tool
+            matched well: rephrase in domain terms before concluding it does not exist.
             """
             hidden = await transform._get_visible_tools(ctx)
-            results = await transform._search(hidden, query)
+            results, relevance = await transform._ranked(hidden, query)
             if detail == "full":
                 return serialize_tools_for_output_json(results)
-            return serialize_tools_compact(list(results))
+            return serialize_tools_compact(results, relevance)
 
         return Tool.from_function(fn=search_tools, name=self._search_tool_name)
 
@@ -230,10 +273,14 @@ class CompactBM25SearchTransform(BM25SearchTransform):
     def _searchable_text(self, tool: Tool) -> str:
         """Field-weighted index document: FastMCP's flat text (name + description +
         param names/descriptions) PLUS boosted copies of the tool's own name, its
-        un-namespaced leaf, and its tags (which FastMCP otherwise never indexes)."""
+        un-namespaced leaf, and its tags (which FastMCP otherwise never indexes) — and,
+        once, the tool's offline expansion text (synthetic user requests + keywords)."""
         leaf = tool.name.split("_", 1)[-1] if "_" in tool.name else tool.name
         fields = " ".join([tool.name, leaf, leaf.replace("_", " "), *sorted(tool.tags)])
-        return _stem_text(_extract_searchable_text(tool) + (f" {fields}" * _FIELD_BOOST))
+        expansion = self.expansions.get(tool.name, "")
+        return _stem_text(
+            _extract_searchable_text(tool) + (f" {fields}" * _FIELD_BOOST) + f" {expansion}"
+        )
 
     async def _search(self, tools: Sequence[Tool], query: str) -> Sequence[Tool]:
         """As ``BM25SearchTransform._search`` but index the field-weighted, stemmed
@@ -265,13 +312,25 @@ def apply_tool_search(
     server: FastMCP,
     settings: RouterSettings,
     always_visible: list[str] | None = None,
-) -> None:
+) -> CompactBM25SearchTransform:
     """Replace the full tool listing with search_tools + call_tool + pinned tools."""
     pinned = always_visible if always_visible is not None else DEFAULT_ALWAYS_VISIBLE
-    server.add_transform(
-        CompactBM25SearchTransform(
-            max_results=settings.GF_SEARCH_MAX_RESULTS,
-            always_visible=pinned,
-        )
+    expansions = expansion_texts(settings.GF_SEARCH_EXPANSIONS)
+    reranker = build_reranker(settings)
+    transform = CompactBM25SearchTransform(
+        max_results=settings.GF_SEARCH_MAX_RESULTS,
+        always_visible=pinned,
+        expansions=expansions,
+        reranker=reranker,
+        rerank_pool=settings.GF_SEARCH_RERANK_POOL,
     )
-    log.info("tool_search_enabled", max_results=settings.GF_SEARCH_MAX_RESULTS, pinned=pinned)
+    server.add_transform(transform)
+    log.info(
+        "tool_search_enabled",
+        max_results=settings.GF_SEARCH_MAX_RESULTS,
+        pinned=pinned,
+        expanded_tools=len(expansions),
+        rerank=settings.GF_SEARCH_RERANK,
+        rerank_host=urlsplit(reranker.config.url).hostname if reranker else None,
+    )
+    return transform

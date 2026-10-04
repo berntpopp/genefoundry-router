@@ -39,6 +39,7 @@ ROUTER_IMAGE_ALLOWLIST = {
     "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/fleet-baseline.json",
     "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/fleet-provenance.json",
     "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/image-content-policy-v1.json",
+    "build/.venv/lib/python3.14/site-packages/genefoundry_router/data/tool-expansions.json",
 }
 
 

@@ -71,6 +71,7 @@ packages = ["genefoundry_router"]
 "genefoundry_router/data/fleet-baseline.json" = "genefoundry_router/data/fleet-baseline.json"
 "genefoundry_router/data/container-release.schema.json" = "genefoundry_router/data/container-release.schema.json"
 "genefoundry_router/data/application-release-manifest.schema.json" = "genefoundry_router/data/application-release-manifest.schema.json"
+"genefoundry_router/data/tool-expansions.json" = "genefoundry_router/data/tool-expansions.json"
 
 [tool.ruff]
 line-length = 100

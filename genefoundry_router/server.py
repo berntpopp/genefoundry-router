@@ -50,6 +50,7 @@ from genefoundry_router.runtime_drift import (
     fingerprint_definitions,
     load_runtime_guard,
 )
+from genefoundry_router.search_rerank import SystemOneReranker
 from genefoundry_router.security import add_host_origin_validation, wrap_mcp_cors
 from genefoundry_router.tool_search import apply_tool_search, resolve_entrypoints
 
@@ -214,7 +215,7 @@ def build_app(
         try:
             async with mcp_app.lifespan(_app):
                 await _refresh_catalog("startup")
-                apply_tool_search(  # ordering: after normalization
+                search = apply_tool_search(  # ordering: after normalization
                     server, settings, always_visible=resolve_entrypoints(registry)
                 )
                 refresher = PollingRefresher(settings.GF_POLL_INTERVAL, _relist)
@@ -235,6 +236,8 @@ def build_app(
                         heartbeat_task.cancel()
                         await heartbeat_task
                     await refresher.stop()
+                    if isinstance(search.reranker, SystemOneReranker):
+                        await search.reranker.aclose()
             teardown_complete = True
         finally:
             if refresh_ledger is not None:

@@ -1,0 +1,1720 @@
+# Held-out discoverability set (added 2026-09-28 with document expansion + reranking).
+# Written BLIND to the router's search code and to the expansion generator: nobody ran a
+# search to pick or phrase these queries, and gen_tool_expansions.py never sees this file.
+# Do NOT tune tool descriptions or expansion prompts against individual tasks here — that
+# turns a held-out measurement into a training set. Add new tasks instead.
+#
+# Held-out HARD discoverability set (independent of the router's BM25 tuning).
+# Queries were written as users/agents would phrase them, WITHOUT running any search
+# over the catalog; expected tools were labelled by reading catalog.json descriptions.
+# `expected` = every tool that genuinely serves the request (discovering ANY counts);
+# `expected: []` = negative (no catalog tool can serve it).
+# style: lay | jargon | paraphrase | concrete | workflow | crosslingual | ambiguous | negative
+# Second pass: independent cold adjudication; revised tasks carry adjudicated: revised.
+tasks:
+- id: h-lay-healthy-people
+  category: variant_frequency
+  style: lay
+  query: is this DNA change also seen in healthy people from the general population?
+  expected:
+  - gnomad_get_variant_frequencies
+  - gnomad_get_variant_details
+  - vep_annotate_variant
+  confidence: high
+- id: h-lay-how-rare
+  category: variant_frequency
+  style: lay
+  query: how rare is my genetic variant
+  expected:
+  - gnomad_get_variant_frequencies
+  - gnomad_get_variant_details
+  - vep_annotate_variant
+  confidence: high
+- id: h-jargon-popmax-af
+  category: variant_frequency
+  style: jargon
+  query: grpmax AF and hom count for 1-55051215-G-GA
+  expected:
+  - gnomad_get_variant_frequencies
+  - gnomad_get_variant_details
+  confidence: high
+- id: h-concrete-rsid-frequency
+  category: variant_frequency
+  style: concrete
+  query: allele frequency of rs80357906 in non-Finnish Europeans
+  expected:
+  - gnomad_get_variant_frequencies
+  - gnomad_get_variant_details
+  - gnomad_resolve_variant_id
+  - vep_annotate_variant
+  confidence: medium
+- id: h-workflow-pm2
+  category: acmg
+  style: workflow
+  query: check PM2 for 17-43094464-C-T — is it absent or extremely rare in controls
+  expected:
+  - gnomad_get_variant_frequencies
+  - gnomad_get_variant_details
+  - vep_annotate_variant
+  confidence: high
+  adjudicated: revised
+- id: h-workflow-ba1-bs1
+  category: acmg
+  style: workflow
+  query: apply BA1/BS1 — is the filtering allele frequency above the disease threshold
+  expected:
+  - gnomad_get_variant_frequencies
+  - gnomad_get_variant_details
+  confidence: medium
+- id: h-paraphrase-release-shift
+  category: variant_frequency
+  style: paraphrase
+  query: did this allele's prevalence change between the older exome release and the newest one
+  expected:
+  - gnomad_compare_variant_across_datasets
+  confidence: high
+- id: h-concrete-mito
+  category: variant_frequency
+  style: concrete
+  query: heteroplasmy levels for m.3243A>G (M-3243-A-G) in population data
+  expected:
+  - gnomad_get_mitochondrial_variant
+  confidence: high
+- id: h-paraphrase-carrier-rate
+  category: variant_frequency
+  style: paraphrase
+  query: what fraction of people unknowingly carry one faulty copy of CFTR
+  expected:
+  - gnomad_compute_gene_carrier_frequency
+  - gnomad_compute_carrier_frequency
+  confidence: high
+- id: h-jargon-hwe-carrier
+  category: variant_frequency
+  style: jargon
+  query: HWE carrier frequency for an AR allele, 1-55051215-G-GA
+  expected:
+  - gnomad_compute_carrier_frequency
+  confidence: medium
+  adjudicated: revised
+- id: h-paraphrase-depth
+  category: variant_frequency
+  style: paraphrase
+  query: was this exon well sequenced in the reference cohort — how many reads covered it
+  expected:
+  - gnomad_get_coverage
+  confidence: high
+- id: h-concrete-sv-gene
+  category: variant_frequency
+  style: concrete
+  query: large deletions and duplications overlapping NRXN1 in population controls
+  expected:
+  - gnomad_search_structural_variants
+  confidence: high
+- id: h-concrete-sv-id
+  category: variant_frequency
+  style: concrete
+  query: details for structural variant DEL_2_12345
+  expected:
+  - gnomad_get_structural_variant
+  confidence: high
+- id: h-jargon-region-100kb
+  category: variant_frequency
+  style: jargon
+  query: genes and ClinVar SNVs in chr16:2,097,000-2,140,000
+  expected:
+  - gnomad_get_region
+  confidence: high
+- id: h-concrete-gene-variant-list
+  category: variant_frequency
+  style: concrete
+  query: all LoF variants in ENSG00000139618 with AF < 0.001
+  expected:
+  - gnomad_get_gene_variants
+  confidence: high
+- id: h-jargon-exons-enst
+  category: annotation
+  style: jargon
+  query: exon structure of ENST00000357654
+  expected:
+  - gnomad_get_transcript_details
+  confidence: high
+  adjudicated: revised
+- id: h-jargon-pli
+  category: constraint
+  style: jargon
+  query: pLI and LOEUF for SCN2A
+  expected:
+  - gnomad_get_gene_details
+  - gnomad_get_gene_summary
+  confidence: high
+- id: h-lay-tolerate-broken-copy
+  category: constraint
+  style: lay
+  query: can people live normally with one broken copy of this gene?
+  expected:
+  - gnomad_get_gene_details
+  - gnomad_get_gene_summary
+  - clingen_get_gene_dosage
+  - clingen_get_gene_summary
+  confidence: medium
+  adjudicated: revised
+- id: h-concrete-brca1-constraint
+  category: constraint
+  style: concrete
+  query: BRCA1 constraint
+  expected:
+  - gnomad_get_gene_details
+  - gnomad_get_gene_summary
+  confidence: high
+- id: h-jargon-mane-dossier
+  category: constraint
+  style: jargon
+  query: MANE Select transcript, oe_lof and top GTEx tissues for PCSK9 in one shot
+  expected:
+  - gnomad_get_gene_summary
+  confidence: high
+- id: h-jargon-hgvs-to-vcf
+  category: variant_resolve
+  style: jargon
+  query: convert NM_000492.4:c.1521_1523del to chrom-pos-ref-alt
+  expected:
+  - vep_resolve_variant
+  - vep_recode_variant
+  - spliceai_resolve_variant
+  confidence: medium
+  adjudicated: revised
+- id: h-jargon-spdi-rsid
+  category: variant_resolve
+  style: jargon
+  query: rsID <-> SPDI <-> HGVS p. for a list of 50 variants
+  expected:
+  - vep_recode_variant
+  confidence: high
+- id: h-ambiguous-liftover
+  category: variant_resolve
+  style: ambiguous
+  query: lift my hg19 variant coordinates over to hg38
+  expected:
+  - gnomad_compute_variant_liftover
+  - vep_liftover_variant
+  confidence: high
+- id: h-concrete-rsid-lookup
+  category: variant_resolve
+  style: concrete
+  query: which gene and alleles does rs113993960 correspond to
+  expected:
+  - vep_resolve_variant
+  - gnomad_resolve_variant_id
+  - litvar_resolve_rsid
+  - litvar_get_variant_summary
+  - clinvar_get_variant
+  - spliceai_resolve_variant
+  confidence: medium
+  adjudicated: revised
+- id: h-concrete-hgvs-validate
+  category: variant_resolve
+  style: concrete
+  query: is NM_007294.4:c.5266dupC a syntactically valid HGVS string with the right reference base
+  expected:
+  - mavedb_get_hgvs_validation
+  confidence: medium
+- id: h-lay-what-does-change-do
+  category: annotation
+  style: lay
+  query: what does this spelling change do to the protein it codes for
+  expected:
+  - vep_annotate_variant
+  - gnomad_get_variant_details
+  confidence: medium
+- id: h-jargon-cadd-revel
+  category: annotation
+  style: jargon
+  query: CADD, REVEL and AlphaMissense for 7-117559590-A-G
+  expected:
+  - vep_annotate_variant
+  - gnomad_get_variant_details
+  confidence: medium
+- id: h-workflow-pp3
+  category: acmg
+  style: workflow
+  query: gather computational evidence for PP3/BP4 on a missense change
+  expected:
+  - vep_annotate_variant
+  - gnomad_get_variant_details
+  - spliceai_predict_splicing
+  confidence: medium
+- id: h-concrete-vcf-batch
+  category: annotation
+  style: concrete
+  query: annotate these 120 VCF lines with consequence and SIFT/PolyPhen in one go
+  expected:
+  - vep_annotate_variants_batch
+  confidence: high
+- id: h-paraphrase-severity-transcripts
+  category: annotation
+  style: paraphrase
+  query: most damaging predicted effect across all isoforms for a single-letter DNA swap
+  expected:
+  - vep_annotate_variant
+  - vep_resolve_variant
+  - gnomad_get_variant_details
+  confidence: medium
+- id: h-concrete-ensembl-down
+  category: annotation
+  style: concrete
+  query: Ensembl REST keeps timing out — is the GRCh37 host up?
+  expected:
+  - vep_check_upstream_health
+  - vep_get_capabilities
+  confidence: high
+  adjudicated: revised
+- id: h-concrete-spliceai
+  category: splicing
+  style: concrete
+  query: SpliceAI scores for NM_000492.4:c.1521_1523del
+  expected:
+  - spliceai_predict_splicing
+  - spliceai_predict_spliceai
+  confidence: high
+- id: h-lay-splicing
+  category: splicing
+  style: lay
+  query: could this intronic change mess up how the gene message is cut and pasted
+  expected:
+  - spliceai_predict_splicing
+  - spliceai_predict_spliceai
+  - spliceai_predict_pangolin
+  confidence: high
+- id: h-jargon-pangolin-only
+  category: splicing
+  style: jargon
+  query: Pangolin delta gain/loss for 2-179446218-T-C
+  expected:
+  - spliceai_predict_pangolin
+  - spliceai_predict_splicing
+  confidence: high
+- id: h-concrete-splice-panel
+  category: splicing
+  style: concrete
+  query: run splice prediction on 20 intronic VUS from a cardiomyopathy panel
+  expected:
+  - spliceai_predict_splicing_batch
+  confidence: high
+  adjudicated: revised
+- id: h-workflow-pvs1-splice
+  category: acmg
+  style: workflow
+  query: for a canonical +1 donor variant, check whether a cryptic donor rescues the exon before applying PVS1
+  expected:
+  - spliceai_predict_splicing
+  - spliceai_predict_spliceai
+  - autopvs1_get_variant_pvs1_data
+  confidence: medium
+- id: h-concrete-warm
+  category: splicing
+  style: concrete
+  query: pre-warm the splice model containers before I submit a big batch
+  expected:
+  - spliceai_warmup
+  confidence: high
+- id: h-workflow-pvs1
+  category: acmg
+  style: workflow
+  query: what PVS1 strength applies to NM_000059.4:c.7007G>A
+  expected:
+  - autopvs1_get_variant_pvs1_data
+  confidence: high
+- id: h-jargon-nmd
+  category: acmg
+  style: jargon
+  query: does this stop-gain escape NMD and hit the last exon — null variant strength
+  expected:
+  - autopvs1_get_variant_pvs1_data
+  confidence: medium
+- id: h-concrete-cnv-pvs1
+  category: acmg
+  style: concrete
+  query: PVS1 for a heterozygous deletion of exons 3-7 of DMD (X-31950000-32100000 DEL)
+  expected:
+  - autopvs1_get_cnv_pvs1_data
+  confidence: high
+- id: h-concrete-pvs1-bulk
+  category: acmg
+  style: concrete
+  query: loss-of-function rule verdicts for 8 frameshifts at once
+  expected:
+  - autopvs1_get_variants_pvs1_data_bulk
+  confidence: high
+- id: h-concrete-autopvs1-search
+  category: acmg
+  style: concrete
+  query: find precomputed null-variant scoring records for PAH
+  expected:
+  - autopvs1_search_variants
+  confidence: medium
+- id: h-concrete-cnv-bulk
+  category: acmg
+  style: concrete
+  query: score five copy-number losses against the LoF decision tree in one call
+  expected:
+  - autopvs1_get_cnvs_pvs1_data_bulk
+  confidence: high
+- id: h-jargon-dnds-residue
+  category: tolerance
+  style: jargon
+  query: sw_dn_ds at residue 275 of KCNQ2
+  expected:
+  - metadome_get_position_tolerance
+  - metadome_get_tolerance_landscape
+  - metadome_compare_positions
+  confidence: high
+  adjudicated: revised
+- id: h-paraphrase-intolerant-stretch
+  category: tolerance
+  style: paraphrase
+  query: which stretches of the protein never tolerate amino-acid swaps in healthy humans
+  expected:
+  - metadome_summarize_intolerant_regions
+  - metadome_get_tolerance_landscape
+  confidence: high
+- id: h-workflow-pm1
+  category: acmg
+  style: workflow
+  query: evaluate PM1 — is this missense in a mutational hotspot or critical domain without benign variation
+  expected:
+  - metadome_get_position_tolerance
+  - metadome_summarize_intolerant_regions
+  - metadome_get_meta_domain
+  - metadome_get_tolerance_landscape
+  - metadome_get_variant_counts
+  - metadome_get_protein_domains
+  confidence: medium
+  adjudicated: revised
+- id: h-jargon-paralog-pathogenic
+  category: tolerance
+  style: jargon
+  query: pathogenic variants at the equivalent Pfam position in paralogous genes
+  expected:
+  - metadome_get_meta_domain
+  confidence: high
+- id: h-concrete-compare-residues
+  category: tolerance
+  style: concrete
+  query: side-by-side tolerance for positions 220, 245, 248, 273 on TP53 transcript
+  expected:
+  - metadome_compare_positions
+  confidence: high
+- id: h-concrete-metadome-transcript
+  category: tolerance
+  style: concrete
+  query: which GRCh37 transcript should I use for the tolerance landscape of SCN1A
+  expected:
+  - metadome_resolve_transcript
+  confidence: high
+- id: h-concrete-metadome-build
+  category: tolerance
+  style: concrete
+  query: start computing the tolerance landscape for ENST00000303395.4 and give me a poll handle
+  expected:
+  - metadome_request_tolerance_landscape
+  confidence: high
+- id: h-concrete-metadome-pfam
+  category: tolerance
+  style: concrete
+  query: Pfam domains on the MetaDome landscape of my transcript
+  expected:
+  - metadome_get_protein_domains
+  - metadome_get_tolerance_landscape
+  confidence: high
+  adjudicated: revised
+- id: h-concrete-metadome-counts
+  category: tolerance
+  style: concrete
+  query: ClinVar variant counts per residue on the built landscape
+  expected:
+  - metadome_get_variant_counts
+  confidence: high
+- id: h-lay-disease-causing
+  category: clinical_significance
+  style: lay
+  query: has this exact change been reported as disease-causing by labs?
+  expected:
+  - clinvar_get_variant
+  - clinvar_search_variants
+  - gnomad_get_clinvar_variant_details
+  - clingen_get_variant_interpretation
+  - litvar_get_variant_summary
+  confidence: medium
+- id: h-jargon-stars
+  category: clinical_significance
+  style: jargon
+  query: VCV000017661 review status and star rating
+  expected:
+  - clinvar_get_variant
+  confidence: high
+  adjudicated: revised
+- id: h-concrete-clinvar-batch
+  category: clinical_significance
+  style: concrete
+  query: ClinVar classification for rs28897696, rs80357906 and NM_000059.4:c.8167G>C together
+  expected:
+  - clinvar_get_variants
+  confidence: high
+- id: h-concrete-loose-clinvar
+  category: clinical_significance
+  style: concrete
+  query: MYH7 R403Q clinical significance
+  expected:
+  - clinvar_search_variants
+  - clinvar_get_variant
+  - litvar_get_variant_summary
+  confidence: medium
+- id: h-jargon-gene-landscape
+  category: clinical_significance
+  style: jargon
+  query: P/LP vs VUS vs conflicting counts for TTN
+  expected:
+  - clinvar_get_gene_clinvar_summary
+  confidence: high
+- id: h-concrete-gene-plp-list
+  category: clinical_significance
+  style: concrete
+  query: list pathogenic ≥2-star ClinVar entries in KCNH2
+  expected:
+  - clinvar_get_variants_by_gene
+  - clinvar_search_variants
+  confidence: high
+  adjudicated: revised
+- id: h-workflow-pp5-expert
+  category: acmg
+  style: workflow
+  query: has a VCEP already classified this variant with evidence codes met and not met
+  expected:
+  - clingen_get_variant_interpretation
+  - clingen_get_variant_interpretations
+  confidence: high
+- id: h-concrete-erepo-gene
+  category: acmg
+  style: concrete
+  query: all expert-panel curated variants in MYH7 from ClinGen ERepo
+  expected:
+  - clingen_get_variant_interpretations
+  confidence: high
+- id: h-jargon-hi-ts
+  category: gene_disease
+  style: jargon
+  query: HI/TS scores for SHANK3
+  expected:
+  - clingen_get_gene_dosage
+  - clingen_search_dosage
+  - clingen_get_gene_summary
+  confidence: high
+- id: h-concrete-dosage-cytoband
+  category: gene_disease
+  style: concrete
+  query: dosage-sensitive regions at 22q11.21
+  expected:
+  - clingen_search_dosage
+  confidence: high
+- id: h-lay-actionable
+  category: gene_disease
+  style: lay
+  query: if someone has a variant in this gene, is there something doctors can actually do to prevent illness?
+  expected:
+  - clingen_get_gene_actionability
+  - clingen_search_actionability
+  - clingen_get_gene_summary
+  confidence: high
+  adjudicated: revised
+- id: h-jargon-cspec-pm2
+  category: acmg
+  style: jargon
+  query: VCEP-specific PM2_Supporting threshold for PTEN
+  expected:
+  - clingen_get_cspec_criterion
+  - clingen_get_cspec
+  - clingen_list_cspecs
+  - clingen_search_cspec
+  confidence: medium
+- id: h-paraphrase-rule-specs
+  category: acmg
+  style: paraphrase
+  query: gene-tailored adaptations of the variant-classification guidelines for hearing-loss genes
+  expected:
+  - clingen_list_cspecs
+  - clingen_search_cspec
+  - clingen_get_cspec
+  confidence: medium
+- id: h-concrete-expert-panels
+  category: gene_disease
+  style: concrete
+  query: which ClinGen expert panels work on cardiomyopathy
+  expected:
+  - clingen_list_expert_panels
+  confidence: high
+- id: h-concrete-clingen-overview
+  category: gene_disease
+  style: concrete
+  query: everything ClinGen has on MECP2 — validity, dosage, actionability
+  expected:
+  - clingen_get_gene_summary
+  confidence: high
+- id: h-concrete-validity-by-disease
+  category: gene_disease
+  style: concrete
+  query: ClinGen-curated genes for Brugada syndrome and their classifications
+  expected:
+  - clingen_search_validity
+  - gencc_find_curations
+  confidence: medium
+  adjudicated: revised
+- id: h-ambiguous-gene-disease-strength
+  category: gene_disease
+  style: ambiguous
+  query: how strong is the evidence that KCNQ1 causes long QT syndrome
+  expected:
+  - clingen_get_gene_validity
+  - clingen_search_validity
+  - clingen_get_gene_summary
+  - gencc_get_gene_disease_assertion
+  - gencc_get_gene_curations
+  confidence: high
+- id: h-ambiguous-gene-to-diseases
+  category: gene_disease
+  style: ambiguous
+  query: which disorders are linked to the gene NF1
+  expected:
+  - hpo_get_diseases_for_gene
+  - orphanet_find_diseases_by_gene
+  - gencc_get_gene_curations
+  - clingen_get_gene_validity
+  - clingen_get_gene_summary
+  confidence: medium
+- id: h-ambiguous-disease-to-genes
+  category: gene_disease
+  style: ambiguous
+  query: genes known to cause Joubert syndrome
+  expected:
+  - gencc_get_disease_curations
+  - hpo_get_genes_for_disease
+  - orphanet_get_disease_genes
+  - clingen_search_validity
+  confidence: medium
+- id: h-jargon-gencc-conflict
+  category: gene_disease
+  style: jargon
+  query: GenCC submitters disagreeing — Definitive vs Refuted for the same gene-disease pair
+  expected:
+  - gencc_find_curations
+  - gencc_get_gene_disease_assertion
+  confidence: high
+- id: h-concrete-gencc-submitters
+  category: gene_disease
+  style: concrete
+  query: which labs and organizations contribute gene-disease classifications to GenCC
+  expected:
+  - gencc_list_submitters
+  confidence: high
+- id: h-concrete-gencc-batch
+  category: gene_disease
+  style: concrete
+  query: gene-disease validity for 15 genes on my exome shortlist in one call
+  expected:
+  - gencc_get_genes_curations
+  confidence: high
+- id: h-concrete-gencc-disease-batch
+  category: gene_disease
+  style: concrete
+  query: genes asserted for MONDO:0007254, MONDO:0016419 and Marfan syndrome together
+  expected:
+  - gencc_get_diseases_curations
+  confidence: high
+- id: h-paraphrase-disease-catalogue
+  category: gene_disease
+  style: paraphrase
+  query: look up a condition name in the harmonized gene-curation disease list to get its id
+  expected:
+  - gencc_search_diseases
+  - gencc_resolve_identifier
+  confidence: medium
+- id: h-jargon-gencc-moi-filter
+  category: gene_disease
+  style: jargon
+  query: all Definitive AR gene-disease assertions submitted by Orphanet
+  expected:
+  - gencc_find_curations
+  confidence: high
+- id: h-concrete-uniprot-disease
+  category: gene_disease
+  style: concrete
+  query: disease annotations for UniProt entry P04637
+  expected:
+  - uniprot_get_protein_diseases
+  confidence: high
+- id: h-lay-test-panel
+  category: gene_panel
+  style: lay
+  query: which genes should a lab test for a child with epilepsy?
+  expected:
+  - panelapp_search_panels
+  - panelapp_get_panel_genes
+  confidence: medium
+- id: h-jargon-green-genes
+  category: gene_panel
+  style: jargon
+  query: green genes on the GE intellectual disability panel
+  expected:
+  - panelapp_get_panel_genes
+  confidence: high
+- id: h-concrete-gene-on-panels
+  category: gene_panel
+  style: concrete
+  query: which diagnostic panels include TTN and at what confidence
+  expected:
+  - panelapp_get_gene_panels
+  - panelapp_get_panels_for_genes
+  - panelapp_resolve_gene
+  confidence: high
+- id: h-concrete-panel-diff
+  category: gene_panel
+  style: concrete
+  query: genes that differ between the UK and Australian hereditary cancer panels
+  expected:
+  - panelapp_compare_panels
+  confidence: high
+- id: h-concrete-panel-batch
+  category: gene_panel
+  style: concrete
+  query: panel membership for PKD1, PKD2, HNF1B, UMOD, COL4A5
+  expected:
+  - panelapp_get_panels_for_genes
+  confidence: high
+- id: h-concrete-panel-detail
+  category: gene_panel
+  style: concrete
+  query: version, status and entity counts of panel 285 (uk)
+  expected:
+  - panelapp_get_panel
+  confidence: high
+- id: h-ambiguous-panel-vs-validity
+  category: gene_panel
+  style: ambiguous
+  query: is RYR1 considered a diagnostic-grade gene for malignant hyperthermia
+  expected:
+  - panelapp_get_gene_panels
+  - clingen_get_gene_validity
+  - clingen_search_validity
+  - gencc_get_gene_disease_assertion
+  - gencc_get_gene_curations
+  confidence: medium
+- id: h-lay-treatment
+  category: gene_review
+  style: lay
+  query: how is this inherited condition usually managed and followed up
+  expected:
+  - genereviews_search_passages
+  - genereviews_get_chapter_section
+  confidence: medium
+- id: h-concrete-genereview-chapter
+  category: gene_review
+  style: concrete
+  query: GeneReviews chapter overview for FBN1
+  expected:
+  - genereviews_get_genereview_summary
+  - genereviews_search_genereviews
+  confidence: high
+- id: h-concrete-genereview-table
+  category: gene_review
+  style: concrete
+  query: the diagnostic criteria table from the Marfan chapter as rows
+  expected:
+  - genereviews_get_table
+  - genereviews_get_chapter_metadata
+  confidence: medium
+- id: h-paraphrase-surveillance
+  category: gene_review
+  style: paraphrase
+  query: recommended screening intervals for tumours in carriers of VHL — expert clinical summary
+  expected:
+  - genereviews_search_passages
+  - genereviews_get_chapter_section
+  - genereviews_get_genereview_summary
+  confidence: medium
+- id: h-concrete-genereview-batch-search
+  category: gene_review
+  style: concrete
+  query: search the clinical review corpus for genotype-phenotype, differential diagnosis and prevalence in three queries at once
+  expected:
+  - genereviews_search_passages_batch
+  confidence: medium
+- id: h-concrete-genereview-license
+  category: gene_review
+  style: concrete
+  query: attribution and redistribution terms before quoting GeneReviews text
+  expected:
+  - genereviews_get_license
+  confidence: high
+- id: h-concrete-genereview-neighbors
+  category: gene_review
+  style: concrete
+  query: show the passages right before and after passage id nbk1116-p42
+  expected:
+  - genereviews_get_passage
+  confidence: medium
+- id: h-lay-symptom-code
+  category: phenotype
+  style: lay
+  query: standard code for 'floppy baby' low muscle tone in infants
+  expected:
+  - hpo_resolve_term
+  - hpo_search_terms
+  confidence: high
+- id: h-jargon-genes-for-hp
+  category: phenotype
+  style: jargon
+  query: genes annotated to HP:0001250 incl. descendants
+  expected:
+  - hpo_get_genes_for_phenotype
+  confidence: high
+- id: h-ambiguous-phenotype-to-disease
+  category: phenotype
+  style: ambiguous
+  query: rare diseases that present with HP:0000501 glaucoma
+  expected:
+  - hpo_get_diseases_for_phenotype
+  - orphanet_find_diseases_by_phenotype
+  confidence: high
+- id: h-concrete-gene-phenotypes
+  category: phenotype
+  style: concrete
+  query: clinical features associated with the gene COL4A5 as HPO terms
+  expected:
+  - hpo_get_phenotypes_for_gene
+  confidence: high
+- id: h-concrete-disease-phenotypes
+  category: phenotype
+  style: concrete
+  query: HPO features of OMIM:154700
+  expected:
+  - hpo_get_phenotypes_for_disease
+  - orphanet_get_disease_phenotypes
+  confidence: medium
+- id: h-paraphrase-broader-symptom
+  category: phenotype
+  style: paraphrase
+  query: more general symptom categories above 'ventricular septal defect'
+  expected:
+  - hpo_get_term_ancestors
+  - hpo_get_term_parents
+  confidence: high
+- id: h-paraphrase-narrower-symptom
+  category: phenotype
+  style: paraphrase
+  query: all the more specific kinds of seizure beneath the generic seizure concept
+  expected:
+  - hpo_get_term_descendants
+  - hpo_get_term_children
+  confidence: high
+- id: h-jargon-hp-to-umls
+  category: phenotype
+  style: jargon
+  query: UMLS and SNOMED mappings for HP:0001263
+  expected:
+  - hpo_map_cross_ontology
+  - hpo_get_term
+  confidence: high
+- id: h-jargon-snomed-to-hp
+  category: phenotype
+  style: jargon
+  query: which HP term maps to SNOMEDCT_US:84757009
+  expected:
+  - hpo_resolve_xref
+  - hpo_resolve_term
+  confidence: high
+- id: h-concrete-hp-definition
+  category: phenotype
+  style: concrete
+  query: definition and synonyms of HP:0002376 developmental regression
+  expected:
+  - hpo_get_term
+  confidence: high
+- id: h-jargon-omim-to-mondo
+  category: disease_ontology
+  style: jargon
+  query: OMIM:219700 -> MONDO id
+  expected:
+  - mondo_resolve_xref
+  - mondo_resolve_disease
+  - mondo_get_disease
+  confidence: high
+- id: h-concrete-mondo-subtypes
+  category: disease_ontology
+  style: concrete
+  query: all subtypes of MONDO:0005015 diabetes mellitus
+  expected:
+  - mondo_get_disease_descendants
+  - mondo_get_disease_children
+  confidence: high
+- id: h-paraphrase-disease-parents
+  category: disease_ontology
+  style: paraphrase
+  query: which broader disease groupings does Leigh syndrome belong to in the unified disease ontology
+  expected:
+  - mondo_get_disease_ancestors
+  - mondo_get_disease_parents
+  - orphanet_get_disease_ancestors
+  - orphanet_get_disease_classification
+  confidence: medium
+- id: h-concrete-mondo-batch
+  category: disease_ontology
+  style: concrete
+  query: normalize 30 disease labels from a spreadsheet to MONDO ids
+  expected:
+  - mondo_resolve_disease_batch
+  confidence: high
+- id: h-ambiguous-disease-id
+  category: disease_ontology
+  style: ambiguous
+  query: standard identifier for 'Ehlers-Danlos syndrome, vascular type'
+  expected:
+  - mondo_resolve_disease
+  - mondo_search_diseases
+  - orphanet_resolve_disease
+  - orphanet_search_diseases
+  - gencc_resolve_identifier
+  - gencc_search_diseases
+  confidence: medium
+- id: h-jargon-mondo-xrefs
+  category: disease_ontology
+  style: jargon
+  query: MONDO:0008608 xrefs to DOID, MedGen and GARD
+  expected:
+  - mondo_map_cross_ontology
+  - mondo_get_disease
+  confidence: high
+- id: h-concrete-mondo-batch-fetch
+  category: disease_ontology
+  style: concrete
+  query: fetch definitions for 20 MONDO ids with only name and definition fields
+  expected:
+  - mondo_get_disease_batch
+  confidence: high
+- id: h-lay-how-common-disease
+  category: rare_disease
+  style: lay
+  query: how many people have this rare disease?
+  expected:
+  - orphanet_get_disease_prevalence
+  - orphanet_get_disease
+  confidence: high
+  adjudicated: revised
+- id: h-paraphrase-onset
+  category: rare_disease
+  style: paraphrase
+  query: at what age do symptoms typically begin and how is it passed down in families, per the rare-disease portal
+  expected:
+  - orphanet_get_disease_natural_history
+  - orphanet_get_disease
+  confidence: high
+- id: h-paraphrase-disability
+  category: rare_disease
+  style: paraphrase
+  query: which everyday abilities (walking, seeing, communicating) are impaired by this disorder and how severely
+  expected:
+  - orphanet_get_disease_disability
+  - orphanet_get_disease
+  confidence: high
+  adjudicated: revised
+- id: h-jargon-orpha-freq
+  category: rare_disease
+  style: jargon
+  query: very frequent (80-99%) HPO features for ORPHA:558
+  expected:
+  - orphanet_get_disease_phenotypes
+  confidence: high
+- id: h-jargon-orpha-to-icd
+  category: rare_disease
+  style: jargon
+  query: ICD-10 and ICD-11 codes for ORPHA:790
+  expected:
+  - orphanet_map_cross_ontology
+  - orphanet_get_disease
+  confidence: high
+- id: h-jargon-icd-to-orpha
+  category: rare_disease
+  style: jargon
+  query: ORPHAcodes mapped to ICD-10 Q87.4
+  expected:
+  - orphanet_resolve_xref
+  confidence: high
+- id: h-concrete-orpha-genes
+  category: rare_disease
+  style: concrete
+  query: genes associated with ORPHA:2932 and the type of association
+  expected:
+  - orphanet_get_disease_genes
+  - hpo_get_genes_for_disease
+  - orphanet_get_disease
+  confidence: medium
+  adjudicated: revised
+- id: h-concrete-orpha-batch
+  category: rare_disease
+  style: concrete
+  query: resolve 40 rare-disease names to ORPHAcodes
+  expected:
+  - orphanet_resolve_disease_batch
+  confidence: high
+- id: h-concrete-orpha-subtypes
+  category: rare_disease
+  style: concrete
+  query: all Orphanet subtypes under rare hereditary ataxia
+  expected:
+  - orphanet_get_disease_descendants
+  - orphanet_get_disease_classification
+  confidence: medium
+- id: h-lay-old-gene-name
+  category: nomenclature
+  style: lay
+  query: my old lab report calls the gene MLL2 — what is its name today?
+  expected:
+  - hgnc_resolve_symbol
+  - hgnc_get_gene
+  - hgnc_search_genes
+  confidence: high
+- id: h-jargon-ensg-to-symbol
+  category: nomenclature
+  style: jargon
+  query: ENSG00000141510 -> HGNC symbol
+  expected:
+  - hgnc_resolve_gene_by_xref
+  confidence: high
+- id: h-concrete-symbol-batch
+  category: nomenclature
+  style: concrete
+  query: update 150 outdated gene symbols in my supplementary table to approved ones
+  expected:
+  - hgnc_resolve_symbols_batch
+  confidence: high
+- id: h-concrete-gene-family
+  category: nomenclature
+  style: concrete
+  query: all members of the solute carrier family 2 gene group
+  expected:
+  - hgnc_get_gene_group
+  confidence: high
+- id: h-jargon-mane-refseq
+  category: nomenclature
+  style: jargon
+  query: MANE Select RefSeq/ENST, OMIM and Entrez ids for LMNA
+  expected:
+  - hgnc_get_gene_cross_references
+  - hgnc_get_gene
+  confidence: high
+- id: h-lay-mouse-model
+  category: mouse
+  style: lay
+  query: what happens to mice when this gene is knocked out?
+  expected:
+  - mgi_get_marker_phenotypes
+  - mgi_get_phenotype_overview
+  - mgi_get_marker_alleles
+  confidence: high
+- id: h-concrete-mouse-alleles
+  category: mouse
+  style: concrete
+  query: targeted and CRISPR alleles available for mouse Pax6
+  expected:
+  - mgi_get_marker_alleles
+  confidence: high
+- id: h-jargon-mp-to-genes
+  category: mouse
+  style: jargon
+  query: markers annotated to MP:0005367 renal/urinary phenotype
+  expected:
+  - mgi_find_markers_by_phenotype
+  confidence: high
+- id: h-concrete-mouse-disease-models
+  category: mouse
+  style: concrete
+  query: mouse models of human disease for Hnf1b
+  expected:
+  - mgi_get_marker_diseases
+  confidence: high
+- id: h-concrete-ortholog
+  category: mouse
+  style: concrete
+  query: human counterpart of mouse Shh with HGNC and OMIM ids
+  expected:
+  - mgi_get_marker_ortholog
+  - mgi_get_marker
+  confidence: high
+  adjudicated: revised
+- id: h-paraphrase-mp-term
+  category: mouse
+  style: paraphrase
+  query: find the rodent phenotype ontology term for enlarged heart
+  expected:
+  - mgi_search_phenotype_terms
+  - mgi_get_mp_term
+  confidence: medium
+- id: h-concrete-mp-overview
+  category: mouse
+  style: concrete
+  query: organ-system summary grid of phenotypes for mouse Cftr
+  expected:
+  - mgi_get_phenotype_overview
+  confidence: high
+- id: h-concrete-uniprot-seq
+  category: protein
+  style: concrete
+  query: amino-acid sequence of isoform P05067-2
+  expected:
+  - uniprot_get_protein_sequence
+  confidence: high
+- id: h-jargon-uniprot-features
+  category: protein
+  style: jargon
+  query: transmembrane segments, PTMs and active sites for Q14524
+  expected:
+  - uniprot_get_protein_features
+  confidence: high
+- id: h-jargon-go
+  category: protein
+  style: jargon
+  query: GO BP/MF/CC with evidence codes for P38398
+  expected:
+  - uniprot_get_protein_go_terms
+  confidence: high
+- id: h-concrete-gene-to-accession
+  category: protein
+  style: concrete
+  query: Swiss-Prot accession for human DMD
+  expected:
+  - uniprot_find_proteins
+  - hgnc_get_gene_cross_references
+  confidence: high
+- id: h-concrete-uniprot-batch
+  category: protein
+  style: concrete
+  query: UniProt entries for PNKP, NAA10 and KIF1A at once
+  expected:
+  - uniprot_find_proteins_batch
+  confidence: high
+- id: h-concrete-uniprot-natural-variants
+  category: protein
+  style: concrete
+  query: curated natural variants reported in the protein P35555 with linked diseases
+  expected:
+  - uniprot_get_protein_variants
+  confidence: high
+- id: h-concrete-pdb-alphafold
+  category: protein
+  style: concrete
+  query: PDB and AlphaFoldDB identifiers for P00533
+  expected:
+  - uniprot_get_protein_cross_references
+  - uniprot_resolve_identifiers
+  confidence: high
+- id: h-paraphrase-sparql
+  category: protein
+  style: paraphrase
+  query: run a custom structured query against the protein knowledgebase's semantic endpoint
+  expected:
+  - uniprot_search_sparql_query
+  - uniprot_search_example_queries
+  - uniprot_get_example_query
+  confidence: medium
+- id: h-concrete-taxon
+  category: protein
+  style: concrete
+  query: NCBI taxon id and lineage for zebrafish
+  expected:
+  - uniprot_get_taxon
+  confidence: high
+- id: h-ambiguous-protein-domains
+  category: protein
+  style: ambiguous
+  query: domain boundaries for SCN1A protein
+  expected:
+  - uniprot_get_protein_features
+  - metadome_get_protein_domains
+  confidence: medium
+- id: h-lay-partners
+  category: ppi
+  style: lay
+  query: which other proteins does this one work together with in the cell?
+  expected:
+  - stringdb_get_interaction_partners
+  - stringdb_search_protein_interactions
+  confidence: high
+- id: h-jargon-enrichment
+  category: ppi
+  style: jargon
+  query: GO/KEGG over-representation for my 60-gene hit list
+  expected:
+  - stringdb_compute_functional_enrichment
+  confidence: high
+- id: h-jargon-ppi-enrich
+  category: ppi
+  style: jargon
+  query: are my candidate genes more connected than expected by chance — PPI enrichment p-value
+  expected:
+  - stringdb_compute_ppi_enrichment
+  confidence: high
+- id: h-concrete-network-picture
+  category: ppi
+  style: concrete
+  query: draw a picture of the interaction network for MTOR, RPTOR, RICTOR
+  expected:
+  - stringdb_get_network_image
+  - stringdb_get_network_link
+  confidence: high
+- id: h-concrete-ortholog-homology
+  category: ppi
+  style: concrete
+  query: closest yeast homolog of human CDC42 by sequence similarity
+  expected:
+  - stringdb_get_protein_homology_best_hits
+  - stringdb_get_protein_homology_scores
+  confidence: medium
+- id: h-concrete-string-ids
+  category: ppi
+  style: concrete
+  query: map gene symbols to STRING protein identifiers for mouse
+  expected:
+  - stringdb_resolve_protein_identifiers
+  confidence: high
+- id: h-lay-where-active
+  category: expression
+  style: lay
+  query: in which organs is this gene switched on?
+  expected:
+  - gtex_get_median_expression_levels
+  - gtex_fetch
+  - gnomad_get_gene_summary
+  confidence: medium
+- id: h-concrete-tpm
+  category: expression
+  style: concrete
+  query: median TPM of UMOD in kidney cortex
+  expected:
+  - gtex_get_median_expression_levels
+  - gtex_fetch
+  confidence: high
+- id: h-paraphrase-tissue-top
+  category: expression
+  style: paraphrase
+  query: most highly expressed genes in the pancreas
+  expected:
+  - gtex_get_top_expressed_genes_by_tissue
+  confidence: high
+  adjudicated: revised
+- id: h-jargon-per-sample
+  category: expression
+  style: jargon
+  query: per-donor TPM vector for MYH7 in heart LV
+  expected:
+  - gtex_get_individual_expression_data
+  confidence: high
+- id: h-concrete-gtex-isoforms
+  category: expression
+  style: concrete
+  query: GENCODE isoforms annotated for ENSG00000130164.13 in the expression portal
+  expected:
+  - gtex_get_transcript_information
+  confidence: medium
+- id: h-ambiguous-variant-papers
+  category: variant_literature
+  style: ambiguous
+  query: papers about this variant
+  expected:
+  - litvar_get_variant_literature
+  - pubtator_get_variant_evidence
+  confidence: high
+- id: h-concrete-rsid-pmids
+  category: variant_literature
+  style: concrete
+  query: PMIDs mentioning rs121913529
+  expected:
+  - litvar_get_variant_literature
+  confidence: high
+- id: h-concrete-gene-variant-evidence
+  category: variant_literature
+  style: concrete
+  query: literature evidence for SCN5A p.Glu1784Lys with source attribution
+  expected:
+  - pubtator_get_variant_evidence
+  - litvar_get_variant_literature
+  confidence: high
+- id: h-jargon-gene-variant-count
+  category: variant_literature
+  style: jargon
+  query: total number of literature-mentioned variants in BRCA2, paged
+  expected:
+  - litvar_search_gene_variants
+  confidence: high
+- id: h-paraphrase-most-cited-variants
+  category: variant_literature
+  style: paraphrase
+  query: which KRAS mutations are written about most often
+  expected:
+  - litvar_search_genetic_variants
+  - litvar_search_gene_variants
+  confidence: medium
+- id: h-lay-research-articles
+  category: literature
+  style: lay
+  query: find recent scientific articles on gene therapy for spinal muscular atrophy
+  expected:
+  - pubtator_search_literature
+  - pubtator_suggest_corpus
+  confidence: high
+- id: h-paraphrase-guidelines
+  category: literature
+  style: paraphrase
+  query: consensus statements or practice recommendations on managing hereditary angioedema
+  expected:
+  - pubtator_search_guidelines
+  confidence: medium
+  adjudicated: revised
+- id: h-concrete-doi-to-pmid
+  category: literature
+  style: concrete
+  query: convert DOI 10.1038/gim.2015.30 and PMC4544753 to PMIDs
+  expected:
+  - pubtator_convert_article_ids
+  confidence: high
+- id: h-concrete-free-citation
+  category: literature
+  style: concrete
+  query: Richards S et al. Standards and guidelines for the interpretation of sequence variants, Genet Med 2015 — PMID?
+  expected:
+  - pubtator_get_citation
+  confidence: high
+- id: h-jargon-entity-id
+  category: literature
+  style: jargon
+  query: PubTator concept id for the chemical metformin
+  expected:
+  - pubtator_search_biomedical_entities
+  confidence: high
+- id: h-paraphrase-co-mentioned
+  category: literature
+  style: paraphrase
+  query: which diseases and drugs are repeatedly co-mentioned with the gene LRRK2 in abstracts
+  expected:
+  - pubtator_find_entity_relations
+  confidence: medium
+- id: h-concrete-similar-papers
+  category: literature
+  style: concrete
+  query: articles similar to or citing PMID 25741868
+  expected:
+  - pubtator_find_related_articles
+  - pubtator_get_publication_citation_graph
+  - pubtator_find_related_evidence_candidates
+  confidence: high
+- id: h-concrete-abstract-text
+  category: literature
+  style: concrete
+  query: abstract text of PMID 30311386 with citable passages
+  expected:
+  - pubtator_get_publication_passages
+  - genereviews_get_abstract
+  confidence: medium
+- id: h-concrete-journal-metadata
+  category: literature
+  style: concrete
+  query: journal, year and authors for PMIDs 31345219, 29625052
+  expected:
+  - pubtator_get_publication_metadata
+  confidence: high
+- id: h-jargon-mesh
+  category: literature
+  style: jargon
+  query: MeSH descriptors for a query on cardiac amyloidosis
+  expected:
+  - pubtator_get_mesh
+  confidence: high
+- id: h-jargon-bioc
+  category: literature
+  style: jargon
+  query: raw BioC NER annotations for PMC7096066 full text
+  expected:
+  - pubtator_get_pmc_annotations
+  confidence: high
+- id: h-concrete-topic-map
+  category: literature
+  style: concrete
+  query: bounded literature landscape for 'ciliopathy kidney cysts' seeded with two PMIDs
+  expected:
+  - pubtator_build_topic_literature_map
+  - pubtator_suggest_corpus
+  confidence: medium
+- id: h-concrete-fulltext-available
+  category: literature
+  style: concrete
+  query: before indexing, which of these PMIDs have free full text vs abstract only?
+  expected:
+  - pubtator_preflight_review_sources
+  confidence: high
+- id: h-lay-lab-test-function
+  category: functional_assay
+  style: lay
+  query: has anyone tested in the lab whether this protein change actually breaks the protein?
+  expected:
+  - mavedb_find_variant
+  - mavedb_get_variant_score
+  confidence: medium
+- id: h-workflow-ps3
+  category: acmg
+  style: workflow
+  query: PS3/BS3 evidence — is there a calibrated functional assay classifying BRCA1 p.Arg1699Trp
+  expected:
+  - mavedb_find_variant
+  - mavedb_get_variant_score
+  - mavedb_get_classified_variants
+  confidence: medium
+- id: h-jargon-dms
+  category: functional_assay
+  style: jargon
+  query: DMS / saturation genome editing datasets for TP53
+  expected:
+  - mavedb_get_gene_score_sets
+  - mavedb_search_score_sets
+  confidence: high
+- id: h-concrete-abnormal-class
+  category: functional_assay
+  style: concrete
+  query: every variant called functionally abnormal in urn:mavedb:00000097-0-1
+  expected:
+  - mavedb_get_classified_variants
+  confidence: high
+- id: h-concrete-score-dist
+  category: functional_assay
+  style: concrete
+  query: where does a score of -1.8 fall in the distribution of this score set
+  expected:
+  - mavedb_get_score_distribution
+  confidence: high
+- id: h-concrete-mave-table
+  category: functional_assay
+  style: concrete
+  query: full variant-by-variant score table of urn:mavedb:00000001-a-1
+  expected:
+  - mavedb_get_variant_scores
+  confidence: high
+- id: h-jargon-mave-vrs
+  category: functional_assay
+  style: jargon
+  query: VRS alleles and ClinGen CAIDs for the variants of a MAVE score set
+  expected:
+  - mavedb_get_mapped_variants
+  confidence: high
+- id: h-concrete-mave-experiment
+  category: functional_assay
+  style: concrete
+  query: experiment record urn:mavedb:00000001-a with its child score sets
+  expected:
+  - mavedb_get_experiment
+  confidence: high
+- id: h-concrete-cpic-guideline
+  category: pharmacogenomics
+  style: concrete
+  query: CPIC guideline for CYP2C19 and clopidogrel
+  expected:
+  - clinpgx_search_records
+  - clinpgx_get_record
+  - clinpgx_get_website_data
+  - clinpgx_get_related_records
+  confidence: medium
+- id: h-lay-drug-response
+  category: pharmacogenomics
+  style: lay
+  query: could my genes affect how I respond to a medicine like warfarin?
+  expected:
+  - clinpgx_search_records
+  - clinpgx_get_related_records
+  - clinpgx_search_dataset
+  confidence: medium
+- id: h-jargon-pgx-annotation
+  category: pharmacogenomics
+  style: jargon
+  query: PharmGKB clinical annotations for rs4149056 (SLCO1B1) and simvastatin
+  expected:
+  - clinpgx_search_records
+  - clinpgx_get_related_records
+  - clinpgx_search_dataset
+  confidence: medium
+- id: h-concrete-pgx-datasets
+  category: pharmacogenomics
+  style: concrete
+  query: which pharmacogenomic snapshot downloads (drug labels, clinical annotations) are installed
+  expected:
+  - clinpgx_list_datasets
+  - clinpgx_get_dataset
+  confidence: medium
+- id: h-ambiguous-gene-id
+  category: nomenclature
+  style: ambiguous
+  query: resolve the gene name 'PARK2'
+  expected:
+  - hgnc_resolve_symbol
+  - hgnc_search_genes
+  - hgnc_get_gene
+  confidence: high
+- id: h-ambiguous-variant-overview
+  category: annotation
+  style: ambiguous
+  query: give me a full picture of 19-11100236-C-T — consequence, frequency and predictors
+  expected:
+  - vep_annotate_variant
+  - gnomad_get_variant_details
+  confidence: high
+- id: h-ambiguous-gene-overview-disease
+  category: gene_disease
+  style: ambiguous
+  query: what is known clinically about the gene SCN1A
+  expected:
+  - clingen_get_gene_summary
+  - genereviews_get_genereview_summary
+  - gnomad_get_gene_summary
+  - clinvar_get_gene_clinvar_summary
+  - gencc_get_gene_curations
+  confidence: medium
+- id: h-de-frequency
+  category: variant_frequency
+  style: crosslingual
+  query: Wie häufig ist diese Variante in der Allgemeinbevölkerung?
+  expected:
+  - gnomad_get_variant_frequencies
+  - gnomad_get_variant_details
+  - vep_annotate_variant
+  confidence: high
+- id: h-de-pathogenic
+  category: clinical_significance
+  style: crosslingual
+  query: Ist die Variante NM_000546.6:c.743G>A laut ClinVar pathogen?
+  expected:
+  - clinvar_get_variant
+  confidence: high
+  adjudicated: revised
+- id: h-de-splicing
+  category: splicing
+  style: crosslingual
+  query: Spleißvorhersage für eine intronische Variante
+  expected:
+  - spliceai_predict_splicing
+  - spliceai_predict_spliceai
+  - spliceai_predict_pangolin
+  confidence: high
+- id: h-de-genes-for-symptom
+  category: phenotype
+  style: crosslingual
+  query: Welche Gene sind mit Krampfanfällen assoziiert?
+  expected:
+  - hpo_get_genes_for_phenotype
+  confidence: medium
+- id: h-de-expression
+  category: expression
+  style: crosslingual
+  query: In welchen Geweben wird das Gen PKD1 exprimiert?
+  expected:
+  - gtex_get_median_expression_levels
+  - gtex_fetch
+  confidence: high
+- id: h-de-prevalence
+  category: rare_disease
+  style: crosslingual
+  query: Prävalenz der seltenen Erkrankung Morbus Fabry
+  expected:
+  - orphanet_get_disease_prevalence
+  - orphanet_get_disease
+  confidence: high
+  adjudicated: revised
+- id: h-de-mouse
+  category: mouse
+  style: crosslingual
+  query: Phänotyp der Knockout-Maus für Pax6
+  expected:
+  - mgi_get_marker_phenotypes
+  - mgi_get_phenotype_overview
+  confidence: high
+- id: h-fr-panel
+  category: gene_panel
+  style: crosslingual
+  query: Quels panels de gènes contiennent le gène MYBPC3 ?
+  expected:
+  - panelapp_get_gene_panels
+  - panelapp_get_panels_for_genes
+  confidence: high
+- id: h-es-literature
+  category: variant_literature
+  style: crosslingual
+  query: artículos científicos que mencionan la variante rs334
+  expected:
+  - litvar_get_variant_literature
+  - pubtator_get_variant_evidence
+  confidence: high
+- id: h-de-constraint
+  category: constraint
+  style: crosslingual
+  query: Wie tolerant ist das Gen gegenüber Funktionsverlust-Varianten (pLI)?
+  expected:
+  - gnomad_get_gene_details
+  - gnomad_get_gene_summary
+  confidence: high
+- id: h-de-pharmaco
+  category: pharmacogenomics
+  style: crosslingual
+  query: Pharmakogenetische Dosierungsempfehlung für Tamoxifen und CYP2D6
+  expected:
+  - clinpgx_search_records
+  - clinpgx_get_record
+  - clinpgx_get_website_data
+  - clinpgx_get_related_records
+  confidence: medium
+- id: h-neg-gwas
+  category: negative
+  style: negative
+  query: run a genome-wide association study on my case-control cohort
+  expected: []
+  confidence: high
+- id: h-neg-fastq
+  category: negative
+  style: negative
+  query: align FASTQ reads to GRCh38 with BWA
+  expected: []
+  confidence: high
+- id: h-neg-variant-calling
+  category: negative
+  style: negative
+  query: call SNVs and indels from my BAM file
+  expected: []
+  confidence: high
+- id: h-neg-appointment
+  category: negative
+  style: negative
+  query: book an appointment with a genetic counselor next week
+  expected: []
+  confidence: high
+- id: h-neg-primer
+  category: negative
+  style: negative
+  query: design PCR primers flanking exon 11 for Sanger confirmation
+  expected: []
+  confidence: high
+- id: h-neg-crispr
+  category: negative
+  style: negative
+  query: design sgRNAs to knock out a gene in HEK293 cells
+  expected: []
+  confidence: high
+- id: h-neg-prs
+  category: negative
+  style: negative
+  query: calculate a polygenic risk score for coronary artery disease from my genotype array
+  expected: []
+  confidence: high
+- id: h-neg-scrna
+  category: negative
+  style: negative
+  query: cluster my single-cell RNA-seq count matrix and annotate cell types
+  expected: []
+  confidence: high
+- id: h-neg-eqtl
+  category: negative
+  style: negative
+  query: is rs12345 an eQTL for nearby genes in whole blood
+  expected: []
+  confidence: medium
+- id: h-neg-ld
+  category: negative
+  style: negative
+  query: linkage disequilibrium r2 between rs429358 and rs7412
+  expected: []
+  confidence: high
+- id: h-neg-blast
+  category: negative
+  style: negative
+  query: BLAST this nucleotide sequence against the nr database
+  expected: []
+  confidence: medium
+- id: h-neg-denovo-structure
+  category: negative
+  style: negative
+  query: fold my designed protein sequence and predict its 3D structure
+  expected: []
+  confidence: high
+- id: h-neg-methylation
+  category: negative
+  style: negative
+  query: CpG methylation levels at the promoter in blood samples
+  expected: []
+  confidence: high
+- id: h-neg-chip
+  category: negative
+  style: negative
+  query: transcription factor ChIP-seq peaks near the promoter of MYC
+  expected: []
+  confidence: high
+- id: h-neg-trials
+  category: negative
+  style: negative
+  query: find currently recruiting clinical trials for Duchenne near Berlin
+  expected: []
+  confidence: medium
+- id: h-neg-ddi
+  category: negative
+  style: negative
+  query: check drug-drug interactions between warfarin and ibuprofen
+  expected: []
+  confidence: medium
+- id: h-neg-phasing
+  category: negative
+  style: negative
+  query: phase two heterozygous variants from trio VCFs to tell cis from trans
+  expected: []
+  confidence: high
+- id: h-neg-ehr
+  category: negative
+  style: negative
+  query: pull this patient's lab results from the hospital record system
+  expected: []
+  confidence: high
+- id: h-neg-cnv-call
+  category: negative
+  style: negative
+  query: detect copy-number changes from my exome read depth
+  expected: []
+  confidence: high
+- id: h-neg-somatic-tcga
+  category: negative
+  style: negative
+  query: mutation frequency of IDH1 R132H across TCGA glioma tumours
+  expected: []
+  confidence: medium
+- id: h-neg-weather
+  category: negative
+  style: negative
+  query: what's the weather in Heidelberg tomorrow
+  expected: []
+  confidence: high
+- id: h-neg-report
+  category: negative
+  style: negative
+  query: generate and sign a clinical diagnostic report PDF for the patient
+  expected: []
+  confidence: high
+- id: h-neg-translate
+  category: negative
+  style: negative
+  query: translate my DNA sequence ATGGCC... into amino acids in all six frames
+  expected: []
+  confidence: high
+- id: h-neg-de-sequencing
+  category: negative
+  style: crosslingual
+  query: Bitte eine Exomsequenzierung für meinen Patienten bestellen
+  expected: []
+  confidence: high
