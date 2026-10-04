@@ -5,7 +5,7 @@
 cff-version: 1.2.0
 message: If you use this software, please cite it as below.
 title: genefoundry-router
-abstract: MCP gateway federating 21 biomedical MCP servers — gnomAD, ClinVar, HPO, UniProt, Ensembl VEP,
+abstract: MCP gateway federating 22 biomedical MCP servers — gnomAD, ClinVar, HPO, UniProt, Ensembl VEP,
   PanelApp and more — behind one Streamable-HTTP endpoint, with collision-free namespaced tools and BM25
   tool search.
 type: software
@@ -32,4 +32,4 @@ keywords:
 - mcp-server
 - model-context-protocol
 - variant-interpretation
-date-released: '2026-07-16'
+date-released: '2026-10-04'
