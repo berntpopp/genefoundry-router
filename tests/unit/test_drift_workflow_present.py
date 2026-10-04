@@ -1,4 +1,4 @@
-"""The drift workflow exists, is opt-in, least-privilege, SHA-pinned, fail-safe."""
+"""The production drift workflow is key-scoped, main-only, and fail-closed."""
 
 import re
 from pathlib import Path
@@ -32,12 +32,49 @@ def test_all_external_actions_are_sha_pinned():
 
 
 def test_heartbeat_is_fail_safe():
-    # The dead-man's-switch must fire even when the drift step fails.
-    assert re.search(r"always\(\)\s*&&\s*env\.DRIFT_HEARTBEAT_URL", WF.read_text(encoding="utf-8"))
-
-
-def test_fleet_urls_loaded_via_filter_not_raw_cat():
     text = WF.read_text(encoding="utf-8")
-    # Comments in ci/fleet-urls.env must not reach $GITHUB_ENV — load via a grep filter.
-    assert "grep -E" in text and "ci/fleet-urls.env" in text
-    assert "cat ci/fleet-urls.env" not in text
+    # A clean native probe proves the monitor ran; failed/uncertain probes never heartbeat.
+    assert "steps.drift.outputs.exit_code == '0'" in text
+    assert "always() && env.DRIFT_HEARTBEAT_URL" not in text
+
+
+def test_private_ssh_is_main_only_and_has_no_remote_command():
+    text = WF.read_text(encoding="utf-8")
+    assert "github.ref == 'refs/heads/main'" in text
+    assert "DRIFT_SSH_PRIVATE_KEY" in text
+    assert "environment: drift-probe" in text
+    assert "GF_PUBTATOR_TOKEN" not in text
+    assert "ci/fleet-urls.env" not in text
+    assert "StrictHostKeyChecking=yes" in text
+    assert 'UserKnownHostsFile="$GITHUB_WORKSPACE/ci/drift_known_hosts"' in text
+    assert "IdentitiesOnly=yes" in text
+    assert "ClearAllForwardings=yes" in text
+    assert "ssh -nT" in text
+    assert "bernt@217.154.76.71" in text
+    ssh_line = next(line.strip() for line in text.splitlines() if "bernt@217.154.76.71" in line)
+    assert ssh_line == "bernt@217.154.76.71 > drift_output.txt 2>&1"
+    assert "trap 'rm -f \"$key\"' EXIT" in text
+    assert "uv run genefoundry-router drift" not in text
+
+
+def test_nonclean_probe_fails_without_success_heartbeat():
+    text = WF.read_text(encoding="utf-8")
+    assert "steps.drift.outputs.exit_code == '1'" in text
+    assert "steps.drift.outputs.exit_code == '2'" in text
+    assert "steps.drift.outputs.exit_code != '0'" in text
+
+
+def test_heartbeat_delivery_failure_fails_the_step():
+    text = WF.read_text(encoding="utf-8")
+    heartbeat = text.split("- name: Heartbeat (dead-man's-switch)", 1)[1]
+    heartbeat = heartbeat.split("- name: Fail the run", 1)[0]
+    assert 'curl -fsS -m 10 --retry 3 -o /dev/null "$DRIFT_HEARTBEAT_URL"' in heartbeat
+    assert "|| true" not in heartbeat
+
+
+def test_host_key_file_is_a_single_pinned_ed25519_entry():
+    line = Path("ci/drift_known_hosts").read_text(encoding="utf-8").strip()
+    fields = line.split()
+    assert fields[0] == "[217.154.76.71]:2323"
+    assert fields[1] == "ssh-ed25519"
+    assert len(fields[2]) >= 50

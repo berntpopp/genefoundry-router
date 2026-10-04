@@ -2,6 +2,16 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.9.4] - 2026-10-04
+
+### Changed
+
+- Refresh the digest-pinned Python 3.14 runtime base and pin the Dockerfile frontend to a verified immutable digest.
+- Update paired CodeQL action pins to v4.38.2.
+- Refresh all 22 verified backend releases, 285 tool definitions, and database provenance, including the accepted ClinPGx 0.1.3 public data release.
+- Increase BM25 weighting of tool names and tags so the refreshed catalog meets the existing discoverability benchmark.
+- Run scheduled drift checks through a restricted SSH command on the private fleet network and fail when probes or heartbeat delivery fail.
+
 ## [0.9.3] - 2026-10-03
 
 ### Security

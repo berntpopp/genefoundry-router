@@ -15,37 +15,50 @@ concurrency:
 
 jobs:
   drift:
-    # Opt-in: scheduled runs only when DRIFT_ENABLED=true; manual dispatch always allowed.
-    if: ${{ vars.DRIFT_ENABLED == 'true' || github.event_name == 'workflow_dispatch' }}
+    # The SSH key is a production-only capability; never expose it to branches or forks.
+    if: ${{ github.ref == 'refs/heads/main' && (vars.DRIFT_ENABLED == 'true' || github.event_name == 'workflow_dispatch') }}
+    environment: drift-probe
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       DRIFT_HEARTBEAT_URL: ${{ secrets.DRIFT_HEARTBEAT_URL }}
     steps:
-      - name: Checkout
+      - name: Checkout pinned host key
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.12"
-      - name: Set up uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-        with:
-          enable-cache: true
-          version: "0.8.7"
-      - name: Install
-        run: uv sync --frozen --no-dev
-      - name: Load fleet URLs
-        # Filter to GF_*=... assignments only; comment lines must not reach $GITHUB_ENV
-        # (GitHub treats the env file as KEY=value pairs, not a dotenv with comments).
-        run: grep -E '^GF_[A-Z0-9_]+=' ci/fleet-urls.env >> "$GITHUB_ENV"
-      - name: Run drift check
+          persist-credentials: false
+      - name: Run read-only drift probe through the private forced command
         id: drift
+        env:
+          DRIFT_SSH_PRIVATE_KEY: ${{ secrets.DRIFT_SSH_PRIVATE_KEY }}
         run: |
+          set -euo pipefail
+          key="$RUNNER_TEMP/drift-probe-key"
+          umask 077
+          rm -f "$key"
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$DRIFT_SSH_PRIVATE_KEY" > "$key"
+          unset DRIFT_SSH_PRIVATE_KEY
           set +e
-          uv run genefoundry-router drift \
-            > drift_output.txt 2>&1
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          ssh -nT -F /dev/null -p 2323 -i "$key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$GITHUB_WORKSPACE/ci/drift_known_hosts" \
+            -o GlobalKnownHostsFile=/dev/null \
+            -o UpdateHostKeys=no \
+            -o ClearAllForwardings=yes \
+            -o ForwardAgent=no \
+            -o RequestTTY=no \
+            -o PasswordAuthentication=no \
+            -o KbdInteractiveAuthentication=no \
+            -o ConnectTimeout=10 \
+            -o ServerAliveInterval=5 \
+            -o ServerAliveCountMax=2 \
+            bernt@217.154.76.71 > drift_output.txt 2>&1
+          exit_code=$?
+          set -e
+          printf 'exit_code=%s\n' "$exit_code" >> "$GITHUB_OUTPUT"
           cat drift_output.txt
       - name: Open / update drift issue
         if: ${{ steps.drift.outputs.exit_code == '1' && vars.DRIFT_OPEN_ISSUE != 'false' }}
@@ -74,8 +87,8 @@ jobs:
         run: |
           echo "::warning::drift check: some backends were unreachable (availability, not a rug pull)"
       - name: Heartbeat (dead-man's-switch)
-        if: ${{ always() && env.DRIFT_HEARTBEAT_URL != '' }}
-        run: curl -fsS -m 10 --retry 3 -o /dev/null "$DRIFT_HEARTBEAT_URL" || true
-      - name: Fail the run on drift
-        if: ${{ steps.drift.outputs.exit_code == '1' }}
+        if: ${{ steps.drift.outputs.exit_code == '0' && env.DRIFT_HEARTBEAT_URL != '' }}
+        run: curl -fsS -m 10 --retry 3 -o /dev/null "$DRIFT_HEARTBEAT_URL"
+      - name: Fail the run unless the native probe is clean
+        if: ${{ steps.drift.outputs.exit_code != '0' }}
         run: exit 1

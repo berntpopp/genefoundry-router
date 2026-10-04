@@ -16,11 +16,11 @@
       "name": "autopvs1",
       "namespace": "autopvs1",
       "release": {
-        "commit": "c05b46032d135cc48625ecf9b593531e608ad6a4",
+        "commit": "f4831688bb368919db25d6676ce13fa7f4594604",
         "definitions_sha256": "778255b227295db4e572a1cb322f62424edd0a0e712aba7c8cf4090405cb2881",
-        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:90f44d467b1e2a1f2abfdce2b55ab59c72af98a794ee52e96481d742ffb04bf7",
-        "tag": "v4.1.7",
-        "version": "4.1.7"
+        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:f722f95241f734f3a474a8bcaa4cc753c96dd3c2034c4874cc71554be703b901",
+        "tag": "v4.1.8",
+        "version": "4.1.8"
       },
       "repository": "berntpopp/autopvs1-link",
       "repository_url": "https://github.com/berntpopp/autopvs1-link",
@@ -538,15 +538,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:38ff5ebb9b299f313ff23fa8def48ca5a97284c5fea85db21fe3ae06734a2c5b",
+        "asset_sha256": "sha256:b05e65bf42854ec16b9e31265260be352bd0101e32f9fbd2d6bdc2a12b8d7150",
         "data_identity_contract": "runtime-v1",
         "mode": "external-reference",
-        "release_tag": "data-clingen-83dcb565417a23bd",
+        "release_tag": "data-clingen-fc7cb06c3b0041a2",
         "schema_compatibility": [
           "2"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T14:28:08.788288Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -555,11 +555,11 @@
       "name": "clingen",
       "namespace": "clingen",
       "release": {
-        "commit": "5af388a5c28c330bef7a5593b4307dc3f519b903",
-        "definitions_sha256": "f3108155dcb9621becdbb3e5dc36e3e57330a4e0adef004b06c8f9e626b8bc9e",
-        "image": "ghcr.io/berntpopp/clingen-link@sha256:c729996a887194153cc3222b457fbf76b28e41505043ece1227e72a973df11d9",
-        "tag": "v4.0.13",
-        "version": "4.0.13"
+        "commit": "f96bd223622cc3abcf31860631e5653a929c60f9",
+        "definitions_sha256": "fd2e7b20c510a4f97ed89ff0f9621fca0e95c3a4fd110e04400056add643a4a0",
+        "image": "ghcr.io/berntpopp/clingen-link@sha256:600453897805a638bf6817906aa4e321f71aecbfa923fdb395152b256c8ae9d8",
+        "tag": "v4.0.15",
+        "version": "4.0.15"
       },
       "repository": "berntpopp/clingen-link",
       "repository_url": "https://github.com/berntpopp/clingen-link",
@@ -1019,6 +1019,7 @@
                 "anyOf": [
                   {
                     "enum": [
+                      "-1",
                       "0",
                       "1",
                       "2",
@@ -1033,7 +1034,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Exact ClinGen haploinsufficiency score CODE (not its description): 0 no evidence, 1 little, 2 some, 3 sufficient evidence; 30 gene associated with an autosomal-recessive phenotype; 40 dosage sensitivity unlikely. 30 and 40 are flags, not 'more than 3'.",
+                "description": "Exact ClinGen haploinsufficiency score CODE (not its description): 0 no evidence, 1 little, 2 some, 3 sufficient evidence; 30 gene associated with an autosomal-recessive phenotype; 40 dosage sensitivity unlikely; -1 will not be evaluated. -1, 30 and 40 are flags, not evidence levels.",
                 "examples": [
                   "3",
                   "30"
@@ -1114,6 +1115,7 @@
                 "anyOf": [
                   {
                     "enum": [
+                      "-1",
                       "0",
                       "1",
                       "2",
@@ -1128,7 +1130,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Exact ClinGen triplosensitivity score CODE (same scale as haplo_score). Genes upstream has not evaluated carry no code and are not matched by any.",
+                "description": "Exact ClinGen triplosensitivity score CODE (same scale as haplo_score). Absent scores match no code; -1 marks genes that will not be evaluated.",
                 "examples": [
                   "3",
                   "30"
@@ -1840,12 +1842,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": null,
-        "mode": "none",
-        "release_tag": null,
-        "schema_compatibility": [],
-        "status": "unhosted",
-        "updated_at": null
+        "asset_sha256": "sha256:ef590d6eba25423eb562405edfa7ac41862172bc689f496c2ff5346ddd3958ca",
+        "data_identity_contract": "runtime-v1",
+        "mode": "external-reference",
+        "release_tag": "data-clinpgx-core-cfde21bfec473b35",
+        "schema_compatibility": [
+          "1.0.0"
+        ],
+        "status": "attested-reference",
+        "updated_at": "2026-10-04T01:47:20.093525Z"
       },
       "domain": "Pharmacogenomics / gene-drug guidelines",
       "entrypoints": [
@@ -1857,11 +1862,11 @@
       "name": "clinpgx",
       "namespace": "clinpgx",
       "release": {
-        "commit": "55ce516f61ada74504e36e2f4b08009b53b3ef75",
-        "definitions_sha256": "43005c4e51345461c35679024d8a84d4dadc75b26d6a07d1eb960f59ee93201e",
-        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:29300d3229685997d7429db2b8dbf76a6d87ed099ad9d399725b4e2b3937fc4b",
-        "tag": "v0.1.0",
-        "version": "0.1.0"
+        "commit": "b635af5bbc6a0313e2e76bbc90cd16739549f2ae",
+        "definitions_sha256": "70cd8fe19fc2c60972b37efab0aca47d25f1ab4d0236c3107b33d9deec98c798",
+        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:b5a81bbef5175c7dbb88676bf7d78f3229806f8f48ae9b2c42096941f88fb76e",
+        "tag": "v0.1.3",
+        "version": "0.1.3"
       },
       "repository": "berntpopp/clinpgx-link",
       "repository_url": "https://github.com/berntpopp/clinpgx-link",
@@ -1881,7 +1886,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Discover exact allowlisted contracts; inventory-only routes are not callable.",
           "federated_name": "clinpgx_get_api_schema",
@@ -1970,7 +1976,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": true,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Read one allowlisted API operation; paginate its response without refetching.",
           "federated_name": "clinpgx_get_api_data",
@@ -2122,7 +2129,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": true,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Read verified site and linked CPIC reference routes with distinct provenance.",
           "federated_name": "clinpgx_get_website_data",
@@ -2250,7 +2258,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "List datasets available in the installed snapshot catalog. Use response_mode='minimal' for concise overview.",
           "federated_name": "clinpgx_list_datasets",
@@ -2332,7 +2341,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Inspect one installed dataset snapshot record. Member items include member_sha256.",
           "federated_name": "clinpgx_get_dataset",
@@ -2421,7 +2431,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Search indexed rows within an installed snapshot dataset. Rows include member_sha256.",
           "federated_name": "clinpgx_search_dataset",
@@ -2585,9 +2596,10 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
-          "description": "",
+          "description": "Get one indexed dataset row by record ID with optional pointer or parent context.",
           "federated_name": "clinpgx_get_dataset_record",
           "inputSchema": {
             "additionalProperties": false,
@@ -2695,7 +2707,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": true,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Search exact live fields or installed dataset memberships.",
           "federated_name": "clinpgx_search_records",
@@ -2862,7 +2875,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": true,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Get one exact entity without changing source; use source='website' for guideline URLs.",
           "federated_name": "clinpgx_get_record",
@@ -2998,7 +3012,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": true,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Use known IDs for live reports or joins. Guideline URLs live under source='website'.",
           "federated_name": "clinpgx_get_related_records",
@@ -3179,7 +3194,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": true,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Inspect source configuration and pinned data without revealing local paths or secrets.",
           "federated_name": "clinpgx_get_diagnostics",
@@ -3222,7 +3238,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": true,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Discover tools and source limits; non-full modes use api_contract_defaults, while full expands every API row.",
           "federated_name": "clinpgx_get_server_capabilities",
@@ -3260,7 +3277,8 @@
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": true,
-            "readOnlyHint": true
+            "readOnlyHint": true,
+            "title": null
           },
           "description": "Read retained source content in digest-bound, progressing chunks.",
           "federated_name": "clinpgx_get_source_content",
@@ -3337,15 +3355,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:70e8fc1e8c2edad8c6f9bae91606ec86b3cbf6118f7ac8da1cb356b1a36855d6",
+        "asset_sha256": "sha256:e871870a70c239c9ab79b1b2f8aa7fe11305d059d10f03814cc82022ec675cb5",
         "data_identity_contract": "runtime-v1",
         "mode": "external-reference",
-        "release_tag": "bundle-2026-08-31",
+        "release_tag": "bundle-2026-09-29",
         "schema_compatibility": [
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T07:01:46.027466Z"
       },
       "domain": "Variant clinical significance",
       "entrypoints": [
@@ -3354,11 +3372,11 @@
       "name": "clinvar",
       "namespace": "clinvar",
       "release": {
-        "commit": "0bd322193f279c1f72844cd28b4924b0218e3798",
+        "commit": "98871aa4c3b461401ff1bd21766f750d3371d34b",
         "definitions_sha256": "0e75adbad4f3389d918f9e9719b7e4eb21e3e046f27455ef859e52ef6f66c54c",
-        "image": "ghcr.io/berntpopp/clinvar-link@sha256:27c523f5f6a7769ea6255e62139324ca55e4161b069045a74cb78606322bcfd2",
-        "tag": "v0.5.10",
-        "version": "0.5.10"
+        "image": "ghcr.io/berntpopp/clinvar-link@sha256:37332f6333f5bd87a2bfd72297be0da8d4b39db7acbda27503f46bf8bb548657",
+        "tag": "v0.5.12",
+        "version": "0.5.12"
       },
       "repository": "berntpopp/clinvar-link",
       "repository_url": "https://github.com/berntpopp/clinvar-link",
@@ -3992,7 +4010,7 @@
         "release_tag": "observed-2026.08.30",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T07:01:46.027466Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -4001,11 +4019,11 @@
       "name": "gencc",
       "namespace": "gencc",
       "release": {
-        "commit": "614fad3ebc311a9da151f6ce446fd6b0ad6b575e",
+        "commit": "7920f90c84a18b507df9aa24d2140d187044a4b3",
         "definitions_sha256": "cc545a6857602d56e3b042d2ac7a511c6652e6fbfd88f322b5a6ae3267e8ead3",
-        "image": "ghcr.io/berntpopp/gencc-link@sha256:79f4a03b3c9eb0a686a72c16cd998a7b7eb6017f606cae68ff7145d951698dd5",
-        "tag": "v0.8.7",
-        "version": "0.8.7"
+        "image": "ghcr.io/berntpopp/gencc-link@sha256:893f855bb55660391b11334fc0d4388a4cad504fd0f4589a2b0bd30d20e713e5",
+        "tag": "v0.8.8",
+        "version": "0.8.8"
       },
       "repository": "berntpopp/gencc-link",
       "repository_url": "https://github.com/berntpopp/gencc-link",
@@ -4678,6 +4696,7 @@
                     "enum": [
                       "Autosomal dominant",
                       "Autosomal recessive",
+                      "Digenic inheritance",
                       "Mitochondrial",
                       "Semidominant",
                       "Unknown",
@@ -4848,15 +4867,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:9e76402893b51ca6597ad434aef1feb71542a03c7566e43865081fbbff3fdca2",
+        "asset_sha256": "sha256:ca358d3f7052ed97f03f4ac9a9f953b6d3d1c1eaf5faa693d4cffe1949ab0c0a",
         "data_identity_contract": "runtime-v1",
         "mode": "restored-database",
-        "release_tag": "corpus-data-2026-09-01-r1",
+        "release_tag": "corpus-data-2026-10-03-r1",
         "schema_compatibility": [
           "0007_embedding_run_identity"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T07:01:46.027466Z"
       },
       "domain": "Gene\u2013disease literature",
       "entrypoints": [
@@ -4866,11 +4885,11 @@
       "name": "genereviews",
       "namespace": "genereviews",
       "release": {
-        "commit": "101e18ea1c4c5399692d623e94e5e89ebe246005",
+        "commit": "e55ae2223d0ab33b351cb6333775d53443e75ded",
         "definitions_sha256": "eec51191f4873538677a01a767143fe5476c7cf1ecce62542e897e77451e7764",
-        "image": "ghcr.io/berntpopp/genereviews-link@sha256:176050e1e22c6d6c6e324bb5fc76bcdf2f1b7abecc2e1b27b360fb8ada5f6ba1",
-        "tag": "v5.2.7",
-        "version": "5.2.7"
+        "image": "ghcr.io/berntpopp/genereviews-link@sha256:2afe325f27bc6c601e99c7f99883da645aff4b8a2175702d0f91ed1a01106b0d",
+        "tag": "v5.2.9",
+        "version": "5.2.9"
       },
       "repository": "berntpopp/genereviews-link",
       "repository_url": "https://github.com/berntpopp/genereviews-link",
@@ -5876,11 +5895,11 @@
       "name": "gnomad",
       "namespace": "gnomad",
       "release": {
-        "commit": "f5593f0c05df1767ec8505f129e998f281a0cf28",
+        "commit": "f2799d11cfc4e369bd4840adc5b9170486d92d69",
         "definitions_sha256": "b30ddbfb94f1aef69a4092f0112d01ffe5bcae33818cc22de7bcd9dfff02cc44",
-        "image": "ghcr.io/berntpopp/gnomad-link@sha256:f39a77812e5c2e5413628ff6ad12ac21b0aa20bd26f639d5ee1fa585813f6940",
-        "tag": "v9.0.6",
-        "version": "9.0.6"
+        "image": "ghcr.io/berntpopp/gnomad-link@sha256:22be8ec940fdb199a15958cfa7d39b608c243f425d5fe41187b21377f23353f6",
+        "tag": "v9.0.7",
+        "version": "9.0.7"
       },
       "repository": "berntpopp/gnomad-link",
       "repository_url": "https://github.com/berntpopp/gnomad-link",
@@ -7541,11 +7560,11 @@
       "name": "gtex",
       "namespace": "gtex",
       "release": {
-        "commit": "76c3b7f05ae59b60bb3960a7c5383a918449d2ba",
+        "commit": "4bb84cf1b4527ec5a729e13947cadc6f1f846520",
         "definitions_sha256": "3f763d85c4fb812af42f570fb4b54a64d8aeb233efd0ec1a6aba76517a46a429",
-        "image": "ghcr.io/berntpopp/gtex-link@sha256:77424be0adbc18dfeb80e4df6ccd7070dae7a8c41176a2e1ecffc6dbc34ee51f",
-        "tag": "v3.1.7",
-        "version": "3.1.7"
+        "image": "ghcr.io/berntpopp/gtex-link@sha256:b4b89f74cb07c62be0ddafe991340ce14c00188256d248a7293709ca2ce82cf2",
+        "tag": "v3.1.8",
+        "version": "3.1.8"
       },
       "repository": "berntpopp/gtex-link",
       "repository_url": "https://github.com/berntpopp/gtex-link",
@@ -8333,7 +8352,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T07:01:46.027466Z"
       },
       "domain": "Gene nomenclature",
       "entrypoints": [
@@ -8342,11 +8361,11 @@
       "name": "hgnc",
       "namespace": "hgnc",
       "release": {
-        "commit": "d3773b0d9cc38086bd1d87fabe43607817e1040c",
+        "commit": "9f9a25ef24ff7494b17be5eae681e9825ee0c5b5",
         "definitions_sha256": "bcc5612d7f8435048bb4f9169abd520a05c91583c8ccb0391a63c18b4a8177c9",
-        "image": "ghcr.io/berntpopp/hgnc-link@sha256:af75f004008dc4a96038dc15bf402fd7175419465e4d60adf77351c7f1d733c1",
-        "tag": "v2.1.7",
-        "version": "2.1.7"
+        "image": "ghcr.io/berntpopp/hgnc-link@sha256:e99b420978c4ff7e70f217d6beebbd4ae090d3f628e99481a295e0555ed05800",
+        "tag": "v2.1.8",
+        "version": "2.1.8"
       },
       "repository": "berntpopp/hgnc-link",
       "repository_url": "https://github.com/berntpopp/hgnc-link",
@@ -8882,12 +8901,14 @@
     {
       "database_provenance": {
         "asset_sha256": "sha256:be9e693abf9eabb06ad501e360084cc3fb039eef90ffe02912bfe83256af3999",
-        "data_identity_contract": "unadopted",
+        "data_identity_contract": "runtime-v1",
         "mode": "external-reference",
         "release_tag": "db-v2026-09-01",
-        "schema_compatibility": [],
+        "schema_compatibility": [
+          "1"
+        ],
         "status": "attested-reference",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T07:01:46.027466Z"
       },
       "domain": "Phenotype ontology & associations",
       "entrypoints": [
@@ -8898,11 +8919,11 @@
       "name": "hpo",
       "namespace": "hpo",
       "release": {
-        "commit": "462161b26cd60dbf27457e17f20222c39cefc24e",
-        "definitions_sha256": "71b81906ece974d4391ecccf775e78a2dee9f9f742437f6b760f73174823552f",
-        "image": "ghcr.io/berntpopp/hpo-link@sha256:2160e64d5fcfd46e1390540bcbec21251c09115bdf624d0eb381d3d6b5b23739",
-        "tag": "v0.4.7",
-        "version": "0.4.7"
+        "commit": "cf9d0a1f11bf8c0a14b5b7f217511460961ef87c",
+        "definitions_sha256": "90310b0ea314affbee975e68dff22a0e92044c66ad74eb8dbdf1809377d93181",
+        "image": "ghcr.io/berntpopp/hpo-link@sha256:9bd1c2fca5fc10389512e178f4279c8c14eadfb3ccc30a9f20d16c04e50ed95e",
+        "tag": "v0.4.9",
+        "version": "0.4.9"
       },
       "repository": "berntpopp/hpo-link",
       "repository_url": "https://github.com/berntpopp/hpo-link",
@@ -9422,11 +9443,10 @@
                 "type": "string"
               },
               "xref_id": {
-                "description": "An external cross-reference CURIE (prefix:local), e.g. UMLS/SNOMED/NCIT/MEDDRA, to resolve back to the HPO term(s) that cross-reference it.",
+                "description": "An external cross-reference CURIE (prefix:local) present in the selected HPO release, such as NCIT or MEDDRA, to resolve back to matching HPO terms.",
                 "examples": [
-                  "UMLS:C0036572",
-                  "SNOMEDCT_US:263681008",
-                  "NCIT:C4890"
+                  "NCIT:C3754",
+                  "MEDDRA:10022016"
                 ],
                 "type": "string"
               }
@@ -9942,11 +9962,11 @@
       "name": "litvar",
       "namespace": "litvar",
       "release": {
-        "commit": "8a561b298781e56de6f211a40dbd3a42789e8e28",
+        "commit": "1ba19587ef391bccb424c09c1719cb422d275d5d",
         "definitions_sha256": "7fed6228dd4eee633c599500cf4f6ec06c2242ae30d74d7690970d9145469821",
-        "image": "ghcr.io/berntpopp/litvar-link@sha256:84a696018df5e3ce4f1598aa23f3b7dcb8023d302e2f90c45e62f87392eb43f5",
-        "tag": "v6.0.8",
-        "version": "6.0.8"
+        "image": "ghcr.io/berntpopp/litvar-link@sha256:9e224c7e10e11a0d3cefecbc0a01a2233ac1576478cf3c7344c1c107f96a5c9d",
+        "tag": "v6.0.10",
+        "version": "6.0.10"
       },
       "repository": "berntpopp/litvar-link",
       "repository_url": "https://github.com/berntpopp/litvar-link",
@@ -10241,13 +10261,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:30b2b4fdbdff9a1a2e9f13e9f7de072a22ff07e70dea5d45eba297a5b9a5155a",
-        "data_identity_contract": "unadopted",
+        "asset_sha256": "sha256:5f2315d8036eca4c93574238f261e22d5b5199f45c370f58a0455616ad7d26b9",
+        "data_identity_contract": "runtime-v1",
         "mode": "external-reference",
-        "release_tag": "data-2026-06-24",
-        "schema_compatibility": [],
+        "release_tag": "data-2026-06-24-s4-r3",
+        "schema_compatibility": [
+          "4.0.0"
+        ],
         "status": "attested-reference",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T14:28:08.788288Z"
       },
       "domain": "Variant-effect assay scores",
       "entrypoints": [
@@ -10256,11 +10278,11 @@
       "name": "mavedb",
       "namespace": "mavedb",
       "release": {
-        "commit": "1ae150ff3f041045708001403be13f908d58d077",
+        "commit": "602d7ab6b4244ea324c326036079f3d9d058d50a",
         "definitions_sha256": "7163a135521e80bbe1ba28070b8c41d356c779c2ebdf4c71b7acbcf282f1c7f6",
-        "image": "ghcr.io/berntpopp/mavedb-link@sha256:7553b3ec1e37cf1c7f46f6c2fb4fa7c36bbc4024c5843d8b6879e0fdea127780",
-        "tag": "v0.5.7",
-        "version": "0.5.7"
+        "image": "ghcr.io/berntpopp/mavedb-link@sha256:618b54da92c01a0341f4776b0e2d30692efe7cd8ab181250957523cfb5b5fe83",
+        "tag": "v0.5.10",
+        "version": "0.5.10"
       },
       "repository": "berntpopp/mavedb-link",
       "repository_url": "https://github.com/berntpopp/mavedb-link",
@@ -11429,11 +11451,11 @@
       "name": "metadome",
       "namespace": "metadome",
       "release": {
-        "commit": "e78f6ef37fb6737e1a4d5bc788c089ca550df4d4",
+        "commit": "f4a8a87ec6e5d22f5cb0391312a5447207f6d8c0",
         "definitions_sha256": "2fa791b88ad64448b826cd068c3a39bbb3d882086e65fdb261ded35399dfd696",
-        "image": "ghcr.io/berntpopp/metadome-link@sha256:918caa987441c53f552b7c75534df30bcd7b02cc9dbc120ec6c5f2207ac81aa8",
-        "tag": "v0.3.8",
-        "version": "0.3.8"
+        "image": "ghcr.io/berntpopp/metadome-link@sha256:a09bf81b60e7be7d68438e89c71d8387d4bba3e6cb0deb71ba344e43ff1b449c",
+        "tag": "v0.3.10",
+        "version": "0.3.10"
       },
       "repository": "berntpopp/metadome-link",
       "repository_url": "https://github.com/berntpopp/metadome-link",
@@ -14962,7 +14984,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T07:01:46.027466Z"
       },
       "domain": "Mouse phenotype & models",
       "entrypoints": [
@@ -14971,11 +14993,11 @@
       "name": "mgi",
       "namespace": "mgi",
       "release": {
-        "commit": "bf400c8bfa61289b7fa9fc64aca6edb0c9180de6",
+        "commit": "b164ec9129b5e35198fd72a7e00a4540dd20dd72",
         "definitions_sha256": "6f0cbd449985078f74b2fadfab101fbfef830bce8eb042c2ebbcb043ca1e7283",
-        "image": "ghcr.io/berntpopp/mgi-link@sha256:b4c804dbd2c6a06b84efb836e3cfa27b953e64f486c7dba39a881a9e097710e2",
-        "tag": "v0.6.6",
-        "version": "0.6.6"
+        "image": "ghcr.io/berntpopp/mgi-link@sha256:d915abfeacf5bd898a536aa77a4a39ee73b876d6a020894d30f74af859b7f21b",
+        "tag": "v0.6.8",
+        "version": "0.6.8"
       },
       "repository": "berntpopp/mgi-link",
       "repository_url": "https://github.com/berntpopp/mgi-link",
@@ -15676,7 +15698,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T07:01:46.027466Z"
       },
       "domain": "Disease ontology / cross-references",
       "entrypoints": [
@@ -15685,11 +15707,11 @@
       "name": "mondo",
       "namespace": "mondo",
       "release": {
-        "commit": "924a688fbbd71d4ea383bc7bb63138c0642ff1c7",
+        "commit": "55477bcacca1258ec7cbdfaa127f93f295dc9160",
         "definitions_sha256": "179f9225ffd41cb8551e11b75604f20cf96e4b4fd7af5e338846602740a331ca",
-        "image": "ghcr.io/berntpopp/mondo-link@sha256:2bb25a8517d5a3dce636acc79c1087676247a94b9f13187194259db7e3673b31",
-        "tag": "v0.4.7",
-        "version": "0.4.7"
+        "image": "ghcr.io/berntpopp/mondo-link@sha256:5d706dd755f10da9d375394148885cbfff2670e646cf8ac97e86ea2e30062b64",
+        "tag": "v0.4.9",
+        "version": "0.4.9"
       },
       "repository": "berntpopp/mondo-link",
       "repository_url": "https://github.com/berntpopp/mondo-link",
@@ -16443,7 +16465,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T07:01:46.027466Z"
       },
       "domain": "Rare disease ontology & associations",
       "entrypoints": [
@@ -16452,11 +16474,11 @@
       "name": "orphanet",
       "namespace": "orphanet",
       "release": {
-        "commit": "cb4dd9021c0c4915f6b786923ddae2d45b9baf79",
+        "commit": "8f5b2528110cce68d886fe6b18a5aacb57fd1b99",
         "definitions_sha256": "e48c67610afd134796521ce8e0ebca4c641ad8042882b4c0aff98330713ef632",
-        "image": "ghcr.io/berntpopp/orphanet-link@sha256:b04257e6e9dd0fff97ba9c763f1e90d0a048918b8afc3dfae356fe58dc1545da",
-        "tag": "v0.4.8",
-        "version": "0.4.8"
+        "image": "ghcr.io/berntpopp/orphanet-link@sha256:484c4a3720608f0c1917b08992f88a9f3b3cf11366fadc75f6e47ccaacf95ece",
+        "tag": "v0.4.10",
+        "version": "0.4.10"
       },
       "repository": "berntpopp/orphanet-link",
       "repository_url": "https://github.com/berntpopp/orphanet-link",
@@ -17677,11 +17699,11 @@
       "name": "panelapp",
       "namespace": "panelapp",
       "release": {
-        "commit": "9e3664fd323de554c4c691f1e8fa8bac735401bc",
+        "commit": "293f3035a9a4658b833f52e7d166135c2b4aa366",
         "definitions_sha256": "04f72aebcb0ef65d0ed0fb802342a5edcfc827a107d5960bf2db1d991428cc8e",
-        "image": "ghcr.io/berntpopp/panelapp-link@sha256:fe9b37d6eab237796a2d8cc824ddc4a5707a17398252c7b16ddd77a285ed09b4",
-        "tag": "v0.7.4",
-        "version": "0.7.4"
+        "image": "ghcr.io/berntpopp/panelapp-link@sha256:a532e34ec261c1daa088d5dc1f8bbb527deb97807d0d39b393515f15c585ddd0",
+        "tag": "v0.7.6",
+        "version": "0.7.6"
       },
       "repository": "berntpopp/panelapp-link",
       "repository_url": "https://github.com/berntpopp/panelapp-link",
@@ -18611,7 +18633,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "attested-reference",
-        "updated_at": "2026-09-17T19:08:59.467565Z"
+        "updated_at": "2026-10-03T07:01:46.027466Z"
       },
       "domain": "Literature & entity annotation",
       "entrypoints": [
@@ -18620,11 +18642,11 @@
       "name": "pubtator",
       "namespace": "pubtator",
       "release": {
-        "commit": "eb850ef5ad06e43882e7f375ad4b8119f20ceb24",
+        "commit": "1584f520eb5f9f27f4a088a76f3d8986f0413a61",
         "definitions_sha256": "512f5c1dc2fe8e7e9fa383ba5e88e568933125e6143434d0b1f09614230b3441",
-        "image": "ghcr.io/berntpopp/pubtator-link@sha256:fbf1d84d42f3e88e7d52020cb80d85d193c578feb40daa00b208477396f6e20d",
-        "tag": "v7.1.11",
-        "version": "7.1.11"
+        "image": "ghcr.io/berntpopp/pubtator-link@sha256:cb97498d86573c0bea2e49999abec8be89d0e17cdf58837988ec707447633045",
+        "tag": "v7.1.13",
+        "version": "7.1.13"
       },
       "repository": "berntpopp/pubtator-link",
       "repository_url": "https://github.com/berntpopp/pubtator-link",
@@ -21366,11 +21388,11 @@
       "name": "spliceai",
       "namespace": "spliceai",
       "release": {
-        "commit": "1a69a1df4ba8b70c1927e5275fca11c09e7885a6",
+        "commit": "ccfcf20c46efef96682edc739c8c4ddd02565b22",
         "definitions_sha256": "7bc98a2c95f0fab7e26fd4fc42e8fa032f3472b7598deb8ac73f0f0ad8febf5f",
-        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:3dc6b5a300fd74b212fd372ab780507c441ba685fe17edde365f0bca0d3bce94",
-        "tag": "v4.0.5",
-        "version": "4.0.5"
+        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:607cfd99cc6005ec7fcbed69442886aedaa016fb3bba120d27e7ecf4d639c92b",
+        "tag": "v4.0.8",
+        "version": "4.0.8"
       },
       "repository": "berntpopp/spliceailookup-link",
       "repository_url": "https://github.com/berntpopp/spliceailookup-link",
@@ -22030,11 +22052,11 @@
       "name": "stringdb",
       "namespace": "stringdb",
       "release": {
-        "commit": "c3c04cf3ddef0ab3461cf150c6c62b6475dc70d1",
+        "commit": "197038d3287e72016b94076be0ea16fc68f549d3",
         "definitions_sha256": "62a8908b84685b727d28bf5a79b0fa241cdeb4e963768989c58a3e17334e8dde",
-        "image": "ghcr.io/berntpopp/stringdb-link@sha256:c4fa8712c6c068bb57a7f3f255d3c80c15775064d8a0953826066cf4eedecbbb",
-        "tag": "v4.1.7",
-        "version": "4.1.7"
+        "image": "ghcr.io/berntpopp/stringdb-link@sha256:f36db87172149fe556c9d02f2fdf4be92b051df6e4de4d81a81b0ac233f506c4",
+        "tag": "v4.1.10",
+        "version": "4.1.10"
       },
       "repository": "berntpopp/stringdb-link",
       "repository_url": "https://github.com/berntpopp/stringdb-link",
@@ -22978,11 +23000,11 @@
       "name": "uniprot",
       "namespace": "uniprot",
       "release": {
-        "commit": "fe6832c06a872615bbdf46a1517f80f3fa2ea9f0",
+        "commit": "c319cf40c48b8e7354beddbc8581fa9e3876509e",
         "definitions_sha256": "5d94f620dabf0a33e8b93f8df64ded825468e088806ed737be7daeff96cf0321",
-        "image": "ghcr.io/berntpopp/uniprot-link@sha256:75b5388792da81ad67372c40ce939484b89867e11d82b2044bae5cbb770471cd",
-        "tag": "v5.1.4",
-        "version": "5.1.4"
+        "image": "ghcr.io/berntpopp/uniprot-link@sha256:632fb771a7921b14edbcaaa7e44beaec6be97de6d0599e8a68180b571022e393",
+        "tag": "v5.1.7",
+        "version": "5.1.7"
       },
       "repository": "berntpopp/uniprot-link",
       "repository_url": "https://github.com/berntpopp/uniprot-link",
@@ -23985,11 +24007,11 @@
       "name": "vep",
       "namespace": "vep",
       "release": {
-        "commit": "532bcb6f234f0d1ec74a265553e69cfdceb48c67",
+        "commit": "d106c35caec8f152077455dffda89fadaa9c2470",
         "definitions_sha256": "68dc33bdc4d7e76c685b05aa4a321af68b318df39474af66352eeb34a53c99f8",
-        "image": "ghcr.io/berntpopp/vep-link@sha256:b5ef0dfd8aeebaa108c1d467d40a76f2c643c0a8f4688083605028b59a592462",
-        "tag": "v1.1.6",
-        "version": "1.1.6"
+        "image": "ghcr.io/berntpopp/vep-link@sha256:8e1a6318af284bdcc4cf238e863e14bfd52f22411d0eae1bdf6bac99d13302be",
+        "tag": "v1.1.8",
+        "version": "1.1.8"
       },
       "repository": "berntpopp/vep-link",
       "repository_url": "https://github.com/berntpopp/vep-link",

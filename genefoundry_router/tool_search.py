@@ -50,7 +50,7 @@ _MAX_RETURN_FIELDS = 12
 # tool's OWN name/category ranks it above tools that merely mention the keyword in
 # prose — the flat-index miss diagnosed in issue #3. Tuned via the discoverability
 # benchmark (genefoundry_router/devtools/discoverability.py).
-_FIELD_BOOST = 4
+_FIELD_BOOST = 12
 
 # call_tool's default FastMCP description ("Call a tool by name…") doesn't convey the
 # namespaced name format or that a host's "Unknown tool" eviction is recoverable, so we
