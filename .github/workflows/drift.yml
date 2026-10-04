@@ -88,7 +88,7 @@ jobs:
           echo "::warning::drift check: some backends were unreachable (availability, not a rug pull)"
       - name: Heartbeat (dead-man's-switch)
         if: ${{ steps.drift.outputs.exit_code == '0' && env.DRIFT_HEARTBEAT_URL != '' }}
-        run: curl -fsS -m 10 --retry 3 -o /dev/null "$DRIFT_HEARTBEAT_URL" || true
+        run: curl -fsS -m 10 --retry 3 -o /dev/null "$DRIFT_HEARTBEAT_URL"
       - name: Fail the run unless the native probe is clean
         if: ${{ steps.drift.outputs.exit_code != '0' }}
         run: exit 1

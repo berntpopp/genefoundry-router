@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -104,7 +105,7 @@ def test_drift_container_is_digest_pinned_non_root_and_has_no_host_mounts() -> N
     image_ref = "ghcr.io/berntpopp/genefoundry-router@sha256:" + "a" * 64
     args = probe.drift_container_argv(image_ref)
 
-    assert args[0:3] == ["docker", "run", "--rm"]
+    assert args[0:2] == ["docker", "run"]
     assert "--pull=never" in args
     assert "--network=npm_default" in args
     assert "--user=10001:10001" in args
@@ -115,6 +116,9 @@ def test_drift_container_is_digest_pinned_non_root_and_has_no_host_mounts() -> N
     assert "--memory=512m" in args
     assert "--memory-swap=512m" in args
     assert "--pids-limit=128" in args
+    assert f"--name={probe.DRIFT_CONTAINER_NAME}" in args
+    assert f"--label={probe.DRIFT_CONTAINER_LABEL_KEY}={probe.DRIFT_CONTAINER_LABEL_VALUE}" in args
+    assert "--rm" not in args
     assert not any(arg in {"-v", "--volume", "-p", "--publish", "--mount"} for arg in args)
     assert args[-2:] == [image_ref, "drift"]
     assert not any("opaque-test-value" in arg for arg in args)
@@ -143,15 +147,38 @@ def test_nonempty_ssh_original_command_is_refused_without_docker(monkeypatch) ->
     ],
 )
 def test_pipeline_selects_exact_image_env_and_exit_code(
-    probe_exit, stdout, stderr, expected
+    probe_exit, stdout, stderr, expected, tmp_path: Path
 ) -> None:
     image_ref = "ghcr.io/berntpopp/genefoundry-router@sha256:" + "a" * 64
     image_id = "sha256:" + "b" * 64
     env_entries = _environment()
     observed: list[tuple[list[str], dict[str, str]]] = []
+    container_exists = False
 
     def fake_run(args, *, env, **kwargs):
+        nonlocal container_exists
         observed.append((args, env))
+        if args[0] == "/usr/bin/docker" and args[2] == "ps":
+            assert "--all" in args
+            assert f"name=^/{probe.DRIFT_CONTAINER_NAME}$" in args
+            if not container_exists:
+                return probe.subprocess.CompletedProcess(args, 0, "", "")
+            return probe.subprocess.CompletedProcess(
+                args,
+                0,
+                f"{probe.DRIFT_CONTAINER_NAME}\t{probe.DRIFT_CONTAINER_LABEL_VALUE}\n",
+                "",
+            )
+        if args[0] == "/usr/bin/docker" and args[2] == "rm":
+            assert args == [
+                "/usr/bin/docker",
+                "--host=unix:///var/run/docker.sock",
+                "rm",
+                "--force",
+                probe.DRIFT_CONTAINER_NAME,
+            ]
+            container_exists = False
+            return probe.subprocess.CompletedProcess(args, 0, "", "")
         if args[0] == "/usr/bin/docker" and "inspect" in args:
             if args[-1] == probe.ROUTER_CONTAINER and args[6] == "{{json .Config.Env}}":
                 return probe.subprocess.CompletedProcess(args, 0, json.dumps(env_entries), "")
@@ -186,18 +213,117 @@ def test_pipeline_selects_exact_image_env_and_exit_code(
         assert env[probe.TOKEN_KEY] == "opaque-test-value"
         assert "HF_TOKEN" not in env
         assert "GF_OAUTH_CLIENT_SECRET" not in env
+        container_exists = True
         return probe.subprocess.CompletedProcess(args, probe_exit, stdout, stderr)
 
-    code, output = probe.execute_probe(run=fake_run)
+    code, output = probe.execute_probe(run=fake_run, lock_path=tmp_path / "drift.lock")
 
     assert code == probe_exit
     assert output == expected
-    run_args = observed[-1][0]
+    assert container_exists is False
+    run_args = next(args for args, _ in observed if len(args) > 2 and args[2] == "run")
     assert "--pull=never" in run_args
     assert "--network=npm_default" in run_args
     assert not any(
         value in {"--env-file", "--mount", "--volume", "--publish"} for value in run_args
     )
+
+
+def test_lock_rejects_overlapping_probe_processes(tmp_path: Path) -> None:
+    lock_path = tmp_path / "drift.lock"
+    first_fd = probe._acquire_probe_lock(lock_path)
+    try:
+        with pytest.raises(probe.ProbeError, match="already running"):
+            probe._acquire_probe_lock(lock_path)
+    finally:
+        os.close(first_fd)
+
+    second_fd = probe._acquire_probe_lock(lock_path)
+    os.close(second_fd)
+
+
+def test_cleanup_failure_is_not_reported_as_a_completed_probe() -> None:
+    def fake_run(args, *, env, **kwargs):
+        if args[2] == "ps":
+            return probe.subprocess.CompletedProcess(
+                args,
+                0,
+                f"{probe.DRIFT_CONTAINER_NAME}\t{probe.DRIFT_CONTAINER_LABEL_VALUE}\n",
+                "",
+            )
+        assert args[2] == "rm"
+        return probe.subprocess.CompletedProcess(args, 1, "", "daemon refused cleanup")
+
+    with pytest.raises(probe.ProbeError, match="cleanup failed"):
+        probe._remove_probe_container(fake_run)
+
+
+def test_existing_unowned_fixed_name_is_not_removed_or_reused(tmp_path: Path) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(args, *, env, **kwargs):
+        calls.append(args)
+        if args[2] == "ps":
+            return probe.subprocess.CompletedProcess(
+                args, 0, f"{probe.DRIFT_CONTAINER_NAME}\tother-label\n", ""
+            )
+        pytest.fail("unowned container collision must stop before inspect/run/remove")
+
+    with pytest.raises(probe.ProbeError, match="name is occupied"):
+        probe.execute_probe(run=fake_run, lock_path=tmp_path / "drift.lock")
+    assert len(calls) == 1
+
+
+def test_timeout_still_removes_only_the_named_probe_container(tmp_path: Path) -> None:
+    image_ref = "ghcr.io/berntpopp/genefoundry-router@sha256:" + "a" * 64
+    image_id = "sha256:" + "b" * 64
+    env_entries = _environment()
+    container_exists = False
+    removed: list[str] = []
+
+    def fake_run(args, *, env, **kwargs):
+        nonlocal container_exists
+        if args[2] == "ps":
+            output = (
+                f"{probe.DRIFT_CONTAINER_NAME}\t{probe.DRIFT_CONTAINER_LABEL_VALUE}\n"
+                if container_exists
+                else ""
+            )
+            return probe.subprocess.CompletedProcess(args, 0, output, "")
+        if args[2] == "rm":
+            assert args[-1] == probe.DRIFT_CONTAINER_NAME
+            removed.append(args[-1])
+            container_exists = False
+            return probe.subprocess.CompletedProcess(args, 0, "", "")
+        if "inspect" in args:
+            if args[-1] == probe.ROUTER_CONTAINER and args[6] == "{{json .Config.Env}}":
+                return probe.subprocess.CompletedProcess(args, 0, json.dumps(env_entries), "")
+            if args[-1] == probe.ROUTER_CONTAINER:
+                output = "\t".join(
+                    [image_ref, image_id, "10001:10001", probe.ROUTER_SOURCE, "a" * 40]
+                )
+            else:
+                output = "\t".join(
+                    [
+                        image_id,
+                        json.dumps([image_ref]),
+                        "10001:10001",
+                        probe.ROUTER_SOURCE,
+                        "a" * 40,
+                        "linux",
+                        "amd64",
+                    ]
+                )
+            return probe.subprocess.CompletedProcess(args, 0, output, "")
+        assert args[2] == "run"
+        container_exists = True
+        raise probe.subprocess.TimeoutExpired(args, probe.PROBE_TIMEOUT_SECONDS)
+
+    with pytest.raises(probe.subprocess.TimeoutExpired):
+        probe.execute_probe(run=fake_run, lock_path=tmp_path / "drift.lock")
+
+    assert removed == [probe.DRIFT_CONTAINER_NAME]
+    assert container_exists is False
 
 
 def test_bounded_runner_stops_when_output_limit_is_exceeded() -> None:

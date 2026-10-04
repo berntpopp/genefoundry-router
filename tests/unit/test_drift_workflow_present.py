@@ -64,6 +64,14 @@ def test_nonclean_probe_fails_without_success_heartbeat():
     assert "steps.drift.outputs.exit_code != '0'" in text
 
 
+def test_heartbeat_delivery_failure_fails_the_step():
+    text = WF.read_text(encoding="utf-8")
+    heartbeat = text.split("- name: Heartbeat (dead-man's-switch)", 1)[1]
+    heartbeat = heartbeat.split("- name: Fail the run", 1)[0]
+    assert 'curl -fsS -m 10 --retry 3 -o /dev/null "$DRIFT_HEARTBEAT_URL"' in heartbeat
+    assert "|| true" not in heartbeat
+
+
 def test_host_key_file_is_a_single_pinned_ed25519_entry():
     line = Path("ci/drift_known_hosts").read_text(encoding="utf-8").strip()
     fields = line.split()

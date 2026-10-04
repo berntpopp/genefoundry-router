@@ -39,10 +39,12 @@ It validates those URLs against the registry's reviewed public endpoints, then r
 has no mounts or published ports, runs as uid 10001 with a read-only rootfs, dropped
 capabilities, `no-new-privileges`, and CPU, memory, PID, output, and time limits. The
 workflow updates the existing drift issue on native exit 1; native exit 2 and SSH,
-preflight, or timeout failures fail the job. Only native exit 0 sends the dead-man's-switch
-heartbeat, so an unavailable probe cannot report a healthy monitor. Installing the forced
-command key and configuring the `drift-probe` environment are host/operator prerequisites;
-the workflow must remain disabled until those controls are in place.
+preflight, or timeout failures fail the job. A host lock prevents overlapping runs. The
+forced command removes only its fixed, labeled probe container after normal exit or timeout
+and fails closed if cleanup cannot be verified. Only native exit 0 sends the
+dead-man's-switch heartbeat; failed heartbeat delivery fails the job. Installing the
+forced-command key and configuring the `drift-probe` environment are host/operator
+prerequisites; the workflow must remain disabled until those controls are in place.
 
 Self-check the rendered stack against the controller's own projection before deploying:
 

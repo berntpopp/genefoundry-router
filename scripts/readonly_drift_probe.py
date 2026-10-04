@@ -8,16 +8,19 @@ currently running router container and never written to a file or printed.
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import re
 import selectors
 import signal
+import stat
 import subprocess
 import sys
 import time
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
+from pathlib import Path
 from typing import IO
 
 ROUTER_CONTAINER = "genefoundry_router"
@@ -25,10 +28,15 @@ ROUTER_NETWORK = "npm_default"
 ROUTER_IMAGE = "ghcr.io/berntpopp/genefoundry-router"
 ROUTER_SOURCE = "https://github.com/berntpopp/genefoundry-router"
 ROUTER_USER = "10001:10001"
+DRIFT_CONTAINER_NAME = "genefoundry-private-drift-probe"
+DRIFT_CONTAINER_LABEL_KEY = "org.genefoundry.private-drift-probe"
+DRIFT_CONTAINER_LABEL_VALUE = "router-monitor-v1"
+PROBE_LOCK_PATH = Path("/home/bernt/.genefoundry-private-drift-probe.lock")
 MAX_ENV_BYTES = 128 * 1024
 MAX_OUTPUT_BYTES = 64 * 1024
 PROBE_TIMEOUT_SECONDS = 780
 INSPECT_TIMEOUT_SECONDS = 10
+CLEANUP_TIMEOUT_SECONDS = 10
 
 EXPECTED_URLS: dict[str, str] = {
     "GF_GNOMAD_URL": "https://gnomad-link.genefoundry.org/mcp",
@@ -140,8 +148,9 @@ def drift_container_argv(image_ref: str) -> list[str]:
     args = [
         "docker",
         "run",
-        "--rm",
         "--pull=never",
+        f"--name={DRIFT_CONTAINER_NAME}",
+        f"--label={DRIFT_CONTAINER_LABEL_KEY}={DRIFT_CONTAINER_LABEL_VALUE}",
         f"--network={ROUTER_NETWORK}",
         f"--user={ROUTER_USER}",
         "--read-only",
@@ -180,6 +189,84 @@ def _docker_inspect(run: Run, target: str, template: str, *, kind: str) -> str:
     if completed.returncode != 0:
         raise ProbeError("router image inspection failed")
     return completed.stdout.rstrip("\n")
+
+
+def _acquire_probe_lock(lock_path: Path = PROBE_LOCK_PATH) -> int:
+    """Serialize runs and reject symlink, non-file, or foreign-owned lock paths."""
+    flags = os.O_CREAT | os.O_RDWR | os.O_CLOEXEC | os.O_NOFOLLOW
+    try:
+        lock_fd = os.open(lock_path, flags, 0o600)
+    except OSError as exc:
+        raise ProbeError("probe lock is unavailable") from exc
+    try:
+        metadata = os.fstat(lock_fd)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != os.geteuid()
+            or metadata.st_nlink != 1
+        ):
+            raise ProbeError("probe lock path is unsafe")
+        os.fchmod(lock_fd, 0o600)
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise ProbeError("a private drift probe is already running") from exc
+        return lock_fd
+    except BaseException:
+        os.close(lock_fd)
+        raise
+
+
+def _probe_container_exists(run: Run) -> bool:
+    """Find only the exact dedicated name and require its ownership label."""
+    template = f'{{{{.Names}}}}\t{{{{.Label "{DRIFT_CONTAINER_LABEL_KEY}"}}}}'
+    argv = [
+        "/usr/bin/docker",
+        "--host=unix:///var/run/docker.sock",
+        "ps",
+        "--all",
+        "--filter",
+        f"name=^/{DRIFT_CONTAINER_NAME}$",
+        "--format",
+        template,
+    ]
+    completed = _run_bounded(
+        run,
+        argv,
+        env=_host_environment(),
+        timeout=INSPECT_TIMEOUT_SECONDS,
+        output_limit=4096,
+    )
+    if completed.returncode != 0:
+        raise ProbeError("probe container ownership check failed")
+    rows = [line.split("\t") for line in completed.stdout.splitlines() if line]
+    if not rows:
+        return False
+    if rows != [[DRIFT_CONTAINER_NAME, DRIFT_CONTAINER_LABEL_VALUE]]:
+        raise ProbeError("probe container name is occupied by an unowned container")
+    return True
+
+
+def _remove_probe_container(run: Run) -> None:
+    """Remove only the dedicated labeled probe, and verify daemon cleanup completed."""
+    if not _probe_container_exists(run):
+        return
+    argv = [
+        "/usr/bin/docker",
+        "--host=unix:///var/run/docker.sock",
+        "rm",
+        "--force",
+        DRIFT_CONTAINER_NAME,
+    ]
+    completed = _run_bounded(
+        run,
+        argv,
+        env=_host_environment(),
+        timeout=CLEANUP_TIMEOUT_SECONDS,
+        output_limit=4096,
+    )
+    if completed.returncode != 0 or _probe_container_exists(run):
+        raise ProbeError("probe container cleanup failed")
 
 
 def _terminate_process(process: subprocess.Popen[bytes]) -> None:
@@ -348,23 +435,36 @@ def _safe_output(stdout: str, stderr: str, token: str) -> str:
     return "\n".join(safe) or "drift probe completed; details omitted"
 
 
-def execute_probe(run: Run = subprocess.run) -> tuple[int, str]:
+def execute_probe(
+    run: Run = subprocess.run, *, lock_path: Path = PROBE_LOCK_PATH
+) -> tuple[int, str]:
     """Inspect current runtime, then execute its exact cached image with bounded resources."""
-    image_ref = _inspect_current_router(run)
-    environment = _inspect_runtime_environment(run)
-    completed = _run_bounded(
-        run,
-        [
-            "/usr/bin/docker",
-            "--host=unix:///var/run/docker.sock",
-            *drift_container_argv(image_ref)[1:],
-        ],
-        env={**_host_environment(), **environment, "NO_COLOR": "1", "TERM": "dumb"},
-        timeout=PROBE_TIMEOUT_SECONDS,
-        output_limit=MAX_OUTPUT_BYTES,
-    )
-    output = _safe_output(completed.stdout, completed.stderr, environment[TOKEN_KEY])
-    return completed.returncode, output
+    lock_fd = _acquire_probe_lock(lock_path)
+    cleanup_required = False
+    try:
+        _remove_probe_container(run)
+        image_ref = _inspect_current_router(run)
+        environment = _inspect_runtime_environment(run)
+        cleanup_required = True
+        completed = _run_bounded(
+            run,
+            [
+                "/usr/bin/docker",
+                "--host=unix:///var/run/docker.sock",
+                *drift_container_argv(image_ref)[1:],
+            ],
+            env={**_host_environment(), **environment, "NO_COLOR": "1", "TERM": "dumb"},
+            timeout=PROBE_TIMEOUT_SECONDS,
+            output_limit=MAX_OUTPUT_BYTES,
+        )
+        output = _safe_output(completed.stdout, completed.stderr, environment[TOKEN_KEY])
+        return completed.returncode, output
+    finally:
+        try:
+            if cleanup_required:
+                _remove_probe_container(run)
+        finally:
+            os.close(lock_fd)
 
 
 def main(run: Run = subprocess.run, argv: Sequence[str] | None = None) -> int:
