@@ -264,6 +264,19 @@ class RouterSettings(BaseSettings):
             )
         return self
 
+    @model_validator(mode="after")
+    def _jwt_audience_must_match_the_advertised_resource(self) -> RouterSettings:
+        """A mismatch makes the router mint tokens it then rejects."""
+        if self.GF_AUTH_MODE == "oauth" and self.GF_PUBLIC_BASE_URL and self.GF_JWT_AUDIENCE:
+            expected = f"{self.GF_PUBLIC_BASE_URL.rstrip('/')}/{self.GF_MCP_PATH.strip('/')}"
+            if self.GF_JWT_AUDIENCE.rstrip("/") != expected:
+                raise ValueError(
+                    f"GF_JWT_AUDIENCE ({self.GF_JWT_AUDIENCE}) must equal "
+                    f"GF_PUBLIC_BASE_URL + GF_MCP_PATH ({expected}) — otherwise the router "
+                    "advertises one resource identifier and validates another."
+                )
+        return self
+
 
 def load_registry(path: str | Path, environ: Mapping[str, str]) -> list[BackendDef]:
     """Parse servers.yaml, merge ``defaults`` into each server, and resolve URLs.

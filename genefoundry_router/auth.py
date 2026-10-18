@@ -137,33 +137,6 @@ def _build_jwt(settings: RouterSettings) -> Any:
     )
 
 
-def _install_resource_tolerance() -> None:
-    """Collapse a duplicated trailing path segment in the RFC 8707 ``resource``.
-
-    Because ``resource_base_url`` is GF_JWT_AUDIENCE (already ``…/mcp``) and FastMCP's
-    protected-resource metadata appends the mount path a second time, the PRM can advertise
-    ``…/mcp/mcp``; spec-compliant clients then echo that doubled URI back in their
-    ``resource`` param. The strict OAuthProxy check would raise
-    ``AuthorizeError(error="invalid_target")`` -> the MCP SDK's error enum rejects it ->
-    pydantic ValidationError -> the authorize handler 500s. Collapse ``/mcp/mcp`` -> ``/mcp``
-    in the normalizer so client and server resource URLs compare equal. Idempotent.
-    """
-    import re
-
-    from fastmcp.server.auth.oauth_proxy import proxy as _p
-
-    if getattr(_p, "_gf_resource_tolerant", False):
-        return
-    _orig = _p._normalize_resource_url
-
-    def _norm(url: str) -> str:
-        return re.sub(r"(/[^/]+)\1(?=$|/)", r"\1", _orig(url))
-
-    _p._normalize_resource_url = _norm
-    # Marker attribute for idempotency; dynamic, so it isn't in fastmcp's stubs.
-    _p._gf_resource_tolerant = True  # type: ignore[attr-defined]
-
-
 def _collapse_duplicate_slashes(url: str) -> str:
     """``https://host//token`` -> ``https://host/token``.
 
@@ -231,7 +204,6 @@ def _install_client_assertion_audience_fix() -> None:
 def _build_oauth(settings: RouterSettings, *, refresh_ledger: RefreshLedger | None = None) -> Any:
     # R1.5: OAuthProxy.token_verifier is REQUIRED — so the JWT verifier inputs are
     # mandatory in oauth mode too (no None verifier). base_url MUST be the public URL.
-    _install_resource_tolerance()
     _install_client_assertion_audience_fix()
     required = {
         "GF_OAUTH_CLIENT_ID": settings.GF_OAUTH_CLIENT_ID,

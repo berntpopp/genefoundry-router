@@ -1,3 +1,5 @@
+# mypy: disable-error-code="call-arg,arg-type"
+
 import pytest
 from pydantic import ValidationError
 
@@ -113,3 +115,46 @@ def test_negative_trusted_proxy_hops_rejected(monkeypatch):
     monkeypatch.setenv("GF_TRUSTED_PROXY_HOPS", "-1")
     with pytest.raises(ValidationError):
         RouterSettings(_env_file=None)
+
+
+def test_oauth_jwt_audience_must_match_advertised_resource() -> None:
+    with pytest.raises(ValidationError, match="GF_JWT_AUDIENCE"):
+        RouterSettings(
+            _env_file=None,
+            GF_AUTH_MODE="oauth",
+            GF_PUBLIC_BASE_URL="https://genefoundry.org",
+            GF_MCP_PATH="/mcp",
+            GF_JWT_AUDIENCE="https://genefoundry.org/wrong",
+        )
+
+
+@pytest.mark.parametrize(
+    ("public_base", "mcp_path", "audience"),
+    [
+        ("https://genefoundry.org/", "/mcp", "https://genefoundry.org/mcp/"),
+        ("https://genefoundry.org", "mcp/", "https://genefoundry.org/mcp"),
+        ("https://genefoundry.org/sub", "/mcp", "https://genefoundry.org/sub/mcp"),
+    ],
+)
+def test_oauth_jwt_audience_slash_normalization_succeeds(
+    public_base: str, mcp_path: str, audience: str
+) -> None:
+    settings = RouterSettings(
+        _env_file=None,
+        GF_AUTH_MODE="oauth",
+        GF_PUBLIC_BASE_URL=public_base,
+        GF_MCP_PATH=mcp_path,
+        GF_JWT_AUDIENCE=audience,
+    )
+    assert audience == settings.GF_JWT_AUDIENCE
+
+
+def test_jwt_mode_allows_differing_audience_and_public_base_url() -> None:
+    settings = RouterSettings(
+        _env_file=None,
+        GF_AUTH_MODE="jwt",
+        GF_PUBLIC_BASE_URL="https://genefoundry.org",
+        GF_MCP_PATH="/mcp",
+        GF_JWT_AUDIENCE="https://idp.example.com/api",
+    )
+    assert settings.GF_JWT_AUDIENCE == "https://idp.example.com/api"
