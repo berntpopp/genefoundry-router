@@ -7,7 +7,19 @@ every backend — a token-passthrough / confused-deputy violation (MCP spec MUST
 The router disables forwarding on every proxy client it builds.
 """
 
-from genefoundry_router.composition import build_proxy, make_proxy_client
+from unittest.mock import AsyncMock, MagicMock
+
+import httpx
+import pytest
+
+from genefoundry_router.composition import (
+    _BorrowedTransport,
+    build_proxy,
+    close_shared_upstream_transport,
+    default_httpx_client_factory,
+    get_shared_upstream_transport,
+    make_proxy_client,
+)
 from genefoundry_router.registry import BackendDef
 
 
@@ -39,3 +51,36 @@ def test_build_proxy_does_not_forward_caller_headers() -> None:
     # The per-request client the proxy hands out must not forward incoming headers.
     client = proxy.client_factory()
     assert client.transport.forward_incoming_headers is False
+
+
+@pytest.mark.asyncio
+async def test_borrowed_transport_aclose_does_not_close_pool() -> None:
+    mock_pool = MagicMock(spec=httpx.AsyncHTTPTransport)
+    mock_pool.aclose = AsyncMock()
+
+    borrowed = _BorrowedTransport(mock_pool)
+    await borrowed.aclose()
+
+    # aclose on borrowed transport is a no-op; pool is not closed
+    mock_pool.aclose.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_close_shared_upstream_transport_closes_pool() -> None:
+    pool = get_shared_upstream_transport()
+    assert pool is not None
+
+    await close_shared_upstream_transport()
+    # Next get creates a fresh pool
+    pool2 = get_shared_upstream_transport()
+    assert pool2 is not pool
+
+    await close_shared_upstream_transport()
+
+
+def test_default_httpx_client_factory_sets_redirects_false() -> None:
+    factory = default_httpx_client_factory()
+    # FastMCP supplies follow_redirects=True; factory must override to False without TypeError
+    client = factory(headers={}, follow_redirects=True)
+    assert client.follow_redirects is False
+    assert client.trust_env is False

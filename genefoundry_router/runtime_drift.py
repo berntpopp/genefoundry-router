@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import structlog
+from fastmcp.server.transforms import GetToolNext, Transform, VersionSpec
 from fastmcp.tools import Tool
 
 from genefoundry_router.config import RouterSettings
@@ -30,7 +31,7 @@ DriftPhase = Literal["startup", "poll"]
 log = structlog.get_logger(__name__)
 
 
-class RuntimeDriftGuard:
+class RuntimeDriftGuard(Transform):
     """Compare each harvested catalog with the reviewed definition pin."""
 
     def __init__(self, pinned: dict[str, str], mode: DriftMode) -> None:
@@ -39,7 +40,50 @@ class RuntimeDriftGuard:
         self.last_report = DriftReport(added=[], removed=[], changed=[])
         self.last_check_timestamp = 0.0
         self.degraded = False
-        self.quarantined: frozenset[str] = frozenset()
+        self.quarantined: set[str] = set()
+
+    async def list_tools(self, tools: Sequence[Tool]) -> Sequence[Tool]:
+        """Filter out tools currently quarantined from public listing."""
+        return [tool for tool in tools if tool.name not in self.quarantined]
+
+    async def get_tool(
+        self,
+        name: str,
+        call_next: GetToolNext,
+        *,
+        version: VersionSpec | None = None,
+    ) -> Tool | None:
+        """Reject quarantined tools immediately with zero upstream RPCs."""
+        if name in self.quarantined:
+            return None
+        tool = await call_next(name, version=version)
+        return None if name in self.quarantined else tool
+
+    def check(
+        self,
+        name_or_current: str | dict[str, str],
+        digest: str | None = None,
+        *,
+        phase: DriftPhase = "poll",
+        unreachable: set[str] | None = None,
+    ) -> Any:
+        """Check for drift or check a single tool.
+
+        When called with (name, digest): if self.pinned.get(name) == digest,
+        self.quarantined.discard(name).
+        When called with (current, ...): delegates to evaluate.
+        """
+        if isinstance(name_or_current, str):
+            name = name_or_current
+            if self.pinned.get(name) == digest:
+                self.quarantined.discard(name)
+                return True
+            return False
+        return self.evaluate(
+            name_or_current,
+            phase=phase,
+            unreachable=unreachable or set(),
+        )
 
     def evaluate(
         self,
@@ -52,7 +96,7 @@ class RuntimeDriftGuard:
         if self.mode == "off":
             self.last_report = DriftReport(added=[], removed=[], changed=[])
             self.degraded = False
-            self.quarantined = frozenset()
+            self.quarantined.clear()
             set_drift_metrics(changed=0, added=0, removed=0, timestamp=self.last_check_timestamp)
             return self.last_report
 
@@ -63,12 +107,24 @@ class RuntimeDriftGuard:
                 if name.split("_", 1)[0] not in unreachable
             }
 
-        report = detect_drift(reachable(current), reachable(self.pinned))
+        reachable_current = reachable(current)
+
+        # Recover tools whose current digest matches pinned (only if backend was reachable)
+        for name, digest in reachable_current.items():
+            if self.pinned.get(name) == digest:
+                self.quarantined.discard(name)
+
+        report = detect_drift(reachable_current, reachable(self.pinned))
         self.last_report = report
-        self.degraded = report.has_drift
-        self.quarantined = frozenset(report.added) | (
-            frozenset(report.changed) if phase == "poll" else frozenset()
-        )
+
+        for name in report.added:
+            self.quarantined.add(name)
+        if phase == "poll":
+            for name in report.changed:
+                self.quarantined.add(name)
+
+        self.degraded = report.has_drift or bool(self.quarantined)
+
         self._log_report(report, phase)
         set_drift_metrics(
             changed=len(report.changed),
