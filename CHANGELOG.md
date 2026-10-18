@@ -2,6 +2,12 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.3] - 2026-10-18
+
+### Changed
+
+- Bump `mcp` from `1.29.0` to `1.30.0` (#241).
+
 ## [0.10.2] - 2026-10-18
 
 ### Fixed
