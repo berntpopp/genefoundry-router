@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 _STABLE_COMPONENT = r"(?:0|[1-9][0-9]{0,63})"
@@ -25,6 +27,10 @@ RELEASE_COMMAND_TIMEOUT_SECONDS = 60
 
 class SourceReleaseError(ValueError):
     """A source identity cannot safely authorize a container publication."""
+
+
+class ReleaseConfigError(SourceReleaseError):
+    """A release configuration or package metadata error."""
 
 
 @dataclass(frozen=True)
@@ -185,10 +191,40 @@ def _resolve_remote_tag(tag: ReleaseTag, local: _LocalTagIdentity, runner: Comma
     return remote_direct
 
 
-def _read_package_version(runner: CommandRunner) -> str:
-    version = _require_success(
-        runner(("uv", "version", "--short")), "read the package version with uv"
-    )
+def _read_package_version(
+    runner: CommandRunner | Path = run_command,
+    root: Path | None = None,
+) -> str:
+    if isinstance(runner, Path):
+        base_root = runner
+        cmd_runner = run_command
+    else:
+        cmd_runner = runner
+        base_root = root if root is not None else Path(".")
+
+    pyproject_file = base_root / "pyproject.toml"
+    package_json_file = base_root / "package.json"
+
+    if not pyproject_file.is_file() and package_json_file.is_file():
+        try:
+            data = json.loads(package_json_file.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            raise ReleaseConfigError("unable to read package.json") from exc
+        if not isinstance(data, dict):
+            raise ReleaseConfigError("package.json must be a JSON object")
+        version_value = data.get("version")
+        if not isinstance(version_value, str) or not version_value.strip():
+            raise ReleaseConfigError("package.json must declare a non-empty version")
+        version = version_value.strip()
+    elif pyproject_file.is_file():
+        version = _require_success(
+            cmd_runner(("uv", "version", "--short")), "read the package version with uv"
+        )
+    else:
+        raise SourceReleaseError(
+            "neither pyproject.toml nor package.json found to determine package version"
+        )
+
     if re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", version) is None:
         raise SourceReleaseError("package version must be canonical stable SemVer")
     return version
@@ -293,6 +329,7 @@ def validate_source_release(
     event_sha: str,
     changelog_text: str,
     runner: CommandRunner = run_command,
+    root: Path | None = None,
 ) -> SourceRelease:
     """Validate a tag checkout and changelog text read from that exact checkout."""
     tag = resolve_event_tag(event_name, event_ref)
@@ -308,7 +345,7 @@ def validate_source_release(
     remote_direct_revision = _resolve_remote_tag(tag, local_tag, runner)
     _require_checkout_head(resolved_revision, runner)
 
-    package_version = _read_package_version(runner)
+    package_version = _read_package_version(runner, root=root)
     if package_version != tag.version:
         raise SourceReleaseError(
             f"tag version {tag.version} does not match package version {package_version}"

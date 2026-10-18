@@ -199,7 +199,7 @@ class ServiceConfig(StrictModel):
     name: SafeIdentifier
     container_port: Annotated[StrictInt, Field(ge=1, le=65535)] = 8000
     health_path: LocalHttpPath = "/health"
-    mcp_path: LocalHttpPath = "/mcp"
+    mcp_path: LocalHttpPath | None = "/mcp"
     startup_timeout_seconds: Annotated[StrictInt, Field(ge=1, le=3600)] = 90
     networks: Annotated[tuple[SafeIdentifier, ...], Field(min_length=1, max_length=8)] = (
         "default",

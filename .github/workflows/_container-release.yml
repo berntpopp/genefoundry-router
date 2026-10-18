@@ -187,7 +187,14 @@ jobs:
           oras="$RUNNER_TEMP/oras"
           tag="${EVENT_REF#refs/tags/}"
           version="${tag#v}"
-          test "$(uv version --short)" = "$version"
+          if [ -f pyproject.toml ]; then
+            test "$(uv version --short)" = "$version"
+          elif [ -f package.json ]; then
+            test "$(jq -er .version package.json)" = "$version"
+          else
+            echo "neither pyproject.toml nor package.json found" >&2
+            exit 1
+          fi
           source_sha="$EVENT_SHA"
           build_date="$(git show -s --format=%cI "$source_sha")"
           source_alias="sha-$source_sha"
@@ -482,7 +489,7 @@ jobs:
           # wrong endpoint for any backend that serves a different path (stringdb declares
           # /api/health).
           health_path="$(jq -er '.service.health_path' container-release.json)"
-          mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
+          mcp_path="$(jq -r '.service.mcp_path // empty' container-release.json)"
           curl -fsS -H 'Host: localhost' \
             "http://127.0.0.1:18000$health_path" > "$RUNNER_TEMP/release-gate-health.json"
           contract="$(jq -er '.definitions.contract' container-release.json)"
@@ -504,13 +511,15 @@ jobs:
             echo "unsupported data identity contract state" >&2
             exit 1
           fi
-          curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \
-            -H 'Host: localhost' -H 'Content-Type: application/json' \
-            -H 'Accept: application/json, text/event-stream' \
-            --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-gate","version":"1"}}}' \
-            "http://127.0.0.1:18000$mcp_path"
-          grep -Fq '"result"' "$RUNNER_TEMP/mcp-init.json"
-          grep -Fq '"serverInfo"' "$RUNNER_TEMP/mcp-init.json"
+          if [ -n "$mcp_path" ]; then
+            curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \
+              -H 'Host: localhost' -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
+              --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-gate","version":"1"}}}' \
+              "http://127.0.0.1:18000$mcp_path"
+            grep -Fq '"result"' "$RUNNER_TEMP/mcp-init.json"
+            grep -Fq '"serverInfo"' "$RUNNER_TEMP/mcp-init.json"
+          fi
           # The hardening invariants are asserted against the container Compose started, which
           # is the one that just served /health and MCP initialize.
           container_id="$(docker compose --env-file "$SMOKE_EFFECTIVE_ENV" \
@@ -838,7 +847,7 @@ jobs:
           service="$(jq -er '.service.name' container-release.json)"
           timeout="$(jq -er '.service.startup_timeout_seconds' container-release.json)"
           health_path="$(jq -er '.service.health_path' container-release.json)"
-          mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
+          mcp_path="$(jq -r '.service.mcp_path // empty' container-release.json)"
           base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
           compose_args=()
           while IFS= read -r file; do
@@ -894,28 +903,32 @@ jobs:
             curl -fsS -H 'Host: localhost' \
               "http://127.0.0.1:${host_port}${health_path}" \
               > "$RUNNER_TEMP/capture/${label}-health.json"
-            curl -fsS -D "$RUNNER_TEMP/capture/${label}.headers" \
-              -o "$RUNNER_TEMP/capture/${label}-initialize.json" \
-              -H 'Host: localhost' -H 'Content-Type: application/json' \
-              -H 'Accept: application/json, text/event-stream' \
-              --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-capture","version":"1"}}}' \
-              "http://127.0.0.1:${host_port}${mcp_path}"
-            grep -Fq '"serverInfo"' "$RUNNER_TEMP/capture/${label}-initialize.json"
-            session="$(awk 'tolower($1) == "mcp-session-id:" {gsub("\\r", "", $2); print $2}' "$RUNNER_TEMP/capture/${label}.headers")"
-            session_args=()
-            if [ -n "$session" ]; then
-              session_args=(-H "Mcp-Session-Id: $session")
+            if [ -n "$mcp_path" ]; then
+              curl -fsS -D "$RUNNER_TEMP/capture/${label}.headers" \
+                -o "$RUNNER_TEMP/capture/${label}-initialize.json" \
+                -H 'Host: localhost' -H 'Content-Type: application/json' \
+                -H 'Accept: application/json, text/event-stream' \
+                --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"release-capture","version":"1"}}}' \
+                "http://127.0.0.1:${host_port}${mcp_path}"
+              grep -Fq '"serverInfo"' "$RUNNER_TEMP/capture/${label}-initialize.json"
+              session="$(awk 'tolower($1) == "mcp-session-id:" {gsub("\\r", "", $2); print $2}' "$RUNNER_TEMP/capture/${label}.headers")"
+              session_args=()
+              if [ -n "$session" ]; then
+                session_args=(-H "Mcp-Session-Id: $session")
+              fi
+              curl -fsS -o "$RUNNER_TEMP/capture/${label}-tools-response.json" \
+                -H 'Host: localhost' -H 'Content-Type: application/json' \
+                -H 'Accept: application/json, text/event-stream' \
+                "${session_args[@]}" \
+                --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+                "http://127.0.0.1:${host_port}${mcp_path}"
+              jq -er '.result.tools | type == "array" and length > 0' \
+                "$RUNNER_TEMP/capture/${label}-tools-response.json" >/dev/null
+              jq -c '.result.tools' "$RUNNER_TEMP/capture/${label}-tools-response.json" \
+                > "$tools_json"
+            else
+              echo "[]" > "$tools_json"
             fi
-            curl -fsS -o "$RUNNER_TEMP/capture/${label}-tools-response.json" \
-              -H 'Host: localhost' -H 'Content-Type: application/json' \
-              -H 'Accept: application/json, text/event-stream' \
-              "${session_args[@]}" \
-              --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-              "http://127.0.0.1:${host_port}${mcp_path}"
-            jq -er '.result.tools | type == "array" and length > 0' \
-              "$RUNNER_TEMP/capture/${label}-tools-response.json" >/dev/null
-            jq -c '.result.tools' "$RUNNER_TEMP/capture/${label}-tools-response.json" \
-              > "$tools_json"
             jq -n --arg label "$label" --arg image "$IMAGE" --arg digest "$PUBLISHED_DIGEST" \
               --argjson port "$host_port" \
               '{runtime:"published-ghcr-digest", capture:$label, image:$image, digest:$digest, port:$port}' \

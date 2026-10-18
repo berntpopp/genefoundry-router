@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 REUSABLE = ROOT / ".github/workflows/_container-release.yml"
 CALLER = ROOT / ".github/workflows/container-release.yml"
 TRIVY_CACHE_DIR = "${{ github.workspace }}/.cache/trivy"
+
 
 ACTION_PINS = {
     "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
@@ -47,7 +48,7 @@ def _load(path: Path) -> dict[str, Any]:
 
 
 def _on(document: dict[str, Any]) -> dict[str, Any]:
-    trigger = document.get("on", document.get(True))
+    trigger = document.get("on", cast(dict[Any, Any], document).get(True))
     assert isinstance(trigger, dict)
     return trigger
 
@@ -253,10 +254,11 @@ def _critical_boundary_slice(boundary: int, health: str, output: str) -> tuple[s
     conditional = _adoption_conditional(boundary, health, output)
     if boundary == 0:
         return (
-            "mcp_path=\"$(jq -er '.service.mcp_path' container-release.json)\"",
+            "mcp_path=\"$(jq -r '.service.mcp_path // empty' container-release.json)\"",
             *RUNTIME_IDENTITY_PRODUCERS[boundary],
             *_adoption_assignments(),
             *conditional,
+            'if [ -n "$mcp_path" ]; then',
             'curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-init.json" \\',
         )
     return (
@@ -1384,3 +1386,25 @@ def test_opting_out_of_the_deployed_overlay_gate_requires_a_recorded_reason() ->
     assert waiver["if"] == "${{ !inputs.validate_deployed_overlay }}"
     assert waiver["env"] == {"WAIVER": "${{ inputs.deployed_overlay_waiver }}"}
     assert 'test -n "${WAIVER//[[:space:]]/}"' in waiver["run"]
+
+
+def test_prepare_supports_package_json_version_when_pyproject_absent() -> None:
+    workflow = _load(REUSABLE)
+    prepare = _run_text(workflow["jobs"]["prepare"])
+
+    assert "if [ -f pyproject.toml ]; then" in prepare
+    assert 'test "$(uv version --short)" = "$version"' in prepare
+    assert "elif [ -f package.json ]; then" in prepare
+    assert 'test "$(jq -er .version package.json)" = "$version"' in prepare
+
+
+def test_release_gates_support_optional_mcp_path() -> None:
+    workflow = _load(REUSABLE)
+    build_gate = _run_text(workflow["jobs"]["build-gate"])
+    capture = _run_text(workflow["jobs"]["capture"])
+
+    assert "mcp_path=\"$(jq -r '.service.mcp_path // empty' container-release.json)\"" in build_gate
+    assert "mcp_path=\"$(jq -r '.service.mcp_path // empty' container-release.json)\"" in capture
+    assert 'if [ -n "$mcp_path" ]; then' in build_gate
+    assert 'if [ -n "$mcp_path" ]; then' in capture
+    assert 'echo "[]" > "$tools_json"' in capture
