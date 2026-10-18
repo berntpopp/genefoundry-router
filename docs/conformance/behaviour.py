@@ -655,8 +655,18 @@ def check_total_is_not_the_page_size(
     )
 
 
+def _substantive_payload(res: dict[str, Any], env: dict[str, Any]) -> Any:
+    if env:
+        return {k: v for k, v in env.items() if k not in ("_meta", "meta", "response_mode")}
+    return res
+
+
 def check_response_modes(
-    rep: Report, probe: Probe, tool: dict[str, Any], base: dict[str, Any], control: list[Any]
+    rep: Report,
+    probe: Probe,
+    tool: dict[str, Any],
+    base: dict[str, Any],
+    control: list[Any] | None = None,
 ) -> None:
     """`response_mode` narrows a payload; it MUST NOT destroy it.
 
@@ -666,23 +676,54 @@ def check_response_modes(
     response_mode=minimal discards the entire gene list and still returns success:true.
     """
     name = tool["name"]
-    modes = enum_of(properties(tool).get("response_mode") or {}) or []
+    rm_prop = properties(tool).get("response_mode")
+    if rm_prop is None:
+        return
+    modes = enum_of(rm_prop) or ["compact", "full"]
+    mode_payloads: dict[str, tuple[dict[str, Any], dict[str, Any]]] = {}
     for mode in modes:
         label = f"{name}: response_mode={mode!r} preserves the payload"
         try:
             result = probe.call(name, {**base, "response_mode": mode})
-        except ProtocolError:
+        except ProtocolError as exc:
+            rep.check(
+                f"{name}: response_mode={mode!r} is accepted",
+                False,
+                f"JSON-RPC {exc.error.get('code')}",
+            )
             continue
         env = envelope(result)
         if is_error_result(result, env):
             _record_error_frame(rep, name, result, env)
+            code = env.get("error_code")
+            if code in INCONCLUSIVE:
+                rep.skip(f"{name}: response_mode={mode!r}", f"upstream inconclusive ({code})")
+            else:
+                rep.check(
+                    f"{name}: response_mode={mode!r} is accepted",
+                    False,
+                    f"advertised response_mode={mode!r} was rejected with {code!r}",
+                )
             continue
+        mode_payloads[mode] = (result, env)
         found = rows(env)
+        if control is not None:
+            rep.check(
+                label,
+                bool(found),
+                f"the default call returned {len(control)} records; response_mode={mode!r} returned "
+                f"{0 if found is None else len(found)} with success={env.get('success')!r}",
+            )
+
+    if "compact" in mode_payloads and "full" in mode_payloads:
+        c_res, c_env = mode_payloads["compact"]
+        f_res, f_env = mode_payloads["full"]
+        is_identical = _substantive_payload(c_res, c_env) == _substantive_payload(f_res, f_env)
         rep.check(
-            label,
-            bool(found),
-            f"the default call returned {len(control)} records; response_mode={mode!r} returned "
-            f"{0 if found is None else len(found)} with success={env.get('success')!r}",
+            f"{name}: response_mode='compact' and 'full' differ",
+            not is_identical,
+            f"{name} returned identical payloads for response_mode='compact' and 'full'; "
+            "response_mode is ignored",
         )
 
 
@@ -716,6 +757,10 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
         check_argument_error(rep, probe, tool)
 
         if any(marker in name for marker in META_TOOLS):
+            props = properties(tool)
+            required = set((tool.get("inputSchema") or {}).get("required") or [])
+            if "response_mode" in props and required <= {"response_mode"}:
+                check_response_modes(rep, probe, tool, {})
             continue
 
         base = valid_args(tool)

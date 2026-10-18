@@ -1,23 +1,11 @@
 """The OAuthProxy resource URI must be GF_JWT_AUDIENCE and survive the LIVE mount.
 
-This reverts #71 and guards against its return. #71 set ``resource_base_url`` to the ROOT
-origin on the theory that FastMCP forms ``_resource_url = resource_base_url + set_mcp_path``
-and that the mount path is ``/mcp``. That holds only when you call ``set_mcp_path("/mcp")``
-by hand — the trap the previous test fell into. It is NOT how the app runs.
-
-In production the server is mounted with ``server.http_app(path="/mcp")`` inside FastAPI, so
-the OAuthProxy's ``set_mcp_path`` receives the sub-app's OWN root — ``""`` — and
-``_resource_url == resource_base_url`` verbatim. With the origin, the live ``_resource_url``
-was the bare origin: every client sending ``…/mcp`` (per the RFC 9728 PRM) was rejected with
-``server_error``, and minted tokens carried ``audience == origin``, which the router's own
-``JWTVerifier`` (``GF_JWT_AUDIENCE`` = ``…/mcp``) rejects. That is INCIDENT 2026-07-15 — every
-Claude/ChatGPT login to genefoundry.org/mcp broke.
-
-So ``resource_base_url`` MUST be the full audience (``…/mcp``). The one cost is that FastMCP's
-PRM derivation, which DOES append the path, can advertise ``…/mcp/mcp``; a doubled segment
-that ``_install_resource_tolerance()`` collapses so clients echoing it back still validate.
-These tests model the LIVE mount (``set_mcp_path("")``), not the hand-call, so origin-base
-fails them.
+In production the server is mounted with ``server.http_app(path="/mcp")`` inside FastAPI,
+which passes the mount path ("/mcp") to FastMCP's sub-app auth provider so
+``_resource_url == public_base + "/mcp" == GF_JWT_AUDIENCE``.
+Following #235a / #84, PRM metadata and the OAuthProxy resource check share this
+exact single-source resource URI without route duplication and without legacy
+tolerance monkeypatching.
 """
 
 from __future__ import annotations
@@ -93,21 +81,55 @@ def test_router_reference_token_lifetime_is_bounded_and_configurable() -> None:
     assert configured_proxy._fastmcp_access_token_expiry_seconds == 7_200  # type: ignore[attr-defined]
 
 
-def test_resource_tolerance_patch_is_installed_and_collapses_the_doubled_segment() -> None:
-    """Because resource_base_url is public_base, the tolerance patch remains installed
-    to collapse any legacy doubled segment so spec-compliant clients that echo doubled URIs
-    still validate."""
-    build_auth(_settings("oauth"))  # installs the patch at oauth-provider build time
+async def test_strict_rfc9728_resource_derivation_without_monkeypatch() -> None:
+    """Now that #235a fixed resource_base_url=public_base without route duplication,
+    no monkeypatching is applied to FastMCP's OAuthProxy, and a doubled /mcp/mcp
+    resource is strictly rejected by OAuthProxy."""
+    auth = build_auth(_settings("oauth"))
     from fastmcp.server.auth.oauth_proxy import proxy as p
+    from fastmcp.server.auth.oauth_proxy.proxy import AuthorizeError
+    from mcp.server.auth.provider import AuthorizationParams
+    from mcp.shared.auth import OAuthClientInformationFull
 
-    assert getattr(p, "_gf_resource_tolerant", False)
-    assert p._normalize_resource_url("https://genefoundry.example/mcp/mcp") == (
-        "https://genefoundry.example/mcp"
+    # Verify no monkeypatch is applied to FastMCP
+    assert not getattr(p, "_gf_resource_tolerant", False)
+    assert p._normalize_resource_url(f"{AUDIENCE}/mcp") == f"{AUDIENCE}/mcp"
+
+    proxy = _oauth_proxy(auth)
+    proxy.set_mcp_path(LIVE_MOUNT_PATH)  # type: ignore[attr-defined]
+
+    from pydantic import AnyUrl
+
+    client = OAuthClientInformationFull(
+        client_id="test-client",
+        client_name="Test Client",
+        redirect_uris=[AnyUrl("https://client.example/cb")],
     )
-    # a single, correct segment is left untouched
-    assert p._normalize_resource_url("https://genefoundry.example/mcp") == (
-        "https://genefoundry.example/mcp"
+    # Doubled resource is rejected by OAuthProxy resource check
+    params_doubled = AuthorizationParams(
+        state="state-123",
+        scopes=["mcp"],
+        code_challenge="challenge-123",
+        redirect_uri_provided_explicitly=True,
+        redirect_uri=AnyUrl("https://client.example/cb"),
+        resource=f"{AUDIENCE}/mcp",
     )
+    with pytest.raises(AuthorizeError) as exc_info:
+        await proxy.authorize(client, params_doubled)  # type: ignore[attr-defined]
+    assert str(exc_info.value.error) == "invalid_target"
+    assert exc_info.value.error_description == "Resource does not match this server"
+
+    # Matching resource is accepted
+    params_valid = AuthorizationParams(
+        state="state-123",
+        scopes=["mcp"],
+        code_challenge="challenge-123",
+        redirect_uri_provided_explicitly=True,
+        redirect_uri=AnyUrl("https://client.example/cb"),
+        resource=AUDIENCE,
+    )
+    redirect_url = await proxy.authorize(client, params_valid)  # type: ignore[attr-defined]
+    assert redirect_url.startswith(f"{ISSUER}/protocol/openid-connect/auth")
 
 
 def test_calling_set_mcp_path_slash_mcp_matches_audience() -> None:

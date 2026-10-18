@@ -2,6 +2,19 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.4] - 2026-10-18
+
+### Added
+
+- Provider-compatible OpenAI strict JSON Schema projection (`to_openai_strict_schema`, `detail="strict"` in `search_tools`, and `strip_strict_nulls` in `call_tool`) (#116).
+- Support for non-Python (`package.json`) and non-MCP (`mcp_path: null`) services in the reusable container release and CI workflows (#70).
+- Integration and conformance suites covering MCP protocol beyond tools (`resources/list`, `prompts/list`, 64-character tool-name ceiling) and Draft 2020-12 `$ref` resolution across all 285 baseline tools (#77).
+
+### Fixed
+
+- Enforce startup invariant `GF_PUBLIC_BASE_URL + GF_MCP_PATH == GF_JWT_AUDIENCE` in OAuth mode and remove the legacy `_install_resource_tolerance()` monkeypatch (#78, #84).
+- Flag diagnostics tools advertising `response_mode` in `scripts/check_tool_surface.py` (rule `S5`) and probe `META_TOOLS` advertising `response_mode` with volatile-metadata stripping in `docs/conformance/behaviour.py` (#158).
+
 ## [0.10.3] - 2026-10-18
 
 ### Changed

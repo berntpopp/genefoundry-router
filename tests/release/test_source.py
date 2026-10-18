@@ -5,14 +5,18 @@ from __future__ import annotations
 import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from genefoundry_router.release.models import ReleaseConfig, ServiceConfig
 from genefoundry_router.release.source import (
     RELEASE_COMMAND_TIMEOUT_SECONDS,
     CommandResult,
+    ReleaseConfigError,
     SourceReleaseError,
+    _read_package_version,
     ensure_version_increases,
     parse_release_tag,
     resolve_event_tag,
@@ -570,3 +574,88 @@ def test_validation_returns_exact_source_identity_and_uses_argument_arrays() -> 
             ".github/workflows/container-release.yml",
         ),
     ]
+
+
+def test_service_config_allows_null_mcp_path() -> None:
+    service = ServiceConfig(name="web", mcp_path=None)
+    assert service.mcp_path is None
+
+    service_default = ServiceConfig(name="web")
+    assert service_default.mcp_path == "/mcp"
+
+    raw_config = {
+        "service": {"name": "web", "mcp_path": None},
+        "definitions": {"contract": "data-independent"},
+        "data": {"mode": "none"},
+    }
+    parsed = ReleaseConfig.model_validate(raw_config)
+    assert parsed.service.mcp_path is None
+
+
+def test_read_package_version_from_package_json(tmp_path: Path) -> None:
+    package_json = tmp_path / "package.json"
+    package_json.write_text('{"name": "genefoundry-web", "version": "2.1.0"}', encoding="utf-8")
+
+    version = _read_package_version(root=tmp_path)
+    assert version == "2.1.0"
+
+
+def test_read_package_version_package_json_missing_or_empty(tmp_path: Path) -> None:
+    package_json = tmp_path / "package.json"
+    package_json.write_text('{"name": "genefoundry-web"}', encoding="utf-8")
+
+    with pytest.raises(ReleaseConfigError, match="version"):
+        _read_package_version(root=tmp_path)
+
+    package_json.write_text('{"name": "genefoundry-web", "version": ""}', encoding="utf-8")
+    with pytest.raises(ReleaseConfigError, match="version"):
+        _read_package_version(root=tmp_path)
+
+
+def test_read_package_version_package_json_invalid_semver(tmp_path: Path) -> None:
+    package_json = tmp_path / "package.json"
+    package_json.write_text(
+        '{"name": "genefoundry-web", "version": "invalid-v1"}', encoding="utf-8"
+    )
+
+    with pytest.raises(SourceReleaseError, match="canonical stable SemVer"):
+        _read_package_version(root=tmp_path)
+
+
+def test_read_package_version_prefers_pyproject_toml(tmp_path: Path) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nname = "test"\nversion = "1.0.0"\n', encoding="utf-8")
+    package_json = tmp_path / "package.json"
+    package_json.write_text('{"name": "test", "version": "9.9.9"}', encoding="utf-8")
+
+    uv_cmd = ("uv", "--project", str(tmp_path), "version", "--short")
+    runner = RecordingRunner({uv_cmd: CommandResult(0, "1.0.0\n", "")})
+    version = _read_package_version(runner=runner, root=tmp_path)
+    assert version == "1.0.0"
+    assert runner.calls == [uv_cmd]
+
+
+def test_read_package_version_neither_file_raises(tmp_path: Path) -> None:
+    with pytest.raises(SourceReleaseError):
+        _read_package_version(root=tmp_path)
+
+
+def test_validate_source_release_with_package_json(tmp_path: Path) -> None:
+    package_json = tmp_path / "package.json"
+    package_json.write_text('{"name": "genefoundry-web", "version": "1.2.3"}', encoding="utf-8")
+
+    results = command_results()
+    # Remove uv command from results to ensure it is never invoked when pyproject.toml is absent
+    del results[("uv", "version", "--short")]
+
+    runner = RecordingRunner(results)
+    source = validate_source_release(
+        event_name="push",
+        event_ref=f"refs/tags/{TAG}",
+        event_sha=SOURCE_SHA,
+        changelog_text="# Changelog\n\n## [1.2.3] - 2026-07-13\n\n- Release.\n",
+        runner=runner,
+        root=tmp_path,
+    )
+    assert source.version == "1.2.3"
+    assert ("uv", "version", "--short") not in runner.calls
