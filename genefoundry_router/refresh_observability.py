@@ -204,6 +204,8 @@ class RefreshLedger(RefreshLifecycleMixin):
                     stale_seconds=REFRESH_ATTEMPT_STALE_SECONDS,
                     excluded_event_ids=self._owned_attempt_ids(at),
                 )
+                if self._checkpoint_pending and not self.maintain(at):
+                    return False
             except (OSError, sqlite3.Error, RefreshLedgerError):
                 self.note_unavailable(at=at, reason="write_failure")
                 return False

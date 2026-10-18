@@ -827,7 +827,7 @@ async def test_refresh_attempt_is_counted_at_successful_load_boundary(
             before_attempts + 1
         )
     finally:
-        proxy._finish_abandoned_refresh_attempt()
+        await proxy._finish_abandoned_refresh_attempt()
         ledger.close()
 
 
