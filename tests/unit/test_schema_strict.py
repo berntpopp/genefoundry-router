@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from genefoundry_router.schema_strict import to_openai_strict_schema
+from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_strict_schema
 
 
 def assert_strict_invariants(node: Any, path: str = "root") -> None:
@@ -15,10 +15,13 @@ def assert_strict_invariants(node: Any, path: str = "root") -> None:
     if not isinstance(node, dict):
         return
 
-    is_object = (
-        node.get("type") == "object"
-        or (isinstance(node.get("type"), list) and "object" in node["type"])
-        or ("properties" in node and node.get("type") in (None, "object"))
+    assert not isinstance(node.get("type"), list), (
+        f"OpenAI strict mode forbids type as list at {path}: {node.get('type')}"
+    )
+    assert "default" not in node, f"OpenAI strict mode forbids default at {path}"
+
+    is_object = node.get("type") == "object" or (
+        "properties" in node and node.get("type") in (None, "object")
     )
 
     if is_object:
@@ -45,7 +48,7 @@ def test_required_vs_optional_properties() -> None:
     schema: dict[str, Any] = {
         "type": "object",
         "properties": {
-            "req_field": {"type": "string", "description": "A required string"},
+            "req_field": {"type": "string", "description": "A required string", "default": "x"},
             "opt_field": {
                 "type": "integer",
                 "description": "An optional int",
@@ -65,6 +68,7 @@ def test_required_vs_optional_properties() -> None:
     req = result["properties"]["req_field"]
     assert req["type"] == "string"
     assert req["description"] == "A required string"
+    assert "default" not in req
     assert "anyOf" not in req
 
     opt = result["properties"]["opt_field"]
@@ -77,7 +81,7 @@ def test_required_vs_optional_properties() -> None:
 
 
 def test_already_nullable_optional_property_not_duplicated() -> None:
-    """Already-nullable optional properties do not duplicate {'type': 'null'}."""
+    """Already-nullable optional properties do not duplicate {'type': 'null'} and convert type lists."""
     schema: dict[str, Any] = {
         "type": "object",
         "properties": {
@@ -113,8 +117,7 @@ def test_already_nullable_optional_property_not_duplicated() -> None:
     assert null_count == 1
 
     p2 = result["properties"]["type_list_nullable"]
-    assert "anyOf" not in p2
-    assert p2["type"] == ["string", "null"]
+    assert p2 == {"anyOf": [{"type": "string"}, {"type": "null"}]}
 
     p3 = result["properties"]["explicit_null_type"]
     assert "anyOf" not in p3
@@ -122,36 +125,42 @@ def test_already_nullable_optional_property_not_duplicated() -> None:
 
 
 def test_optional_with_existing_anyof_not_nullable() -> None:
-    """Optional property with non-nullable anyOf has {'type': 'null'} appended."""
+    """Optional property with non-nullable anyOf has {'type': 'null'} appended or wrapped."""
     schema: dict[str, Any] = {
         "type": "object",
         "properties": {
             "union_field": {
                 "anyOf": [{"type": "string"}, {"type": "integer"}],
                 "description": "String or int",
-            }
+            },
+            "constrained_anyof": {
+                "type": "string",
+                "anyOf": [{"const": "a"}, {"const": "b"}],
+            },
         },
     }
     result = to_openai_strict_schema(schema)
-    assert result["required"] == ["union_field"]
+    assert set(result["required"]) == {"union_field", "constrained_anyof"}
     prop = result["properties"]["union_field"]
     assert prop["description"] == "String or int"
     assert {"type": "null"} in prop["anyOf"]
     assert len(prop["anyOf"]) == 3
-    assert {"type": "string"} in prop["anyOf"]
-    assert {"type": "integer"} in prop["anyOf"]
+
+    constrained = result["properties"]["constrained_anyof"]
+    assert "type" not in constrained
+    assert {"type": "null"} in constrained["anyOf"]
 
 
 def test_open_object_with_no_properties() -> None:
-    """Open object gets properties: {}, required: [], additionalProperties: False."""
-    schema = {"type": "object"}
-    result = to_openai_strict_schema(schema)
-    assert result == {
-        "type": "object",
-        "properties": {},
-        "required": [],
-        "additionalProperties": False,
-    }
+    """Open or empty root object gets properties: {}, required: [], additionalProperties: False."""
+    for schema in ({"type": "object"}, {}):
+        result = to_openai_strict_schema(schema)
+        assert result == {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        }
 
 
 def test_object_without_explicit_type() -> None:
@@ -165,17 +174,39 @@ def test_object_without_explicit_type() -> None:
 
 
 def test_object_with_type_object_null() -> None:
-    """Object with type: ['object', 'null'] satisfies strict object invariants."""
+    """Object with type: ['object', 'null'] converts to anyOf with strict object branch."""
     schema: dict[str, Any] = {
         "type": ["object", "null"],
         "properties": {"k": {"type": "string"}},
         "required": ["k"],
     }
     result = to_openai_strict_schema(schema)
-    assert result["type"] == ["object", "null"]
-    assert result["additionalProperties"] is False
-    assert result["required"] == ["k"]
-    assert result["properties"]["k"] == {"type": "string"}
+    assert result == {
+        "anyOf": [
+            {
+                "type": "object",
+                "properties": {"k": {"type": "string"}},
+                "required": ["k"],
+                "additionalProperties": False,
+            },
+            {"type": "null"},
+        ]
+    }
+
+
+def test_strip_strict_nulls_omits_optional_non_nullable_sentinels() -> None:
+    """strip_strict_nulls drops None for optional non-nullable fields and keeps genuine nulls."""
+    schema: dict[str, Any] = {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string"},
+            "limit": {"type": "integer", "default": 10},
+            "cursor": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        },
+        "required": ["query"],
+    }
+    cleaned = strip_strict_nulls({"query": "BRCA1", "limit": None, "cursor": None}, schema)
+    assert cleaned == {"query": "BRCA1", "cursor": None}
 
 
 def test_nested_objects_recursively_transformed() -> None:

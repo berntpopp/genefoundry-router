@@ -254,7 +254,7 @@ def _critical_boundary_slice(boundary: int, health: str, output: str) -> tuple[s
     conditional = _adoption_conditional(boundary, health, output)
     if boundary == 0:
         return (
-            "mcp_path=\"$(jq -r '.service.mcp_path // empty' container-release.json)\"",
+            'mcp_path="$(jq -r \'if (.service | has("mcp_path")) then (.service.mcp_path // empty) else "/mcp" end\' container-release.json)"',
             *RUNTIME_IDENTITY_PRODUCERS[boundary],
             *_adoption_assignments(),
             *conditional,
@@ -1402,9 +1402,10 @@ def test_release_gates_support_optional_mcp_path() -> None:
     workflow = _load(REUSABLE)
     build_gate = _run_text(workflow["jobs"]["build-gate"])
     capture = _run_text(workflow["jobs"]["capture"])
+    expected_jq = 'mcp_path="$(jq -r \'if (.service | has("mcp_path")) then (.service.mcp_path // empty) else "/mcp" end\' container-release.json)"'
 
-    assert "mcp_path=\"$(jq -r '.service.mcp_path // empty' container-release.json)\"" in build_gate
-    assert "mcp_path=\"$(jq -r '.service.mcp_path // empty' container-release.json)\"" in capture
+    assert expected_jq in build_gate
+    assert expected_jq in capture
     assert 'if [ -n "$mcp_path" ]; then' in build_gate
     assert 'if [ -n "$mcp_path" ]; then' in capture
     assert 'echo "[]" > "$tools_json"' in capture

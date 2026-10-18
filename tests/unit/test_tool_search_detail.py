@@ -164,6 +164,38 @@ async def test_search_results_invalid_detail_raises_tool_error() -> None:
 
 
 @pytest.mark.asyncio
+async def test_call_tool_strips_strict_null_sentinels_for_optional_args() -> None:
+    """call_tool strips None sentinels introduced by strict mode for optional non-nullable args."""
+    tool = _sample_tool(
+        "mondo_resolve_disease",
+        description="Resolve disease names",
+        properties={
+            "query": {"type": "string"},
+            "limit": {"type": "integer", "default": 10},
+            "cursor": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        },
+        required=["query"],
+    )
+    transform = CompactBM25SearchTransform(always_visible=["mondo_resolve_disease"])
+    call_tool = transform._make_call_tool()
+
+    ctx = MagicMock()
+    ctx.fastmcp.list_tools = AsyncMock(return_value=[tool])
+    ctx.fastmcp.call_tool = AsyncMock(return_value="ok")
+
+    res = await _tool_fn(call_tool)(
+        name="mondo_resolve_disease",
+        arguments={"query": "Marfan", "limit": None, "cursor": None},
+        ctx=ctx,
+    )
+    assert res == "ok"
+    ctx.fastmcp.call_tool.assert_awaited_once_with(
+        "mondo_resolve_disease",
+        {"query": "Marfan", "cursor": None},
+    )
+
+
+@pytest.mark.asyncio
 async def test_synthetic_tools_are_cached_per_transform() -> None:
     """#232: search_tools and call_tool are cached per CompactBM25SearchTransform instance."""
     t1 = CompactBM25SearchTransform(always_visible=["pinned_tool"])

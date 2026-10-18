@@ -628,10 +628,11 @@ def test_read_package_version_prefers_pyproject_toml(tmp_path: Path) -> None:
     package_json = tmp_path / "package.json"
     package_json.write_text('{"name": "test", "version": "9.9.9"}', encoding="utf-8")
 
-    runner = RecordingRunner({("uv", "version", "--short"): CommandResult(0, "1.0.0\n", "")})
+    uv_cmd = ("uv", "--project", str(tmp_path), "version", "--short")
+    runner = RecordingRunner({uv_cmd: CommandResult(0, "1.0.0\n", "")})
     version = _read_package_version(runner=runner, root=tmp_path)
     assert version == "1.0.0"
-    assert runner.calls == [("uv", "version", "--short")]
+    assert runner.calls == [uv_cmd]
 
 
 def test_read_package_version_neither_file_raises(tmp_path: Path) -> None:

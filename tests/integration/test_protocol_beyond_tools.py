@@ -87,7 +87,7 @@ async def test_client_federates_resources_and_prompts_when_exposed_by_backend() 
         assert "NM_000059.4:c.5946del" in msg_content.text
 
 
-def test_build_app_serves_valid_resources_and_prompts_protocol(
+async def test_build_app_serves_valid_resources_and_prompts_protocol(
     gnomad_fake: FastMCP,
 ) -> None:
     """build_app discovery surfaces resource/prompt capabilities and router state handles queries."""
@@ -95,7 +95,6 @@ def test_build_app_serves_valid_resources_and_prompts_protocol(
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
     app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
 
-    # Test HTTP discovery endpoint
     with TestClient(app) as test_client:
         resp = test_client.get("/mcp")
         assert resp.status_code == 200
@@ -104,6 +103,10 @@ def test_build_app_serves_valid_resources_and_prompts_protocol(
         assert capabilities["resources"] == {"subscribe": False, "listChanged": False}
         assert capabilities["prompts"] == {"listChanged": False}
         assert capabilities["tools"] == {"listChanged": False}
+
+    async with Client(app.state.mcp_server) as client:
+        assert await client.list_resources() == []
+        assert await client.list_prompts() == []
 
 
 def test_fleet_baseline_tool_names_are_collision_free_and_within_client_ceiling() -> None:

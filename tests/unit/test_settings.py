@@ -134,6 +134,8 @@ def test_oauth_jwt_audience_must_match_advertised_resource() -> None:
         ("https://genefoundry.org/", "/mcp", "https://genefoundry.org/mcp/"),
         ("https://genefoundry.org", "mcp/", "https://genefoundry.org/mcp"),
         ("https://genefoundry.org/sub", "/mcp", "https://genefoundry.org/sub/mcp"),
+        ("https://genefoundry.org", "/", "https://genefoundry.org"),
+        ("https://genefoundry.org/", "/", "https://genefoundry.org/"),
     ],
 )
 def test_oauth_jwt_audience_slash_normalization_succeeds(

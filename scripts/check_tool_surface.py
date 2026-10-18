@@ -123,9 +123,6 @@ def check_backend(namespace: str, entry: dict[str, Any]) -> list[Violation]:
     return bad
 
 
-lint_server = check_backend
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Enforce the fleet's tool-surface standards")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
@@ -188,7 +185,7 @@ def main() -> int:
         "S1": "input property with no description",
         "S2": "required property with no examples",
         "S3": "array property with no examples",
-        "S5": "diagnostics tool must not advertise response_mode (must be zero-argument)",
+        "S5": "diagnostics tool advertises response_mode",
     }
     for rule in sorted(by_rule):
         found = by_rule[rule]

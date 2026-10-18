@@ -10,7 +10,7 @@ _SCRIPTS = str(Path(__file__).resolve().parents[2] / "scripts")
 if _SCRIPTS not in sys.path:
     sys.path.insert(0, _SCRIPTS)
 
-from check_tool_surface import check_backend, lint_server, lint_tool_schema  # noqa: E402
+from check_tool_surface import check_backend, lint_tool_schema  # noqa: E402
 
 
 def test_get_diagnostics_advertising_response_mode_is_flagged() -> None:
@@ -91,7 +91,7 @@ def test_non_diagnostics_tool_with_response_mode_not_flagged_by_s5() -> None:
     assert not any(v.rule == "S5" for v in violations)
 
 
-def test_lint_server_reports_s5_violations() -> None:
+def test_check_backend_reports_s5_violations() -> None:
     backend_entry: dict[str, Any] = {
         "tools": [
             {
@@ -114,6 +114,5 @@ def test_lint_server_reports_s5_violations() -> None:
             },
         ]
     }
-    violations = lint_server("demo", backend_entry)
+    violations = check_backend("demo", backend_entry)
     assert any(v.rule == "S5" for v in violations)
-    assert check_backend("demo", backend_entry) == violations

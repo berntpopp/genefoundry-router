@@ -192,16 +192,11 @@ def _resolve_remote_tag(tag: ReleaseTag, local: _LocalTagIdentity, runner: Comma
 
 
 def _read_package_version(
-    runner: CommandRunner | Path = run_command,
+    runner: CommandRunner = run_command,
+    *,
     root: Path | None = None,
 ) -> str:
-    if isinstance(runner, Path):
-        base_root = runner
-        cmd_runner = run_command
-    else:
-        cmd_runner = runner
-        base_root = root if root is not None else Path(".")
-
+    base_root = root if root is not None else Path(".")
     pyproject_file = base_root / "pyproject.toml"
     package_json_file = base_root / "package.json"
 
@@ -217,9 +212,12 @@ def _read_package_version(
             raise ReleaseConfigError("package.json must declare a non-empty version")
         version = version_value.strip()
     elif pyproject_file.is_file():
-        version = _require_success(
-            cmd_runner(("uv", "version", "--short")), "read the package version with uv"
+        uv_cmd = (
+            ("uv", "version", "--short")
+            if root is None
+            else ("uv", "--project", str(base_root), "version", "--short")
         )
+        version = _require_success(runner(uv_cmd), "read the package version with uv")
     else:
         raise SourceReleaseError(
             "neither pyproject.toml nor package.json found to determine package version"

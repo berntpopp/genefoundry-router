@@ -22,7 +22,7 @@ from conformance.behaviour import (  # noqa: E402
     check_argument_error,
     is_error_result,
     rows,
-    run_behaviour_suite,
+    run_probe,
 )
 
 
@@ -278,20 +278,22 @@ def test_get_diagnostics_with_response_mode_probed_and_fails_on_identical_payloa
                         "parameter": BOGUS_ARG,
                     },
                 }
-            # Return identical payloads for compact and full
+            # Return identical substantive payloads with differing _meta.request_id
             return {
                 "isError": False,
                 "structuredContent": {
                     "success": True,
                     "status": "healthy",
                     "version": "1.0.0",
+                    "response_mode": args.get("response_mode"),
+                    "_meta": {"request_id": f"req-{len(calls)}"},
                 },
             }
 
     import conformance.behaviour as behaviour_module
 
     monkeypatch.setattr(behaviour_module, "Probe", FakeDiagnosticsProbe)
-    rep = run_behaviour_suite("http://test", expected_name="test-srv")
+    rep = run_probe("http://test", expected_name="test-srv")
     assert not rep.conformant
     assert any("get_diagnostics" in f and ("differ" in f or "identical" in f) for f in rep.failed)
     # Verify response_mode was probed
@@ -345,7 +347,7 @@ def test_get_diagnostics_zero_arg_not_probed_by_response_mode(
     import conformance.behaviour as behaviour_module
 
     monkeypatch.setattr(behaviour_module, "Probe", FakeZeroArgProbe)
-    rep = run_behaviour_suite("http://test", expected_name="test-srv")
+    rep = run_probe("http://test", expected_name="test-srv")
     assert rep.conformant
     assert rep.failed == []
     # Verify response_mode was NOT probed

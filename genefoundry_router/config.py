@@ -268,7 +268,9 @@ class RouterSettings(BaseSettings):
     def _jwt_audience_must_match_the_advertised_resource(self) -> RouterSettings:
         """A mismatch makes the router mint tokens it then rejects."""
         if self.GF_AUTH_MODE == "oauth" and self.GF_PUBLIC_BASE_URL and self.GF_JWT_AUDIENCE:
-            expected = f"{self.GF_PUBLIC_BASE_URL.rstrip('/')}/{self.GF_MCP_PATH.strip('/')}"
+            expected = (
+                f"{self.GF_PUBLIC_BASE_URL.rstrip('/')}/{self.GF_MCP_PATH.strip('/')}".rstrip("/")
+            )
             if self.GF_JWT_AUDIENCE.rstrip("/") != expected:
                 raise ValueError(
                     f"GF_JWT_AUDIENCE ({self.GF_JWT_AUDIENCE}) must equal "

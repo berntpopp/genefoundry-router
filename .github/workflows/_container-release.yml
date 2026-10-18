@@ -489,7 +489,7 @@ jobs:
           # wrong endpoint for any backend that serves a different path (stringdb declares
           # /api/health).
           health_path="$(jq -er '.service.health_path' container-release.json)"
-          mcp_path="$(jq -r '.service.mcp_path // empty' container-release.json)"
+          mcp_path="$(jq -r 'if (.service | has("mcp_path")) then (.service.mcp_path // empty) else "/mcp" end' container-release.json)"
           curl -fsS -H 'Host: localhost' \
             "http://127.0.0.1:18000$health_path" > "$RUNNER_TEMP/release-gate-health.json"
           contract="$(jq -er '.definitions.contract' container-release.json)"
@@ -847,7 +847,7 @@ jobs:
           service="$(jq -er '.service.name' container-release.json)"
           timeout="$(jq -er '.service.startup_timeout_seconds' container-release.json)"
           health_path="$(jq -er '.service.health_path' container-release.json)"
-          mcp_path="$(jq -r '.service.mcp_path // empty' container-release.json)"
+          mcp_path="$(jq -r 'if (.service | has("mcp_path")) then (.service.mcp_path // empty) else "/mcp" end' container-release.json)"
           base_compose="$(jq -er '.service.compose_files[0]' container-release.json)"
           compose_args=()
           while IFS= read -r file; do

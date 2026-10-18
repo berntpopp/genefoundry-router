@@ -78,8 +78,15 @@ jobs:
 
           ReleaseConfig.model_validate(json.loads(Path("container-release.json").read_text()))
           PY
-          uv lock --check
-          version="$(uv version --short)"
+          if [ -f pyproject.toml ]; then
+            uv lock --check
+            version="$(uv version --short)"
+          elif [ -f package.json ]; then
+            version="$(jq -er .version package.json)"
+          else
+            echo "neither pyproject.toml nor package.json found" >&2
+            exit 1
+          fi
           grep -Fq "## [$version]" CHANGELOG.md
 
       - name: Set up Docker Buildx
@@ -96,7 +103,13 @@ jobs:
           platform="linux/amd64"
           dockerfile_hash="$(sha256sum "$dockerfile" | cut -d' ' -f1)"
           buildx_hash="$(docker buildx version | sha256sum | cut -d' ' -f1)"
-          lock_hash="$(sha256sum uv.lock | cut -d' ' -f1)"
+          if [ -f uv.lock ]; then
+            lock_hash="$(sha256sum uv.lock | cut -d' ' -f1)"
+          elif [ -f package-lock.json ]; then
+            lock_hash="$(sha256sum package-lock.json | cut -d' ' -f1)"
+          else
+            lock_hash="$(sha256sum package.json | cut -d' ' -f1)"
+          fi
           scope="ci-v1-${repository//\//-}-${dockerfile//\//-}-${platform//\//-}-${dockerfile_hash:0:16}-${buildx_hash:0:16}-${lock_hash:0:16}"
           echo "scope=$scope" >> "$GITHUB_OUTPUT"
 
@@ -259,27 +272,29 @@ jobs:
         run: |
           set -euo pipefail
           health_path="$(jq -er '.service.health_path' container-release.json)"
-          mcp_path="$(jq -er '.service.mcp_path' container-release.json)"
+          mcp_path="$(jq -r 'if (.service | has("mcp_path")) then (.service.mcp_path // empty) else "/mcp" end' container-release.json)"
           curl -fsS -H 'Host: localhost' \
             "http://127.0.0.1:18000$health_path" > "$RUNNER_TEMP/health.json"
-          curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-initialize.out" \
-            -H 'Host: localhost' -H 'Content-Type: application/json' \
-            -H 'Accept: application/json, text/event-stream' \
-            --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"container-ci","version":"1"}}}' \
-            "http://127.0.0.1:18000$mcp_path"
-          grep -Fq '"serverInfo"' "$RUNNER_TEMP/mcp-initialize.out"
-          session="$(awk 'tolower($1) == "mcp-session-id:" {gsub("\\r", "", $2); print $2}' "$RUNNER_TEMP/mcp.headers")"
-          session_args=()
-          if [ -n "$session" ]; then
-            session_args=(-H "Mcp-Session-Id: $session")
+          if [ -n "$mcp_path" ]; then
+            curl -fsS -D "$RUNNER_TEMP/mcp.headers" -o "$RUNNER_TEMP/mcp-initialize.out" \
+              -H 'Host: localhost' -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
+              --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"container-ci","version":"1"}}}' \
+              "http://127.0.0.1:18000$mcp_path"
+            grep -Fq '"serverInfo"' "$RUNNER_TEMP/mcp-initialize.out"
+            session="$(awk 'tolower($1) == "mcp-session-id:" {gsub("\\r", "", $2); print $2}' "$RUNNER_TEMP/mcp.headers")"
+            session_args=()
+            if [ -n "$session" ]; then
+              session_args=(-H "Mcp-Session-Id: $session")
+            fi
+            curl -fsS -o "$RUNNER_TEMP/mcp-tools-list.out" \
+              -H 'Host: localhost' -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
+              "${session_args[@]}" \
+              --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+              "http://127.0.0.1:18000$mcp_path"
+            grep -Fq '"tools"' "$RUNNER_TEMP/mcp-tools-list.out"
           fi
-          curl -fsS -o "$RUNNER_TEMP/mcp-tools-list.out" \
-            -H 'Host: localhost' -H 'Content-Type: application/json' \
-            -H 'Accept: application/json, text/event-stream' \
-            "${session_args[@]}" \
-            --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-            "http://127.0.0.1:18000$mcp_path"
-          grep -Fq '"tools"' "$RUNNER_TEMP/mcp-tools-list.out"
 
       - name: Assert runtime identity and hardening
         shell: bash

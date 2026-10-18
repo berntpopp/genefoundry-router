@@ -32,7 +32,7 @@ from fastmcp.tools.base import Tool
 
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.registry import BackendDef, qualified_name
-from genefoundry_router.schema_strict import to_openai_strict_schema
+from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_strict_schema
 from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.search_rerank import Reranker, build_reranker
 
@@ -295,10 +295,29 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         return self._search_tool
 
     def _make_call_tool(self) -> Tool:
-        """Reuse FastMCP's call_tool proxy but with a self-healing description."""
+        """Reuse FastMCP's call_tool proxy with self-healing description and strict-null stripping."""
         if self._call_tool is None:
-            tool = super()._make_call_tool()
-            tool.description = _CALL_TOOL_DESCRIPTION
+            base_tool = super()._make_call_tool()
+            base_fn = getattr(base_tool, "fn")  # noqa: B009
+            transform = self
+
+            async def call_tool(
+                name: Annotated[str, "The name of the tool to call"],
+                arguments: Annotated[dict[str, Any] | None, "Arguments to pass to the tool"] = None,
+                ctx: Context = None,  # type: ignore[assignment]
+            ) -> Any:
+                if arguments and any(v is None or isinstance(v, dict) for v in arguments.values()):
+                    catalog = await transform.get_tool_catalog(ctx)
+                    target = next((t for t in catalog if t.name == name), None)
+                    if target is not None and isinstance(target.parameters, dict):
+                        arguments = strip_strict_nulls(arguments, target.parameters)
+                return await base_fn(name=name, arguments=arguments, ctx=ctx)
+
+            tool = Tool.from_function(
+                fn=call_tool,
+                name=self._call_tool_name,
+                description=_CALL_TOOL_DESCRIPTION,
+            )
             self._call_tool = tool
         return self._call_tool
 
