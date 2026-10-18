@@ -44,21 +44,8 @@ jobs:
         # (GitHub treats the env file as KEY=value pairs, not a dotenv with comments).
         run: grep -E '^GF_[A-Z0-9_]+=' ci/fleet-urls.env >> "$GITHUB_ENV"
       - name: Fleet conformance probe
-        id: probe
-        run: |
-          set +e
-          uv run genefoundry-router fleet-probe > fleet_probe_output.txt 2>&1
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
-          cat fleet_probe_output.txt
+        run: uv run genefoundry-router fleet-probe --output /tmp/probe.json
       - name: Heartbeat (dead-man's-switch)
-        if: ${{ always() && env.FLEET_PROBE_HEARTBEAT_URL != '' }}
-        run: curl -fsS -m 10 --retry 3 -o /dev/null "$FLEET_PROBE_HEARTBEAT_URL" || true
-      - name: Warn on unreachable backends (availability, not a contract violation)
-        if: ${{ steps.probe.outputs.exit_code == '2' }}
-        run: |
-          echo "::warning::fleet-probe: some backends were unreachable (availability, not a transport-contract violation)"
-      - name: Fail on non-conformance
-        if: ${{ steps.probe.outputs.exit_code == '1' }}
-        run: |
-          echo "::error::fleet-probe: a deployed backend violates MCP Transport Standard v1 (see log)"
-          exit 1
+        if: ${{ success() && env.FLEET_PROBE_HEARTBEAT_URL != '' }}
+        run: curl -fsS -m 10 --retry 3 -o /dev/null "$FLEET_PROBE_HEARTBEAT_URL"
+
