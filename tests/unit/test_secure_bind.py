@@ -95,9 +95,7 @@ def test_insecure_bind_override_cannot_downgrade_production_controls() -> None:
 
 
 def test_development_only_override_warns_when_controls_are_omitted() -> None:
-    assert should_warn_development_unsafe_observability(
-        "jwt", "development", True, rate_limit_rpm=0, metrics_token=None
-    )
+    assert should_warn_development_unsafe_observability("jwt", "development", True)
 
 
 def test_no_refuse_rate_limit_when_auth_none() -> None:

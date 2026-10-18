@@ -106,7 +106,7 @@ def main() -> None:
     for problem in dev_config_warnings(manifest, args.host, args.port):
         print(f"  WARN dev-config: {problem}")
     app = build_fleet_app(manifest)
-    uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+    uvicorn.run(app, host=args.host, port=args.port, log_level="warning", workers=1)
 
 
 if __name__ == "__main__":

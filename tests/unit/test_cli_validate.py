@@ -12,6 +12,7 @@ def test_validate_flags_missing_url_for_enabled(monkeypatch, tmp_path):
         "  - { name: gnomad, url_env: GF_GNOMAD_URL, namespace: gnomad }\n"
         "  - { name: hgnc, url_env: GF_HGNC_URL, namespace: hgnc, enabled: false }\n"
     )
+    monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("GF_GNOMAD_URL", raising=False)
     result = runner.invoke(app, ["validate", "--servers-file", str(yaml)])
     assert result.exit_code == 1  # enabled gnomad has no URL

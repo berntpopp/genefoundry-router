@@ -87,11 +87,6 @@ def expected_server_name(backend: BackendDef) -> str:
     return backend.server_name or f"{backend.namespace}-link"
 
 
-def exceeds_name_limit(namespace: str, tool: str) -> bool:
-    """True when the namespaced tool name exceeds the MCP 64-char limit."""
-    return len(qualified_name(namespace, tool)) > MAX_QUALIFIED_NAME_LEN
-
-
 def is_client_safe_name(name: str) -> bool:
     """True when a tool name is portable across MCP clients incl. Gemini.
 
