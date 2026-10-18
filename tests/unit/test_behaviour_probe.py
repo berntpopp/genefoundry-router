@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
 
-from docs.conformance.behaviour import (
+_DOCS = str(Path(__file__).resolve().parents[2] / "docs")
+if _DOCS not in sys.path:
+    sys.path.insert(0, _DOCS)
+
+from conformance.behaviour import (  # noqa: E402
+    BOGUS_ARG,
     Probe,
     ProtocolError,
     Report,
@@ -16,6 +22,7 @@ from docs.conformance.behaviour import (
     check_argument_error,
     is_error_result,
     rows,
+    run_behaviour_suite,
 )
 
 
@@ -226,3 +233,120 @@ def test_mcp_registry_workflow_guard() -> None:
     assert "version=1.8.1" in content
     assert "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc" in content
     assert "sha256sum -c" in content
+
+
+def test_get_diagnostics_with_response_mode_probed_and_fails_on_identical_payloads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    class FakeDiagnosticsProbe:
+        def __init__(self, base_url: str, timeout: float = 60.0) -> None:
+            self.base_url = base_url
+            self.server_info = {"name": "test-srv"}
+
+        def initialize(self) -> dict[str, Any]:
+            return {"serverInfo": self.server_info}
+
+        def list_tools(self) -> list[dict[str, Any]]:
+            return [
+                {
+                    "name": "get_diagnostics",
+                    "description": "Health and diagnostics.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "response_mode": {
+                                "type": "string",
+                                "enum": ["compact", "full"],
+                                "description": "Mode",
+                            }
+                        },
+                    },
+                }
+            ]
+
+        def call(self, tool: str, args: dict[str, Any]) -> dict[str, Any]:
+            calls.append((tool, dict(args)))
+            if BOGUS_ARG in args:
+                return {
+                    "isError": True,
+                    "structuredContent": {
+                        "success": False,
+                        "error_code": "invalid_input",
+                        "message": f"Field required: {BOGUS_ARG}",
+                        "parameter": BOGUS_ARG,
+                    },
+                }
+            # Return identical payloads for compact and full
+            return {
+                "isError": False,
+                "structuredContent": {
+                    "success": True,
+                    "status": "healthy",
+                    "version": "1.0.0",
+                },
+            }
+
+    import conformance.behaviour as behaviour_module
+
+    monkeypatch.setattr(behaviour_module, "Probe", FakeDiagnosticsProbe)
+    rep = run_behaviour_suite("http://test", expected_name="test-srv")
+    assert not rep.conformant
+    assert any("get_diagnostics" in f and ("differ" in f or "identical" in f) for f in rep.failed)
+    # Verify response_mode was probed
+    mode_calls = [args.get("response_mode") for _, args in calls if "response_mode" in args]
+    assert "compact" in mode_calls
+    assert "full" in mode_calls
+
+
+def test_get_diagnostics_zero_arg_not_probed_by_response_mode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    class FakeZeroArgProbe:
+        def __init__(self, base_url: str, timeout: float = 60.0) -> None:
+            self.base_url = base_url
+            self.server_info = {"name": "test-srv"}
+
+        def initialize(self) -> dict[str, Any]:
+            return {"serverInfo": self.server_info}
+
+        def list_tools(self) -> list[dict[str, Any]]:
+            return [
+                {
+                    "name": "get_diagnostics",
+                    "description": "Health and diagnostics.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {},
+                    },
+                }
+            ]
+
+        def call(self, tool: str, args: dict[str, Any]) -> dict[str, Any]:
+            calls.append((tool, dict(args)))
+            if BOGUS_ARG in args:
+                return {
+                    "isError": True,
+                    "structuredContent": {
+                        "success": False,
+                        "error_code": "invalid_input",
+                        "message": f"Field required: {BOGUS_ARG}",
+                        "parameter": BOGUS_ARG,
+                    },
+                }
+            return {
+                "isError": False,
+                "structuredContent": {"success": True, "status": "healthy"},
+            }
+
+    import conformance.behaviour as behaviour_module
+
+    monkeypatch.setattr(behaviour_module, "Probe", FakeZeroArgProbe)
+    rep = run_behaviour_suite("http://test", expected_name="test-srv")
+    assert rep.conformant
+    assert rep.failed == []
+    # Verify response_mode was NOT probed
+    assert not any("response_mode" in args for _, args in calls)

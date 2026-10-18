@@ -656,7 +656,11 @@ def check_total_is_not_the_page_size(
 
 
 def check_response_modes(
-    rep: Report, probe: Probe, tool: dict[str, Any], base: dict[str, Any], control: list[Any]
+    rep: Report,
+    probe: Probe,
+    tool: dict[str, Any],
+    base: dict[str, Any],
+    control: list[Any] | None = None,
 ) -> None:
     """`response_mode` narrows a payload; it MUST NOT destroy it.
 
@@ -666,7 +670,8 @@ def check_response_modes(
     response_mode=minimal discards the entire gene list and still returns success:true.
     """
     name = tool["name"]
-    modes = enum_of(properties(tool).get("response_mode") or {}) or []
+    modes = enum_of(properties(tool).get("response_mode") or {}) or ["compact", "full"]
+    mode_payloads: dict[str, tuple[dict[str, Any], dict[str, Any]]] = {}
     for mode in modes:
         label = f"{name}: response_mode={mode!r} preserves the payload"
         try:
@@ -677,22 +682,42 @@ def check_response_modes(
         if is_error_result(result, env):
             _record_error_frame(rep, name, result, env)
             continue
+        mode_payloads[mode] = (result, env)
         found = rows(env)
+        if control is not None:
+            rep.check(
+                label,
+                bool(found),
+                f"the default call returned {len(control)} records; response_mode={mode!r} returned "
+                f"{0 if found is None else len(found)} with success={env.get('success')!r}",
+            )
+
+    if "compact" in mode_payloads and "full" in mode_payloads:
+        c_res, c_env = mode_payloads["compact"]
+        f_res, f_env = mode_payloads["full"]
+        is_identical = (c_env == f_env) if (c_env or f_env) else (c_res == f_res)
         rep.check(
-            label,
-            bool(found),
-            f"the default call returned {len(control)} records; response_mode={mode!r} returned "
-            f"{0 if found is None else len(found)} with success={env.get('success')!r}",
+            f"{name}: response_mode='compact' and 'full' differ",
+            not is_identical,
+            f"{name} returned identical payloads for response_mode='compact' and 'full'; "
+            "response_mode is ignored",
         )
 
 
 # --------------------------------------------------------------------------- driver
 
 
-def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Report:
+def run_probe(
+    base_url: str,
+    *,
+    expected_name: str,
+    timeout: float = 60.0,
+    probe: Probe | None = None,
+) -> Report:
     rep = Report(base_url.rstrip("/"), expected_name)
-    probe = Probe(base_url, timeout)
-    probe.initialize()
+    if probe is None:
+        probe = Probe(base_url, timeout)
+        probe.initialize()
 
     # Identity FIRST, and fatally. A developer gating a local build will sooner or later point
     # this at a port some sibling container is squatting on, and every finding below would then
@@ -716,6 +741,10 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
         check_argument_error(rep, probe, tool)
 
         if any(marker in name for marker in META_TOOLS):
+            props = properties(tool)
+            required = set((tool.get("inputSchema") or {}).get("required") or [])
+            if "response_mode" in props and not required:
+                check_response_modes(rep, probe, tool, {})
             continue
 
         base = valid_args(tool)
@@ -781,6 +810,9 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
             )
 
     return rep
+
+
+run_behaviour_suite = run_probe
 
 
 def main(argv: list[str] | None = None) -> int:

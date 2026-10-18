@@ -52,6 +52,56 @@ class Violation(NamedTuple):
     detail: str
 
 
+def lint_tool_schema(tool: dict[str, Any], server: str = "server") -> list[Violation]:
+    name = tool.get("name", "?")
+    bad: list[Violation] = []
+    cost = tokens(tool)
+    if cost > MAX_TOOL_TOKENS:
+        out = tokens(tool.get("outputSchema") or {})
+        bad.append(
+            Violation(
+                server,
+                "B1",
+                f"{name} is {cost:,}t (limit {MAX_TOOL_TOKENS:,}t; "
+                f"{round(100 * out / cost)}% outputSchema)",
+            )
+        )
+
+    if (
+        name == "get_diagnostics"
+        or name.endswith("_get_diagnostics")
+        or name.endswith("_diagnostics")
+    ):
+        props = properties(tool)
+        if "response_mode" in props:
+            bad.append(
+                Violation(
+                    server,
+                    "S5",
+                    f"{name} must not advertise response_mode (diagnostics tools must be zero-argument)",
+                )
+            )
+
+    required = set((tool.get("inputSchema") or {}).get("required") or [])
+    for prop_name, prop in properties(tool).items():
+        if not prop.get("description"):
+            bad.append(Violation(server, "S1", f"{name}.{prop_name} has no description"))
+        if prop_name in required and not prop.get("examples"):
+            bad.append(
+                Violation(server, "S2", f"{name}.{prop_name} is required but has no examples")
+            )
+        if is_array(prop) and not prop.get("examples"):
+            bad.append(
+                Violation(
+                    server,
+                    "S3",
+                    f"{name}.{prop_name} takes an array but has no examples "
+                    "(a model cannot tell a list from a scalar)",
+                )
+            )
+    return bad
+
+
 def check_backend(namespace: str, entry: dict[str, Any]) -> list[Violation]:
     tools: list[dict[str, Any]] = entry.get("tools", [])
     server = f"{namespace}-link"
@@ -69,37 +119,11 @@ def check_backend(namespace: str, entry: dict[str, Any]) -> list[Violation]:
         )
 
     for tool in tools:
-        name = tool.get("name", "?")
-        cost = tokens(tool)
-        if cost > MAX_TOOL_TOKENS:
-            out = tokens(tool.get("outputSchema") or {})
-            bad.append(
-                Violation(
-                    server,
-                    "B1",
-                    f"{name} is {cost:,}t (limit {MAX_TOOL_TOKENS:,}t; "
-                    f"{round(100 * out / cost)}% outputSchema)",
-                )
-            )
-
-        required = set((tool.get("inputSchema") or {}).get("required") or [])
-        for prop_name, prop in properties(tool).items():
-            if not prop.get("description"):
-                bad.append(Violation(server, "S1", f"{name}.{prop_name} has no description"))
-            if prop_name in required and not prop.get("examples"):
-                bad.append(
-                    Violation(server, "S2", f"{name}.{prop_name} is required but has no examples")
-                )
-            if is_array(prop) and not prop.get("examples"):
-                bad.append(
-                    Violation(
-                        server,
-                        "S3",
-                        f"{name}.{prop_name} takes an array but has no examples "
-                        "(a model cannot tell a list from a scalar)",
-                    )
-                )
+        bad.extend(lint_tool_schema(tool, server=server))
     return bad
+
+
+lint_server = check_backend
 
 
 def main() -> int:
@@ -164,6 +188,7 @@ def main() -> int:
         "S1": "input property with no description",
         "S2": "required property with no examples",
         "S3": "array property with no examples",
+        "S5": "diagnostics tool must not advertise response_mode (must be zero-argument)",
     }
     for rule in sorted(by_rule):
         found = by_rule[rule]
