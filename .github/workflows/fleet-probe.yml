@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Set up uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           enable-cache: true
           version: "0.8.7"
@@ -44,7 +44,7 @@ jobs:
         # (GitHub treats the env file as KEY=value pairs, not a dotenv with comments).
         run: grep -E '^GF_[A-Z0-9_]+=' ci/fleet-urls.env >> "$GITHUB_ENV"
       - name: Fleet conformance probe
-        run: uv run genefoundry-router fleet-probe --output /tmp/probe.json
+        run: uv run genefoundry-router fleet-probe
       - name: Heartbeat (dead-man's-switch)
         if: ${{ success() && env.FLEET_PROBE_HEARTBEAT_URL != '' }}
         run: curl -fsS -m 10 --retry 3 -o /dev/null "$FLEET_PROBE_HEARTBEAT_URL"
