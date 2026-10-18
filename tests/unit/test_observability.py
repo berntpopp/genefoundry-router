@@ -1,3 +1,4 @@
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -90,3 +91,24 @@ def test_health_degrades_when_an_enabled_backend_has_zero_tools():
     assert body["backends"]["tools"]["gnomad"] == 7
     assert body["backends"]["tools"]["genereviews"] == 0
     assert body["backends"]["reachable"]["genereviews"] is False
+
+
+@pytest.mark.asyncio
+async def test_metrics_middleware_search_hits_only_for_search_tools() -> None:
+    from unittest.mock import AsyncMock, MagicMock
+
+    from genefoundry_router.observability import SEARCH_HITS, MetricsMiddleware
+
+    mw = MetricsMiddleware()
+    initial = SEARCH_HITS._value.get()
+
+    ctx_call = MagicMock()
+    ctx_call.message.name = "call_tool"
+    call_next = AsyncMock(return_value="ok")
+    await mw.on_call_tool(ctx_call, call_next)
+    assert SEARCH_HITS._value.get() == initial
+
+    ctx_search = MagicMock()
+    ctx_search.message.name = "search_tools"
+    await mw.on_call_tool(ctx_search, call_next)
+    assert SEARCH_HITS._value.get() == initial + 1

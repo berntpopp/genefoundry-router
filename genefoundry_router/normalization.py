@@ -6,7 +6,8 @@ source fix lands, delete the matching ``transform`` block from servers.yaml.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 import structlog
 from fastmcp import FastMCP
@@ -15,16 +16,38 @@ from fastmcp.server.transforms.tool_transform import ToolTransform
 from fastmcp.tools import Tool
 from fastmcp.tools.tool_transform import ArgTransformConfig, ToolTransformConfig
 
+from genefoundry_router.composition import force_tool_refresh
 from genefoundry_router.registry import BackendDef, qualified_name
+from genefoundry_router.runtime_drift import RuntimeDriftGuard
 
 log = structlog.get_logger(__name__)
 
 
-async def _list_normalized_tools(server: FastMCP) -> list[Tool]:
-    """Apply every security/catalog transform except the outer search projection."""
-    tools: list[Tool] = list(await server._list_tools())  # type: ignore[attr-defined]
-    for transform in server.transforms:
-        if isinstance(transform, BM25SearchTransform):
+def insert_transform(server: FastMCP, transform: ToolTransform) -> None:
+    """Insert a ToolTransform before RuntimeDriftGuard and BM25SearchTransform."""
+    transforms_list: list[Any] = getattr(server, "_transforms", server.transforms)
+    index = next(
+        (
+            i
+            for i, existing in enumerate(transforms_list)
+            if isinstance(existing, (RuntimeDriftGuard, BM25SearchTransform))
+        ),
+        len(transforms_list),
+    )
+    transforms_list.insert(index, transform)
+
+
+async def _list_normalized_tools(
+    server: FastMCP, raw_tools: Sequence[Tool] | None = None
+) -> list[Tool]:
+    """Apply every security/catalog transform except the outer search and drift projections."""
+    if raw_tools is None:
+        tools: list[Tool] = list(await server._list_tools())  # type: ignore[attr-defined]
+    else:
+        tools = [t.model_copy(deep=True) for t in raw_tools]
+    transforms_list: list[Any] = getattr(server, "_transforms", server.transforms)
+    for transform in transforms_list:
+        if isinstance(transform, (BM25SearchTransform, RuntimeDriftGuard)):
             continue
         tools = list(await transform.list_tools(tools))
     return tools
@@ -74,21 +97,42 @@ def build_tool_transform(
 async def apply_normalizations(server: FastMCP, registry: list[BackendDef]) -> list[Tool]:
     """Async post-mount pass: rename non-compliant tools, then inject backend tags.
 
-    Enumerates with the PUBLIC ``await server.list_tools()``. Two passes so tag
-    injection sees post-rename names. Resilient: a backend that fails to enumerate
-    (unreachable proxy) is skipped and retried on the next poll (Task 22).
+    Enumerates with force_tool_refresh=True to fetch raw tools from backends.
+    Applies name/arg normalization, then tag injection on post-rename names.
+    Skips tool names already covered by an existing ToolTransform.
     """
+    raw_tools: list[Tool] | None = None
 
     async def enumerate_catalog() -> list[Tool]:
-        return await _list_normalized_tools(server)
+        nonlocal raw_tools
+        if raw_tools is None:
+            token = force_tool_refresh.set(True)
+            try:
+                raw_tools = list(await server._list_tools())  # type: ignore[attr-defined]
+            except Exception as exc:  # tolerate an unreachable backend at startup
+                log.warning("normalization_list_failed", error=str(exc))
+                return []
+            finally:
+                force_tool_refresh.reset(token)
+        return await _list_normalized_tools(server, raw_tools)
 
     # Pass 1 — name/arg transforms
     try:
         tools = await enumerate_catalog()
-    except Exception as exc:  # tolerate an unreachable backend at startup
+    except Exception as exc:
         log.warning("normalization_list_failed", error=str(exc))
         return []
-    present = [tool.name for tool in tools]
+
+    # Skip tool names already covered by an existing ToolTransform in server._transforms
+    installed: set[str] = set()
+    transforms_list: list[Any] = getattr(server, "_transforms", server.transforms)
+    for transform in transforms_list:
+        if isinstance(transform, ToolTransform):
+            for orig_name, config in getattr(transform, "_transforms", {}).items():
+                if config.name is not None:
+                    installed.add(orig_name)
+
+    present = [tool.name for tool in tools if tool.name not in installed]
     renamed = False
     for backend in registry:
         if backend.transform is None:
@@ -96,7 +140,7 @@ async def apply_normalizations(server: FastMCP, registry: list[BackendDef]) -> l
         scoped = [n for n in present if n.startswith(f"{backend.namespace}_")]
         transform = build_tool_transform(backend, scoped)
         if transform is not None:
-            server.add_transform(transform)
+            insert_transform(server, transform)
             renamed = True
             log.info("normalized", backend=backend.name, tools=len(scoped))
 
@@ -108,8 +152,6 @@ async def apply_normalizations(server: FastMCP, registry: list[BackendDef]) -> l
             return []
 
     # Pass 2 — tag injection on post-rename names (union with any existing tags).
-    # Uses add_transform(ToolTransform({...})) — the non-deprecated 3.4.2 path
-    # (add_tool_transformation is deprecated). One batched transform for all tools.
     by_ns = {b.namespace: b for b in registry if b.tags}
     if not by_ns:
         return tools
@@ -124,7 +166,7 @@ async def apply_normalizations(server: FastMCP, registry: list[BackendDef]) -> l
             continue
         tag_transforms[tool.name] = ToolTransformConfig(tags=set(merged))
     if tag_transforms:
-        server.add_transform(ToolTransform(tag_transforms))
+        insert_transform(server, ToolTransform(tag_transforms))
         try:
             tools = await enumerate_catalog()
         except Exception as exc:

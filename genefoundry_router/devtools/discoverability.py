@@ -172,14 +172,12 @@ async def evaluate(
     whose index includes ``expansions`` exactly as the served transform folds them in.
     """
     surfaced_set = set(surfaced)
-    # Pinned tools are excluded from the searchable set, exactly as the live router does.
-    hidden = [t for t in catalog if t.name not in surfaced_set]
     transform = CompactBM25SearchTransform(max_results=PROBE_DEPTH, expansions=expansions)
 
     report = Report()
     for task in tasks:
         pinned_match = next((e for e in task.expected if e in surfaced_set), None)
-        ranked = [t.name for t in await transform._search(hidden, task.query)]
+        ranked = [t.name for t in await transform._search(catalog, task.query)]
         rank: int | None = None
         search_match: str | None = None
         for e in task.expected:

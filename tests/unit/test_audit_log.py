@@ -294,3 +294,21 @@ async def test_audit_still_reraises_and_never_logs_the_message() -> None:
     assert entry["error_type"] == "RuntimeError"
     assert entry["error_code"] == UNCLASSIFIED_ERROR_CODE
     assert PHI not in str(entry)
+
+
+async def test_audit_logs_error_outcome_when_result_has_is_error() -> None:
+    mw = AuditLogMiddleware()
+    ctx = _Ctx("gnomad_search_genes")
+
+    class _MockResult:
+        is_error = True
+
+    async def _return_err(_ctx: object) -> object:
+        return _MockResult()
+
+    with structlog.testing.capture_logs() as logs:
+        res = await mw.on_call_tool(ctx, _return_err)
+
+    assert res.is_error is True
+    entry = next(entry for entry in logs if entry.get("event") == "tool_call")
+    assert entry["outcome"] == "error"

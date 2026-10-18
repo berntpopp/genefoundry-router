@@ -27,6 +27,7 @@ from genefoundry_router.devtools.fakes import (
     load_manifest,
 )
 from genefoundry_router.drift import canonical_json_schema
+from genefoundry_router.registry import BackendDef
 from genefoundry_router.release.evidence import application_release_document
 from genefoundry_router.release.models import (
     ApplicationReleaseManifest,
@@ -219,14 +220,18 @@ async def _run(
                 raise ReleaseCandidateCaptureError(
                     f"application release repository mismatch for {backend.namespace}"
                 )
-    backends: dict[str, BackendSpec] = {}
-    for b in registry:
+
+    async def capture(b: BackendDef) -> tuple[BackendSpec, list[Any]] | None:
         endpoint = (
             release_candidate_inventory["backends"][b.namespace]["endpoint"]
             if release_candidate_inventory is not None
             else b.url
         )
-        captured = await _capture_backend(endpoint, b.service_token) if endpoint else None
+        return await _capture_backend(endpoint, b.service_token) if endpoint else None
+
+    captures = await asyncio.gather(*(capture(b) for b in registry))
+    backends: dict[str, BackendSpec] = {}
+    for b, captured in zip(registry, captures, strict=True):
         fresh = captured[0] if captured else None
         if release_candidate_inventory is not None and captured is not None:
             release = release_candidate_inventory["backends"][b.namespace]["application_release"]
@@ -238,7 +243,7 @@ async def _run(
                 raise ReleaseCandidateCaptureError(
                     f"definition attestation mismatch for required release-candidate backend {b.namespace}"
                 )
-            if fresh.version != release["version"]:
+            if captured[0].version != release["version"]:
                 raise ReleaseCandidateCaptureError(
                     f"version mismatch for required release-candidate backend {b.namespace}"
                 )

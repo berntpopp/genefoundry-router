@@ -10,9 +10,9 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/control-audit.yml"
 CHECKOUT_ACTION = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
-SETUP_UV_ACTION = "astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7"
-APP_TOKEN_ACTION = "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"  # noqa: S105 - action identifier
-UPLOAD_ACTION = "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+SETUP_UV_ACTION = "astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884"
+APP_TOKEN_ACTION = "actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510"  # noqa: S105 - action identifier
+UPLOAD_ACTION = "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"
 SHELL_LEDGER = "$RUNNER_TEMP/container-controls.json"
 MAIN_REF = "refs/heads/main"
 TOPIC_REF = "refs/heads/topic"
@@ -260,9 +260,9 @@ def test_workflow_has_no_long_lived_or_failure_suppressing_escape_hatches() -> N
 
 def test_reviewed_action_version_comments_match_pins() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
-    assert f"uses: {SETUP_UV_ACTION} # v10.2.0" in text
-    assert f"uses: {APP_TOKEN_ACTION} # v3.2.0" in text
-    assert f"uses: {UPLOAD_ACTION} # v7.0.1" in text
+    assert f"uses: {SETUP_UV_ACTION} # v10.3.0" in text
+    assert f"uses: {APP_TOKEN_ACTION} # v3.3.0" in text
+    assert f"uses: {UPLOAD_ACTION} # v7.0.2" in text
 
 
 def test_every_workflow_yaml_parses() -> None:

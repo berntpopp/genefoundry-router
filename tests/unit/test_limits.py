@@ -129,7 +129,7 @@ def test_hits_clear_across_windows(monkeypatch) -> None:
     assert middleware._hits == {"198.51.100.2": 1}
 
 
-def test_max_tracked_ceiling_fails_open_once_per_window(monkeypatch) -> None:
+def test_max_tracked_ceiling_fails_closed_once_per_window(monkeypatch) -> None:
     spy = _SpyLog()
     monkeypatch.setattr(limits_mod, "_MAX_TRACKED", 2)
     monkeypatch.setattr(limits_mod, "log", spy)
@@ -138,8 +138,8 @@ def test_max_tracked_ceiling_fails_open_once_per_window(monkeypatch) -> None:
     assert middleware._increment("a", 1.0) is True
     assert middleware._increment("b", 1.0) is True
     assert len(middleware._hits) == 2
-    assert middleware._increment("c", 1.0) is True
-    assert middleware._increment("d", 1.0) is True
+    assert middleware._increment("c", 1.0) is False
+    assert middleware._increment("d", 1.0) is False
     assert len(middleware._hits) == 2
     assert [event for event, _ in spy.events].count("rate_limit_tracking_ceiling") == 1
     assert spy.events[0][1]["max_tracked"] == 2
@@ -147,7 +147,7 @@ def test_max_tracked_ceiling_fails_open_once_per_window(monkeypatch) -> None:
 
     assert middleware._increment("e", 61.0) is True
     assert middleware._increment("f", 61.0) is True
-    assert middleware._increment("g", 61.0) is True
+    assert middleware._increment("g", 61.0) is False
     assert middleware._hits == {"e": 1, "f": 1}
     assert [event for event, _ in spy.events].count("rate_limit_tracking_ceiling") == 2
 

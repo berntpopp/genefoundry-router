@@ -11120,7 +11120,8 @@
         "Find literature-linked genes and diseases associated with @GENE_BRCA1 from PubTator3 knowledge graph",
         "List all target chemicals that interact with @GENE_EGFR according to literature co-occurrence relations",
         "Find entities related to @DISEASE_cystic_fibrosis to expand my systematic review query",
-        "Quelles sont les maladies associées à l'entité @GENE_TP53 selon les relations extraites de PubTator ?"
+        "Quelles sont les maladies associées à l'entité @GENE_TP53 selon les relations extraites de PubTator ?",
+        "relationships between a gene and a chemical reported in the literature"
       ],
       "keywords": [
         "entity expansion",
@@ -11148,7 +11149,11 @@
         "concept expansion",
         "entity network",
         "predicate filtering",
-        "corpus expansion"
+        "corpus expansion",
+        "relationships",
+        "gene-chemical relationships",
+        "chemical-gene relationships",
+        "relationships reported in the literature"
       ]
     },
     "pubtator_find_related_articles": {
@@ -11897,7 +11902,8 @@
         "Query our indexed review on CFTR F508del using batch variants ['lumacaftor', 'sweat chloride', 'FEV1']",
         "Retrieve quotes from review rev_nf1_glioma for queries 'neurofibromatosis type 1' and 'MEK inhibitor' capped at 1000 chars",
         "Run dry run diagnostics on a batch of queries against review_id rev_cardiomyopathy_2024 to verify character budgets",
-        "Extraire par lots des citations dans l'index de revue pour plusieurs requêtes de recherche simultanées"
+        "Extraire par lots des citations dans l'index de revue pour plusieurs requêtes de recherche simultanées",
+        "retrieve grounded citable context for a biomedical question from prepared PubMed evidence"
       ],
       "keywords": [
         "batch retrieval",
@@ -11926,7 +11932,10 @@
         "staged review query",
         "character budget",
         "PubTator context",
-        "review index querying"
+        "review index querying",
+        "grounded context",
+        "grounded citable context",
+        "biomedical questions"
       ]
     },
     "pubtator_get_review_index_summary": {
@@ -12165,7 +12174,8 @@
         "Query PubTator variant literature evidence for LDLR rs121908027 familial hypercholesterolemia",
         "Need source-attributed PMIDs for MTHFR c.677C>T associated with thrombophilia",
         "Extract publication references for EGFR p.Thr790Met (T790M) resistance mutation",
-        "Trouver les articles scientifiques et preuves bibliographiques pour la mutation BRCA2 c.5946delT"
+        "Trouver les articles scientifiques et preuves bibliographiques pour la mutation BRCA2 c.5946delT",
+        "published evidence for a variant from the literature"
       ],
       "keywords": [
         "variant annotation",
@@ -12195,7 +12205,10 @@
         "literature support",
         "source-attributed records",
         "case reports",
-        "functional evidence"
+        "functional evidence",
+        "published evidence",
+        "published variant evidence",
+        "published literature"
       ]
     },
     "pubtator_inspect_review_index": {
@@ -12610,7 +12623,10 @@
         "variant publication search",
         "abstract search",
         "bioc search",
-        "publication filter"
+        "publication filter",
+        "literature query pmid",
+        "PMID literature query",
+        "query literature by PMID"
       ]
     },
     "pubtator_suggest_corpus": {

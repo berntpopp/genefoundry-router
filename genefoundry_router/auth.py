@@ -280,14 +280,11 @@ def _build_oauth(settings: RouterSettings, *, refresh_ledger: RefreshLedger | No
         # router's own JWTVerifier (GF_JWT_AUDIENCE=…/mcp) rejects. That is INCIDENT
         # 2026-07-15: all Claude/ChatGPT logins to genefoundry.org/mcp broke.
         #
-        # With this = GF_JWT_AUDIENCE, the live `_resource_url` is …/mcp (correct check +
-        # correct minted audience). The PRM's separate, path-appending derivation can then
-        # advertise …/mcp/mcp; `_install_resource_tolerance()` collapses the doubled segment
-        # so clients that echo it back still validate. That doubled-PRM cosmetics is the
-        # lesser evil vs. a hard login outage — the proper fix is a FastMCP change so the PRM
-        # and the OAuthProxy resource-check derive the URI the same way. Guarded by
-        # tests/unit/test_auth_resource_url.py so #71 cannot silently return.
-        resource_base_url=settings.GF_JWT_AUDIENCE,
+        # resource_base_url is public_base (root origin); when mounted via
+        # server.http_app(path=settings.GF_MCP_PATH), FastMCP appends the mcp_path so
+        # _resource_url becomes the full audience (public_base + path == GF_JWT_AUDIENCE)
+        # without doubling the path in the PRM metadata URL (issue #235a).
+        resource_base_url=public_base,
         # Effective signing key → the OAuthProxy-minted tokens AND encrypted on-disk client
         # store stay valid across restarts. An explicit value decouples them from Keycloak
         # secret rotation; when absent, resolve_oauth_signing_key reproduces FastMCP's legacy

@@ -3,6 +3,8 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 from fastmcp import FastMCP
+from fastmcp.tools.base import ToolResult
+from mcp.types import TextContent
 
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.registry import BackendDef
@@ -85,7 +87,11 @@ async def test_tool_cache_end_to_end_via_build_server(slow_backend_fakes) -> Non
 
 
 def test_cache_invalidation_api_endpoints(slow_backend_fakes) -> None:
-    settings = RouterSettings(_env_file=None, GF_AUTH_MODE="none")
+    settings = RouterSettings(
+        _env_file=None,
+        GF_AUTH_MODE="none",
+        GF_METRICS_TOKEN="secret-ops-token",  # noqa: S106
+    )
     registry = [
         BackendDef(name="vep", url_env="GF_VEP_URL", namespace="vep", tool_cache_ttl=86400),
     ]
@@ -94,6 +100,7 @@ def test_cache_invalidation_api_endpoints(slow_backend_fakes) -> None:
         registry,
         proxy_targets={"vep": slow_backend_fakes["vep"]},
     )
+    auth_headers = {"Authorization": "Bearer secret-ops-token"}
 
     with TestClient(app) as client:
         # Prepopulate cache in app.state.tool_cache
@@ -104,7 +111,11 @@ def test_cache_invalidation_api_endpoints(slow_backend_fakes) -> None:
         assert cache.stats["size"] == 2
 
         # Invalidate by tool via query params
-        resp = client.post("/api/cache/invalidate", params={"tool": "vep_recode_variant"})
+        resp = client.post(
+            "/api/cache/invalidate",
+            params={"tool": "vep_recode_variant"},
+            headers=auth_headers,
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "ok"
@@ -114,17 +125,37 @@ def test_cache_invalidation_api_endpoints(slow_backend_fakes) -> None:
         # Repopulate and invalidate by tool via JSON body
         cache.set("vep_recode_variant", {"v": "10"}, {"ok": True})
         assert cache.stats["size"] == 1
-        resp = client.post("/api/cache/invalidate", json={"tool": "vep_recode_variant"})
+        resp = client.post(
+            "/api/cache/invalidate",
+            json={"tool": "vep_recode_variant"},
+            headers=auth_headers,
+        )
         assert resp.status_code == 200
         assert resp.json()["invalidated"] == 1
         assert cache.stats["size"] == 0
 
         # Repopulate and clear
         cache.set("vep_recode_variant", {"v": "3"}, {"ok": True})
-        resp = client.post("/api/cache/clear")
+        resp = client.post("/api/cache/clear", headers=auth_headers)
         assert resp.status_code == 200
         assert resp.json()["cleared"] == 1
         assert cache.stats["size"] == 0
+
+
+@pytest.mark.parametrize("path", ["/api/cache/clear", "/api/cache/invalidate"])
+def test_cache_admin_denies_without_configured_token(path, slow_backend_fakes) -> None:
+    settings = RouterSettings(_env_file=None, GF_AUTH_MODE="none", GF_METRICS_TOKEN=None)
+    app = build_app(settings, [], proxy_targets={})
+    cache = app.state.tool_cache
+    assert cache is not None
+    cache.set("vep_recode_variant", {"v": "1"}, {"ok": True})
+
+    with TestClient(app) as client:
+        response = client.post(path, json={"tool": "vep_recode_variant"})
+        assert response.status_code == 401
+        assert response.headers["www-authenticate"] == "Bearer"
+        assert cache.stats["size"] == 1
+        assert client.get("/metrics").status_code == 200
 
 
 def test_cache_admin_endpoints_require_token_when_configured(slow_backend_fakes) -> None:
@@ -162,3 +193,100 @@ def test_cache_admin_endpoints_require_token_when_configured(slow_backend_fakes)
         )
         assert res4.status_code == 200
         assert res4.json()["status"] == "ok"
+
+
+@pytest.mark.asyncio
+async def test_tool_cache_rewrites_hints_before_caching() -> None:
+    vep = FastMCP("vep")
+    vep_calls = 0
+
+    @vep.tool()
+    def recode_variant(v: str) -> dict:
+        nonlocal vep_calls
+        vep_calls += 1
+        return {
+            "success": True,
+            "fallback_tool": "recode_variant",
+        }
+
+    registry = [BackendDef(name="vep", url_env="GF_VEP_URL", namespace="vep", tool_cache_ttl=86400)]
+    settings = RouterSettings(_env_file=None, GF_AUTH_MODE="none", GF_REWRITE_HINTS=True)
+    server = build_server(settings, registry, proxy_targets={"vep": vep})
+
+    res1 = await server.call_tool("vep_recode_variant", {"v": "1"})
+    assert vep_calls == 1
+    assert res1.structured_content["fallback_tool"] == "vep_recode_variant"
+
+    res2 = await server.call_tool("vep_recode_variant", {"v": "1"})
+    assert vep_calls == 1
+    assert res2.structured_content["fallback_tool"] == "vep_recode_variant"
+
+
+@pytest.mark.asyncio
+async def test_tool_cache_does_not_cache_text_block_errors() -> None:
+    vep = FastMCP("vep")
+    vep_calls = 0
+
+    @vep.tool()
+    def recode_variant(v: str) -> ToolResult:
+        nonlocal vep_calls
+        vep_calls += 1
+        return ToolResult(
+            content=[TextContent(type="text", text='{"error": "variant not found"}')],
+            structured_content=None,
+        )
+
+    registry = [BackendDef(name="vep", url_env="GF_VEP_URL", namespace="vep", tool_cache_ttl=86400)]
+    settings = RouterSettings(_env_file=None, GF_AUTH_MODE="none")
+    server = build_server(settings, registry, proxy_targets={"vep": vep})
+
+    await server.call_tool("vep_recode_variant", {"v": "bad"})
+    assert vep_calls == 1
+
+    await server.call_tool("vep_recode_variant", {"v": "bad"})
+    assert vep_calls == 2
+
+
+@pytest.mark.asyncio
+async def test_quarantined_tool_not_served_from_warm_cache() -> None:
+    from fastmcp import Client
+
+    vep = FastMCP("vep")
+    vep_calls = 0
+
+    @vep.tool(description="Original description")
+    def recode_variant(v: str) -> dict:
+        nonlocal vep_calls
+        vep_calls += 1
+        return {"success": True, "v": v}
+
+    registry = [BackendDef(name="vep", url_env="GF_VEP_URL", namespace="vep", tool_cache_ttl=86400)]
+    settings = RouterSettings(_env_file=None, GF_AUTH_MODE="none", GF_DRIFT_MODE="off")
+    app = build_app(settings, registry, proxy_targets={"vep": vep})
+    await app.state.refresh_catalog("startup")
+
+    async with Client(app.state.mcp_server) as client:
+        # 1. Warm the response cache
+        res1 = await client.call_tool("vep_recode_variant", {"v": "rs1"})
+        assert res1.data["v"] == "rs1"
+        assert vep_calls == 1
+        assert app.state.tool_cache.stats["size"] == 1
+
+        # 2. Enable drift guard with a mismatched digest and run poll refresh -> tool is quarantined
+        app.state.runtime_drift_guard.mode = "warn"
+        app.state.runtime_drift_guard.pinned = {"vep_recode_variant": "mismatch-digest"}
+        await app.state.refresh_catalog("poll")
+        assert "vep_recode_variant" in app.state.runtime_drift_guard.quarantined
+
+        # 3. Direct call and call_tool must NOT serve the warm cached response
+        res_direct = await client.call_tool(
+            "vep_recode_variant", {"v": "rs1"}, raise_on_error=False
+        )
+        assert res_direct.is_error is True
+        res_synthetic = await client.call_tool(
+            "call_tool",
+            {"name": "vep_recode_variant", "arguments": {"v": "rs1"}},
+            raise_on_error=False,
+        )
+        assert res_synthetic.is_error is True
+        assert vep_calls == 1

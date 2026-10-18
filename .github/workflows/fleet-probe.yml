@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Set up uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           enable-cache: true
           version: "0.8.7"
@@ -44,21 +44,8 @@ jobs:
         # (GitHub treats the env file as KEY=value pairs, not a dotenv with comments).
         run: grep -E '^GF_[A-Z0-9_]+=' ci/fleet-urls.env >> "$GITHUB_ENV"
       - name: Fleet conformance probe
-        id: probe
-        run: |
-          set +e
-          uv run genefoundry-router fleet-probe > fleet_probe_output.txt 2>&1
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
-          cat fleet_probe_output.txt
+        run: uv run genefoundry-router fleet-probe
       - name: Heartbeat (dead-man's-switch)
-        if: ${{ always() && env.FLEET_PROBE_HEARTBEAT_URL != '' }}
-        run: curl -fsS -m 10 --retry 3 -o /dev/null "$FLEET_PROBE_HEARTBEAT_URL" || true
-      - name: Warn on unreachable backends (availability, not a contract violation)
-        if: ${{ steps.probe.outputs.exit_code == '2' }}
-        run: |
-          echo "::warning::fleet-probe: some backends were unreachable (availability, not a transport-contract violation)"
-      - name: Fail on non-conformance
-        if: ${{ steps.probe.outputs.exit_code == '1' }}
-        run: |
-          echo "::error::fleet-probe: a deployed backend violates MCP Transport Standard v1 (see log)"
-          exit 1
+        if: ${{ success() && env.FLEET_PROBE_HEARTBEAT_URL != '' }}
+        run: curl -fsS -m 10 --retry 3 -o /dev/null "$FLEET_PROBE_HEARTBEAT_URL"
+

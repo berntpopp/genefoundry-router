@@ -508,7 +508,7 @@ class AuditLogMiddleware(Middleware):
         audit_log.info(
             "tool_call",
             **await self._identity_fields(context),
-            outcome="ok",
+            outcome="error" if getattr(result, "is_error", False) else "ok",
             elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
         )
         return result
@@ -523,7 +523,7 @@ class MetricsMiddleware(Middleware):
 
     async def on_call_tool(self, context: MiddlewareContext, call_next):  # type: ignore[no-untyped-def]
         raw = getattr(context.message, "name", "") or ""
-        if raw in ("search_tools", "call_tool"):
+        if raw == "search_tools":
             SEARCH_HITS.inc()
         start = time.perf_counter()
         try:

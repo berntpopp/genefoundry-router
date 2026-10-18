@@ -152,11 +152,21 @@ class Probe:
         text = resp.text.strip()
         if "text/event-stream" in resp.headers.get("content-type", ""):
             frames = [ln[5:].strip() for ln in text.splitlines() if ln.startswith("data:")]
-            text = frames[-1] if frames else "{}"
-        message = json.loads(text or "{}")
+            text = frames[-1] if frames else ""
+        try:
+            message = json.loads(text)
+        except (ValueError, json.JSONDecodeError) as exc:
+            raise httpx.DecodingError("Invalid JSON-RPC response object") from exc
+        if not isinstance(message, dict):
+            raise httpx.DecodingError("Invalid JSON-RPC response object")
         if "error" in message:
+            if not isinstance(message["error"], dict):
+                raise httpx.DecodingError("Invalid JSON-RPC response object")
             raise ProtocolError(message["error"])
-        return dict(message.get("result") or {})
+        result = message.get("result")
+        if not isinstance(result, dict):
+            raise httpx.DecodingError("Invalid JSON-RPC response object")
+        return result
 
     def initialize(self) -> dict[str, Any]:
         result = self._rpc(
@@ -256,7 +266,7 @@ def rows(env: dict[str, Any]) -> list[Any] | None:
     for key, value in env.items():
         if key.startswith("_") or not isinstance(value, list):
             continue
-        if value and not isinstance(value[0], dict):
+        if not all(isinstance(item, dict) for item in value):
             continue
         if best is None or len(value) > len(best):
             best = value
@@ -277,6 +287,8 @@ def _grouped_collection(env: dict[str, Any]) -> list[Any] | None:
         if value and not all(isinstance(branch, list) for branch in value.values()):
             continue
         flat = [item for branch in value.values() if isinstance(branch, list) for item in branch]
+        if not all(isinstance(item, dict) for item in flat):
+            continue
         if best is None or len(flat) > len(best):
             best = flat
     return best
@@ -313,8 +325,10 @@ def more_flag(env: dict[str, Any]) -> bool | None:
     return None
 
 
-def is_error_envelope(env: dict[str, Any]) -> bool:
-    return env.get("success") is False or bool(env.get("error_code"))
+def is_error_result(result: dict[str, Any], env: dict[str, Any]) -> bool:
+    return (
+        result.get("isError") is True or env.get("success") is False or bool(env.get("error_code"))
+    )
 
 
 def properties(tool: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -405,6 +419,11 @@ def _record_error_frame(
         result.get("isError") is True,
         f"success={env.get('success')!r} error_code={code!r} but isError={result.get('isError')!r}",
     )
+    rep.check(
+        f"{tool}: tool error includes a fleet error envelope",
+        env.get("success") is False or bool(env.get("error_code")),
+        "MCP rejection lacks the fleet error envelope",
+    )
     if code is not None:
         rep.check(
             f"{tool}: error_code is in the closed enum",
@@ -435,7 +454,7 @@ def check_argument_error(rep: Report, probe: Probe, tool: dict[str, Any]) -> Non
         return
 
     env = envelope(result)
-    if not is_error_envelope(env):
+    if not is_error_result(result, env):
         rep.check(label + " is rejected", False, "the server ACCEPTED an unknown argument")
         return
 
@@ -492,7 +511,7 @@ def check_declared_enums(
             continue
 
         env = envelope(result)
-        if is_error_envelope(env):
+        if is_error_result(result, env):
             _record_error_frame(rep, name, result, env)
             rep.check(
                 f"{label} → invalid_input",
@@ -542,7 +561,7 @@ def check_silent_empty_filter(
             continue
 
         env = envelope(result)
-        if is_error_envelope(env):
+        if is_error_result(result, env):
             _record_error_frame(rep, name, result, env)
             rep.passed.append(f"{label} → rejected ({env.get('error_code')})")
             continue
@@ -619,7 +638,8 @@ def check_total_is_not_the_page_size(
         except ProtocolError:
             return
         env = envelope(result)
-        if is_error_envelope(env):
+        if is_error_result(result, env):
+            _record_error_frame(rep, name, result, env)
             return
         totals[limit] = total_of(env)
 
@@ -654,7 +674,7 @@ def check_response_modes(
         except ProtocolError:
             continue
         env = envelope(result)
-        if is_error_envelope(env):
+        if is_error_result(result, env):
             _record_error_frame(rep, name, result, env)
             continue
         found = rows(env)
@@ -715,7 +735,7 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
             continue
 
         control_env = envelope(control_result)
-        if is_error_envelope(control_env):
+        if is_error_result(control_result, control_env):
             code = control_env.get("error_code")
             _record_error_frame(rep, name, control_result, control_env)
             if code in INCONCLUSIVE:

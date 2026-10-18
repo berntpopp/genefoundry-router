@@ -2,6 +2,20 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.2] - 2026-10-18
+
+### Fixed
+
+- Include the 32 pinned `entrypoints` (`always_visible`) in `search_tools` by querying `get_tool_catalog(ctx)` and cache synthetic `search_tools`/`call_tool` `FunctionTool` instances per transform (#221, #232).
+- Share a persistent per-event-loop `httpx.AsyncHTTPTransport` connection pool across upstream proxy calls, honor per-backend `cache_ttl` via `CachedProxyProvider`, deduplicate `apply_normalizations()`, and make `RuntimeDriftGuard` a first-class FastMCP `Transform` with zero-RPC quarantine rejection and automatic recovery (#222, #224, #227, #237).
+- Offload synchronous `RefreshLedger` SQLite operations from the asyncio event loop via `observe_in_thread()`, recover pending WAL `TRUNCATE` checkpoints in `heartbeat()`, preserve `overlapping_attempt` classification across concurrent refreshes, and propagate `correlation_id` into refresh ledger attempts (#223, #226, #235, #239).
+- Include CORS headers on `405 Method Not Allowed` responses to `GET /mcp` (`Accept: text/event-stream`), fail closed in `_verify_cache_admin_auth` when `GF_METRICS_TOKEN` is unset and in `_SlidingWindow.allow()` at `_MAX_TRACKED`, place `NamespaceHintMiddleware` innermost so cached responses retain `_meta.hint`, inspect JSON text blocks in `is_error_response()`, record `is_error` tool outcomes without double-counting `call_tool`, and prevent duplicate OAuth PRM routes (#225, #228, #230, #231, #234, #235).
+- Load `.env` in the CLI callback, normalize tool names in `list-tools`, parallelize `doctor` / `fleet-probe` / `snapshot_fleet.py`, pin `workers=1` in `uvicorn.run()`, harden `.github/workflows/fleet-probe.yml` and `.github/workflows/mcp-registry.yml`, and reject malformed JSON-RPC payloads in transport/behaviour conformance probes (#229, #233, #236, #237, #238, #239).
+
+### Changed
+
+- Consolidated Dependabot updates for the `uv` dependency group (#219) and `github_actions` group (#220), and removed unused `gunicorn` and `orjson` runtime dependencies (#237).
+
 ## [0.10.1] - 2026-10-04
 
 ### Added

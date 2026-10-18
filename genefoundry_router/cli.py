@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import typer
 import uvicorn
+from dotenv import load_dotenv
 from rich.console import Console
 
 if TYPE_CHECKING:
@@ -23,6 +24,13 @@ from genefoundry_router.server import build_app
 
 app = typer.Typer(help="GeneFoundry Router — federate the -link MCP fleet.", no_args_is_help=True)
 app.command("refresh-report")(refresh_report_command)
+
+
+@app.callback()
+def _load_env() -> None:
+    load_dotenv(".env", override=False)
+
+
 console = Console()
 
 DEFAULT_SERVERS = "servers.yaml"
@@ -112,11 +120,7 @@ def refuses_public_metrics_without_token(
 
 
 def should_warn_development_unsafe_observability(
-    auth_mode: str,
-    deployment_mode: str,
-    development_override: bool,
-    rate_limit_rpm: int,
-    metrics_token: str | None,
+    auth_mode: str, deployment_mode: str, development_override: bool
 ) -> bool:
     """Warn when the named development-only observability override is active."""
     return auth_mode != "none" and deployment_mode == "development" and development_override
@@ -190,17 +194,19 @@ def check_leaf_name(leaf: str, tags: list[str] | None = None) -> list[str]:
 
 @app.command()
 def run(
-    host: str = typer.Option("127.0.0.1", help="Bind host."),
-    port: int = typer.Option(8000, help="Bind port."),
+    host: str = typer.Option("127.0.0.1", envvar="GF_HOST", help="Bind host."),
+    port: int = typer.Option(8000, envvar="GF_PORT", help="Bind port."),
     transport: str = typer.Option("http", help="Transport (only 'http' supported)."),
-    log_level: str = typer.Option("INFO", help="Log level."),
-    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+    log_level: str = typer.Option("INFO", envvar="GF_LOG_LEVEL", help="Log level."),
+    servers_file: str = typer.Option(DEFAULT_SERVERS, envvar="GF_SERVERS_FILE", help="Registry."),
 ) -> None:
     """Start the router over Streamable HTTP."""
     if transport != "http":
         console.print(f"[red]Unsupported transport {transport!r}; only 'http' is offered.[/red]")
         raise typer.Exit(2)
-    settings = RouterSettings(GF_LOG_LEVEL=log_level, GF_SERVERS_FILE=servers_file)
+    settings = RouterSettings(
+        GF_HOST=host, GF_PORT=port, GF_LOG_LEVEL=log_level, GF_SERVERS_FILE=servers_file
+    )
     if is_insecure_public_bind(settings.GF_AUTH_MODE, host, settings.GF_ALLOW_INSECURE):
         console.print(
             f"[red]Refusing to start: GF_AUTH_MODE=none on a non-loopback bind ({host}) "
@@ -251,8 +257,6 @@ def run(
         settings.GF_AUTH_MODE,
         settings.GF_DEPLOYMENT_MODE,
         settings.GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY,
-        settings.GF_RATE_LIMIT_RPM,
-        settings.GF_METRICS_TOKEN,
     ):
         console.print(
             "[yellow]WARNING: GF_ALLOW_DEVELOPMENT_UNSAFE_OBSERVABILITY is enabled; "
@@ -278,7 +282,7 @@ def run(
         )
     registry = load_registry(servers_file, os.environ)
     application = build_app(settings, registry)
-    uvicorn.run(application, host=host, port=port, log_level=log_level.lower())
+    uvicorn.run(application, host=host, port=port, log_level=log_level.lower(), workers=1)
 
 
 def _backend_transport(backend: BackendDef) -> Any:
@@ -328,7 +332,7 @@ async def _probe_backend(backend: BackendDef) -> dict[str, object]:
 
 @app.command()
 def doctor(
-    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+    servers_file: str = typer.Option(DEFAULT_SERVERS, envvar="GF_SERVERS_FILE", help="Registry."),
     strict_naming: bool = typer.Option(
         False,
         "--strict-naming",
@@ -365,7 +369,7 @@ def doctor(
 
 
 async def _gather_probes(backends: list[BackendDef]) -> list[dict[str, object]]:
-    return [await _probe_backend(b) for b in backends]
+    return list(await asyncio.gather(*(_probe_backend(b) for b in backends)))
 
 
 def _classify_fleet(
@@ -397,7 +401,7 @@ def _classify_fleet(
 
 @app.command("fleet-probe")
 def fleet_probe(
-    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+    servers_file: str = typer.Option(DEFAULT_SERVERS, envvar="GF_SERVERS_FILE", help="Registry."),
     tier: str = typer.Option("stateless", help="Transport tier to assert (stateless|stateful)."),
 ) -> None:
     """Run the MCP Transport Standard v1 conformance probe against every enabled backend's
@@ -409,34 +413,33 @@ def fleet_probe(
     proves the *code* conformant; this proves the *deployed fleet* conformant. Exit 1 on any
     contract violation, 2 on transport errors only, 0 if all pass.
     """
+    from concurrent.futures import ThreadPoolExecutor
+
     import httpx
 
     from genefoundry_router.conformance import run_probe
 
     registry = load_registry(servers_file, os.environ)
-    results: list[tuple[str, Report | None, str | None]] = []
-    for b in registry:
-        if not b.enabled:
-            continue
+
+    def _probe(b: BackendDef) -> tuple[str, Report | None, str | None]:
         if not b.url:
-            results.append((b.name, None, f"no URL configured ({b.url_env})"))
-            continue
+            return b.name, None, f"no URL configured ({b.url_env})"
         base = b.url[: -len("/mcp")] if b.url.endswith("/mcp") else b.url
         try:
-            results.append(
-                (
-                    b.name,
-                    run_probe(
-                        base,
-                        expected_name=expected_server_name(b),
-                        tier=tier,
-                        service_token=b.service_token,
-                    ),
-                    None,
-                )
+            rep = run_probe(
+                base,
+                expected_name=expected_server_name(b),
+                tier=tier,
+                service_token=b.service_token,
             )
+            return b.name, rep, None
         except httpx.HTTPError as exc:  # DNS/TLS/connect/timeout — a transport error, not a verdict
-            results.append((b.name, None, str(exc)))
+            return b.name, None, str(exc)
+
+    enabled = [b for b in registry if b.enabled]
+    max_workers = min(32, len(getattr(registry, "backends", registry)) or 1)
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        results = list(pool.map(_probe, enabled))
     code, lines = _classify_fleet(results)
     for line in lines:
         style = (
@@ -455,9 +458,11 @@ async def _list_federated_tools(settings: RouterSettings, registry: list[Backend
     """Build the gateway (search disabled) and return all namespaced tool names."""
     from fastmcp import Client
 
+    from genefoundry_router.normalization import apply_normalizations
     from genefoundry_router.server import build_server
 
     server = build_server(settings, registry, enable_search=False)
+    await apply_normalizations(server, registry)
     async with Client(server) as client:
         return [t.name for t in await client.list_tools()]
 
@@ -465,7 +470,7 @@ async def _list_federated_tools(settings: RouterSettings, registry: list[Backend
 @app.command("list-tools")
 def list_tools(
     namespace: str = typer.Option(None, help="Filter to a single namespace."),
-    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+    servers_file: str = typer.Option(DEFAULT_SERVERS, envvar="GF_SERVERS_FILE", help="Registry."),
 ) -> None:
     """Enumerate federated tools (post-namespace, post-transform); flag >64-char names."""
     settings = RouterSettings(GF_SERVERS_FILE=servers_file)
@@ -481,7 +486,7 @@ def list_tools(
 
 @app.command()
 def validate(
-    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+    servers_file: str = typer.Option(DEFAULT_SERVERS, envvar="GF_SERVERS_FILE", help="Registry."),
 ) -> None:
     """Validate servers.yaml + env; report missing URLs and invalid namespaces."""
     registry = load_registry(servers_file, os.environ)
@@ -536,7 +541,7 @@ async def _snapshot_live(registry: list[BackendDef]) -> tuple[Manifest, set[str]
 
 @app.command()
 def drift(
-    servers_file: str = typer.Option(DEFAULT_SERVERS, help="Path to servers.yaml."),
+    servers_file: str = typer.Option(DEFAULT_SERVERS, envvar="GF_SERVERS_FILE", help="Registry."),
     manifest: str | None = typer.Option(None, help="Reviewed, pinned fleet manifest."),
 ) -> None:
     """Detect tool-definition drift vs the pinned manifest (rug-pull / tool-poisoning tripwire).
