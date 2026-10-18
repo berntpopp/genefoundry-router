@@ -178,6 +178,42 @@ def test_cache_does_not_cache_errors() -> None:
     cache.set("vep_recode_variant", {"v": "bad5"}, res5)
     assert cache.get("vep_recode_variant", {"v": "bad5"}) is None
 
+    # 6. ToolResult with sc=None, text block JSON with error
+    res6 = ToolResult(
+        structured_content=None,
+        content=[TextContent(type="text", text='{"error": "variant not found"}')],
+        is_error=False,
+    )
+    cache.set("vep_recode_variant", {"v": "bad6"}, res6)
+    assert cache.get("vep_recode_variant", {"v": "bad6"}) is None
+
+    # 7. ToolResult with sc=None, text block JSON with status: error
+    res7 = ToolResult(
+        structured_content=None,
+        content=[TextContent(type="text", text='{"status": "error", "detail": "failed"}')],
+        is_error=False,
+    )
+    cache.set("vep_recode_variant", {"v": "bad7"}, res7)
+    assert cache.get("vep_recode_variant", {"v": "bad7"}) is None
+
+    # 8. ToolResult with sc=None, text block JSON with status: failed
+    res8 = ToolResult(
+        structured_content=None,
+        content=[TextContent(type="text", text='{"status": "failed"}')],
+        is_error=False,
+    )
+    cache.set("vep_recode_variant", {"v": "bad8"}, res8)
+    assert cache.get("vep_recode_variant", {"v": "bad8"}) is None
+
+    # 9. ToolResult with sc=None, valid success JSON without error -> should cache
+    res9 = ToolResult(
+        structured_content=None,
+        content=[TextContent(type="text", text='{"status": "ok", "error": null}')],
+        is_error=False,
+    )
+    cache.set("vep_recode_variant", {"v": "good9"}, res9)
+    assert cache.get("vep_recode_variant", {"v": "good9"}) is not None
+
 
 def test_cache_invalidation() -> None:
     cache = ToolResponseCache()

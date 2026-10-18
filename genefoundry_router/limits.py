@@ -165,7 +165,7 @@ class RequestLimitMiddleware:
             if not self._ceiling_warned:
                 log.warning("rate_limit_tracking_ceiling", max_tracked=_MAX_TRACKED)
                 self._ceiling_warned = True
-            return True
+            return False
 
         count = self._hits.get(key, 0) + 1
         self._hits[key] = count

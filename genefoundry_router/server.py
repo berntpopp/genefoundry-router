@@ -12,16 +12,14 @@ import structlog
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI, Request
 from fastmcp import FastMCP
-from fastmcp.server.transforms.tool_transform import ToolTransform
 from fastmcp.tools import Tool
-from fastmcp.tools.tool_transform import ToolTransformConfig
 from starlette.responses import JSONResponse
 
 from genefoundry_router import __version__
 from genefoundry_router.auth import build_auth, resolve_refresh_observability_hmac_key
 from genefoundry_router.authorization import WriteAuthorizationMiddleware
 from genefoundry_router.cache import ToolResponseCache, ToolResponseCacheMiddleware
-from genefoundry_router.composition import register_backend
+from genefoundry_router.composition import close_shared_upstream_transport, register_backend
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
 from genefoundry_router.hints import NamespaceHintMiddleware
@@ -117,20 +115,19 @@ def build_server(
     server.add_middleware(WriteAuthorizationMiddleware())
     server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
     server.add_middleware(AuditLogMiddleware())  # PII-safe per-call audit (GDPR Art. 30/32)
-    if settings.GF_REWRITE_HINTS:
-        # Finding 1 — namespace bare tool references embedded in backend responses so the
-        # fleet's self-healing hints resolve through call_tool. Enabled backends only.
-        namespaces = {b.namespace for b in registry if b.enabled}
-        server.add_middleware(NamespaceHintMiddleware(namespaces))
     # FastMCP-core not-found reflection guard (Response-Envelope v1.1 fast-follow).
-    # Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary). Registered LAST
-    # so it is the innermost on_call_tool hook — it preflights `get_tool` just before core
-    # dispatch, and (because the call_tool meta-tool re-enters the chain) also covers a
-    # bogus meta-tool target. Layers 3 + 5 are installed below, after tools are mounted.
+    # Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary). Registered before
+    # ToolResponseCacheMiddleware so quarantined tools cannot be served from cache.
     server.add_middleware(NotFoundGuard())
     tool_cache = ToolResponseCache(registry)
     server.add_middleware(ToolResponseCacheMiddleware(tool_cache))
     server.tool_cache = tool_cache  # type: ignore[attr-defined]
+    if settings.GF_REWRITE_HINTS:
+        # Finding 1 — namespace bare tool references embedded in backend responses so the
+        # fleet's self-healing hints resolve through call_tool. Registered innermost so
+        # hint rewrites are cached (issue #230). Enabled backends only.
+        namespaces = {b.namespace for b in registry if b.enabled}
+        server.add_middleware(NamespaceHintMiddleware(namespaces))
     for backend in registry:
         if not backend.enabled:
             log.info("backend_skipped", backend=backend.name, reason="disabled")
@@ -186,7 +183,7 @@ def build_app(
             refresh_ledger.close()
         raise
     guard = load_runtime_guard(settings)
-    applied_quarantine: set[str] = set()
+    server.add_transform(guard)
     mcp_app = server.http_app(  # ASGI sub-app; its lifespan must be entered
         path=settings.GF_MCP_PATH,
         stateless_http=True,
@@ -202,14 +199,6 @@ def build_app(
             phase=phase,
             unreachable=unreachable,
         )
-        newly_quarantined = set(guard.quarantined) - applied_quarantine
-        if newly_quarantined:
-            server.add_transform(
-                ToolTransform(
-                    {name: ToolTransformConfig(enabled=False) for name in sorted(newly_quarantined)}
-                )
-            )
-            applied_quarantine.update(newly_quarantined)
 
     async def _relist() -> None:
         await _refresh_catalog("poll")
@@ -244,6 +233,7 @@ def build_app(
                     await refresher.stop()
                     if isinstance(search.reranker, SystemOneReranker):
                         await search.reranker.aclose()
+                    await close_shared_upstream_transport()
             teardown_complete = True
         finally:
             if refresh_ledger is not None:
@@ -276,11 +266,17 @@ def build_app(
 
     def _verify_cache_admin_auth(request: Request) -> bool:
         if settings.GF_METRICS_TOKEN is None:
-            return True
+            return False
         return _metrics_authorized(request.headers.get("authorization"), settings.GF_METRICS_TOKEN)
 
     @app.get(settings.GF_MCP_PATH)
     async def mcp_discovery(request: Request) -> JSONResponse:
+        origin = request.headers.get("origin")
+        headers: dict[str, str] = {}
+        if origin and origin in settings.GF_ALLOWED_ORIGINS:
+            headers["access-control-allow-origin"] = origin
+            headers["vary"] = "Origin"
+
         accept = request.headers.get("accept", "")
         # MCP Streamable HTTP transport: if client strictly requests SSE event-stream, answer 405
         if (
@@ -291,14 +287,8 @@ def build_app(
             return JSONResponse(
                 {"error": "SSE transport is not offered; use Streamable HTTP POST /mcp"},
                 status_code=405,
-                headers={"allow": "POST"},
+                headers={**headers, "allow": "POST"},
             )
-
-        origin = request.headers.get("origin")
-        headers: dict[str, str] = {}
-        if origin and origin in settings.GF_ALLOWED_ORIGINS:
-            headers["access-control-allow-origin"] = origin
-            headers["vary"] = "Origin"
 
         endpoints: dict[str, str] = {
             "mcp": settings.GF_MCP_PATH,
@@ -402,7 +392,7 @@ def build_app(
     # in WWW-Authenticate. The MCP app is sub-mounted at GF_MCP_PATH, so its own routes
     # would otherwise land under that prefix and miss the root well-known path.
     auth_provider = server.auth
-    if auth_provider is not None:
+    if auth_provider is not None and settings.GF_AUTH_MODE != "oauth":
         app.router.routes.extend(auth_provider.get_routes())
     # Root mount: baked GF_MCP_PATH owns /mcp; /health and /metrics registered first.
     # The CORS wrapper is applied to the MOUNTED app only (issue #162), so /mcp answers a

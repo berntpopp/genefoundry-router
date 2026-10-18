@@ -91,6 +91,26 @@ def is_error_response(result: Any) -> bool:
         ):
             return True
 
+    if sc is None:
+        content = getattr(result, "content", None)
+        if content is not None and not isinstance(content, (str, bytes)):
+            for block in content:
+                text = getattr(block, "text", None)
+                if not isinstance(text, str) and isinstance(block, dict):
+                    text = block.get("text")
+                if not isinstance(text, str):
+                    continue
+                try:
+                    payload = json.loads(text)
+                except (ValueError, TypeError):
+                    continue
+                if isinstance(payload, dict) and (
+                    payload.get("error")
+                    or payload.get("status") in ("error", "failed")
+                    or is_error_response(payload)
+                ):
+                    return True
+
     if isinstance(result, dict):
         if (
             result.get("isError") is True

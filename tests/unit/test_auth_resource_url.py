@@ -22,32 +22,37 @@ fails them.
 
 from __future__ import annotations
 
+import pytest
+from fastapi.testclient import TestClient
+
 from genefoundry_router.auth import build_auth
 from genefoundry_router.config import RouterSettings
+from genefoundry_router.server import build_app
 
 ISSUER = "https://auth.genefoundry.example/realms/genefoundry"
 PUBLIC_BASE = "https://genefoundry.example"  # ROOT origin — no path
 AUDIENCE = "https://genefoundry.example/mcp"  # the MCP endpoint = the resource URI
 
 # What server.http_app(path="/mcp") actually hands the mounted sub-app's auth provider:
-# its own root, NOT the FastAPI mount prefix. The whole incident lives in this "" vs "/mcp".
-LIVE_MOUNT_PATH = ""
+# the streamable HTTP path ("/mcp"), so _resource_url = public_base + "/mcp" == AUDIENCE.
+LIVE_MOUNT_PATH = "/mcp"
 
 
 def _settings(mode: str, **overrides: object) -> RouterSettings:
-    return RouterSettings(
-        _env_file=None,
-        GF_AUTH_MODE=mode,
-        GF_JWT_ISSUER=ISSUER,
-        GF_JWT_JWKS_URL=f"{ISSUER}/protocol/openid-connect/certs",
-        GF_JWT_AUDIENCE=AUDIENCE,
-        GF_PUBLIC_BASE_URL=PUBLIC_BASE,
-        GF_OAUTH_CLIENT_ID="genefoundry-router",
-        GF_OAUTH_CLIENT_SECRET="secret",  # noqa: S106 - test fixture, not a real secret
-        GF_OAUTH_AUTHORIZE_URL=f"{ISSUER}/protocol/openid-connect/auth",
-        GF_OAUTH_TOKEN_URL=f"{ISSUER}/protocol/openid-connect/token",
-        **overrides,
-    )
+    defaults: dict[str, object] = {
+        "_env_file": None,
+        "GF_AUTH_MODE": mode,
+        "GF_JWT_ISSUER": ISSUER,
+        "GF_JWT_JWKS_URL": f"{ISSUER}/protocol/openid-connect/certs",
+        "GF_JWT_AUDIENCE": AUDIENCE,
+        "GF_PUBLIC_BASE_URL": PUBLIC_BASE,
+        "GF_OAUTH_CLIENT_ID": "genefoundry-router",
+        "GF_OAUTH_CLIENT_SECRET": "secret",
+        "GF_OAUTH_AUTHORIZE_URL": f"{ISSUER}/protocol/openid-connect/auth",
+        "GF_OAUTH_TOKEN_URL": f"{ISSUER}/protocol/openid-connect/token",
+    }
+    defaults.update(overrides)
+    return RouterSettings(**defaults)  # type: ignore[arg-type]
 
 
 def _oauth_proxy(provider: object) -> object:
@@ -62,10 +67,7 @@ def _live_resource_url(provider: object) -> str:
 
 
 def test_live_resource_url_is_the_audience() -> None:
-    """The deployed oauth mode: under the real mount, the resource URI is the endpoint.
-
-    Fails on #71's origin-base, which yields the bare origin here.
-    """
+    """The deployed oauth mode: under the real mount, the resource URI is the endpoint."""
     assert _live_resource_url(build_auth(_settings("oauth"))) == AUDIENCE
 
 
@@ -92,9 +94,9 @@ def test_router_reference_token_lifetime_is_bounded_and_configurable() -> None:
 
 
 def test_resource_tolerance_patch_is_installed_and_collapses_the_doubled_segment() -> None:
-    """Because resource_base_url is the audience, FastMCP's path-appending PRM derivation can
-    advertise …/mcp/mcp; the tolerance patch collapses it so spec-compliant clients that echo
-    the doubled URI back still validate. #71 deleted this and broke exactly those clients."""
+    """Because resource_base_url is public_base, the tolerance patch remains installed
+    to collapse any legacy doubled segment so spec-compliant clients that echo doubled URIs
+    still validate."""
     build_auth(_settings("oauth"))  # installs the patch at oauth-provider build time
     from fastmcp.server.auth.oauth_proxy import proxy as p
 
@@ -108,10 +110,38 @@ def test_resource_tolerance_patch_is_installed_and_collapses_the_doubled_segment
     )
 
 
-def test_hand_calling_set_mcp_path_slash_mcp_doubles_which_is_the_trap_71_hit() -> None:
-    """Documents WHY the naive test is wrong: calling set_mcp_path('/mcp') by hand appends a
-    second segment, which the previous suite read as 'origin-base is correct'. The live mount
-    passes '', not '/mcp'. This test exists so the distinction is not lost again."""
+def test_calling_set_mcp_path_slash_mcp_matches_audience() -> None:
+    """Calling set_mcp_path('/mcp') on public_base produces the exact audience without doubling."""
     proxy = _oauth_proxy(build_auth(_settings("oauth")))
     proxy.set_mcp_path("/mcp")  # type: ignore[attr-defined]
-    assert str(proxy._resource_url).rstrip("/").endswith("/mcp/mcp")  # type: ignore[attr-defined]
+    assert str(proxy._resource_url).rstrip("/") == AUDIENCE  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize("mcp_path", ["/mcp", "/custom_mcp"])
+def test_oauth_resource_url_and_metadata_match_audience(mcp_path: str) -> None:
+    expected_audience = f"{PUBLIC_BASE}{mcp_path}"
+    settings = _settings("oauth", GF_MCP_PATH=mcp_path, GF_JWT_AUDIENCE=expected_audience)
+    app = build_app(settings, [])
+
+    with TestClient(app) as client:
+        # 1. 401 challenge on POST {mcp_path}
+        res_post = client.post(mcp_path)
+        assert res_post.status_code == 401
+        auth_header = res_post.headers.get("www-authenticate", "")
+        expected_meta_url = f"{PUBLIC_BASE}/.well-known/oauth-protected-resource{mcp_path}"
+        assert f'resource_metadata="{expected_meta_url}"' in auth_header
+
+        # 2. Discovery on GET {mcp_path}
+        res_get = client.get(mcp_path)
+        assert res_get.status_code == 200
+        meta_rel_path = res_get.json()["endpoints"]["oauth_protected_resource"]
+        assert meta_rel_path == f"/.well-known/oauth-protected-resource{mcp_path}"
+
+        # 3. GET Protected Resource Metadata at that endpoint
+        res_meta = client.get(meta_rel_path)
+        assert res_meta.status_code == 200
+        assert res_meta.json()["resource"] == expected_audience
+
+        # 4. Proxy _resource_url matches expected audience
+        proxy = _oauth_proxy(app.state.mcp_server.auth)
+        assert str(proxy._resource_url).rstrip("/") == expected_audience  # type: ignore[attr-defined]
