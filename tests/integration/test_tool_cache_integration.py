@@ -245,3 +245,48 @@ async def test_tool_cache_does_not_cache_text_block_errors() -> None:
 
     await server.call_tool("vep_recode_variant", {"v": "bad"})
     assert vep_calls == 2
+
+
+@pytest.mark.asyncio
+async def test_quarantined_tool_not_served_from_warm_cache() -> None:
+    from fastmcp import Client
+
+    vep = FastMCP("vep")
+    vep_calls = 0
+
+    @vep.tool(description="Original description")
+    def recode_variant(v: str) -> dict:
+        nonlocal vep_calls
+        vep_calls += 1
+        return {"success": True, "v": v}
+
+    registry = [BackendDef(name="vep", url_env="GF_VEP_URL", namespace="vep", tool_cache_ttl=86400)]
+    settings = RouterSettings(_env_file=None, GF_AUTH_MODE="none", GF_DRIFT_MODE="off")
+    app = build_app(settings, registry, proxy_targets={"vep": vep})
+    await app.state.refresh_catalog("startup")
+
+    async with Client(app.state.mcp_server) as client:
+        # 1. Warm the response cache
+        res1 = await client.call_tool("vep_recode_variant", {"v": "rs1"})
+        assert res1.data["v"] == "rs1"
+        assert vep_calls == 1
+        assert app.state.tool_cache.stats["size"] == 1
+
+        # 2. Enable drift guard with a mismatched digest and run poll refresh -> tool is quarantined
+        app.state.runtime_drift_guard.mode = "warn"
+        app.state.runtime_drift_guard.pinned = {"vep_recode_variant": "mismatch-digest"}
+        await app.state.refresh_catalog("poll")
+        assert "vep_recode_variant" in app.state.runtime_drift_guard.quarantined
+
+        # 3. Direct call and call_tool must NOT serve the warm cached response
+        res_direct = await client.call_tool(
+            "vep_recode_variant", {"v": "rs1"}, raise_on_error=False
+        )
+        assert res_direct.is_error is True
+        res_synthetic = await client.call_tool(
+            "call_tool",
+            {"name": "vep_recode_variant", "arguments": {"v": "rs1"}},
+            raise_on_error=False,
+        )
+        assert res_synthetic.is_error is True
+        assert vep_calls == 1

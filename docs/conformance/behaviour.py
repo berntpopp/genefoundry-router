@@ -325,21 +325,10 @@ def more_flag(env: dict[str, Any]) -> bool | None:
     return None
 
 
-def is_error_envelope(env: dict[str, Any]) -> bool:
-    return env.get("success") is False or bool(env.get("error_code"))
-
-
 def is_error_result(result: dict[str, Any], env: dict[str, Any]) -> bool:
     return (
         result.get("isError") is True or env.get("success") is False or bool(env.get("error_code"))
     )
-
-
-def check_error_envelope(result: dict[str, Any], env: dict[str, Any] | None = None) -> bool:
-    """Return True if result or envelope represents an error, checking isError for plain text."""
-    if env is None:
-        env = envelope(result)
-    return is_error_result(result, env)
 
 
 def properties(tool: dict[str, Any]) -> dict[str, dict[str, Any]]:

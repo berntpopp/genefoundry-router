@@ -77,30 +77,6 @@ def _parse_body(resp: httpx.Response) -> dict[str, Any]:
 _jsonrpc = _parse_body
 
 
-def check_error_envelope(result: dict[str, Any], env: dict[str, Any] | None = None) -> bool:
-    """Return True if result or envelope represents an error, checking isError for plain text."""
-    if result.get("isError") is True:
-        return True
-    if env is not None:
-        return env.get("success") is False or bool(env.get("error_code"))
-    structured = result.get("structuredContent")
-    if isinstance(structured, dict) and (
-        structured.get("success") is False or bool(structured.get("error_code"))
-    ):
-        return True
-    for block in result.get("content") or []:
-        if isinstance(block, dict) and block.get("type") == "text":
-            try:
-                parsed = json.loads(block.get("text") or "")
-                if isinstance(parsed, dict) and (
-                    parsed.get("success") is False or bool(parsed.get("error_code"))
-                ):
-                    return True
-            except (ValueError, json.JSONDecodeError):
-                pass
-    return False
-
-
 def check_sse_rejected(
     client: httpx.Client,
     base: str,

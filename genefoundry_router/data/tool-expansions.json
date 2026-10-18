@@ -12623,7 +12623,10 @@
         "variant publication search",
         "abstract search",
         "bioc search",
-        "publication filter"
+        "publication filter",
+        "literature query pmid",
+        "PMID literature query",
+        "query literature by PMID"
       ]
     },
     "pubtator_suggest_corpus": {

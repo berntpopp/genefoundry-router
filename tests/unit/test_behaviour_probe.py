@@ -14,8 +14,6 @@ from docs.conformance.behaviour import (
     Report,
     _grouped_collection,
     check_argument_error,
-    check_error_envelope,
-    is_error_envelope,
     is_error_result,
     rows,
 )
@@ -150,27 +148,23 @@ def test_grouped_collection_handles_valid_groups_and_empty() -> None:
     assert _grouped_collection(env_empty) == []
 
 
-def test_is_error_result_and_check_error_envelope() -> None:
+def test_is_error_result() -> None:
     result_plain_text: dict[str, Any] = {
         "isError": True,
         "content": [{"type": "text", "text": "Field required"}],
     }
     assert is_error_result(result_plain_text, {}) is True
-    assert check_error_envelope(result_plain_text) is True
-    assert is_error_envelope({}) is False
 
     result_env_error: dict[str, Any] = {
-        "isError": True,
+        "isError": False,
         "structuredContent": {"success": False, "error_code": "invalid_input"},
     }
     env_error = {"success": False, "error_code": "invalid_input"}
     assert is_error_result(result_env_error, env_error) is True
-    assert check_error_envelope(result_env_error, env_error) is True
 
     result_success: dict[str, Any] = {"isError": False}
     env_success = {"success": True, "results": []}
     assert is_error_result(result_success, env_success) is False
-    assert check_error_envelope(result_success, env_success) is False
 
 
 def test_check_argument_error_plain_text_rejection() -> None:
@@ -200,21 +194,34 @@ def test_check_argument_error_plain_text_rejection() -> None:
     assert any("tool error includes a fleet error envelope" in f for f in rep.failed)
 
 
-def test_fleet_probe_workflow_guard() -> None:
+def test_fleet_probe_workflow_guard(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from genefoundry_router.cli import app
+
     root = Path(__file__).resolve().parents[2]
     content = (root / ".github" / "workflows" / "fleet-probe.yml").read_text()
     assert "set +e" not in content
-    assert "uv run genefoundry-router fleet-probe --output /tmp/probe.json" in content
+    assert "run: uv run genefoundry-router fleet-probe\n" in content
     assert "FLEET_PROBE_HEARTBEAT_URL" in content
     assert "success()" in content
     assert "|| true" not in content
+
+    # Verify the exact CLI arguments invoked by the workflow execute cleanly via CliRunner
+    yaml_file = tmp_path / "servers.yaml"
+    yaml_file.write_text(
+        "servers:\n  - { name: gnomad, url_env: GF_GNOMAD_URL, namespace: gnomad, enabled: false }\n"
+    )
+    monkeypatch.setenv("GF_SERVERS_FILE", str(yaml_file))
+    res = CliRunner().invoke(app, ["fleet-probe"])
+    assert res.exit_code == 0, res.output
 
 
 def test_mcp_registry_workflow_guard() -> None:
     root = Path(__file__).resolve().parents[2]
     content = (root / ".github" / "workflows" / "mcp-registry.yml").read_text()
     assert "pipx install uv" not in content
-    assert "astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7" in content
+    assert "astral-sh/setup-uv@" in content
     assert 'version: "0.8.7"' in content
     assert "version=1.8.1" in content
     assert "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc" in content

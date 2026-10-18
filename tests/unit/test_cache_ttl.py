@@ -10,9 +10,9 @@ from fastmcp import FastMCP
 from mcp.types import Tool as McpTool
 
 from genefoundry_router.composition import (
+    DEFAULT_CACHE_TTL,
     CachedProxyProvider,
     force_tool_refresh,
-    mount_backends,
     register_backend,
 )
 from genefoundry_router.registry import BackendDef
@@ -162,42 +162,23 @@ async def test_cached_proxy_provider_concurrent_fetches_once() -> None:
 
 def test_register_backend_registers_cached_proxy_provider() -> None:
     server = FastMCP("test-server")
-    backend = BackendDef(
+    b1 = BackendDef(
         name="gnomad",
         namespace="gnomad",
         url_env="X",
         url="https://backend.example.org/mcp",
         cache_ttl=600,
     )
+    b2 = BackendDef(
+        name="hgnc",
+        namespace="hgnc",
+        url_env="Y",
+        url="https://hgnc.example.org/mcp",
+    )
 
-    register_backend(server, backend)
+    register_backend(server, b1)
+    register_backend(server, b2)
 
     providers = [getattr(p, "_inner", p) for p in server.providers]
     matching = [p for p in providers if isinstance(p, CachedProxyProvider)]
-    assert len(matching) == 1
-    assert matching[0]._cache_ttl == 600.0
-
-
-def test_mount_backends_iterates_and_registers() -> None:
-    server = FastMCP("test-server")
-    b1 = BackendDef(
-        name="b1",
-        namespace="b1",
-        url_env="X",
-        url="https://b1.example.org/mcp",
-        cache_ttl=120,
-    )
-    b2 = BackendDef(
-        name="b2",
-        namespace="b2",
-        url_env="X",
-        url="https://b2.example.org/mcp",
-        enabled=False,
-    )
-
-    mount_backends(server, [b1, b2])
-
-    providers = [getattr(p, "_inner", p) for p in server.providers]
-    cached = [p for p in providers if isinstance(p, CachedProxyProvider)]
-    assert len(cached) == 1
-    assert cached[0]._cache_ttl == 120.0
+    assert [p._cache_ttl for p in matching] == [600.0, float(DEFAULT_CACHE_TTL)]

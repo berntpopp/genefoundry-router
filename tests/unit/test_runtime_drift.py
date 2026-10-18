@@ -123,14 +123,28 @@ def test_outage_retains_quarantine() -> None:
     assert "gnomad_get_gene" in guard.quarantined
 
 
-def test_check_method_recovers_single_tool() -> None:
-    guard = RuntimeDriftGuard(pinned={"tool_x": "digest_123"}, mode="warn")
-    guard.quarantined.add("tool_x")
+def test_removed_unpinned_tool_clears_quarantine_and_restores_health() -> None:
+    guard = RuntimeDriftGuard(pinned={"gnomad_get_gene": "pinned_hash"}, mode="warn")
+    # 1. Unreviewed tool added during poll -> quarantined and degraded
+    report1 = guard.evaluate(
+        {"gnomad_get_gene": "pinned_hash", "gnomad_extra": "extra_hash"},
+        phase="poll",
+        unreachable=set(),
+    )
+    assert report1.added == ["gnomad_extra"]
+    assert "gnomad_extra" in guard.quarantined
+    assert guard.degraded is True
 
-    # Mismatched digest does not recover
-    assert guard.check("tool_x", "wrong_digest") is False
-    assert "tool_x" in guard.quarantined
+    # 2. Outage while unreviewed tool is quarantined -> quarantine preserved
+    guard.evaluate({}, phase="poll", unreachable={"gnomad"})
+    assert "gnomad_extra" in guard.quarantined
 
-    # Matching digest recovers
-    assert guard.check("tool_x", "digest_123") is True
-    assert "tool_x" not in guard.quarantined
+    # 3. Unreviewed tool rolled back / removed on reachable refresh -> quarantine cleared and healthy
+    report2 = guard.evaluate(
+        {"gnomad_get_gene": "pinned_hash"},
+        phase="poll",
+        unreachable=set(),
+    )
+    assert report2.has_drift is False
+    assert "gnomad_extra" not in guard.quarantined
+    assert guard.degraded is False

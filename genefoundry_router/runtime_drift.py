@@ -59,32 +59,6 @@ class RuntimeDriftGuard(Transform):
         tool = await call_next(name, version=version)
         return None if name in self.quarantined else tool
 
-    def check(
-        self,
-        name_or_current: str | dict[str, str],
-        digest: str | None = None,
-        *,
-        phase: DriftPhase = "poll",
-        unreachable: set[str] | None = None,
-    ) -> Any:
-        """Check for drift or check a single tool.
-
-        When called with (name, digest): if self.pinned.get(name) == digest,
-        self.quarantined.discard(name).
-        When called with (current, ...): delegates to evaluate.
-        """
-        if isinstance(name_or_current, str):
-            name = name_or_current
-            if self.pinned.get(name) == digest:
-                self.quarantined.discard(name)
-                return True
-            return False
-        return self.evaluate(
-            name_or_current,
-            phase=phase,
-            unreachable=unreachable or set(),
-        )
-
     def evaluate(
         self,
         current: dict[str, str],
@@ -109,9 +83,15 @@ class RuntimeDriftGuard(Transform):
 
         reachable_current = reachable(current)
 
-        # Recover tools whose current digest matches pinned (only if backend was reachable)
-        for name, digest in reachable_current.items():
-            if self.pinned.get(name) == digest:
+        # Recover pinned tools whose current digest matches, and unpinned tools that were
+        # rolled back/removed from a reachable backend.
+        for name in list(self.quarantined):
+            if name.split("_", 1)[0] in unreachable:
+                continue
+            if name in self.pinned:
+                if reachable_current.get(name) == self.pinned[name]:
+                    self.quarantined.discard(name)
+            elif name not in reachable_current:
                 self.quarantined.discard(name)
 
         report = detect_drift(reachable_current, reachable(self.pinned))

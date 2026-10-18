@@ -11,14 +11,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
+from fastmcp import FastMCP
 
 from genefoundry_router.composition import (
+    CachedProxyProvider,
     _BorrowedTransport,
-    build_proxy,
     close_shared_upstream_transport,
     default_httpx_client_factory,
     get_shared_upstream_transport,
     make_proxy_client,
+    register_backend,
 )
 from genefoundry_router.registry import BackendDef
 
@@ -43,13 +45,15 @@ def test_blank_backend_service_token_is_not_injected() -> None:
     assert client.transport.forward_incoming_headers is False
 
 
-def test_build_proxy_does_not_forward_caller_headers() -> None:
+def test_register_backend_provider_does_not_forward_caller_headers() -> None:
+    server = FastMCP("test-server")
     backend = BackendDef(
         name="gnomad", namespace="gnomad", url_env="X", url="https://backend.example.org/mcp"
     )
-    proxy = build_proxy(backend)
-    # The per-request client the proxy hands out must not forward incoming headers.
-    client = proxy.client_factory()
+    register_backend(server, backend)
+    providers = [getattr(p, "_inner", p) for p in server.providers]
+    provider = next(p for p in providers if isinstance(p, CachedProxyProvider))
+    client = provider.client_factory()
     assert client.transport.forward_incoming_headers is False
 
 

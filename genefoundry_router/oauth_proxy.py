@@ -9,7 +9,6 @@ for a fixed migration window.
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import re
 import time
@@ -271,9 +270,7 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         attempt = self._refresh_attempt.get()
         if attempt is not None:
             try:
-                await asyncio.shield(
-                    observe_in_thread(self._record_refresh, attempt, "failure", "local_rejected")
-                )
+                await observe_in_thread(self._record_refresh, attempt, "failure", "local_rejected")
             finally:
                 self._finish_refresh_attempt(attempt)
 
@@ -407,6 +404,8 @@ class GeneFoundryOAuthProxy(OAuthProxy):
                 reason, delay = await observe_in_thread(
                     self._classify_missing, client, attempt, refresh_token
                 )
+                if attempt.overlapping:
+                    reason, delay = "overlapping_attempt", None
         except BaseException:
             try:
                 await observe_in_thread(self._record_refresh, attempt, "failure", "internal_error")

@@ -12,7 +12,6 @@ import httpx
 from genefoundry_router.conformance import (
     Report,
     _parse_body,
-    check_error_envelope,
     check_sse_rejected,
     run_probe,
 )
@@ -67,12 +66,25 @@ def test_parse_body_sse_empty() -> None:
 
 def test_check_sse_rejected_streaming_and_token() -> None:
     seen_headers: dict[str, str] = {}
+    stream_closed = False
+
+    class NeverReadStream(httpx.SyncByteStream):
+        def __iter__(self) -> Any:
+            raise AssertionError("SSE stream body must not be read")
+
+        def close(self) -> None:
+            nonlocal stream_closed
+            stream_closed = True
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen_headers.update({k.lower(): v for k, v in request.headers.items()})
         assert request.method == "GET"
         assert request.url.path == "/mcp"
-        return httpx.Response(200, text="ok")
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/event-stream"},
+            stream=NeverReadStream(),
+        )
 
     transport = httpx.MockTransport(handler)
     with httpx.Client(transport=transport) as client:
@@ -80,6 +92,7 @@ def test_check_sse_rejected_streaming_and_token() -> None:
         ok = check_sse_rejected(client, "http://test", rep, token="secret-token")  # noqa: S106
         assert ok is True
         assert rep.conformant is True
+        assert stream_closed is True
         assert seen_headers.get("accept") == "text/event-stream"
         assert seen_headers.get("authorization") == "Bearer secret-token"
 
@@ -95,28 +108,6 @@ def test_check_sse_rejected_fails_on_307() -> None:
         assert ok is False
         assert not rep.conformant
         assert any("GET /mcp does not 307" in f for f in rep.failed)
-
-
-def test_check_error_envelope_plain_text() -> None:
-    result: dict[str, Any] = {
-        "isError": True,
-        "content": [{"type": "text", "text": "Argument foo is required"}],
-    }
-    assert check_error_envelope(result) is True
-
-
-def test_check_error_envelope_success_result() -> None:
-    result: dict[str, Any] = {
-        "isError": False,
-        "content": [{"type": "text", "text": json.dumps({"success": True, "results": []})}],
-    }
-    assert check_error_envelope(result) is False
-
-
-def test_check_error_envelope_with_explicit_env() -> None:
-    result: dict[str, Any] = {"isError": False}
-    env = {"success": False, "error_code": "invalid_input"}
-    assert check_error_envelope(result, env) is True
 
 
 def test_run_probe_with_service_token() -> None:
