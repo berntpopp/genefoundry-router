@@ -218,6 +218,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         self.served_results = max_results
         self.expansions = dict(expansions or {})
         self.reranker = reranker
+        self._search_tool: Tool | None = None
+        self._call_tool: Tool | None = None
 
     async def _ranked(
         self, tools: Sequence[Tool], query: str
@@ -232,6 +234,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         return shortlist[: self.served_results], None
 
     def _make_search_tool(self) -> Tool:
+        if self._search_tool is not None:
+            return self._search_tool
         transform = self
 
         async def search_tools(
@@ -256,19 +260,22 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             ``detail="full"`` for the complete output schema. An empty list means no tool
             matched well: rephrase in domain terms before concluding it does not exist.
             """
-            hidden = await transform._get_visible_tools(ctx)
-            results, relevance = await transform._ranked(hidden, query)
+            catalog = await transform.get_tool_catalog(ctx)
+            results, relevance = await transform._ranked(catalog, query)
             if detail == "full":
                 return serialize_tools_for_output_json(results)
             return serialize_tools_compact(results, relevance)
 
-        return Tool.from_function(fn=search_tools, name=self._search_tool_name)
+        self._search_tool = Tool.from_function(fn=search_tools, name=self._search_tool_name)
+        return self._search_tool
 
     def _make_call_tool(self) -> Tool:
         """Reuse FastMCP's call_tool proxy but with a self-healing description."""
-        tool = super()._make_call_tool()
-        tool.description = _CALL_TOOL_DESCRIPTION
-        return tool
+        if self._call_tool is None:
+            tool = super()._make_call_tool()
+            tool.description = _CALL_TOOL_DESCRIPTION
+            self._call_tool = tool
+        return self._call_tool
 
     def _searchable_text(self, tool: Tool) -> str:
         """Field-weighted index document: FastMCP's flat text (name + description +
@@ -298,9 +305,9 @@ class CompactBM25SearchTransform(BM25SearchTransform):
 
 def resolve_entrypoints(registry: list[BackendDef]) -> list[str]:
     """Namespaced canonical-resolver tools to pin, from each enabled backend's
-    ``entrypoints``. Pinned tools bypass BM25 ranking entirely (FastMCP lists them
-    directly), so this is the deterministic fix for the resolver-invisible-to-search
-    failure. Falls back to ``DEFAULT_ALWAYS_VISIBLE`` when no backend declares any.
+    ``entrypoints``. Pinned tools are listed directly (bypassing initial BM25 search
+    to be immediately visible) and are also included in search results. Falls back
+    to ``DEFAULT_ALWAYS_VISIBLE`` when no backend declares any.
     """
     pins = [
         qualified_name(b.namespace, leaf) for b in registry if b.enabled for leaf in b.entrypoints
