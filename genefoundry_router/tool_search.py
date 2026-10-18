@@ -17,6 +17,7 @@ from urllib.parse import urlsplit
 
 import structlog
 from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 from fastmcp.server.context import Context
 from fastmcp.server.transforms.search.base import (
     _extract_searchable_text,
@@ -31,10 +32,13 @@ from fastmcp.tools.base import Tool
 
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.registry import BackendDef, qualified_name
+from genefoundry_router.schema_strict import to_openai_strict_schema
 from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.search_rerank import Reranker, build_reranker
 
 log = structlog.get_logger(__name__)
+
+DetailLevel = Literal["compact", "full", "strict"]
 
 # Pinned, always-listed essentials (namespaced gateway names). Spec §19 Q4 / Finding 7:
 # the fleet's entry-point resolvers (symbol->ID, variant-ID normalization) that nearly
@@ -192,6 +196,19 @@ def serialize_tools_compact(
     return [_compact_entry(t, scores.get(t.name)) for t in tools]
 
 
+def serialize_tools_strict(tools: Sequence[Tool]) -> list[dict[str, Any]]:
+    """Full tool definitions with inputSchema projected to OpenAI strict mode and strict: True."""
+    serialized = serialize_tools_for_output_json(tools)
+    for entry in serialized:
+        entry["strict"] = True
+        schema = entry.get("inputSchema")
+        if isinstance(schema, dict):
+            entry["inputSchema"] = to_openai_strict_schema(schema)
+        else:
+            entry["inputSchema"] = to_openai_strict_schema({"type": "object", "properties": {}})
+    return serialized
+
+
 class CompactBM25SearchTransform(BM25SearchTransform):
     """BM25 search whose ``search_tools`` defaults to a token-lean serialization.
 
@@ -241,8 +258,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         async def search_tools(
             query: Annotated[str, "Natural language query to search for tools"],
             detail: Annotated[
-                Literal["compact", "full"],
-                "compact (default): inputSchema + one-line returns; full: complete schemas",
+                DetailLevel,
+                "compact (default): inputSchema + one-line returns; full: complete schemas; strict: OpenAI strict schemas",
             ] = "compact",
             ctx: Context = None,  # type: ignore[assignment]
         ) -> str | list[dict[str, Any]]:
@@ -257,13 +274,21 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             concluding it is missing. Hits are ranked by BM25 relevance; each hit's
             ``name`` is the ``<namespace>_<tool>`` you then pass to ``call_tool``.
             Defaults to a compact form (full inputSchema + one-line ``returns``); pass
-            ``detail="full"`` for the complete output schema. An empty list means no tool
-            matched well: rephrase in domain terms before concluding it does not exist.
+            ``detail="full"`` for the complete output schema or ``detail="strict"`` for
+            OpenAI-compatible strict schemas with ``strict: True``. An empty list means
+            no tool matched well: rephrase in domain terms before concluding it does
+            not exist.
             """
+            if detail not in ("compact", "full", "strict"):
+                raise ToolError(
+                    f"Invalid detail level '{detail}'. Expected one of: 'compact', 'full', 'strict'."
+                )
             catalog = await transform.get_tool_catalog(ctx)
             results, relevance = await transform._ranked(catalog, query)
             if detail == "full":
                 return serialize_tools_for_output_json(results)
+            if detail == "strict":
+                return serialize_tools_strict(results)
             return serialize_tools_compact(results, relevance)
 
         self._search_tool = Tool.from_function(fn=search_tools, name=self._search_tool_name)
