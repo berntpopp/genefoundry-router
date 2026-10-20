@@ -169,11 +169,17 @@ def test_app_token_is_exactly_scoped_to_the_fleet_and_two_read_permissions() -> 
 
 def test_live_probe_is_strictly_validated_before_success_only_upload() -> None:
     steps = _load()["jobs"]["audit"]["steps"]
-    assert steps[:3] == [
+    assert steps[:4] == [
         {
             "name": "Checkout",
             "uses": CHECKOUT_ACTION,
             "with": {"persist-credentials": False},
+        },
+        # Without it, uv 0.8.7 downloads its newest known 3.14 (3.14.0rc1), which pydantic rejects.
+        {
+            "name": "Set up Python",
+            "uses": "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97",
+            "with": {"python-version": "3.14"},
         },
         {
             "name": "Set up uv",
