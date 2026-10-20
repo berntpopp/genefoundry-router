@@ -176,7 +176,11 @@ def _gh_api(path: str) -> Any | None:
             timeout=60,
             check=True,
         )
-    except subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError:
+    except subprocess.CalledProcessError as exc:
+        # Say why a probe is unprovable; GitHub's error text names the missing permission.
+        print(f"probe: gh api {path} failed: {exc.stderr.strip()[:200]}", file=sys.stderr)
+        return None
+    except subprocess.TimeoutExpired, OSError:
         return None
     try:
         return json.loads(completed.stdout)
@@ -218,6 +222,11 @@ def probe_tag_ruleset(repo: str) -> JsonDict | None:
         for actor in detail.get("bypass_actors", [])
     ]
     if detail.get("enforcement") != "active" or not REQUIRED_RULES <= rules or not bypass:
+        print(
+            f"probe: {repo} tag ruleset unproven: enforcement={detail.get('enforcement')} "
+            f"rules={sorted(rules)} bypass_actors_present={'bypass_actors' in detail}",
+            file=sys.stderr,
+        )
         return None
     return {
         "active": True,
