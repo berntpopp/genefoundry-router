@@ -56,6 +56,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from genefoundry_router.release.controls import (
+    BYPASS_ACTORS_GAP,
     ControlLedgerError,
     expected_fleet_repositories,
     load_control_ledger,
@@ -217,11 +218,13 @@ def probe_tag_ruleset(repo: str) -> JsonDict | None:
     if not isinstance(detail, dict):
         return None
     rules = {rule.get("type") for rule in detail.get("rules", [])}
-    bypass = [
-        f"{actor.get('actor_type')}:{actor.get('actor_id')}"
-        for actor in detail.get("bypass_actors", [])
-    ]
-    if detail.get("enforcement") != "active" or not REQUIRED_RULES <= rules or not bypass:
+    # GitHub returns bypass_actors to admins only; None = not visible to this token.
+    bypass = (
+        [f"{actor.get('actor_type')}:{actor.get('actor_id')}" for actor in detail["bypass_actors"]]
+        if "bypass_actors" in detail
+        else None
+    )
+    if detail.get("enforcement") != "active" or not REQUIRED_RULES <= rules or bypass == []:
         print(
             f"probe: {repo} tag ruleset unproven: enforcement={detail.get('enforcement')} "
             f"rules={sorted(rules)} bypass_actors_present={'bypass_actors' in detail}",
@@ -270,7 +273,8 @@ def probe_main_branch_ruleset(repo: str) -> JsonDict | None:
         return None
     if ref_name.get("include") != [MAIN_BRANCH_REF] or ref_name.get("exclude") != []:
         return None
-    if detail.get("bypass_actors") != []:
+    main_bypass = detail.get("bypass_actors")  # absent = not visible to this token
+    if "bypass_actors" in detail and main_bypass != []:
         return None
     rules = detail.get("rules")
     if not isinstance(rules, list) or any(not isinstance(rule, dict) for rule in rules):
@@ -302,7 +306,7 @@ def probe_main_branch_ruleset(repo: str) -> JsonDict | None:
         "required_approving_review_count": parameters["required_approving_review_count"],
         "blocks_force_pushes": True,
         "blocks_deletions": True,
-        "bypass_actors": [],
+        "bypass_actors": main_bypass,
         "evidence": _api_evidence(
             f"https://github.com/{repo}/settings/rules/{ruleset_id}",
             "Exact active main branch ruleset probed via the repository rulesets API.",
@@ -445,6 +449,9 @@ def build_row(repo: str, role: Literal["trusted-builder", "backend"]) -> JsonDic
     }
     if role == "trusted-builder":
         row["main_branch_ruleset"] = probes["main_branch_ruleset"]
+    rulesets = [row["tag_ruleset"], row.get("main_branch_ruleset")]
+    if any(rule is not None and rule["bypass_actors"] is None for rule in rulesets):
+        row["manual_evidence_required"].append(BYPASS_ACTORS_GAP)
     return row
 
 

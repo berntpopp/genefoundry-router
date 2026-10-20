@@ -80,7 +80,8 @@ class TagRulesetControl(_StrictModel):
     restricts_update: bool
     restricts_deletion: bool
     restricts_non_fast_forward: bool
-    bypass_actors: tuple[Annotated[str, Field(min_length=1, max_length=100)], ...]
+    # None = not visible to the probing token (GitHub shows bypass actors to admins only).
+    bypass_actors: tuple[Annotated[str, Field(min_length=1, max_length=100)], ...] | None
     evidence: ControlEvidence
 
 
@@ -95,7 +96,8 @@ class MainBranchRulesetControl(_StrictModel):
     required_approving_review_count: Literal[0]
     blocks_force_pushes: bool
     blocks_deletions: bool
-    bypass_actors: list[Annotated[str, Field(min_length=1, max_length=100)]]
+    # None = not visible to the probing token; never read as "no bypass actors".
+    bypass_actors: list[Annotated[str, Field(min_length=1, max_length=100)]] | None
     evidence: ControlEvidence
 
     @field_validator("required_approving_review_count", mode="before")
@@ -153,6 +155,11 @@ class VerifiedRepositoryControls(_StrictModel):
         if self.role == "backend" and self.main_branch_ruleset is not None:
             raise ValueError("backend must not carry a main branch ruleset")
         return self
+
+
+# Manual-evidence item a partial row names when the probing token could not see
+# ruleset bypass actors; the only condition under which ``bypass_actors`` may be None.
+BYPASS_ACTORS_GAP = "ruleset bypass actors"
 
 
 class PartialRepositoryControls(_StrictModel):
@@ -293,6 +300,10 @@ def _common_row_errors(row: VerifiedRepositoryControls | PartialRepositoryContro
     relax anything else a row claims to have proven.
     """
     errors: list[str] = []
+    bypass_gap_named = (
+        isinstance(row, PartialRepositoryControls)
+        and BYPASS_ACTORS_GAP in row.manual_evidence_required
+    )
     if row.role == "trusted-builder":
         main_rule = row.main_branch_ruleset
         if main_rule is None or not (
@@ -301,7 +312,10 @@ def _common_row_errors(row: VerifiedRepositoryControls | PartialRepositoryContro
             and main_rule.requires_pull_request
             and main_rule.blocks_force_pushes
             and main_rule.blocks_deletions
-            and not main_rule.bypass_actors
+            and (
+                main_rule.bypass_actors == []
+                or (main_rule.bypass_actors is None and bypass_gap_named)
+            )
             and main_rule.evidence.status == "verified"
         ):
             errors.append("main branch ruleset does not enforce the exact trusted-builder policy")
@@ -312,7 +326,7 @@ def _common_row_errors(row: VerifiedRepositoryControls | PartialRepositoryContro
         and rules.restricts_update
         and rules.restricts_deletion
         and rules.restricts_non_fast_forward
-        and rules.bypass_actors
+        and (bool(rules.bypass_actors) or (rules.bypass_actors is None and bypass_gap_named))
     ):
         errors.append("tag ruleset semantics or bypass actors are incomplete")
     environment = row.release_environment
