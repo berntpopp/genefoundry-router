@@ -66,7 +66,7 @@ status**; slots 1 and 4 restate facts that `pyproject.toml` and CI already enfor
 contract gate — present and `push`-triggered on all 21):
 
 ```markdown
-[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![CI](https://github.com/berntpopp/<repo>/actions/workflows/ci.yml/badge.svg)](https://github.com/berntpopp/<repo>/actions/workflows/ci.yml)
 [![Conformance](https://github.com/berntpopp/<repo>/actions/workflows/conformance.yml/badge.svg)](https://github.com/berntpopp/<repo>/actions/workflows/conformance.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -76,7 +76,7 @@ contract gate — present and `push`-triggered on all 21):
 the trust boundary, and `push`-triggered:
 
 ```markdown
-[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![CI](https://github.com/berntpopp/genefoundry-router/actions/workflows/ci.yml/badge.svg)](https://github.com/berntpopp/genefoundry-router/actions/workflows/ci.yml)
 [![Security](https://github.com/berntpopp/genefoundry-router/actions/workflows/security.yml/badge.svg)](https://github.com/berntpopp/genefoundry-router/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)

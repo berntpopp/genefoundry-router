@@ -95,7 +95,7 @@ def run_command(args: Sequence[str]) -> CommandResult:
             stdin=subprocess.DEVNULL,
             timeout=COMMAND_TIMEOUT_SECONDS,
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except OSError, subprocess.TimeoutExpired:
         return CommandResult(125, "", "")
     if (
         len(completed.stdout) > MAX_COMMAND_OUTPUT_BYTES

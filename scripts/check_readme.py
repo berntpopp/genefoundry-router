@@ -108,8 +108,8 @@ def expected_badges(slug: str) -> list[tuple[str, str]]:
     gate_label = "Security" if is_router() else "Conformance"
     return [
         (
-            "Python 3.12+",
-            "[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB"
+            "Python 3.14+",
+            "[![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-3776AB"
             "?logo=python&logoColor=white)](https://www.python.org/)",
         ),
         ("CI", _workflow_badge("CI", slug, "ci.yml")),

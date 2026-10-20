@@ -1,6 +1,6 @@
 # genefoundry-router
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![CI](https://github.com/berntpopp/genefoundry-router/actions/workflows/ci.yml/badge.svg)](https://github.com/berntpopp/genefoundry-router/actions/workflows/ci.yml)
 [![Security](https://github.com/berntpopp/genefoundry-router/actions/workflows/security.yml/badge.svg)](https://github.com/berntpopp/genefoundry-router/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -34,7 +34,7 @@ claude mcp add --transport http genefoundry https://genefoundry.org/mcp
 
 Health check: [`genefoundry.org/health`](https://genefoundry.org/health).
 
-To run your own against the live fleet (Python 3.12+, [uv](https://github.com/astral-sh/uv)):
+To run your own against the live fleet (Python 3.14+, [uv](https://github.com/astral-sh/uv)):
 
 ```bash
 uv sync --group dev

@@ -208,7 +208,7 @@ def _is_structured_envelope(call_result: mcp.types.CallToolResult) -> bool:
         return False
     try:
         obj = json.loads(text)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return False
     return isinstance(obj, dict) and "error_code" in obj
 
@@ -426,7 +426,7 @@ def redacted_message(record: logging.LogRecord, *, fallback: str = _SCRUBBED_MES
         tokens = tuple(_REDACTED_ARG for _ in args)
     try:
         return template % tokens
-    except (TypeError, ValueError, KeyError):
+    except TypeError, ValueError, KeyError:
         return fallback
 
 

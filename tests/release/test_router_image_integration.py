@@ -97,7 +97,7 @@ def _require_docker() -> None:
         pytest.skip("Docker is required for the router image integration contract")
     try:
         _run((str(DOCKER), "info", "--format", "{{.ServerVersion}}"), timeout=15)
-    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+    except OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired:
         pytest.skip("a reachable Docker daemon is required")
 
 

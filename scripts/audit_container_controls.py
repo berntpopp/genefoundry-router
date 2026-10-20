@@ -176,7 +176,7 @@ def _gh_api(path: str) -> Any | None:
             timeout=60,
             check=True,
         )
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+    except subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError:
         return None
     try:
         return json.loads(completed.stdout)
@@ -356,7 +356,7 @@ def _anonymous_manifest_status(repo: str) -> int:
     try:
         with urllib.request.urlopen(token_url, timeout=30) as response:
             token = json.loads(response.read()).get("token")
-    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError, OSError):
+    except urllib.error.URLError, json.JSONDecodeError, TimeoutError, OSError:
         return 0
     if not token:
         return 0
@@ -369,7 +369,7 @@ def _anonymous_manifest_status(repo: str) -> int:
             return int(response.status)
     except urllib.error.HTTPError as exc:
         return int(exc.code)
-    except (urllib.error.URLError, TimeoutError, OSError):
+    except urllib.error.URLError, TimeoutError, OSError:
         return 0
 
 

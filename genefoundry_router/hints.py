@@ -75,7 +75,7 @@ def _rewrite_block(block: Any, ns: str, namespaces: set[str]) -> Any:
         return block
     try:
         parsed = json.loads(text)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return block  # plain prose — never regex-rewrite free text
     if rewrite_tool_refs(parsed, ns, namespaces):
         return block.model_copy(update={"text": json.dumps(parsed)})
