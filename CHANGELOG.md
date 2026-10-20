@@ -2,6 +2,12 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.6] - 2026-10-20
+
+### Security
+
+- certifi 2026.10.19: drops emSign root CAs whose intermediate CA keys were compromised (critical).
+
 ## [0.10.5] - 2026-10-20
 
 ### Changed
