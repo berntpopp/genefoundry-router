@@ -312,8 +312,8 @@ backends:
   - namespace: metadome
     description: >-
       MCP server for MetaDome: per-position missense tolerance (dN/dS) landscapes for human
-      transcripts, Pfam domains, meta-domain homolog aggregation, and gnomAD/ClinVar
-      per-position counts.
+      transcripts, Pfam domains, meta-domain homolog aggregation, and ClinVar annotations
+      (no residue-level gnomAD counts).
     topics: [metadome, missense-tolerance, protein-domains, variant-interpretation, proteomics]
 
   - namespace: orphanet
