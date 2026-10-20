@@ -43,6 +43,7 @@ jobs:
           repositories: |
             autopvs1-link
             clingen-link
+            clinpgx-link
             clinvar-link
             gencc-link
             genefoundry-router
