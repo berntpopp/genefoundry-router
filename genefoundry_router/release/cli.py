@@ -131,7 +131,7 @@ def _execute(command: str, operation: Callable[[], _CliResult]) -> None:
             {"reason": str(exc), "verdict": "policy_violation"},
             ReleaseExitCode.POLICY_VIOLATION,
         )
-    except (OSError, TypeError, ValueError, ValidationError):
+    except OSError, TypeError, ValueError, ValidationError:
         result = _CliResult(
             {"reason": "input validation failed", "verdict": "invalid_evidence"},
             ReleaseExitCode.INVALID_EVIDENCE,

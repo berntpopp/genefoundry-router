@@ -102,7 +102,7 @@ def is_error_response(result: Any) -> bool:
                     continue
                 try:
                     payload = json.loads(text)
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     continue
                 if isinstance(payload, dict) and (
                     payload.get("error")

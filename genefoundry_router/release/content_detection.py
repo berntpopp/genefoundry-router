@@ -292,7 +292,7 @@ def _decompressed_prefix(payload: bytes, limit: int) -> bytes | None:
             return lzma.LZMADecompressor().decompress(payload, max_length=limit)
         if payload.startswith(b"\x28\xb5\x2f\xfd"):
             return None
-    except (OSError, EOFError, ValueError, zlib.error, lzma.LZMAError):
+    except OSError, EOFError, ValueError, zlib.error, lzma.LZMAError:
         return None
     return b""
 

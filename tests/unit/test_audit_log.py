@@ -153,7 +153,7 @@ def _fleet_error(code: str = "not_found", request_id: str = "6b30f83150204aaf972
     )
 
 
-async def _record(ctx: "_Ctx", exc: BaseException | None = None) -> dict:
+async def _record(ctx: _Ctx, exc: BaseException | None = None) -> dict:
     mw = AuditLogMiddleware()
 
     async def _ok(_ctx):

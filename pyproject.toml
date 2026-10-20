@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genefoundry-router"
-version = "0.10.4"
+version = "0.10.5"
 description = "A thin FastMCP 3.x aggregator federating the GeneFoundry -link MCP fleet behind one endpoint."
 readme = "README.md"
 authors = [{ name = "Bernt Popp" }]
 license = { text = "MIT" }
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -17,8 +17,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -73,7 +72,7 @@ packages = ["genefoundry_router"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "S", "T20", "SIM", "RUF"]
@@ -88,7 +87,7 @@ line-ending = "lf"
 "tests/**/*" = ["S101", "T20"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = false
 disallow_untyped_defs = false

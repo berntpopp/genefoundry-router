@@ -148,7 +148,7 @@ class RefreshLedger(RefreshLifecycleMixin):
                             (at, reason),
                         )
                 self._pending_gap = None
-            except (OSError, sqlite3.Error, RefreshLedgerError):
+            except OSError, sqlite3.Error, RefreshLedgerError:
                 if self._pending_gap is None or at < self._pending_gap[0]:
                     self._pending_gap = (at, reason)
 
@@ -190,7 +190,7 @@ class RefreshLedger(RefreshLifecycleMixin):
                         )
                 self._pending_gap = None
                 return True
-            except (OSError, sqlite3.Error, RefreshLedgerError):
+            except OSError, sqlite3.Error, RefreshLedgerError:
                 return False
 
     def heartbeat(self, at: float) -> bool:
@@ -206,14 +206,14 @@ class RefreshLedger(RefreshLifecycleMixin):
                 )
                 if self._checkpoint_pending and not self.maintain(at):
                     return False
-            except (OSError, sqlite3.Error, RefreshLedgerError):
+            except OSError, sqlite3.Error, RefreshLedgerError:
                 self.note_unavailable(at=at, reason="write_failure")
                 return False
         if self._mark_available(at, heartbeat=True):
             try:
                 self._after_write()
                 return True
-            except (OSError, sqlite3.Error, RefreshLedgerError):
+            except OSError, sqlite3.Error, RefreshLedgerError:
                 pass
         self.note_unavailable(at=at, reason="write_failure")
         return False

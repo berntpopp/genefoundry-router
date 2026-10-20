@@ -477,7 +477,7 @@ def main(run: Run = subprocess.run, argv: Sequence[str] | None = None) -> int:
     except subprocess.TimeoutExpired:
         print("private drift probe timed out", file=sys.stderr)
         return 124
-    except (OSError, ProbeError, json.JSONDecodeError):
+    except OSError, ProbeError, json.JSONDecodeError:
         print("private drift probe preflight failed", file=sys.stderr)
         return 2
     print(output)

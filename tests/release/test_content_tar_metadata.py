@@ -113,8 +113,8 @@ def test_semantic_word_code_paths_are_allowed_but_real_credential_files_deny(
     tmp_path: Path,
 ) -> None:
     ordinary = {
-        "usr/local/lib/python3.12/token.py": b"",
-        "usr/local/lib/python3.12/tokenize.py": b"",
+        "usr/local/lib/python3.14/token.py": b"",
+        "usr/local/lib/python3.14/tokenize.py": b"",
         "opt/app/auth/authorization.py": b"",
         "opt/app/secretary.py": b"",
         "opt/app/pkg/credentials.py": b"",

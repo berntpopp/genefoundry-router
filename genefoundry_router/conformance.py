@@ -69,7 +69,7 @@ def _parse_body(resp: httpx.Response) -> dict[str, Any]:
             parsed = json.loads(raw)
         else:
             parsed = resp.json()
-    except (ValueError, json.JSONDecodeError):
+    except ValueError:  # json.JSONDecodeError is a ValueError subclass
         return {}
     return parsed if isinstance(parsed, dict) else {}
 

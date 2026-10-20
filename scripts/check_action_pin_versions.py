@@ -60,7 +60,7 @@ def _api_lines(path: str, jq: str) -> list[str] | None:
             timeout=90,
             check=False,
         )
-    except (OSError, subprocess.SubprocessError):
+    except OSError, subprocess.SubprocessError:
         return None
     if proc.returncode != 0:
         return None

@@ -2,6 +2,13 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.5] - 2026-10-20
+
+### Changed
+
+- Unify on Python 3.14: the reusable `_container-ci.yml` / `_container-release.yml` workflows (which `uv sync` caller repos with a uv that does not download interpreters), every other workflow, `.python-version`, `requires-python = ">=3.14"`, ruff `py314` and mypy `3.14`. A new guard (`tests/unit/test_workflow_python_version.py`) pins every `setup-python` to `.python-version`. The README-Standard Python badge is now `3.14+`.
+- Actions concurrency: every PR/push-triggered workflow already cancels superseded runs; no new groups were needed.
+
 ## [0.10.4] - 2026-10-18
 
 ### Added
