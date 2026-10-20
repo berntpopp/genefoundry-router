@@ -207,7 +207,7 @@ jobs:
             source_digest="$(jq -er '.digest | select(test("^sha256:[0-9a-f]{64}$"))' <<<"$descriptor")"
             manifest="$($oras manifest fetch "$image@$source_digest")"
             config_digest="$(jq -er '.config.digest' <<<"$manifest")"
-            config="$($oras blob fetch "$image@$source_digest" "$config_digest")"
+            config="$($oras blob fetch --output - "$image@$config_digest")"
             revision="$(jq -er '.config.Labels["org.opencontainers.image.revision"]' <<<"$config")"
             test "$revision" = "$source_sha" || {
               echo "source alias collision" >&2

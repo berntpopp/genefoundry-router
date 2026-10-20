@@ -2,6 +2,12 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.7] - 2026-10-20
+
+### Fixed
+
+- `_container-release.yml` recovery path: `oras blob fetch` takes one `<name>@<digest>` reference and needs `--output -`, so a rerun after a partial publish failed with `requires exactly 1 argument but got 2`. Now `oras blob fetch --output - "$image@$config_digest"`, guarded by `tests/unit/test_workflow_oras_blob_fetch.py`.
+
 ## [0.10.6] - 2026-10-20
 
 ### Security
