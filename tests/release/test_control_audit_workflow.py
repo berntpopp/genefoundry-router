@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -48,29 +49,15 @@ TRIGGER_MATRIX = (
     ("push", TOPIC_REF, "true", False),
 )
 ARTIFACT_LEDGER = "${{ runner.temp }}/container-controls.json"
-REPOSITORIES = (
-    "autopvs1-link",
-    "clingen-link",
-    "clinvar-link",
-    "gencc-link",
-    "genefoundry-router",
-    "genereviews-link",
-    "gnomad-link",
-    "gtex-link",
-    "hgnc-link",
-    "hpo-link",
-    "litvar-link",
-    "mavedb-link",
-    "metadome-link",
-    "mgi-link",
-    "mondo-link",
-    "orphanet-link",
-    "panelapp-link",
-    "pubtator-link",
-    "spliceailookup-link",
-    "stringdb-link",
-    "uniprot-link",
-    "vep-link",
+# Derived from the ledger the audit verifies, so a backend added to the fleet cannot be
+# silently left out of the App token's repository scope (clinpgx-link was, 2026-09 .. 2026-10).
+REPOSITORIES = tuple(
+    sorted(
+        name.split("/", 1)[1]
+        for name in json.loads((ROOT / "ci/container-controls.json").read_text(encoding="utf-8"))[
+            "repositories"
+        ]
+    )
 )
 
 
