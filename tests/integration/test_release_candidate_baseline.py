@@ -13,14 +13,14 @@ RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 
-# fleet-final-2026-10-04: strict on-host capture of 22 verified signed backend releases.
+# fleet-2026-10-21: strict capture of 22 verified signed backend releases (certifi/Python 3.14 wave).
 # Updating these four hashes adopts the reviewed fleet atomically with its captured evidence;
 # they must never move independently merely to make a failing check pass.
 HISTORICAL_EVIDENCE_SHA256 = {
-    APPLICATION_RELEASES: "2b0d3058fe86c2fe7f88e208b180c5a6112837fd63de59635db3edf06bec2de7",
-    RELEASE_INVENTORY: "05142ff1d3a5e767cb977de31dda26e4b1613191f73e20d59345b299f182dde6",
-    RELEASE_CANDIDATE: "160d84a7a9fcb393f593e952ae8c7e2e5343a89b4c6c4dfe6eb9e04b19d45c28",
-    BASELINE: "160d84a7a9fcb393f593e952ae8c7e2e5343a89b4c6c4dfe6eb9e04b19d45c28",
+    APPLICATION_RELEASES: "19ee6b74546c37069aa2a92f12d862e1335130cf13d1357ab81b9db8efbd1726",
+    RELEASE_INVENTORY: "bc1cd8960e1c9a4b519d0cb01d8038f87e76c65fceed48333c4471de8d989570",
+    RELEASE_CANDIDATE: "98119125f1654678152965e7b06560ccbd9443eeba0c1206d163ad828732606e",
+    BASELINE: "98119125f1654678152965e7b06560ccbd9443eeba0c1206d163ad828732606e",
 }
 
 

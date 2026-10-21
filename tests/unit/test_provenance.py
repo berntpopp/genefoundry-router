@@ -34,7 +34,7 @@ def test_load_fleet_provenance_structure() -> None:
     clinpgx = backends["clinpgx"]
     assert clinpgx["tools_count"] == 13
     assert len(clinpgx["tools"]) == 13
-    assert clinpgx["release"]["tag"] == "v0.1.3"
+    assert clinpgx["release"]["tag"] == "v0.1.5"
     assert clinpgx["database_provenance"]["mode"] == "external-reference"
     assert clinpgx["database_provenance"]["release_tag"] == "data-clinpgx-core-cfde21bfec473b35"
     assert clinpgx["database_provenance"]["status"] == "attested-reference"
