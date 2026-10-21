@@ -16,11 +16,11 @@
       "name": "autopvs1",
       "namespace": "autopvs1",
       "release": {
-        "commit": "f4831688bb368919db25d6676ce13fa7f4594604",
+        "commit": "ec6cbdc0e5ce965ecf4dba89c8573a131098f021",
         "definitions_sha256": "778255b227295db4e572a1cb322f62424edd0a0e712aba7c8cf4090405cb2881",
-        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:f722f95241f734f3a474a8bcaa4cc753c96dd3c2034c4874cc71554be703b901",
-        "tag": "v4.1.8",
-        "version": "4.1.8"
+        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:726ee8e81e967f623a229112ba04c9be793d107f75006256121963d2469d33ed",
+        "tag": "v4.1.10",
+        "version": "4.1.10"
       },
       "repository": "berntpopp/autopvs1-link",
       "repository_url": "https://github.com/berntpopp/autopvs1-link",
@@ -538,15 +538,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:b05e65bf42854ec16b9e31265260be352bd0101e32f9fbd2d6bdc2a12b8d7150",
+        "asset_sha256": "sha256:a8fdc8af639ac94a44be4efd9163400c7b3c8f9f21c33fc67fd83bae11a52357",
         "data_identity_contract": "runtime-v1",
         "mode": "external-reference",
-        "release_tag": "data-clingen-fc7cb06c3b0041a2",
+        "release_tag": "data-clingen-f0c047cff56d589b",
         "schema_compatibility": [
           "2"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-10-03T14:28:08.788288Z"
+        "updated_at": "2026-10-20T19:12:26.430296Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -555,11 +555,11 @@
       "name": "clingen",
       "namespace": "clingen",
       "release": {
-        "commit": "f96bd223622cc3abcf31860631e5653a929c60f9",
+        "commit": "d8a3a068c89b48438980abc0819045f35f02b6e8",
         "definitions_sha256": "fd2e7b20c510a4f97ed89ff0f9621fca0e95c3a4fd110e04400056add643a4a0",
-        "image": "ghcr.io/berntpopp/clingen-link@sha256:600453897805a638bf6817906aa4e321f71aecbfa923fdb395152b256c8ae9d8",
-        "tag": "v4.0.15",
-        "version": "4.0.15"
+        "image": "ghcr.io/berntpopp/clingen-link@sha256:1ce0a7b1dda21f605f33ad98b533765f7e3f27157e13d016363abf1af05614f1",
+        "tag": "v4.0.18",
+        "version": "4.0.18"
       },
       "repository": "berntpopp/clingen-link",
       "repository_url": "https://github.com/berntpopp/clingen-link",
@@ -1850,7 +1850,7 @@
           "1.0.0"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-10-04T01:47:20.093525Z"
+        "updated_at": "2026-10-20T13:14:22.737606Z"
       },
       "domain": "Pharmacogenomics / gene-drug guidelines",
       "entrypoints": [
@@ -1862,11 +1862,11 @@
       "name": "clinpgx",
       "namespace": "clinpgx",
       "release": {
-        "commit": "b635af5bbc6a0313e2e76bbc90cd16739549f2ae",
+        "commit": "1bf58b047ebcc271a15ca944612e66069f8f41a7",
         "definitions_sha256": "70cd8fe19fc2c60972b37efab0aca47d25f1ab4d0236c3107b33d9deec98c798",
-        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:b5a81bbef5175c7dbb88676bf7d78f3229806f8f48ae9b2c42096941f88fb76e",
-        "tag": "v0.1.3",
-        "version": "0.1.3"
+        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:26a50ad49fc15bbea847e1e64824205429bfe5a0ee5884a4a637e067658043b1",
+        "tag": "v0.1.5",
+        "version": "0.1.5"
       },
       "repository": "berntpopp/clinpgx-link",
       "repository_url": "https://github.com/berntpopp/clinpgx-link",
@@ -3355,15 +3355,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:e871870a70c239c9ab79b1b2f8aa7fe11305d059d10f03814cc82022ec675cb5",
+        "asset_sha256": "sha256:f8f40ca837bf047628b99800e93ffecd681280e23b9617b9aff56895f7032635",
         "data_identity_contract": "runtime-v1",
         "mode": "external-reference",
-        "release_tag": "bundle-2026-09-29",
+        "release_tag": "bundle-2026-10-19",
         "schema_compatibility": [
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-10-03T07:01:46.027466Z"
+        "updated_at": "2026-10-20T13:14:22.737606Z"
       },
       "domain": "Variant clinical significance",
       "entrypoints": [
@@ -3372,11 +3372,11 @@
       "name": "clinvar",
       "namespace": "clinvar",
       "release": {
-        "commit": "98871aa4c3b461401ff1bd21766f750d3371d34b",
+        "commit": "181de5b1d9289bf656b9ac04a96f2ffc66898905",
         "definitions_sha256": "0e75adbad4f3389d918f9e9719b7e4eb21e3e046f27455ef859e52ef6f66c54c",
-        "image": "ghcr.io/berntpopp/clinvar-link@sha256:37332f6333f5bd87a2bfd72297be0da8d4b39db7acbda27503f46bf8bb548657",
-        "tag": "v0.5.12",
-        "version": "0.5.12"
+        "image": "ghcr.io/berntpopp/clinvar-link@sha256:5e02280324c6d7f4da24f1ab29e6e1c5a6a97b320810780258b341f6713182b4",
+        "tag": "v0.5.15",
+        "version": "0.5.15"
       },
       "repository": "berntpopp/clinvar-link",
       "repository_url": "https://github.com/berntpopp/clinvar-link",
@@ -4010,7 +4010,7 @@
         "release_tag": "observed-2026.08.30",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-10-03T07:01:46.027466Z"
+        "updated_at": "2026-10-20T19:12:26.430296Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -4019,11 +4019,11 @@
       "name": "gencc",
       "namespace": "gencc",
       "release": {
-        "commit": "7920f90c84a18b507df9aa24d2140d187044a4b3",
+        "commit": "930b9fd0cf9a3c6ade9b4a2c7b198567e0395326",
         "definitions_sha256": "cc545a6857602d56e3b042d2ac7a511c6652e6fbfd88f322b5a6ae3267e8ead3",
-        "image": "ghcr.io/berntpopp/gencc-link@sha256:893f855bb55660391b11334fc0d4388a4cad504fd0f4589a2b0bd30d20e713e5",
-        "tag": "v0.8.8",
-        "version": "0.8.8"
+        "image": "ghcr.io/berntpopp/gencc-link@sha256:6a467aa2b8561e71549eb759053c2e8b9505762ea5ad66bf34e3dd4bec8be59a",
+        "tag": "v0.8.10",
+        "version": "0.8.10"
       },
       "repository": "berntpopp/gencc-link",
       "repository_url": "https://github.com/berntpopp/gencc-link",
@@ -4875,7 +4875,7 @@
           "0007_embedding_run_identity"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-10-03T07:01:46.027466Z"
+        "updated_at": "2026-10-20T13:14:22.737606Z"
       },
       "domain": "Gene\u2013disease literature",
       "entrypoints": [
@@ -4885,11 +4885,11 @@
       "name": "genereviews",
       "namespace": "genereviews",
       "release": {
-        "commit": "e55ae2223d0ab33b351cb6333775d53443e75ded",
+        "commit": "2209ae79953e43d154ede517ce4382ff78c9d664",
         "definitions_sha256": "eec51191f4873538677a01a767143fe5476c7cf1ecce62542e897e77451e7764",
-        "image": "ghcr.io/berntpopp/genereviews-link@sha256:2afe325f27bc6c601e99c7f99883da645aff4b8a2175702d0f91ed1a01106b0d",
-        "tag": "v5.2.9",
-        "version": "5.2.9"
+        "image": "ghcr.io/berntpopp/genereviews-link@sha256:54aa5170806a1befcdb43dadf17ea11a8572cb807ea5a22d532f62d0340a6c6b",
+        "tag": "v5.2.14",
+        "version": "5.2.14"
       },
       "repository": "berntpopp/genereviews-link",
       "repository_url": "https://github.com/berntpopp/genereviews-link",
@@ -5526,6 +5526,144 @@
           "description": "Accepts 1-5 search specs, each with its own ``q``, ``sections``, ``nbk_id``, ``gene``, ``mode``, ``rerank``, etc. (mirrors the query parameters of ``GET /passages/search``). Executes all specs concurrently via ``asyncio.gather`` and returns a flat envelope.\n\n**When to use:** when a clinical-report workflow issues several related but independent queries (e.g. one scoped to ``management``, one to ``genetic_counseling``, one open-section exploratory) \u2014 batching cuts N round-trip latencies to ~1x the slowest query.\n\n**Response shape:** ``results[i].query_index`` matches the zero-based position of the spec in the request. ``results[i].hits`` mirrors the shape of ``GET /passages/search`` results for that spec's ``mode``.\n\n**Deduplication:** when the same ``passage_id`` appears in hits for multiple specs, every occurrence except the one from the lowest ``query_index`` carries ``also_matched_query_indices`` (a list of the other indices). Hits are never removed \u2014 the annotation signals redundancy without discarding evidence.\n\n**Cap:** requests with more than 5 specs are rejected with 422.\n\n**MCP:** registered as the ``search_passages_batch`` MCP tool via the FastMCP OpenAPI proxy.\n\nLatency: p95 <= 1.5x the slowest single-query latency for a 3-spec batch (concurrent execution).",
           "federated_name": "genereviews_search_passages_batch",
           "inputSchema": {
+            "$defs": {
+              "SearchBatchSpec": {
+                "description": "One search spec in a batch request; mirrors GET /passages/search params.",
+                "properties": {
+                  "gene": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional HGNC gene symbol filter for this spec.",
+                    "examples": [
+                      "BRCA1"
+                    ],
+                    "title": "Gene"
+                  },
+                  "heading_path_contains": {
+                    "anyOf": [
+                      {
+                        "maxLength": 200,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional case-insensitive substring filter on heading_path.",
+                    "examples": [
+                      "Risk-Reducing Surgery"
+                    ],
+                    "title": "Heading Path Contains"
+                  },
+                  "limit": {
+                    "default": 5,
+                    "description": "Number of rows to return for this spec (1-100).",
+                    "maximum": 100.0,
+                    "minimum": 1.0,
+                    "title": "Limit",
+                    "type": "integer"
+                  },
+                  "mode": {
+                    "default": "brief",
+                    "description": "Response detail: brief (default), full, or ids_only.",
+                    "enum": [
+                      "brief",
+                      "full",
+                      "ids_only"
+                    ],
+                    "title": "Mode",
+                    "type": "string"
+                  },
+                  "nbk_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional single-chapter filter, e.g. 'NBK1247'.",
+                    "examples": [
+                      "NBK1247"
+                    ],
+                    "title": "Nbk Id"
+                  },
+                  "q": {
+                    "description": "Query string for this spec.",
+                    "examples": [
+                      "breast cancer surveillance"
+                    ],
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "title": "Q",
+                    "type": "string"
+                  },
+                  "rerank": {
+                    "default": "rrf",
+                    "description": "Reranker: rrf (default), lexical, or off.",
+                    "enum": [
+                      "rrf",
+                      "lexical",
+                      "off"
+                    ],
+                    "title": "Rerank",
+                    "type": "string"
+                  },
+                  "sections": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "enum": [
+                            "summary",
+                            "diagnosis",
+                            "clinical_features",
+                            "management",
+                            "genetic_counseling",
+                            "molecular_genetics",
+                            "resources",
+                            "other",
+                            "references"
+                          ],
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional canonical-section filter (see search_passages sections).",
+                    "examples": [
+                      [
+                        "management"
+                      ]
+                    ],
+                    "title": "Sections"
+                  },
+                  "snippet_chars": {
+                    "default": 400,
+                    "description": "Approximate brief-mode snippet length in characters (80-800).",
+                    "maximum": 800.0,
+                    "minimum": 80.0,
+                    "title": "Snippet Chars",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "q"
+                ],
+                "title": "SearchBatchSpec",
+                "type": "object"
+              }
+            },
             "additionalProperties": false,
             "properties": {
               "specs": {
@@ -5538,140 +5676,7 @@
                   ]
                 ],
                 "items": {
-                  "description": "One search spec in a batch request; mirrors GET /passages/search params.",
-                  "properties": {
-                    "gene": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "description": "Optional HGNC gene symbol filter for this spec.",
-                      "examples": [
-                        "BRCA1"
-                      ],
-                      "title": "Gene"
-                    },
-                    "heading_path_contains": {
-                      "anyOf": [
-                        {
-                          "maxLength": 200,
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "description": "Optional case-insensitive substring filter on heading_path.",
-                      "examples": [
-                        "Risk-Reducing Surgery"
-                      ],
-                      "title": "Heading Path Contains"
-                    },
-                    "limit": {
-                      "default": 5,
-                      "description": "Number of rows to return for this spec (1-100).",
-                      "maximum": 100.0,
-                      "minimum": 1.0,
-                      "title": "Limit",
-                      "type": "integer"
-                    },
-                    "mode": {
-                      "default": "brief",
-                      "description": "Response detail: brief (default), full, or ids_only.",
-                      "enum": [
-                        "brief",
-                        "full",
-                        "ids_only"
-                      ],
-                      "title": "Mode",
-                      "type": "string"
-                    },
-                    "nbk_id": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "description": "Optional single-chapter filter, e.g. 'NBK1247'.",
-                      "examples": [
-                        "NBK1247"
-                      ],
-                      "title": "Nbk Id"
-                    },
-                    "q": {
-                      "description": "Query string for this spec.",
-                      "examples": [
-                        "breast cancer surveillance"
-                      ],
-                      "maxLength": 512,
-                      "minLength": 1,
-                      "title": "Q",
-                      "type": "string"
-                    },
-                    "rerank": {
-                      "default": "rrf",
-                      "description": "Reranker: rrf (default), lexical, or off.",
-                      "enum": [
-                        "rrf",
-                        "lexical",
-                        "off"
-                      ],
-                      "title": "Rerank",
-                      "type": "string"
-                    },
-                    "sections": {
-                      "anyOf": [
-                        {
-                          "items": {
-                            "enum": [
-                              "summary",
-                              "diagnosis",
-                              "clinical_features",
-                              "management",
-                              "genetic_counseling",
-                              "molecular_genetics",
-                              "resources",
-                              "other",
-                              "references"
-                            ],
-                            "type": "string"
-                          },
-                          "type": "array"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "description": "Optional canonical-section filter (see search_passages sections).",
-                      "examples": [
-                        [
-                          "management"
-                        ]
-                      ],
-                      "title": "Sections"
-                    },
-                    "snippet_chars": {
-                      "default": 400,
-                      "description": "Approximate brief-mode snippet length in characters (80-800).",
-                      "maximum": 800.0,
-                      "minimum": 80.0,
-                      "title": "Snippet Chars",
-                      "type": "integer"
-                    }
-                  },
-                  "required": [
-                    "q"
-                  ],
-                  "title": "SearchBatchSpec",
-                  "type": "object"
+                  "$ref": "#/$defs/SearchBatchSpec"
                 },
                 "maxItems": 5,
                 "minItems": 1,
@@ -5895,11 +5900,11 @@
       "name": "gnomad",
       "namespace": "gnomad",
       "release": {
-        "commit": "f2799d11cfc4e369bd4840adc5b9170486d92d69",
+        "commit": "8f2b15dfda2d101cf6e2877366857e817f6b2cfb",
         "definitions_sha256": "b30ddbfb94f1aef69a4092f0112d01ffe5bcae33818cc22de7bcd9dfff02cc44",
-        "image": "ghcr.io/berntpopp/gnomad-link@sha256:22be8ec940fdb199a15958cfa7d39b608c243f425d5fe41187b21377f23353f6",
-        "tag": "v9.0.7",
-        "version": "9.0.7"
+        "image": "ghcr.io/berntpopp/gnomad-link@sha256:3015db7110c26b5a5595ddcf81cbb897f25f5d445ada1f45a29f5972ccd2c369",
+        "tag": "v9.0.9",
+        "version": "9.0.9"
       },
       "repository": "berntpopp/gnomad-link",
       "repository_url": "https://github.com/berntpopp/gnomad-link",
@@ -7560,11 +7565,11 @@
       "name": "gtex",
       "namespace": "gtex",
       "release": {
-        "commit": "4bb84cf1b4527ec5a729e13947cadc6f1f846520",
-        "definitions_sha256": "3f763d85c4fb812af42f570fb4b54a64d8aeb233efd0ec1a6aba76517a46a429",
-        "image": "ghcr.io/berntpopp/gtex-link@sha256:b4b89f74cb07c62be0ddafe991340ce14c00188256d248a7293709ca2ce82cf2",
-        "tag": "v3.1.8",
-        "version": "3.1.8"
+        "commit": "1f32851cbbb148522b51af4934acf3e555aa71d1",
+        "definitions_sha256": "10f34b7e71e87bfbc603621b776558bc1f78c8ebd70d3caab9318af69bcf8c4c",
+        "image": "ghcr.io/berntpopp/gtex-link@sha256:d125ba75a9deccb6a7d9210c239a02a9f1d9715ebccf811da258c55a68098ab6",
+        "tag": "v3.1.10",
+        "version": "3.1.10"
       },
       "repository": "berntpopp/gtex-link",
       "repository_url": "https://github.com/berntpopp/gtex-link",
@@ -7712,7 +7717,8 @@
                     "enum": [
                       "v19",
                       "v26",
-                      "v39"
+                      "v39",
+                      "v47"
                     ],
                     "type": "string"
                   },
@@ -7793,7 +7799,8 @@
                     "enum": [
                       "v19",
                       "v26",
-                      "v39"
+                      "v39",
+                      "v47"
                     ],
                     "type": "string"
                   },
@@ -7859,6 +7866,67 @@
           "description": "Get median GTEx Portal expression (TPM) per tissue for one or more genes (GENCODE IDs or symbols; symbols are auto-resolved). Results are grouped per gene with invariant fields hoisted. Use `sort` + `top_n` to answer 'where is this gene expressed most?' in one call; `response_mode='full'` adds ontologyId; `include_spread=true` adds per-tissue min/max/quartiles/IQR (one extra upstream call).",
           "federated_name": "gtex_get_median_expression_levels",
           "inputSchema": {
+            "$defs": {
+              "TissueChoice": {
+                "enum": [
+                  "Whole_Blood",
+                  "Brain_Cortex",
+                  "Muscle_Skeletal",
+                  "Liver",
+                  "Lung",
+                  "Breast_Mammary_Tissue",
+                  "Heart_Left_Ventricle",
+                  "Thyroid",
+                  "Adipose_Subcutaneous",
+                  "Skin_Sun_Exposed_Lower_leg",
+                  "Adipose_Visceral_Omentum",
+                  "Adrenal_Gland",
+                  "Artery_Aorta",
+                  "Artery_Coronary",
+                  "Artery_Tibial",
+                  "Bladder",
+                  "Brain_Amygdala",
+                  "Brain_Anterior_cingulate_cortex_BA24",
+                  "Brain_Caudate_basal_ganglia",
+                  "Brain_Cerebellar_Hemisphere",
+                  "Brain_Cerebellum",
+                  "Brain_Frontal_Cortex_BA9",
+                  "Brain_Hippocampus",
+                  "Brain_Hypothalamus",
+                  "Brain_Nucleus_accumbens_basal_ganglia",
+                  "Brain_Putamen_basal_ganglia",
+                  "Brain_Spinal_cord_cervical_c-1",
+                  "Brain_Substantia_nigra",
+                  "Cells_Cultured_fibroblasts",
+                  "Cells_EBV-transformed_lymphocytes",
+                  "Cervix_Ectocervix",
+                  "Cervix_Endocervix",
+                  "Colon_Sigmoid",
+                  "Colon_Transverse",
+                  "Esophagus_Gastroesophageal_Junction",
+                  "Esophagus_Mucosa",
+                  "Esophagus_Muscularis",
+                  "Fallopian_Tube",
+                  "Heart_Atrial_Appendage",
+                  "Kidney_Cortex",
+                  "Kidney_Medulla",
+                  "Minor_Salivary_Gland",
+                  "Nerve_Tibial",
+                  "Ovary",
+                  "Pancreas",
+                  "Pituitary",
+                  "Prostate",
+                  "Skin_Not_Sun_Exposed_Suprapubic",
+                  "Small_Intestine_Terminal_Ileum",
+                  "Spleen",
+                  "Stomach",
+                  "Testis",
+                  "Uterus",
+                  "Vagina"
+                ],
+                "type": "string"
+              }
+            },
             "additionalProperties": false,
             "properties": {
               "dataset_id": {
@@ -7866,7 +7934,8 @@
                 "description": "GTEx dataset release to query.",
                 "enum": [
                   "gtex_v8",
-                  "gtex_v10"
+                  "gtex_v10",
+                  "gtex_v11"
                 ],
                 "type": "string"
               },
@@ -7921,123 +7990,11 @@
               "tissue_site_detail_id": {
                 "anyOf": [
                   {
-                    "enum": [
-                      "Whole_Blood",
-                      "Brain_Cortex",
-                      "Muscle_Skeletal",
-                      "Liver",
-                      "Lung",
-                      "Breast_Mammary_Tissue",
-                      "Heart_Left_Ventricle",
-                      "Thyroid",
-                      "Adipose_Subcutaneous",
-                      "Skin_Sun_Exposed_Lower_leg",
-                      "Adipose_Visceral_Omentum",
-                      "Adrenal_Gland",
-                      "Artery_Aorta",
-                      "Artery_Coronary",
-                      "Artery_Tibial",
-                      "Bladder",
-                      "Brain_Amygdala",
-                      "Brain_Anterior_cingulate_cortex_BA24",
-                      "Brain_Caudate_basal_ganglia",
-                      "Brain_Cerebellar_Hemisphere",
-                      "Brain_Cerebellum",
-                      "Brain_Frontal_Cortex_BA9",
-                      "Brain_Hippocampus",
-                      "Brain_Hypothalamus",
-                      "Brain_Nucleus_accumbens_basal_ganglia",
-                      "Brain_Putamen_basal_ganglia",
-                      "Brain_Spinal_cord_cervical_c-1",
-                      "Brain_Substantia_nigra",
-                      "Cells_Cultured_fibroblasts",
-                      "Cells_EBV-transformed_lymphocytes",
-                      "Cervix_Ectocervix",
-                      "Cervix_Endocervix",
-                      "Colon_Sigmoid",
-                      "Colon_Transverse",
-                      "Esophagus_Gastroesophageal_Junction",
-                      "Esophagus_Mucosa",
-                      "Esophagus_Muscularis",
-                      "Fallopian_Tube",
-                      "Heart_Atrial_Appendage",
-                      "Kidney_Cortex",
-                      "Kidney_Medulla",
-                      "Minor_Salivary_Gland",
-                      "Nerve_Tibial",
-                      "Ovary",
-                      "Pancreas",
-                      "Pituitary",
-                      "Prostate",
-                      "Skin_Not_Sun_Exposed_Suprapubic",
-                      "Small_Intestine_Terminal_Ileum",
-                      "Spleen",
-                      "Stomach",
-                      "Testis",
-                      "Uterus",
-                      "Vagina"
-                    ],
-                    "type": "string"
+                    "$ref": "#/$defs/TissueChoice"
                   },
                   {
                     "items": {
-                      "enum": [
-                        "Whole_Blood",
-                        "Brain_Cortex",
-                        "Muscle_Skeletal",
-                        "Liver",
-                        "Lung",
-                        "Breast_Mammary_Tissue",
-                        "Heart_Left_Ventricle",
-                        "Thyroid",
-                        "Adipose_Subcutaneous",
-                        "Skin_Sun_Exposed_Lower_leg",
-                        "Adipose_Visceral_Omentum",
-                        "Adrenal_Gland",
-                        "Artery_Aorta",
-                        "Artery_Coronary",
-                        "Artery_Tibial",
-                        "Bladder",
-                        "Brain_Amygdala",
-                        "Brain_Anterior_cingulate_cortex_BA24",
-                        "Brain_Caudate_basal_ganglia",
-                        "Brain_Cerebellar_Hemisphere",
-                        "Brain_Cerebellum",
-                        "Brain_Frontal_Cortex_BA9",
-                        "Brain_Hippocampus",
-                        "Brain_Hypothalamus",
-                        "Brain_Nucleus_accumbens_basal_ganglia",
-                        "Brain_Putamen_basal_ganglia",
-                        "Brain_Spinal_cord_cervical_c-1",
-                        "Brain_Substantia_nigra",
-                        "Cells_Cultured_fibroblasts",
-                        "Cells_EBV-transformed_lymphocytes",
-                        "Cervix_Ectocervix",
-                        "Cervix_Endocervix",
-                        "Colon_Sigmoid",
-                        "Colon_Transverse",
-                        "Esophagus_Gastroesophageal_Junction",
-                        "Esophagus_Mucosa",
-                        "Esophagus_Muscularis",
-                        "Fallopian_Tube",
-                        "Heart_Atrial_Appendage",
-                        "Kidney_Cortex",
-                        "Kidney_Medulla",
-                        "Minor_Salivary_Gland",
-                        "Nerve_Tibial",
-                        "Ovary",
-                        "Pancreas",
-                        "Pituitary",
-                        "Prostate",
-                        "Skin_Not_Sun_Exposed_Suprapubic",
-                        "Small_Intestine_Terminal_Ileum",
-                        "Spleen",
-                        "Stomach",
-                        "Testis",
-                        "Uterus",
-                        "Vagina"
-                      ],
-                      "type": "string"
+                      "$ref": "#/$defs/TissueChoice"
                     },
                     "type": "array"
                   },
@@ -8098,7 +8055,8 @@
                 "description": "GTEx dataset release to query.",
                 "enum": [
                   "gtex_v8",
-                  "gtex_v10"
+                  "gtex_v10",
+                  "gtex_v11"
                 ],
                 "type": "string"
               },
@@ -8226,7 +8184,8 @@
                 "description": "GTEx dataset release to query.",
                 "enum": [
                   "gtex_v8",
-                  "gtex_v10"
+                  "gtex_v10",
+                  "gtex_v11"
                 ],
                 "type": "string"
               },
@@ -8352,7 +8311,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-10-03T07:01:46.027466Z"
+        "updated_at": "2026-10-20T19:12:26.430296Z"
       },
       "domain": "Gene nomenclature",
       "entrypoints": [
@@ -8361,11 +8320,11 @@
       "name": "hgnc",
       "namespace": "hgnc",
       "release": {
-        "commit": "9f9a25ef24ff7494b17be5eae681e9825ee0c5b5",
+        "commit": "6c6b031b6d31e6f02543e7e44be5eb9527274839",
         "definitions_sha256": "bcc5612d7f8435048bb4f9169abd520a05c91583c8ccb0391a63c18b4a8177c9",
-        "image": "ghcr.io/berntpopp/hgnc-link@sha256:e99b420978c4ff7e70f217d6beebbd4ae090d3f628e99481a295e0555ed05800",
-        "tag": "v2.1.8",
-        "version": "2.1.8"
+        "image": "ghcr.io/berntpopp/hgnc-link@sha256:669d315e14917e70ed833bf2e5d6bbe8df8d65340e4c1f56f480825cbf1549b9",
+        "tag": "v2.1.10",
+        "version": "2.1.10"
       },
       "repository": "berntpopp/hgnc-link",
       "repository_url": "https://github.com/berntpopp/hgnc-link",
@@ -8908,7 +8867,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-10-03T07:01:46.027466Z"
+        "updated_at": "2026-10-20T13:14:22.737606Z"
       },
       "domain": "Phenotype ontology & associations",
       "entrypoints": [
@@ -8919,11 +8878,11 @@
       "name": "hpo",
       "namespace": "hpo",
       "release": {
-        "commit": "cf9d0a1f11bf8c0a14b5b7f217511460961ef87c",
+        "commit": "20d449e919b3ad69b76e1d90a528065ad920edcf",
         "definitions_sha256": "90310b0ea314affbee975e68dff22a0e92044c66ad74eb8dbdf1809377d93181",
-        "image": "ghcr.io/berntpopp/hpo-link@sha256:9bd1c2fca5fc10389512e178f4279c8c14eadfb3ccc30a9f20d16c04e50ed95e",
-        "tag": "v0.4.9",
-        "version": "0.4.9"
+        "image": "ghcr.io/berntpopp/hpo-link@sha256:58d7b6253e62040f5085f012d86e06288dfc47d6a17db33b6d2185c75c426dc3",
+        "tag": "v0.4.11",
+        "version": "0.4.11"
       },
       "repository": "berntpopp/hpo-link",
       "repository_url": "https://github.com/berntpopp/hpo-link",
@@ -9962,11 +9921,11 @@
       "name": "litvar",
       "namespace": "litvar",
       "release": {
-        "commit": "1ba19587ef391bccb424c09c1719cb422d275d5d",
+        "commit": "1b0d02c08498453ea6c166c67cc8b8e50bcb91c4",
         "definitions_sha256": "7fed6228dd4eee633c599500cf4f6ec06c2242ae30d74d7690970d9145469821",
-        "image": "ghcr.io/berntpopp/litvar-link@sha256:9e224c7e10e11a0d3cefecbc0a01a2233ac1576478cf3c7344c1c107f96a5c9d",
-        "tag": "v6.0.10",
-        "version": "6.0.10"
+        "image": "ghcr.io/berntpopp/litvar-link@sha256:577011c400e98abaef7b95b4326fb2fd267f080202e65137b76861e487308f77",
+        "tag": "v6.0.13",
+        "version": "6.0.13"
       },
       "repository": "berntpopp/litvar-link",
       "repository_url": "https://github.com/berntpopp/litvar-link",
@@ -10269,7 +10228,7 @@
           "4.0.0"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-10-03T14:28:08.788288Z"
+        "updated_at": "2026-10-20T19:12:26.430296Z"
       },
       "domain": "Variant-effect assay scores",
       "entrypoints": [
@@ -10278,11 +10237,11 @@
       "name": "mavedb",
       "namespace": "mavedb",
       "release": {
-        "commit": "602d7ab6b4244ea324c326036079f3d9d058d50a",
+        "commit": "1b256b60d158a7d3f0738ffaca887b9a9bd162b1",
         "definitions_sha256": "7163a135521e80bbe1ba28070b8c41d356c779c2ebdf4c71b7acbcf282f1c7f6",
-        "image": "ghcr.io/berntpopp/mavedb-link@sha256:618b54da92c01a0341f4776b0e2d30692efe7cd8ab181250957523cfb5b5fe83",
-        "tag": "v0.5.10",
-        "version": "0.5.10"
+        "image": "ghcr.io/berntpopp/mavedb-link@sha256:d4fb293dcfbde279fd97b4ac23c2b872e0fee96dc262b602329b85cff0e77621",
+        "tag": "v0.5.12",
+        "version": "0.5.12"
       },
       "repository": "berntpopp/mavedb-link",
       "repository_url": "https://github.com/berntpopp/mavedb-link",
@@ -11451,11 +11410,11 @@
       "name": "metadome",
       "namespace": "metadome",
       "release": {
-        "commit": "f4a8a87ec6e5d22f5cb0391312a5447207f6d8c0",
+        "commit": "fc36b4c88c3333383a0e9b39e85d27cb681caf48",
         "definitions_sha256": "2fa791b88ad64448b826cd068c3a39bbb3d882086e65fdb261ded35399dfd696",
-        "image": "ghcr.io/berntpopp/metadome-link@sha256:a09bf81b60e7be7d68438e89c71d8387d4bba3e6cb0deb71ba344e43ff1b449c",
-        "tag": "v0.3.10",
-        "version": "0.3.10"
+        "image": "ghcr.io/berntpopp/metadome-link@sha256:2c98bc0e82d2b860a7860451ea3f7a5fa261ac22bccc79244b183230a972f977",
+        "tag": "v0.3.12",
+        "version": "0.3.12"
       },
       "repository": "berntpopp/metadome-link",
       "repository_url": "https://github.com/berntpopp/metadome-link",
@@ -11502,6 +11461,61 @@
           },
           "name": "get_server_capabilities",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "$ref": "#/$defs/V"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "propertyNames": {
+                            "const": "query"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              },
+              "V": {
+                "additionalProperties": false,
+                "minProperties": 8,
+                "patternProperties": {
+                  "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -11519,54 +11533,7 @@
                     "type": "array"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "const": "query"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^build$": {
                     "additionalProperties": false,
@@ -11585,14 +11552,7 @@
                     "type": "object"
                   },
                   "^data_versions$": {
-                    "additionalProperties": false,
-                    "minProperties": 8,
-                    "patternProperties": {
-                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                        "type": "string"
-                      }
-                    },
-                    "type": "object"
+                    "$ref": "#/$defs/V"
                   },
                   "^limits$": {
                     "additionalProperties": false,
@@ -11656,54 +11616,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "const": "query"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -11775,59 +11688,67 @@
           },
           "name": "get_diagnostics",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "$ref": "#/$defs/V"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "propertyNames": {
+                            "const": "query"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              },
+              "V": {
+                "additionalProperties": false,
+                "minProperties": 8,
+                "patternProperties": {
+                  "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
                 "properties": {
                   "_meta": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "const": "query"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "build": {
                     "additionalProperties": false,
@@ -11862,14 +11783,7 @@
                     "type": "string"
                   },
                   "data_versions": {
-                    "additionalProperties": false,
-                    "minProperties": 8,
-                    "patternProperties": {
-                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                        "type": "string"
-                      }
-                    },
-                    "type": "object"
+                    "$ref": "#/$defs/V"
                   },
                   "dropped_summary": {
                     "type": "string"
@@ -11934,54 +11848,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "const": "query"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -12063,6 +11930,58 @@
           },
           "name": "resolve_transcript",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "additionalProperties": false,
+                    "minProperties": 8,
+                    "patternProperties": {
+                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "propertyNames": {
+                            "pattern": "^(query|transcript_id)$"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -12095,54 +12014,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(query|transcript_id)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^analyzable$": {
                     "type": "boolean"
@@ -12202,54 +12074,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(query|transcript_id)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -12344,6 +12169,58 @@
           },
           "name": "request_tolerance_landscape",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "additionalProperties": false,
+                    "minProperties": 8,
+                    "patternProperties": {
+                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "propertyNames": {
+                            "const": "transcript_id"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -12352,54 +12229,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "const": "transcript_id"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^poll_after_s$": {
                     "type": "number"
@@ -12433,54 +12263,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "const": "transcript_id"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -12591,6 +12374,58 @@
           },
           "name": "get_tolerance_landscape",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "additionalProperties": false,
+                    "minProperties": 8,
+                    "patternProperties": {
+                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "propertyNames": {
+                            "pattern": "^(transcript_id|position(_start|_stop)?|limit|offset)$"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -12619,54 +12454,7 @@
                     ]
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position(_start|_stop)?|limit|offset)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^domains$": {
                     "items": {
@@ -12831,54 +12619,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position(_start|_stop)?|limit|offset)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -12970,6 +12711,58 @@
           },
           "name": "get_position_tolerance",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "additionalProperties": false,
+                    "minProperties": 8,
+                    "patternProperties": {
+                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "propertyNames": {
+                            "pattern": "^(transcript_id|positions?)$"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -12981,54 +12774,7 @@
                     "type": "integer"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|positions?)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^domains$": {
                     "additionalProperties": {
@@ -13141,54 +12887,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|positions?)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -13318,6 +13017,58 @@
           },
           "name": "get_variant_counts",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "additionalProperties": false,
+                    "minProperties": 8,
+                    "patternProperties": {
+                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "propertyNames": {
+                            "pattern": "^(transcript_id|position(_start|_stop)?|source|limit|offset)$"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -13326,54 +13077,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position(_start|_stop)?|source|limit|offset)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^pagination$": {
                     "additionalProperties": false,
@@ -13543,54 +13247,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position(_start|_stop)?|source|limit|offset)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -13688,6 +13345,58 @@
           },
           "name": "compare_positions",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "additionalProperties": false,
+                    "minProperties": 8,
+                    "patternProperties": {
+                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "propertyNames": {
+                            "pattern": "^(transcript_id|position)$"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -13696,54 +13405,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^comparison$": {
                     "items": {
@@ -13878,54 +13540,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -14007,6 +13622,69 @@
           },
           "name": "get_protein_domains",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "additionalProperties": false,
+                    "minProperties": 8,
+                    "patternProperties": {
+                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "properties": {
+                            "domains": {
+                              "additionalProperties": {
+                                "items": {
+                                  "type": "integer"
+                                },
+                                "type": "array"
+                              },
+                              "type": "object"
+                            }
+                          },
+                          "propertyNames": {
+                            "pattern": "^(transcript_id|position|limit|offset|domains)$"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -14015,65 +13693,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "properties": {
-                                "domains": {
-                                  "additionalProperties": {
-                                    "items": {
-                                      "type": "integer"
-                                    },
-                                    "type": "array"
-                                  },
-                                  "type": "object"
-                                }
-                              },
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position|limit|offset|domains)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^domains$": {
                     "items": {
@@ -14119,65 +13739,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "properties": {
-                                "domains": {
-                                  "additionalProperties": {
-                                    "items": {
-                                      "type": "integer"
-                                    },
-                                    "type": "array"
-                                  },
-                                  "type": "object"
-                                }
-                              },
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position|limit|offset|domains)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -14307,6 +13869,98 @@
           },
           "name": "get_meta_domain",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "additionalProperties": false,
+                    "minProperties": 8,
+                    "patternProperties": {
+                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "properties": {
+                            "domains": {
+                              "additionalProperties": {
+                                "items": {
+                                  "type": "integer"
+                                },
+                                "type": "array"
+                              },
+                              "type": "object"
+                            }
+                          },
+                          "propertyNames": {
+                            "pattern": "^(transcript_id|position|limit|offset|domains)$"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              },
+              "v": {
+                "patternProperties": {
+                  "^(alt|alt_aa|alt_aa_triplet|alt_codon|cdna_pos|chr|chr_positions|exon_numbers|gene_name|ref|ref_aa|ref_aa_triplet|ref_codon|strand|type)$": {
+                    "type": "string"
+                  },
+                  "^(pos|protein_pos)$": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "alt",
+                  "alt_aa",
+                  "alt_aa_triplet",
+                  "alt_codon",
+                  "cdna_pos",
+                  "chr",
+                  "chr_positions",
+                  "gene_name",
+                  "pos",
+                  "protein_pos",
+                  "ref",
+                  "ref_aa",
+                  "ref_aa_triplet",
+                  "ref_codon",
+                  "strand",
+                  "type"
+                ],
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -14315,65 +13969,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "properties": {
-                                "domains": {
-                                  "additionalProperties": {
-                                    "items": {
-                                      "type": "integer"
-                                    },
-                                    "type": "array"
-                                  },
-                                  "type": "object"
-                                }
-                              },
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position|limit|offset|domains)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^meta_domains$": {
                     "additionalProperties": {
@@ -14387,33 +13983,7 @@
                           "items": {
                             "allOf": [
                               {
-                                "patternProperties": {
-                                  "^(alt|alt_aa|alt_aa_triplet|alt_codon|cdna_pos|chr|chr_positions|exon_numbers|gene_name|ref|ref_aa|ref_aa_triplet|ref_codon|strand|type)$": {
-                                    "type": "string"
-                                  },
-                                  "^(pos|protein_pos)$": {
-                                    "type": "integer"
-                                  }
-                                },
-                                "required": [
-                                  "alt",
-                                  "alt_aa",
-                                  "alt_aa_triplet",
-                                  "alt_codon",
-                                  "cdna_pos",
-                                  "chr",
-                                  "chr_positions",
-                                  "gene_name",
-                                  "pos",
-                                  "protein_pos",
-                                  "ref",
-                                  "ref_aa",
-                                  "ref_aa_triplet",
-                                  "ref_codon",
-                                  "strand",
-                                  "type"
-                                ],
-                                "type": "object"
+                                "$ref": "#/$defs/v"
                               },
                               {
                                 "patternProperties": {
@@ -14462,33 +14032,7 @@
                           "items": {
                             "allOf": [
                               {
-                                "patternProperties": {
-                                  "^(alt|alt_aa|alt_aa_triplet|alt_codon|cdna_pos|chr|chr_positions|exon_numbers|gene_name|ref|ref_aa|ref_aa_triplet|ref_codon|strand|type)$": {
-                                    "type": "string"
-                                  },
-                                  "^(pos|protein_pos)$": {
-                                    "type": "integer"
-                                  }
-                                },
-                                "required": [
-                                  "alt",
-                                  "alt_aa",
-                                  "alt_aa_triplet",
-                                  "alt_codon",
-                                  "cdna_pos",
-                                  "chr",
-                                  "chr_positions",
-                                  "gene_name",
-                                  "pos",
-                                  "protein_pos",
-                                  "ref",
-                                  "ref_aa",
-                                  "ref_aa_triplet",
-                                  "ref_codon",
-                                  "strand",
-                                  "type"
-                                ],
-                                "type": "object"
+                                "$ref": "#/$defs/v"
                               },
                               {
                                 "patternProperties": {
@@ -14543,65 +14087,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "properties": {
-                                "domains": {
-                                  "additionalProperties": {
-                                    "items": {
-                                      "type": "integer"
-                                    },
-                                    "type": "array"
-                                  },
-                                  "type": "object"
-                                }
-                              },
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position|limit|offset|domains)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -14701,6 +14187,58 @@
           },
           "name": "summarize_intolerant_regions",
           "outputSchema": {
+            "$defs": {
+              "M": {
+                "additionalProperties": false,
+                "patternProperties": {
+                  "^(tool|request_id|capabilities_version)$": {
+                    "type": "string"
+                  },
+                  "^data_versions$": {
+                    "additionalProperties": false,
+                    "minProperties": 8,
+                    "patternProperties": {
+                      "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "^elapsed_ms$": {
+                    "type": "integer"
+                  },
+                  "^next_commands$": {
+                    "items": {
+                      "additionalProperties": false,
+                      "minProperties": 2,
+                      "properties": {
+                        "arguments": {
+                          "propertyNames": {
+                            "pattern": "^(transcript_id|position)$"
+                          },
+                          "type": "object"
+                        },
+                        "tool": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "^unsafe_for_clinical_use$": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "data_versions",
+                  "request_id",
+                  "tool",
+                  "unsafe_for_clinical_use"
+                ],
+                "type": "object"
+              }
+            },
             "oneOf": [
               {
                 "additionalProperties": false,
@@ -14712,54 +14250,7 @@
                     "type": "integer"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^gene_name$": {
                     "type": [
@@ -14882,54 +14373,7 @@
                     "type": "string"
                   },
                   "^_meta$": {
-                    "additionalProperties": false,
-                    "patternProperties": {
-                      "^(tool|request_id|capabilities_version)$": {
-                        "type": "string"
-                      },
-                      "^data_versions$": {
-                        "additionalProperties": false,
-                        "minProperties": 8,
-                        "patternProperties": {
-                          "^(assembly|gencode|uniprot|gnomad|clinvar|pfam|metadome_app|data_doi)$": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "^elapsed_ms$": {
-                        "type": "integer"
-                      },
-                      "^next_commands$": {
-                        "items": {
-                          "additionalProperties": false,
-                          "minProperties": 2,
-                          "properties": {
-                            "arguments": {
-                              "propertyNames": {
-                                "pattern": "^(transcript_id|position)$"
-                              },
-                              "type": "object"
-                            },
-                            "tool": {
-                              "type": "string"
-                            }
-                          },
-                          "type": "object"
-                        },
-                        "type": "array"
-                      },
-                      "^unsafe_for_clinical_use$": {
-                        "const": true
-                      }
-                    },
-                    "required": [
-                      "data_versions",
-                      "request_id",
-                      "tool",
-                      "unsafe_for_clinical_use"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/M"
                   },
                   "^allowed_values$": {
                     "items": {
@@ -14984,7 +14428,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-10-03T07:01:46.027466Z"
+        "updated_at": "2026-10-20T19:12:26.430296Z"
       },
       "domain": "Mouse phenotype & models",
       "entrypoints": [
@@ -14993,11 +14437,11 @@
       "name": "mgi",
       "namespace": "mgi",
       "release": {
-        "commit": "b164ec9129b5e35198fd72a7e00a4540dd20dd72",
+        "commit": "cf1ef967ed0412609e37744e9c487a2d79480c89",
         "definitions_sha256": "6f0cbd449985078f74b2fadfab101fbfef830bce8eb042c2ebbcb043ca1e7283",
-        "image": "ghcr.io/berntpopp/mgi-link@sha256:d915abfeacf5bd898a536aa77a4a39ee73b876d6a020894d30f74af859b7f21b",
-        "tag": "v0.6.8",
-        "version": "0.6.8"
+        "image": "ghcr.io/berntpopp/mgi-link@sha256:85576c045532337951e50a303e5da5c28dec02037ab6eff8f9884c13caa31caa",
+        "tag": "v0.6.10",
+        "version": "0.6.10"
       },
       "repository": "berntpopp/mgi-link",
       "repository_url": "https://github.com/berntpopp/mgi-link",
@@ -15698,7 +15142,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-10-03T07:01:46.027466Z"
+        "updated_at": "2026-10-20T19:12:26.430296Z"
       },
       "domain": "Disease ontology / cross-references",
       "entrypoints": [
@@ -15707,11 +15151,11 @@
       "name": "mondo",
       "namespace": "mondo",
       "release": {
-        "commit": "55477bcacca1258ec7cbdfaa127f93f295dc9160",
+        "commit": "9d10ef730d0b56b183ce47084f65236c47f4feac",
         "definitions_sha256": "179f9225ffd41cb8551e11b75604f20cf96e4b4fd7af5e338846602740a331ca",
-        "image": "ghcr.io/berntpopp/mondo-link@sha256:5d706dd755f10da9d375394148885cbfff2670e646cf8ac97e86ea2e30062b64",
-        "tag": "v0.4.9",
-        "version": "0.4.9"
+        "image": "ghcr.io/berntpopp/mondo-link@sha256:a08dfe998f4be228f293cd1699db864591290eecf2cb723dbc69c424405addae",
+        "tag": "v0.5.2",
+        "version": "0.5.2"
       },
       "repository": "berntpopp/mondo-link",
       "repository_url": "https://github.com/berntpopp/mondo-link",
@@ -16465,7 +15909,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-10-03T07:01:46.027466Z"
+        "updated_at": "2026-10-20T13:14:22.737606Z"
       },
       "domain": "Rare disease ontology & associations",
       "entrypoints": [
@@ -16474,11 +15918,11 @@
       "name": "orphanet",
       "namespace": "orphanet",
       "release": {
-        "commit": "8f5b2528110cce68d886fe6b18a5aacb57fd1b99",
+        "commit": "937905ae77fad549c2ec77216f253f5d5310c757",
         "definitions_sha256": "e48c67610afd134796521ce8e0ebca4c641ad8042882b4c0aff98330713ef632",
-        "image": "ghcr.io/berntpopp/orphanet-link@sha256:484c4a3720608f0c1917b08992f88a9f3b3cf11366fadc75f6e47ccaacf95ece",
-        "tag": "v0.4.10",
-        "version": "0.4.10"
+        "image": "ghcr.io/berntpopp/orphanet-link@sha256:06b4041ef0a8bfe7b473a45c1aa65cc460f3957d63147a48e0e9240a4c30395c",
+        "tag": "v0.4.12",
+        "version": "0.4.12"
       },
       "repository": "berntpopp/orphanet-link",
       "repository_url": "https://github.com/berntpopp/orphanet-link",
@@ -17699,11 +17143,11 @@
       "name": "panelapp",
       "namespace": "panelapp",
       "release": {
-        "commit": "293f3035a9a4658b833f52e7d166135c2b4aa366",
+        "commit": "2edb0e619f50f21170ea4d168824380c593d8ac2",
         "definitions_sha256": "04f72aebcb0ef65d0ed0fb802342a5edcfc827a107d5960bf2db1d991428cc8e",
-        "image": "ghcr.io/berntpopp/panelapp-link@sha256:a532e34ec261c1daa088d5dc1f8bbb527deb97807d0d39b393515f15c585ddd0",
-        "tag": "v0.7.6",
-        "version": "0.7.6"
+        "image": "ghcr.io/berntpopp/panelapp-link@sha256:2a7e792d06a38d596eefa6ca0778ea2d742f3b7b877bfe207f15e7fc5fc68b54",
+        "tag": "v0.7.8",
+        "version": "0.7.8"
       },
       "repository": "berntpopp/panelapp-link",
       "repository_url": "https://github.com/berntpopp/panelapp-link",
@@ -18120,6 +17564,37 @@
           "description": "Diff genes across 2-5 panels server-side: shared genes, genes unique to each panel, and per-panel confidence deltas. Pass concrete-region refs ({panel_id, region}); 'both' is rejected. Cheaper than pulling each panel's full gene list and diffing in context.",
           "federated_name": "panelapp_compare_panels",
           "inputSchema": {
+            "$defs": {
+              "PanelRef": {
+                "description": "One compare_panels panel reference: a panel id plus its region.\n\nPanelApp panel ids are per-region (UK panel 285 is a different panel from\nAustralia panel 285), so each ref carries its own concrete region -- 'both' is\nnot a namespace a panel id can live in.\n\nThis docstring is advertised verbatim as the JSON-Schema description of a\npanels[] item; keep it plain prose an agent can act on.",
+                "properties": {
+                  "panel_id": {
+                    "description": "PanelApp panel id (region-scoped, positive integer, e.g. 285).",
+                    "examples": [
+                      285
+                    ],
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "region": {
+                    "description": "uk (Genomics England) | australia.",
+                    "enum": [
+                      "uk",
+                      "australia"
+                    ],
+                    "examples": [
+                      "uk"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "panel_id",
+                  "region"
+                ],
+                "type": "object"
+              }
+            },
             "additionalProperties": false,
             "properties": {
               "min_confidence": {
@@ -18154,33 +17629,7 @@
                   ]
                 ],
                 "items": {
-                  "description": "One compare_panels panel reference: a panel id plus its region.\n\nPanelApp panel ids are per-region (UK panel 285 is a different panel from\nAustralia panel 285), so each ref carries its own concrete region -- 'both' is\nnot a namespace a panel id can live in.\n\nThis docstring is advertised verbatim as the JSON-Schema description of a\npanels[] item; keep it plain prose an agent can act on.",
-                  "properties": {
-                    "panel_id": {
-                      "description": "PanelApp panel id (region-scoped, positive integer, e.g. 285).",
-                      "examples": [
-                        285
-                      ],
-                      "minimum": 1,
-                      "type": "integer"
-                    },
-                    "region": {
-                      "description": "uk (Genomics England) | australia.",
-                      "enum": [
-                        "uk",
-                        "australia"
-                      ],
-                      "examples": [
-                        "uk"
-                      ],
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "panel_id",
-                    "region"
-                  ],
-                  "type": "object"
+                  "$ref": "#/$defs/PanelRef"
                 },
                 "maxItems": 5,
                 "minItems": 2,
@@ -18633,7 +18082,7 @@
         "release_tag": "observed-2026.07.13",
         "schema_compatibility": [],
         "status": "attested-reference",
-        "updated_at": "2026-10-03T07:01:46.027466Z"
+        "updated_at": "2026-10-20T13:14:22.737606Z"
       },
       "domain": "Literature & entity annotation",
       "entrypoints": [
@@ -18642,11 +18091,11 @@
       "name": "pubtator",
       "namespace": "pubtator",
       "release": {
-        "commit": "1584f520eb5f9f27f4a088a76f3d8986f0413a61",
+        "commit": "31599f347ce88fa1e1ea6a9ef6ec431730990f98",
         "definitions_sha256": "512f5c1dc2fe8e7e9fa383ba5e88e568933125e6143434d0b1f09614230b3441",
-        "image": "ghcr.io/berntpopp/pubtator-link@sha256:cb97498d86573c0bea2e49999abec8be89d0e17cdf58837988ec707447633045",
-        "tag": "v7.1.13",
-        "version": "7.1.13"
+        "image": "ghcr.io/berntpopp/pubtator-link@sha256:69e7faf9547b898cfe4dc0752231da0e86d8e2d925e60c2fb9d556d34453009c",
+        "tag": "v7.1.18",
+        "version": "7.1.18"
       },
       "repository": "berntpopp/pubtator-link",
       "repository_url": "https://github.com/berntpopp/pubtator-link",
@@ -21388,11 +20837,11 @@
       "name": "spliceai",
       "namespace": "spliceai",
       "release": {
-        "commit": "ccfcf20c46efef96682edc739c8c4ddd02565b22",
+        "commit": "0107934d564c27ddbb20066583389a1bd8c1ef06",
         "definitions_sha256": "7bc98a2c95f0fab7e26fd4fc42e8fa032f3472b7598deb8ac73f0f0ad8febf5f",
-        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:607cfd99cc6005ec7fcbed69442886aedaa016fb3bba120d27e7ecf4d639c92b",
-        "tag": "v4.0.8",
-        "version": "4.0.8"
+        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:ef39b90cc410af5a3f56fb0fda4fa5897f3d255e975e7dbf9c8d91061944e054",
+        "tag": "v4.0.10",
+        "version": "4.0.10"
       },
       "repository": "berntpopp/spliceailookup-link",
       "repository_url": "https://github.com/berntpopp/spliceailookup-link",
@@ -22052,11 +21501,11 @@
       "name": "stringdb",
       "namespace": "stringdb",
       "release": {
-        "commit": "197038d3287e72016b94076be0ea16fc68f549d3",
+        "commit": "4598266ac2894ef04d34a38a38d71f56a2682f00",
         "definitions_sha256": "62a8908b84685b727d28bf5a79b0fa241cdeb4e963768989c58a3e17334e8dde",
-        "image": "ghcr.io/berntpopp/stringdb-link@sha256:f36db87172149fe556c9d02f2fdf4be92b051df6e4de4d81a81b0ac233f506c4",
-        "tag": "v4.1.10",
-        "version": "4.1.10"
+        "image": "ghcr.io/berntpopp/stringdb-link@sha256:f73ce2d3fda60e4efd0982277e46281c62279dc5096f4c33b85ae31f3b2700fd",
+        "tag": "v4.1.13",
+        "version": "4.1.13"
       },
       "repository": "berntpopp/stringdb-link",
       "repository_url": "https://github.com/berntpopp/stringdb-link",
@@ -22146,6 +21595,17 @@
           "description": "Get protein-protein interaction network.\n\nRetrieves the protein-protein interaction network for the given proteins.\nIf only one protein is provided and add_nodes is 0, additional nodes will\nbe automatically added to show the interaction neighborhood.\n\nArgs:\n    request: Network interaction request\n    service: StringDB service instance\n    logger: Logger instance\n\nReturns:\n    List of protein-protein interactions\n\nRaises:\n    HTTPException: If the request fails",
           "federated_name": "stringdb_search_protein_interactions",
           "inputSchema": {
+            "$defs": {
+              "NetworkType": {
+                "description": "Network types supported by STRING.",
+                "enum": [
+                  "functional",
+                  "physical"
+                ],
+                "title": "NetworkType",
+                "type": "string"
+              }
+            },
             "additionalProperties": false,
             "properties": {
               "add_nodes": {
@@ -22174,14 +21634,9 @@
                 "type": "array"
               },
               "network_type": {
+                "$ref": "#/$defs/NetworkType",
                 "default": "functional",
-                "description": "Network type: functional or physical",
-                "enum": [
-                  "functional",
-                  "physical"
-                ],
-                "title": "NetworkType",
-                "type": "string"
+                "description": "Network type: functional or physical"
               },
               "required_score": {
                 "default": 0.4,
@@ -22238,6 +21693,17 @@
           "description": "Get interaction partners for proteins.\n\nRetrieves all interaction partners for the given proteins, not just\ninteractions between the input proteins. Useful for finding all\nproteins that interact with your proteins of interest.\n\nArgs:\n    request: Interaction partners request\n    client: StringDB HTTP client\n    logger: Logger instance\n\nReturns:\n    List of interaction partners\n\nRaises:\n    HTTPException: If the request fails",
           "federated_name": "stringdb_get_interaction_partners",
           "inputSchema": {
+            "$defs": {
+              "NetworkType": {
+                "description": "Network types supported by STRING.",
+                "enum": [
+                  "functional",
+                  "physical"
+                ],
+                "title": "NetworkType",
+                "type": "string"
+              }
+            },
             "additionalProperties": false,
             "properties": {
               "identifiers": {
@@ -22265,14 +21731,9 @@
                 "type": "integer"
               },
               "network_type": {
+                "$ref": "#/$defs/NetworkType",
                 "default": "functional",
-                "description": "Network type: functional or physical",
-                "enum": [
-                  "functional",
-                  "physical"
-                ],
-                "title": "NetworkType",
-                "type": "string"
+                "description": "Network type: functional or physical"
               },
               "required_score": {
                 "default": 0.4,
@@ -22323,6 +21784,27 @@
           "description": "Get shareable link to STRING webpage for the network.\n\nThis endpoint generates a shareable URL that leads to the STRING database\nwebsite showing the protein interaction network for the specified proteins.\nThe link includes all visualization parameters and can be shared with others.\n\nThe generated link allows users to:\n- View the network interactively on the STRING website\n- Access additional features like network customization\n- Share the exact network view with collaborators",
           "federated_name": "stringdb_get_network_link",
           "inputSchema": {
+            "$defs": {
+              "NetworkFlavor": {
+                "description": "Network visualization styles supported by STRING.",
+                "enum": [
+                  "evidence",
+                  "confidence",
+                  "actions"
+                ],
+                "title": "NetworkFlavor",
+                "type": "string"
+              },
+              "NetworkType": {
+                "description": "Network types supported by STRING.",
+                "enum": [
+                  "functional",
+                  "physical"
+                ],
+                "title": "NetworkType",
+                "type": "string"
+              }
+            },
             "additionalProperties": false,
             "properties": {
               "identifiers": {
@@ -22343,25 +21825,14 @@
                 "type": "array"
               },
               "network_flavor": {
+                "$ref": "#/$defs/NetworkFlavor",
                 "default": "evidence",
-                "description": "Network visualization style",
-                "enum": [
-                  "evidence",
-                  "confidence",
-                  "actions"
-                ],
-                "title": "NetworkFlavor",
-                "type": "string"
+                "description": "Network visualization style"
               },
               "network_type": {
+                "$ref": "#/$defs/NetworkType",
                 "default": "functional",
-                "description": "Network type: functional or physical",
-                "enum": [
-                  "functional",
-                  "physical"
-                ],
-                "title": "NetworkType",
-                "type": "string"
+                "description": "Network type: functional or physical"
               },
               "output_format": {
                 "default": "json",
@@ -22427,6 +21898,36 @@
           "description": "Perform functional enrichment analysis.",
           "federated_name": "stringdb_compute_functional_enrichment",
           "inputSchema": {
+            "$defs": {
+              "EnrichmentCategory": {
+                "description": "Enrichment analysis categories.",
+                "enum": [
+                  "Process",
+                  "Function",
+                  "Component",
+                  "Keyword",
+                  "KEGG",
+                  "RCTM",
+                  "HPO",
+                  "MPO",
+                  "DPO",
+                  "WPO",
+                  "ZPO",
+                  "FYPO",
+                  "Pfam",
+                  "SMART",
+                  "InterPro",
+                  "PMID",
+                  "NetworkNeighborAL",
+                  "COMPARTMENTS",
+                  "TISSUES",
+                  "DISEASES",
+                  "WikiPathways"
+                ],
+                "title": "EnrichmentCategory",
+                "type": "string"
+              }
+            },
             "additionalProperties": false,
             "properties": {
               "background_string_identifiers": {
@@ -22453,32 +21954,7 @@
               "category": {
                 "anyOf": [
                   {
-                    "description": "Enrichment analysis categories.",
-                    "enum": [
-                      "Process",
-                      "Function",
-                      "Component",
-                      "Keyword",
-                      "KEGG",
-                      "RCTM",
-                      "HPO",
-                      "MPO",
-                      "DPO",
-                      "WPO",
-                      "ZPO",
-                      "FYPO",
-                      "Pfam",
-                      "SMART",
-                      "InterPro",
-                      "PMID",
-                      "NetworkNeighborAL",
-                      "COMPARTMENTS",
-                      "TISSUES",
-                      "DISEASES",
-                      "WikiPathways"
-                    ],
-                    "title": "EnrichmentCategory",
-                    "type": "string"
+                    "$ref": "#/$defs/EnrichmentCategory"
                   },
                   {
                     "type": "null"
@@ -22859,6 +22335,37 @@
           "description": "Generate a protein network visualization image as base64 (MCP surface).",
           "federated_name": "stringdb_get_network_image",
           "inputSchema": {
+            "$defs": {
+              "ImageFormat": {
+                "description": "Image formats for network visualization.",
+                "enum": [
+                  "image",
+                  "highres_image",
+                  "svg"
+                ],
+                "title": "ImageFormat",
+                "type": "string"
+              },
+              "NetworkFlavor": {
+                "description": "Network visualization styles supported by STRING.",
+                "enum": [
+                  "evidence",
+                  "confidence",
+                  "actions"
+                ],
+                "title": "NetworkFlavor",
+                "type": "string"
+              },
+              "NetworkType": {
+                "description": "Network types supported by STRING.",
+                "enum": [
+                  "functional",
+                  "physical"
+                ],
+                "title": "NetworkType",
+                "type": "string"
+              }
+            },
             "additionalProperties": false,
             "properties": {
               "add_color_nodes": {
@@ -22905,36 +22412,19 @@
                 "type": "array"
               },
               "image_format": {
+                "$ref": "#/$defs/ImageFormat",
                 "default": "image",
-                "description": "Image format: PNG, high-res PNG, or SVG",
-                "enum": [
-                  "image",
-                  "highres_image",
-                  "svg"
-                ],
-                "title": "ImageFormat",
-                "type": "string"
+                "description": "Image format: PNG, high-res PNG, or SVG"
               },
               "network_flavor": {
+                "$ref": "#/$defs/NetworkFlavor",
                 "default": "evidence",
-                "description": "Network visualization style",
-                "enum": [
-                  "evidence",
-                  "confidence",
-                  "actions"
-                ],
-                "title": "NetworkFlavor",
-                "type": "string"
+                "description": "Network visualization style"
               },
               "network_type": {
+                "$ref": "#/$defs/NetworkType",
                 "default": "functional",
-                "description": "Network type: functional or physical",
-                "enum": [
-                  "functional",
-                  "physical"
-                ],
-                "title": "NetworkType",
-                "type": "string"
+                "description": "Network type: functional or physical"
               },
               "required_score": {
                 "default": 0.4,
@@ -23000,11 +22490,11 @@
       "name": "uniprot",
       "namespace": "uniprot",
       "release": {
-        "commit": "c319cf40c48b8e7354beddbc8581fa9e3876509e",
+        "commit": "f7aae66e958cbeeb3b9a11c7d79985f2049e8e8c",
         "definitions_sha256": "5d94f620dabf0a33e8b93f8df64ded825468e088806ed737be7daeff96cf0321",
-        "image": "ghcr.io/berntpopp/uniprot-link@sha256:632fb771a7921b14edbcaaa7e44beaec6be97de6d0599e8a68180b571022e393",
-        "tag": "v5.1.7",
-        "version": "5.1.7"
+        "image": "ghcr.io/berntpopp/uniprot-link@sha256:5ecb3be292b57fe318f7933fa567ac22df03582c7eb3e99965d859b06da8fab7",
+        "tag": "v5.1.9",
+        "version": "5.1.9"
       },
       "repository": "berntpopp/uniprot-link",
       "repository_url": "https://github.com/berntpopp/uniprot-link",
@@ -24007,11 +23497,11 @@
       "name": "vep",
       "namespace": "vep",
       "release": {
-        "commit": "d106c35caec8f152077455dffda89fadaa9c2470",
+        "commit": "f463dfab4e87971c30410b65e44a18fc3cb0631f",
         "definitions_sha256": "68dc33bdc4d7e76c685b05aa4a321af68b318df39474af66352eeb34a53c99f8",
-        "image": "ghcr.io/berntpopp/vep-link@sha256:8e1a6318af284bdcc4cf238e863e14bfd52f22411d0eae1bdf6bac99d13302be",
-        "tag": "v1.1.8",
-        "version": "1.1.8"
+        "image": "ghcr.io/berntpopp/vep-link@sha256:2b6bd0f2fe048a7cb9239c35fffde1366bdc1b6a78e8190df474a9a58020d3eb",
+        "tag": "v1.1.10",
+        "version": "1.1.10"
       },
       "repository": "berntpopp/vep-link",
       "repository_url": "https://github.com/berntpopp/vep-link",

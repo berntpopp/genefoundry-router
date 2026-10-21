@@ -2,6 +2,13 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.8] - 2026-10-21
+
+### Changed
+
+- Re-pin the drift baseline and release-candidate inventory to `fleet-2026-10-21`: a strict live capture of the 22 immutable, certifi 2026.10.19 / Python 3.14 backend releases (built by `e8931f0`) now deployed in production. Only gtex 3.1.10 changes its release MCP definitions; the genereviews, metadome, panelapp and stringdb baseline entries change only because the v0.10.4+ schema canonicalization now preserves `$defs` (their release `definitions_sha256` is unchanged).
+- Regenerated `ci/fleet-application-releases.json`, `ci/release-candidate-fleet.json` and the fleet provenance artifacts from the same verified manifest set.
+
 ## [0.10.7] - 2026-10-20
 
 ### Fixed
