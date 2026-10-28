@@ -109,19 +109,11 @@ def _not_found_payload() -> dict[str, Any]:
     }
 
 
-def unknown_tool_result() -> ToolResult:
-    """Return a fixed, name-free ``not_found`` envelope for an unknown tool.
-
-    Carries both ``structured_content`` and a matching TextContent JSON mirror, built
-    from constants only. There is deliberately no ``_meta.tool`` — the requested
-    (caller-controlled) name is never reflected back.
-    """
-    payload = _not_found_payload()
+def _envelope(payload: dict[str, Any]) -> ToolResult:
     return ToolResult(
         content=[
             TextContent(
-                type="text",
-                text=json.dumps(payload, separators=(",", ":"), sort_keys=True),
+                type="text", text=json.dumps(payload, separators=(",", ":"), sort_keys=True)
             )
         ],
         structured_content=payload,
@@ -129,8 +121,39 @@ def unknown_tool_result() -> ToolResult:
     )
 
 
+def backend_unavailable_result(namespace: str) -> ToolResult:
+    """Envelope for a tool whose CONFIGURED backend harvested 0 tools (down/unreachable).
+
+    No search_tools suggestion: search cannot find a tool whose backend serves nothing.
+    """
+    return _envelope(
+        {
+            "success": False,
+            "error_code": "upstream_unavailable",
+            "message": f"The {namespace} backend is not reachable from this deployment.",
+            "retryable": True,
+            "suggestions": [f"Retry later; {namespace} tools are unavailable until it recovers."],
+        }
+    )
+
+
+def unknown_tool_result() -> ToolResult:
+    """Return a fixed, name-free ``not_found`` envelope for an unknown tool.
+
+    Carries both ``structured_content`` and a matching TextContent JSON mirror, built
+    from constants only. There is deliberately no ``_meta.tool`` — the requested
+    (caller-controlled) name is never reflected back.
+    """
+    return _envelope(_not_found_payload())
+
+
 class NotFoundGuard(Middleware):
     """Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary)."""
+
+    def __init__(self) -> None:
+        # Configured namespaces that harvested 0 tools; refreshed by the catalog relist.
+        # A namespace matches NAMESPACE_RE, so naming it never reflects hostile caller input.
+        self.unavailable: frozenset[str] = frozenset()
 
     async def on_call_tool(
         self,
@@ -155,6 +178,10 @@ class NotFoundGuard(Middleware):
             except Exception:
                 tool = object()
             if tool is None:
+                namespace = name.partition("_")[0]
+                if namespace in self.unavailable:
+                    log.warning("mcp_backend_unavailable", namespace=namespace)
+                    return backend_unavailable_result(namespace)
                 log.warning("mcp_unknown_tool")
                 return unknown_tool_result()
         return await call_next(context)

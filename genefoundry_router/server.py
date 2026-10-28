@@ -118,7 +118,9 @@ def build_server(
     # FastMCP-core not-found reflection guard (Response-Envelope v1.1 fast-follow).
     # Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary). Registered before
     # ToolResponseCacheMiddleware so quarantined tools cannot be served from cache.
-    server.add_middleware(NotFoundGuard())
+    notfound_guard = NotFoundGuard()
+    server.add_middleware(notfound_guard)
+    server.notfound_guard = notfound_guard  # type: ignore[attr-defined]
     tool_cache = ToolResponseCache(registry)
     server.add_middleware(ToolResponseCacheMiddleware(tool_cache))
     server.tool_cache = tool_cache  # type: ignore[attr-defined]
@@ -194,6 +196,13 @@ def build_app(
     async def _refresh_catalog(phase: Literal["startup", "poll"]) -> None:
         tools = await apply_normalizations(server, registry)
         unreachable = _seed_reachability(registry, tools)
+        # Advertise only what the live catalog serves (issue #256): instructions/pins named
+        # every configured backend even when it harvested 0 tools, so agents called dead pins.
+        server.instructions = build_instructions(
+            [b for b in registry if b.namespace not in unreachable]
+        )
+        if (notfound := getattr(server, "notfound_guard", None)) is not None:
+            notfound.unavailable = frozenset(unreachable)
         guard.evaluate(
             fingerprint_definitions(definitions_from_tools(tools)),
             phase=phase,
