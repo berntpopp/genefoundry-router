@@ -2,6 +2,15 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.10] - 2026-10-28
+
+### Fixed
+
+- Refresh `ci/container-controls.json` from the 2026-10-28 control-audit run: the ledger's oldest
+  claim (2026-07-30) passed the 90-day freshness bound, so every pinned fleet container release failed
+  "Enforce fleet release controls". The live ledger records the five App-unprovable controls as
+  `manual_evidence_required` (partial rows), which the gate accepts as warnings.
+
 ## [0.10.9] - 2026-10-28
 
 ### Security
