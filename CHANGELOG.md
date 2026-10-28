@@ -2,6 +2,12 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.9] - 2026-10-28
+
+### Security
+
+- dnspython 2.9.0: fixes CVE-2026-114605 (high).
+
 ## [0.10.8] - 2026-10-21
 
 ### Changed
