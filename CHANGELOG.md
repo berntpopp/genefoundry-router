@@ -8,6 +8,10 @@ All notable changes to genefoundry-router are documented here.
 
 - dnspython 2.9.0: fixes CVE-2026-114605 (high).
 
+### Fixed
+
+- Stop advertising unreachable backends: after every catalog refresh the server instructions are rebuilt from reachable backends only, and a call to a tool in a configured but unreachable namespace returns `upstream_unavailable` (`retryable: true`, with the backend name) instead of a `not_found` that points to `search_tools` (#256, #257).
+
 ## [0.10.8] - 2026-10-21
 
 ### Changed
