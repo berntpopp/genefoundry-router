@@ -182,7 +182,6 @@ def restore_refresh_metrics(snapshot: CounterSnapshot, *, source_id: str) -> Non
 
 
 _OAUTH_SENSITIVE_MARKERS = (
-    "CIMD refresh failed for ",
     "Client %s matched upstream client_id",
     "Refresh token not found for client=",
     "Refresh token client_id mismatch",
