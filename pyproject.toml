@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genefoundry-router"
-version = "0.10.10"
+version = "0.10.11"
 description = "A thin FastMCP 3.x aggregator federating the GeneFoundry -link MCP fleet behind one endpoint."
 readme = "README.md"
 authors = [{ name = "Bernt Popp" }]
@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "authlib>=1.8.0,<2.0.0",
-    "fastmcp>=3.4.7,<4.0.0",
+    "fastmcp>=3.4.10,<4.0.0",
     "mcp[cli]>=1.28.1,<2.0.0",
     "fastapi>=0.140.0,<1.0.0",
     "uvicorn[standard]>=0.52.1,<1.0.0",
@@ -135,3 +135,8 @@ exclude_also = [
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+[tool.uv]
+# beartype 0.23 ships a code package named `data/`, which the code-only image gate
+# (tests/release image layer scan) rejects as a data path. Lift once the gate allowlists it.
+constraint-dependencies = ["beartype<0.23"]

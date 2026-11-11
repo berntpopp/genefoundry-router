@@ -2,6 +2,19 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.11] - 2026-11-11
+
+### Fixed
+
+- Dependency and security sweep: fastmcp 3.4.11 (GHSA for fastmcp/fastmcp-slim), joserfc 1.8.0,
+  filelock 4.2.10, virtualenv 21.15.6, opentelemetry-api 1.45.2, plus a full `uv lock --upgrade`
+  (Dependabot alerts 21-52 resolved).
+- GitHub Actions pins: setup-python v7.1.0, setup-uv v10.3.3, docker/login-action v4.7.0,
+  codeql-action v4.39.1 (the test-guarded `_container-release.yml` / `control-audit.yml` pins are left as reviewed).
+- Constrain beartype<0.23 (0.23 ships a `data/` code package the code-only image gate rejects).
+- Drop the stale `CIMD refresh failed for ` OAuth log-redaction marker (message removed upstream in fastmcp 3.4.11).
+- Dependabot: ignore Python minor/major base-image bumps (fleet stays on 3.14).
+
 ## [0.10.10] - 2026-10-28
 
 ### Fixed

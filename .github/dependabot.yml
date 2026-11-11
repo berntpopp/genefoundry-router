@@ -5,6 +5,10 @@ updates:
     directory: /docker
     schedule:
       interval: weekly
+    ignore:
+      # Fleet policy: Python stays on 3.14.
+      - dependency-name: python
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
     commit-message:
       prefix: build
 
