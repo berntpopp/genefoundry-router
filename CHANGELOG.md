@@ -2,6 +2,15 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.12] - 2026-11-11
+
+### Fixed
+
+- Re-release of 0.10.11: that tag's GitHub release was created by hand before the Container release
+  workflow ran, so it was immutable and empty and the workflow failed ("missing attestation"). 0.10.11
+  was never published as a container image; 0.10.12 carries the identical dependency and security
+  sweep (see 0.10.11 below) and is published by the workflow.
+
 ## [0.10.11] - 2026-11-11
 
 ### Fixed
