@@ -179,10 +179,12 @@ def unknown_tool_result() -> ToolResult:
 class NotFoundGuard(Middleware):
     """Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary)."""
 
-    def __init__(self) -> None:
+    def __init__(self, backend_status: Mapping[str, bool] | None = None) -> None:
         # Configured namespaces that harvested 0 tools; refreshed by the catalog relist.
         # A namespace matches NAMESPACE_RE, so naming it never reflects hostile caller input.
         self.unavailable: frozenset[str] = frozenset()
+        # Live per-namespace reachability, updated on every backend tools/list (#266).
+        self.backend_status: Mapping[str, bool] = {} if backend_status is None else backend_status
 
     async def on_call_tool(
         self,
@@ -208,7 +210,7 @@ class NotFoundGuard(Middleware):
                 tool = object()
             if tool is None:
                 namespace = name.partition("_")[0]
-                if namespace in self.unavailable:
+                if namespace in self.unavailable or self.backend_status.get(namespace) is False:
                     log.warning("mcp_backend_unavailable", namespace=namespace)
                     return backend_unavailable_result(namespace)
                 log.warning("mcp_unknown_tool")

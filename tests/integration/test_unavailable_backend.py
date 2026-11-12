@@ -77,3 +77,38 @@ async def test_backend_recovery_restores_pins_and_clears_unavailable(
         async with Client(server) as client:
             res = await client.call_tool("gnomad_nosuch", {}, raise_on_error=False)
             assert res.structured_content["error_code"] == "not_found"
+
+
+async def test_backend_that_drops_mid_life_reports_unavailable_not_not_found(
+    gnomad_fake: FastMCP, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue #266: a backend up at startup that later fails its tools/list vanished from
+    search and call_tool said ``not_found`` until restart/poll; it must say unavailable."""
+    import httpx
+    from fastmcp.server.providers import proxy
+
+    from genefoundry_router.observability import BACKEND_STATUS
+
+    registry = [
+        BackendDef(name="gnomad", url_env="X", namespace="gnomad", entrypoints=["search_genes"])
+    ]
+    app = build_app(RouterSettings(), registry, proxy_targets={"gnomad": gnomad_fake})
+    async with app.router.lifespan_context(app):
+        server = app.state.mcp_server
+        assert server.notfound_guard.unavailable == frozenset()
+        real_list = proxy.ProxyProvider._list_tools
+
+        async def _refused(self: object) -> list[object]:
+            raise httpx.ConnectError("refused")
+
+        monkeypatch.setattr(proxy._CacheEntry, "is_fresh", lambda self, ttl: False)
+        monkeypatch.setattr(proxy.ProxyProvider, "_list_tools", _refused)
+        async with Client(server) as client:
+            res = await client.call_tool("gnomad_search_genes", {}, raise_on_error=False)
+            assert res.structured_content["error_code"] == "upstream_unavailable"
+            assert BACKEND_STATUS["gnomad"] is False
+
+            monkeypatch.setattr(proxy.ProxyProvider, "_list_tools", real_list)
+            res = await client.call_tool("gnomad_search_genes", {}, raise_on_error=False)
+            assert not res.is_error
+            assert BACKEND_STATUS["gnomad"] is True
