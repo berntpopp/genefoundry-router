@@ -73,10 +73,17 @@ from typing import Any, cast
 import mcp.types
 import structlog
 from fastmcp.exceptions import NotFoundError as FastMCPNotFoundError
-from fastmcp.exceptions import ResourceError
+from fastmcp.exceptions import ResourceError, ToolError
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.base import ToolResult
 from mcp.types import TextContent
+
+from genefoundry_router.registry import NAMESPACE_RE
+from genefoundry_router.tool_error_taxonomy import (
+    UNCLASSIFIED_ERROR_CODE,
+    error_code,
+    transport_failure,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -137,6 +144,28 @@ def backend_unavailable_result(namespace: str) -> ToolResult:
     )
 
 
+def transport_failure_error(namespace: str, subcode: str) -> ToolError:
+    """Fleet envelope for the router's OWN timeout/connect failure to a backend (#272)."""
+    timed_out = subcode == "backend_timeout"
+    payload = {
+        "success": False,
+        "error_code": "upstream_unavailable",
+        "error_subcode": subcode,
+        "message": (
+            f"The {namespace} backend did not answer within the router's timeout."
+            if timed_out
+            else f"The {namespace} backend could not be reached."
+        ),
+        "retryable": True,
+        "suggestions": [
+            "Retry with a smaller request (fewer batch items)."
+            if timed_out
+            else f"Retry later; {namespace} tools are unavailable until it recovers."
+        ],
+    }
+    return ToolError(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+
+
 def unknown_tool_result() -> ToolResult:
     """Return a fixed, name-free ``not_found`` envelope for an unknown tool.
 
@@ -184,7 +213,17 @@ class NotFoundGuard(Middleware):
                     return backend_unavailable_result(namespace)
                 log.warning("mcp_unknown_tool")
                 return unknown_tool_result()
-        return await call_next(context)
+        try:
+            return await call_next(context)
+        except ToolError as exc:
+            # Only the router's own unclassified failure; never re-wrap a fleet envelope.
+            subcode = transport_failure(exc) if error_code(exc) == UNCLASSIFIED_ERROR_CODE else None
+            namespace = name.partition("_")[0] if isinstance(name, str) else ""
+            # NAMESPACE_RE-bounded: a caller-supplied name never reaches the message or log.
+            if subcode is None or name in _SYNTHETIC or not NAMESPACE_RE.match(namespace):
+                raise
+            log.warning("mcp_backend_transport_failure", namespace=namespace, subcode=subcode)
+            raise transport_failure_error(namespace, subcode) from exc
 
     async def on_read_resource(
         self,

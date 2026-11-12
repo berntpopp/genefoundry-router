@@ -28,6 +28,7 @@ assumption about it.
 
 from __future__ import annotations
 
+import itertools
 import json
 
 import httpx
@@ -205,3 +206,29 @@ def test_extractors_never_raise() -> None:
     assert error_code(exc) == UNCLASSIFIED_ERROR_CODE
     assert upstream_status(exc) is None
     assert upstream_request_id(exc) is None
+
+
+def _chained(*chain: BaseException) -> BaseException:
+    for outer, inner in itertools.pairwise(chain):
+        outer.__cause__ = inner
+    return chain[0]
+
+
+def test_transport_failure_classifies_timeouts_and_connect_errors() -> None:
+    from mcp.shared.exceptions import McpError
+    from mcp.types import ErrorData
+
+    from genefoundry_router.tool_error_taxonomy import transport_failure
+
+    request = httpx.Request("POST", "http://backend/mcp")
+    mcp_timeout = McpError(ErrorData(code=408, message="Timed out"))
+    assert transport_failure(_chained(ToolError("x"), mcp_timeout)) == "backend_timeout"
+    assert transport_failure(_chained(ToolError("x"), TimeoutError())) == "backend_timeout"
+    read_timeout = httpx.ReadTimeout("t", request=request)
+    assert transport_failure(_chained(ToolError("x"), read_timeout)) == "backend_timeout"
+    refused = httpx.ConnectError("refused", request=request)
+    assert transport_failure(_chained(ToolError("x"), refused)) == "backend_unreachable"
+    # an in-band backend envelope or a non-timeout McpError is NOT a transport failure
+    assert transport_failure(ToolError(json.dumps(_envelope()))) is None
+    other = McpError(ErrorData(code=-32602, message="bad params"))
+    assert transport_failure(_chained(ToolError("x"), other)) is None
