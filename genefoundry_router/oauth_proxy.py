@@ -60,6 +60,7 @@ from genefoundry_router.refresh_observability import (
     RefreshLedger,
     RefreshLedgerCapacityError,
 )
+from genefoundry_router.register_guard import RejectNonJsonBody
 
 log = structlog.get_logger(__name__)
 _REFRESH_INFLIGHT_TTL_SECONDS = REFRESH_ATTEMPT_STALE_SECONDS
@@ -571,6 +572,8 @@ class GeneFoundryOAuthProxy(OAuthProxy):
                 endpoint = cors_middleware(authorization_handler.handle, ["GET", "OPTIONS"])
             elif route.path.startswith("/.well-known/oauth-protected-resource"):
                 endpoint = cors_middleware(protected_handler.handle, ["GET", "OPTIONS"])
+            elif route.path == "/register":
+                endpoint = RejectNonJsonBody(cast(ASGIApp, route.endpoint))
             elif route.path == "/token" and self._refresh_ledger is not None:
                 endpoint = _RefreshCleanupEndpoint(
                     cast(ASGIApp, route.endpoint),
