@@ -283,3 +283,24 @@ def test_settings_pin_the_release_transition_instead_of_sliding_on_restart() -> 
     assert settings.GF_OAUTH_CANONICAL_ISSUER == BASE_URL
     assert settings.GF_OAUTH_LEGACY_ISSUERS == [LEGACY_ISSUER]
     assert settings.GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL == DEADLINE
+
+
+@pytest.mark.parametrize("body", [b"", b"not json", b"{", b"\xff\xfe"])
+def test_register_rejects_a_non_json_body_with_400_not_500(body: bytes) -> None:
+    # issue #271: mcp<2's RegistrationHandler only catches ValidationError, so a
+    # JSONDecodeError escaped as an ASGI 500. RFC 7591 §3.2.2 wants 400.
+    client = TestClient(Starlette(routes=_proxy().get_routes("")), raise_server_exceptions=False)
+
+    response = client.post("/register", content=body)
+
+    assert response.status_code == 400
+    assert response.json()["error"] == "invalid_client_metadata"
+
+
+def test_register_still_validates_a_json_body_downstream() -> None:
+    client = TestClient(Starlette(routes=_proxy().get_routes("")), raise_server_exceptions=False)
+
+    response = client.post("/register", json={"redirect_uris": "not-a-list"})
+
+    assert response.status_code == 400
+    assert response.json()["error"] == "invalid_client_metadata"

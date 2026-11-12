@@ -32,6 +32,7 @@ from genefoundry_router.notfound_guard import (
     install_protocol_error_handler,
 )
 from genefoundry_router.observability import (
+    BACKEND_STATUS,
     AuditLogMiddleware,
     MetricsMiddleware,
     _metrics_authorized,
@@ -118,7 +119,7 @@ def build_server(
     # FastMCP-core not-found reflection guard (Response-Envelope v1.1 fast-follow).
     # Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary). Registered before
     # ToolResponseCacheMiddleware so quarantined tools cannot be served from cache.
-    notfound_guard = NotFoundGuard()
+    notfound_guard = NotFoundGuard(BACKEND_STATUS)
     server.add_middleware(notfound_guard)
     server.notfound_guard = notfound_guard  # type: ignore[attr-defined]
     tool_cache = ToolResponseCache(registry)

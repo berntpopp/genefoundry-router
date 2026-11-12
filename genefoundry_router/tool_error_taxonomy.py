@@ -38,6 +38,9 @@ import json
 import re
 from typing import Any
 
+import httpx
+from mcp.shared.exceptions import McpError
+
 #: Response-Envelope Standard v1's closed error enum, harmonized across the fleet.
 FLEET_ERROR_CODES: frozenset[str] = frozenset(
     {
@@ -129,4 +132,27 @@ def upstream_request_id(exc: BaseException) -> str | None:
     candidate = payload.get("request_id")
     if isinstance(candidate, str) and _REQUEST_ID_PATTERN.match(candidate):
         return candidate
+    return None
+
+
+def transport_failure(exc: BaseException) -> str | None:
+    """Classify the router's OWN backend transport failure (issue #272), else ``None``.
+
+    ``backend_timeout`` for ``GF_BACKEND_TIMEOUT`` (the MCP session's 408) or an httpx
+    timeout; ``backend_unreachable`` for a connect/network error. An in-band backend
+    envelope arrives without such a cause and stays ``None``.
+    """
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    for _ in range(_CAUSE_CHAIN_LIMIT):
+        if current is None or id(current) in seen:
+            return None
+        seen.add(id(current))
+        if isinstance(current, McpError) and current.error.code == httpx.codes.REQUEST_TIMEOUT:
+            return "backend_timeout"
+        if isinstance(current, TimeoutError | httpx.TimeoutException):
+            return "backend_timeout"
+        if isinstance(current, httpx.NetworkError):
+            return "backend_unreachable"
+        current = current.__cause__ or current.__context__
     return None

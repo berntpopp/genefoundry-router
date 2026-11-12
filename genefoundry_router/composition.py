@@ -19,6 +19,7 @@ from fastmcp.server.providers.proxy import (
 )
 from fastmcp.tools import Tool
 
+from genefoundry_router.observability import set_backend_up
 from genefoundry_router.registry import BackendDef
 
 log = structlog.get_logger(__name__)
@@ -113,9 +114,11 @@ class CachedProxyProvider(ProxyProvider):
         self,
         client_factory: ClientFactoryT,
         cache_ttl: float | None = None,
+        backend: BackendDef | None = None,
     ) -> None:
         super().__init__(client_factory, cache_ttl=cache_ttl)
         self._refresh_lock = asyncio.Lock()
+        self._backend = backend
 
     def _fresh_cached_tools(self) -> list[Tool] | None:
         entry = self._tools_cache
@@ -130,7 +133,21 @@ class CachedProxyProvider(ProxyProvider):
             if not force_tool_refresh.get() and (cached := self._fresh_cached_tools()) is not None:
                 return cached
             self._tools_cache = None
-            tools = await super()._list_tools()
+            try:
+                tools = await super()._list_tools()
+            except Exception as exc:
+                # Issue #266: a mid-life list failure silently dropped the backend's tools and
+                # call_tool said not_found; record it so the guard can say unavailable.
+                if self._backend is not None:
+                    set_backend_up(self._backend, up=False, tools=0)
+                    log.error(
+                        "backend_list_failed",
+                        namespace=self._backend.namespace,
+                        error_type=type(exc).__name__,
+                    )
+                raise
+            if self._backend is not None:
+                set_backend_up(self._backend, up=bool(tools), tools=len(tools))
             return [t.model_copy(deep=True) for t in tools]
 
 
@@ -199,6 +216,7 @@ def _register_via_provider(
             httpx_client_factory=httpx_client_factory,
         ),
         cache_ttl=float(ttl),
+        backend=backend,
     )
     server.add_provider(provider, namespace=backend.namespace)
 

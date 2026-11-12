@@ -2,6 +2,20 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.13] - 2026-11-12
+
+### Fixed
+
+- A backend call that exceeds `GF_BACKEND_TIMEOUT` (or cannot connect) is now a fleet envelope,
+  `error_code: upstream_unavailable` with `error_subcode: backend_timeout` / `backend_unreachable`,
+  `retryable: true` and a smaller-batch hint, in both the wire result and the audit log; it was a bare
+  `ToolError` logged as `unclassified` (#272).
+- `POST /register` with an empty or non-JSON body answers 400 `invalid_client_metadata` (RFC 7591
+  §3.2.2) instead of an ASGI 500 with a traceback; the mcp<2 handler only caught `ValidationError` (#271).
+- A backend that fails its `tools/list` after startup is now recorded as down (`/health`,
+  `backend_list_failed` log) and `call_tool` answers `upstream_unavailable` instead of `not_found`;
+  previously its tools silently vanished from `search_tools` until restart (#266).
+
 ## [0.10.12] - 2026-11-11
 
 ### Fixed
