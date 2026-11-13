@@ -71,7 +71,7 @@ concluding a tool does not exist.{_entrypoints_block(registry)}
 WORKFLOW.
   1. `search_tools(query="<natural language>")` — BM25 search over the whole \
 federated catalog; returns matching tool definitions (name, inputSchema, one-line \
-`returns`) as DATA.
+`returns`) as DATA. Pass `limit` (e.g. `limit=2`) to get fewer hits and save context.
   2. Read a hit's `name`; it is always `<namespace>_<tool>` \
 (e.g. `spliceai_predict_splicing`, `vep_annotate_variant`).
   3. `call_tool(name="<namespace>_<tool>", arguments={{…}})` to invoke it. A tool's \

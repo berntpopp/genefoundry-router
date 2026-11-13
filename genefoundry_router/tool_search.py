@@ -29,6 +29,7 @@ from fastmcp.server.transforms.search.bm25 import (
     _catalog_hash,
 )
 from fastmcp.tools.base import Tool
+from pydantic import Field
 
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.registry import BackendDef, qualified_name
@@ -218,7 +219,9 @@ class CompactBM25SearchTransform(BM25SearchTransform):
     Ranking has up to three stages: field-weighted, stemmed BM25 over each tool's text PLUS
     its offline ``expansions`` (index-only; see ``search_expansion``), then an optional
     ``reranker`` over the top ``rerank_pool`` BM25 hits (see ``search_rerank``), then the
-    served cut to ``max_results``. A reranker that fails or is skipped leaves the BM25 order.
+    served cut to ``max_results`` — or the caller's ``limit``, capped at ``max_limit``
+    (the larger of ``rerank_pool`` and ``max_results``, so a reranker scores every hit it
+    serves). A reranker that fails or is skipped leaves the BM25 order.
     """
 
     def __init__(
@@ -233,22 +236,24 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         depth = max(rerank_pool, max_results) if reranker is not None else max_results
         super().__init__(max_results=depth, always_visible=always_visible)
         self.served_results = max_results
+        self.max_limit = max(rerank_pool, max_results)
         self.expansions = dict(expansions or {})
         self.reranker = reranker
         self._search_tool: Tool | None = None
         self._call_tool: Tool | None = None
 
     async def _ranked(
-        self, tools: Sequence[Tool], query: str
+        self, tools: Sequence[Tool], query: str, limit: int | None = None
     ) -> tuple[list[Tool], dict[str, float] | None]:
         """Served hits plus reranker scores (``None`` when the BM25 order stands)."""
-        shortlist = list(await self._search(tools, query))
+        served = limit or self.served_results
+        shortlist = list(await self._search(tools, query, depth=max(served, self._max_results)))
         if self.reranker is not None:
             ranked = await self.reranker.rerank(query, shortlist)
             if ranked is not None:
-                top = ranked[: self.served_results]
+                top = ranked[:served]
                 return [t for t, _ in top], {t.name: score for t, score in top}
-        return shortlist[: self.served_results], None
+        return shortlist[:served], None
 
     def _make_search_tool(self) -> Tool:
         if self._search_tool is not None:
@@ -261,6 +266,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
                 DetailLevel,
                 "compact (default): inputSchema + one-line returns; full: complete schemas; strict: OpenAI strict schemas",
             ] = "compact",
+            limit: int = transform.served_results,  # bounds attached below
             ctx: Context = None,  # type: ignore[assignment]
         ) -> str | list[dict[str, Any]]:
             """Search the FEDERATED tool catalog and return matching tool definitions.
@@ -273,7 +279,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             a capability is not in your client's tool list, search for it HERE before
             concluding it is missing. Hits are ranked by BM25 relevance; each hit's
             ``name`` is the ``<namespace>_<tool>`` you then pass to ``call_tool``.
-            Defaults to a compact form (full inputSchema + one-line ``returns``); pass
+            Returns the top ``limit`` hits; lower ``limit`` to save context. Defaults to a
+            compact form (full inputSchema + one-line ``returns``); pass
             ``detail="full"`` for the complete output schema or ``detail="strict"`` for
             OpenAI-compatible strict schemas with ``strict: True``. An empty list means
             no tool matched well: rephrase in domain terms before concluding it does
@@ -284,13 +291,23 @@ class CompactBM25SearchTransform(BM25SearchTransform):
                     f"Invalid detail level '{detail}'. Expected one of: 'compact', 'full', 'strict'."
                 )
             catalog = await transform.get_tool_catalog(ctx)
-            results, relevance = await transform._ranked(catalog, query)
+            results, relevance = await transform._ranked(catalog, query, limit)
             if detail == "full":
                 return serialize_tools_for_output_json(results)
             if detail == "strict":
                 return serialize_tools_strict(results)
             return serialize_tools_compact(results, relevance)
 
+        # Bounds depend on this instance, and `from __future__ import annotations` defers
+        # signature annotations to module scope — so attach the bounded type here.
+        search_tools.__annotations__["limit"] = Annotated[
+            int,
+            Field(
+                ge=1,
+                le=self.max_limit,
+                description="Max hits to return (each ~1-3 kB); lower it to save context",
+            ),
+        ]
         self._search_tool = Tool.from_function(fn=search_tools, name=self._search_tool_name)
         return self._search_tool
 
@@ -333,7 +350,9 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             _extract_searchable_text(tool) + (f" {fields}" * _FIELD_BOOST) + f" {expansion}"
         )
 
-    async def _search(self, tools: Sequence[Tool], query: str) -> Sequence[Tool]:
+    async def _search(
+        self, tools: Sequence[Tool], query: str, depth: int | None = None
+    ) -> Sequence[Tool]:
         """As ``BM25SearchTransform._search`` but index the field-weighted, stemmed
         document and stem the query the same way, so a tool's own name/category outranks
         prose that merely repeats the keyword and word-form mismatches stop hiding tools."""
@@ -343,7 +362,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             new_index = _BM25Index(self._index.k1, self._index.b)
             new_index.build(documents)
             self._index, self._indexed_tools, self._last_hash = new_index, tools, current_hash
-        indices = self._index.query(_stem_text(query), self._max_results)
+        indices = self._index.query(_stem_text(query), depth or self._max_results)
         return [self._indexed_tools[i] for i in indices]
 
 

@@ -27,6 +27,13 @@ search_tools(query="splicing prediction")        # → hit: name="spliceai_predi
 call_tool(name="spliceai_predict_splicing", arguments={...})
 ```
 
+`search_tools` returns the top `GF_SEARCH_MAX_RESULTS` (5) hits by default; a caller passes
+`limit` (1 to max(`GF_SEARCH_MAX_RESULTS`, `GF_SEARCH_RERANK_POOL`), so 20 by default) for
+fewer or more. Each compact hit costs ~1–3 kB, almost all of it the `inputSchema` the agent
+needs to call the tool, so `limit` is the lever on discovery cost. The default stays at 5
+because the right tool is not always first: on the held-out set, BM25 hit@1/@3/@5 is
+0.72/0.88/0.94.
+
 The model is oriented on this two-layer model via the MCP **`instructions`** field (set on
 the server) plus the `search_tools` / `call_tool` descriptions.
 
