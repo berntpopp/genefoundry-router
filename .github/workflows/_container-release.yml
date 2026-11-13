@@ -235,11 +235,20 @@ jobs:
               echo "release attestation not yet published; retry $attempt"
               sleep 10
             done
-            if ! $gh attestation verify "oci://$image@$source_digest" \
-              --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-              echo "missing attestation" >&2
-              exit 1
-            fi
+            # Same identity publish-attest proves: `--repo` alone would demand a signer
+            # workflow in the caller repo, but this reusable workflow signs every attestation.
+            for predicate in https://slsa.dev/provenance/v1 https://spdx.dev/Document/v2.3; do
+              if ! $gh attestation verify "oci://$image@$source_digest" \
+                --repo "$GITHUB_REPOSITORY" \
+                --signer-workflow berntpopp/genefoundry-router/.github/workflows/_container-release.yml \
+                --signer-digest "$STANDARD_SHA" \
+                --source-ref "$EVENT_REF" \
+                --source-digest "$source_sha" \
+                --predicate-type "$predicate" --deny-self-hosted-runners >/dev/null; then
+                echo "missing attestation" >&2
+                exit 1
+              fi
+            done
             completed_release=true
           fi
 
@@ -264,6 +273,9 @@ jobs:
     permissions:
       contents: read
     outputs:
+      # Consumers resolve artifacts through this output, so "re-run failed jobs" (which
+      # keeps a succeeded job's outputs) still finds evidence from the attempt that made it.
+      artifact_name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
       artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
       image_digest: ${{ steps.evidence.outputs.image_digest }}
     env:
@@ -627,6 +639,7 @@ jobs:
       id-token: write
       packages: write
     outputs:
+      artifact_name: release-attest-${{ github.run_id }}-${{ github.run_attempt }}
       published_digest: ${{ steps.publish.outputs.published_digest }}
       published_digest_hex: ${{ steps.publish.outputs.published_digest_hex }}
     env:
@@ -637,7 +650,7 @@ jobs:
       - name: Download immutable build artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.build-gate.outputs.artifact_name }}
           path: ${{ runner.temp }}/release-build
 
       - name: Verify immutable OCI evidence before credentials
@@ -778,6 +791,8 @@ jobs:
     permissions:
       contents: read
       packages: read
+    outputs:
+      artifact_name: release-capture-${{ github.run_id }}-${{ github.run_attempt }}
     env:
       PUBLISHED_DIGEST: ${{ needs.publish-attest.outputs.published_digest }}
       IMAGE: ${{ needs.prepare.outputs.image }}
@@ -1037,6 +1052,7 @@ jobs:
     permissions:
       contents: read
     outputs:
+      artifact_name: release-final-${{ github.run_id }}-${{ github.run_attempt }}
       artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
     steps:
       - name: Checkout exact container standard revision
@@ -1061,19 +1077,19 @@ jobs:
       - name: Download build evidence
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.build-gate.outputs.artifact_name }}
           path: ${{ runner.temp }}/build
 
       - name: Download attestation evidence
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: release-attest-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.publish-attest.outputs.artifact_name }}
           path: ${{ runner.temp }}/attest
 
       - name: Download MCP capture
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: release-capture-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.capture.outputs.artifact_name }}
           path: ${{ runner.temp }}/capture
 
       - name: Assemble and seal final release evidence
@@ -1145,7 +1161,7 @@ jobs:
       - name: Download sealed finalization artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: release-final-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.assemble-evidence.outputs.artifact_name }}
           path: ${{ runner.temp }}/final
 
       - name: Verify finalization evidence before credentials
@@ -1251,7 +1267,25 @@ jobs:
           else
             echo "missing version alias; applying identical accepted manifest bytes"
             $oras cp "$IMAGE:$SOURCE_ALIAS" "$IMAGE:$VERSION"
-            version_digest="$($oras manifest fetch --descriptor "$IMAGE:$VERSION" | jq -er .digest)"
+            # GHCR serves a just-pushed tag eventually: retry only its "not found" answer.
+            version_json=""
+            for attempt in $(seq 1 6); do
+              if version_json="$($oras manifest fetch --descriptor "$IMAGE:$VERSION" 2>"$RUNNER_TEMP/alias.err")"; then
+                break
+              fi
+              version_json=""
+              if ! grep -q ': not found$' "$RUNNER_TEMP/alias.err"; then
+                cat "$RUNNER_TEMP/alias.err" >&2
+                exit 1
+              fi
+              echo "version alias not yet visible; retry $attempt"
+              sleep $((attempt * 5))
+            done
+            test -n "$version_json" || {
+              echo "version alias never became visible" >&2
+              exit 1
+            }
+            version_digest="$(jq -er .digest <<<"$version_json")"
           fi
           test "$version_digest" = "$PUBLISHED_DIGEST" || {
             echo "version alias digest mismatch" >&2

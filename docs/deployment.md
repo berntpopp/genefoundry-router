@@ -202,6 +202,12 @@ mutable-release result, or definition mismatch is a **release incident**: do not
 version alias, retain evidence, and rerun the original tag event only after the cause is
 understood. Roll back by the complete previous tuple, not an image tag alone.
 
+Both rerun modes are supported. "Re-run failed jobs" consumes the sealed evidence the
+succeeded jobs produced (artifacts are addressed through the producing job's outputs, kept
+for 2 days). "Re-run all jobs" takes the recovery path: `prepare` re-verifies the published
+image's provenance and SPDX attestations against this workflow's signer identity, the tag
+and its commit, before it imports the existing digest instead of rebuilding.
+
 ARM64 is not a v1 target; enable it only after native dependency resolution plus
 platform-specific build, content, vulnerability, runtime, MCP, and data tests pass, and the
 release manifest records the multi-platform identities.
