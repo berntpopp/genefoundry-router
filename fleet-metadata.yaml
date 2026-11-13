@@ -102,6 +102,8 @@ vocabulary:
     - pharmacogenomics
     - gene-drug
     - dosing-guideline
+    - mitochondrial-dna
+    - mtdna
   # Source tier — the upstream's proper noun. These are near-empty topic pages
   # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
   source:
@@ -128,6 +130,7 @@ vocabulary:
     - panelapp
     - mondo
     - mavedb
+    - mitomap
     - hpo
     - human-phenotype-ontology
     - metadome
@@ -329,3 +332,10 @@ backends:
       gene-drug interactions, clinical guidelines, dosing recommendations, and variant
       annotations for LLM agents.
     topics: [clinpgx, pharmacogenomics, gene-drug, clinical-genetics, cpic]
+
+  - namespace: mitomap
+    description: >-
+      MCP server for MITOMAP: mitochondrial DNA (mtDNA) disease mutations and polymorphisms
+      with MITOMAP status, plasmy, GenBank frequency and literature from a pinned snapshot,
+      for LLM agents.
+    topics: [mitomap, mitochondrial-dna, mtdna, rare-disease, genetics]

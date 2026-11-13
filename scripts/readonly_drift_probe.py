@@ -61,6 +61,7 @@ EXPECTED_URLS: dict[str, str] = {
     "GF_METADOME_URL": "https://metadome-link.genefoundry.org/mcp",
     "GF_ORPHANET_URL": "https://orphanet-link.genefoundry.org/mcp",
     "GF_CLINPGX_URL": "https://clinpgx-link.genefoundry.org/mcp",
+    "GF_MITOMAP_URL": "https://mitomap-link.genefoundry.org/mcp",
 }
 TOKEN_KEY = "GF_PUBTATOR_TOKEN"  # noqa: S105 - environment variable name, not a credential
 _IMAGE_REF = re.compile(rf"^{re.escape(ROUTER_IMAGE)}@sha256:[0-9a-f]{{64}}$")

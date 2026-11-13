@@ -256,6 +256,16 @@ tasks:
     query: search ClinPGx snapshot datasets for pharmacogenomics evidence
     expected: [clinpgx_search_dataset, clinpgx_list_datasets]
 
+  # --- MITOMAP: mitochondrial DNA variants and disease associations ---
+  - id: mitomap-variant-lookup
+    category: variant
+    query: MITOMAP status and heteroplasmy reports for mitochondrial variant m.3243A>G
+    expected: [mitomap_get_variant]
+  - id: mitomap-gene-disease-variants
+    category: variant
+    query: mitochondrial MT-ATP6 mutations associated with Leigh syndrome
+    expected: [mitomap_search_variants]
+
   # --- cross-cutting first-step resolvers ---
   - id: resolve-gene-generic
     category: nomenclature
