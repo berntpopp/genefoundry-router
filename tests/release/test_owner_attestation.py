@@ -28,6 +28,7 @@ from tests.release.test_control_audit import (
     _install_api,
 )
 
+ROOT = Path(__file__).resolve().parents[2]
 NOW = datetime.now(UTC).replace(microsecond=0)
 GAP = (
     "package linkage",
@@ -145,3 +146,9 @@ def test_load_attestation_is_optional_but_fails_closed_when_malformed(tmp_path: 
     with pytest.raises(ControlLedgerError):
         load_attestation(bad)
 
+
+def test_committed_attestation_parses_and_covers_the_audit_gap() -> None:
+    attestation = load_attestation(ROOT / "ci/container-controls-attestation.json")
+
+    assert attestation is not None
+    assert set(GAP) <= set(attestation.controls)
