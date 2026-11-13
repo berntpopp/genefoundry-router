@@ -2,6 +2,17 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.15] - 2026-11-13
+
+### Added
+
+- `search_tools` takes an optional `limit` (1 to max(`GF_SEARCH_MAX_RESULTS`,
+  `GF_SEARCH_RERANK_POOL`), so 1–20 by default; default unchanged at `GF_SEARCH_MAX_RESULTS`=5).
+  Each compact hit is ~1–3 kB, mostly the `inputSchema` needed to call it, so the hit count is the
+  caller's lever on discovery cost (a 5-hit search is 6–11 kB; `limit=1` 1–3 kB). Out-of-range
+  values are rejected with an error naming `limit` and its bound. `limit=k` returns the exact top-k
+  of the default ranking. The instructions mention it; a payload-budget test guards the default.
+
 ## [0.10.14] - 2026-11-13
 
 ### Fixed

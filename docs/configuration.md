@@ -36,7 +36,7 @@ starts.
 | `GF_REFRESH_OBSERVABILITY_DB` | _(unset)_ | oauth: durable refresh-rotation SQLite ledger. Production Compose sets `/data/genefoundry/refresh-observability.sqlite3` on the existing data volume |
 | `GF_RATE_LIMIT_RPM` | `0` | Per-client requests/min (429 over). An authenticated `GF_DEPLOYMENT_MODE=production` router **refuses to start** with `0`, even on loopback behind a proxy |
 | `GF_METRICS_TOKEN` | _(unset)_ | Bearer token for `GET /metrics`. An authenticated production router **refuses to start** without it, even on loopback behind a proxy |
-| `GF_SEARCH_MAX_RESULTS` | `5` | Hits `search_tools` returns |
+| `GF_SEARCH_MAX_RESULTS` | `5` | Default hits `search_tools` returns; a caller's `limit` may ask for 1 to max(this, `GF_SEARCH_RERANK_POOL`) |
 | `GF_SEARCH_EXPANSIONS` | `builtin` | Offline BM25 document expansion: `builtin` (packaged `data/tool-expansions.json`), `off`, or a path to a file in the same format. Index-only; see [discovery](discovery.md#search-ranking-stages) |
 | `GF_SEARCH_RERANK` | `off` | `off` \| `systemone`: optional reranker over the BM25 shortlist (hosted Jev or self-hosted OneJev). **Sends each search query to `GF_SEARCH_RERANK_URL`.** Fails open to BM25 |
 | `GF_SEARCH_RERANK_URL` | _(unset)_ | Full System One endpoint, e.g. `https://openrouter.ai/api/v1/systemone`, `https://api.typesafe.ai/v1/systemone`, or `http://onejev:8000/v1/systemone` |
