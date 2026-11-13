@@ -245,14 +245,16 @@ servers:
     tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
     entrypoints: [search_records, get_record, get_related_records, search_dataset]
 
-  # ucsc-link: live UCSC Genome Browser JSON API, curated hg38/hg19 track allowlist + bounded
-  # reference sequence (genefoundry-router#191). Merge only once ucsc-link.genefoundry.org is live.
+  # ucsc-link: live UCSC Genome Browser JSON API, curated hg38/hg19 track allowlist (incl. MANE,
+  # ENCODE blacklist / GRC / GIAB problematic regions) + bounded reference sequence, and BLAT /
+  # in-silico PCR on the deployment's own Kent gfServer (v0.3.0; genefoundry-router#191).
+  # Merge only once ucsc-link.genefoundry.org is live.
   - name: ucsc
     repo: berntpopp/ucsc-link
     url_env: GF_UCSC_URL
     namespace: ucsc
-    description: Genome Browser region tracks & reference sequence
+    description: Genome Browser region tracks, reference sequence, BLAT & in-silico PCR
     source_name: UCSC Genome Browser
     source_url: https://genome.ucsc.edu/
-    tags: [genomics, region, repeat, conservation, regulatory, sequence, track]
+    tags: [genomics, region, repeat, conservation, regulatory, sequence, track, blat, pcr]
     entrypoints: [search_genome, get_region_annotations]
