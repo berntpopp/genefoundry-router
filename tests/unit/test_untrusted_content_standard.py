@@ -26,6 +26,7 @@ EXPECTED_BACKENDS = {
     "pubtator",
     "spliceai",
     "stringdb",
+    "strchive",
     "uniprot",
     "vep",
 }

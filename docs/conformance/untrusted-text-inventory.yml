@@ -515,3 +515,27 @@ backends:
       clinpgx_link/mcp/untrusted_content.py (v1.1 structural fence; UntrustedText TypedDict;
       forbidden codepoint filter, raw_sha256, source + record_id provenance)
     existing_sanitization: v1.1 fence (fence_text) shipped, released v0.1.0
+
+  - backend: strchive
+    tool: get_locus
+    json_pointers:
+      - /result/details
+      - /result/disease_description
+      - /result/detection
+      - /result/mechanism_detail
+      - /result/age_onset
+      - /result/location_in_gene
+      - /result/prevalence_details
+      - /result/year
+      - /result/source_range_notes
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      strchive_link/mcp/untrusted_content.py + strchive_link/mcp/shaping.py (every STRchive
+      prose field fenced; source "strchive", record_id "<locus_id>#<field>", raw_sha256);
+      compare_repeat_length /result/source_range_notes uses the same fence; hostile vector
+      tests/unit/mcp/test_untrusted_content.py::test_hostile_source_prose_is_fenced_on_the_wire
+    existing_sanitization: v1.1 fence shipped from the first release (v0.1.1)
