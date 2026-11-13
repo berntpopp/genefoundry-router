@@ -63,6 +63,8 @@ async def test_search_tools_limit_bounds_are_enforced_through_the_router() -> No
     async with Client(server) as client:
         assert len(await _search(client, limit=1)) == 1
         for bad, bound in ((0, "greater than or equal to 1"), (21, "less than or equal to 20")):
-            res = await client.call_tool_mcp("search_tools", {"query": "gene validity", "limit": bad})
+            res = await client.call_tool_mcp(
+                "search_tools", {"query": "gene validity", "limit": bad}
+            )
             text = res.content[0].text  # type: ignore[union-attr]
             assert res.isError and "limit" in text and bound in text, text
