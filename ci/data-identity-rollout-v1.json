@@ -19,10 +19,10 @@
       "verified_commit": "98871aa4c3b461401ff1bd21766f750d3371d34b"
     },
     "gencc-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/gencc-link/releases/download/v0.9.0/mcp-capture-context.json",
+      "observed_identity_sha256": "e205fd07c5e873cc9000f1db67e89c3126e02ac5756a3cfa155ca5f2dce28981",
+      "status": "runtime-v1",
+      "verified_commit": "c0b116a8e071800d6108056f4b1b92663cb91716"
     },
     "genereviews-link": {
       "evidence": "https://github.com/berntpopp/genereviews-link/releases/download/v5.2.9/mcp-capture-context.json",
@@ -31,10 +31,10 @@
       "verified_commit": "e55ae2223d0ab33b351cb6333775d53443e75ded"
     },
     "hgnc-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/hgnc-link/releases/download/v2.2.0/mcp-capture-context.json",
+      "observed_identity_sha256": "f8389501a7cc66dfea4f803cebcf0a9c5d3bd2614b33a2227dc241619233c4fd",
+      "status": "runtime-v1",
+      "verified_commit": "bf28fe57b34bb8ca55dd6082648cf9b6d11e83cf"
     },
     "hpo-link": {
       "evidence": "https://github.com/berntpopp/hpo-link/releases/download/v0.4.9/mcp-capture-context.json",
@@ -49,16 +49,16 @@
       "verified_commit": "602d7ab6b4244ea324c326036079f3d9d058d50a"
     },
     "mgi-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/mgi-link/releases/download/v0.7.0/mcp-capture-context.json",
+      "observed_identity_sha256": "2d3731872a80c0c5e1ea5a1e6c71382db713f4561768a67a55c2c0590157184c",
+      "status": "runtime-v1",
+      "verified_commit": "73a1350296986f0f9b2daf25758e830fa0f571e8"
     },
     "mondo-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
+      "evidence": "https://github.com/berntpopp/mondo-link/releases/download/v0.6.0/mcp-capture-context.json",
+      "observed_identity_sha256": "27089594fd2ddd179af9b8b92087ebf5afcf4b7018352815e84f8831dc313359",
+      "status": "runtime-v1",
+      "verified_commit": "9980d72521c533cbf7bb808a3f36e14ab85e07cc"
     },
     "orphanet-link": {
       "evidence": "https://github.com/berntpopp/orphanet-link/releases/download/v0.4.10/mcp-capture-context.json",
