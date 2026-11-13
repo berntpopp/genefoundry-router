@@ -94,6 +94,7 @@ def _row(repository: str) -> dict[str, object]:
             "linked_repository": repository,
             "anonymous_pull": True,
             "standing_package_pat": False,
+            "github_token_publication": True,
             "evidence": _evidence(),
         },
         "retention": {
@@ -440,6 +441,7 @@ def test_control_ledger_rejects_missing_repository_atomically() -> None:
         (("package", "visibility"), "private", "public package"),
         (("package", "anonymous_pull"), False, "anonymous pull"),
         (("package", "standing_package_pat"), True, "standing package PAT"),
+        (("package", "github_token_publication"), False, "GITHUB_TOKEN"),
         (("retention", "rollback_digests"), False, "retention"),
     ],
 )

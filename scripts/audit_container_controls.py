@@ -55,6 +55,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
+from genefoundry_router.release.attestation import (
+    OwnerAttestation,
+    load_attestation,
+    promote_partial_row,
+)
 from genefoundry_router.release.controls import (
     BYPASS_ACTORS_GAP,
     ControlLedgerError,
@@ -455,15 +460,15 @@ def build_row(repo: str, role: Literal["trusted-builder", "backend"]) -> JsonDic
     return row
 
 
-def build_ledger(repositories: set[str]) -> JsonDict:
+def build_ledger(repositories: set[str], attestation: OwnerAttestation | None = None) -> JsonDict:
     router = router_repository()
     return {
         "schema_version": 1,
         "reviewed_at": _now(),
         "repositories": {
-            repo: build_row(
-                repo,
-                role="trusted-builder" if repo == router else "backend",
+            repo: promote_partial_row(
+                build_row(repo, role="trusted-builder" if repo == router else "backend"),
+                attestation,
             )
             for repo in sorted(repositories)
         },
@@ -511,9 +516,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--servers", type=Path, default=Path("servers.yaml"))
     parser.add_argument("--ledger", type=Path, default=Path("ci/container-controls.json"))
+    parser.add_argument(
+        "--attestation", type=Path, default=Path("ci/container-controls-attestation.json")
+    )
     args = parser.parse_args(argv)
 
     repositories = expected_fleet_repositories(args.servers)
+    try:
+        attestation = load_attestation(args.attestation)
+    except ControlLedgerError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
 
     if args.check:
         try:
@@ -524,7 +537,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         for warning in checked_in_warnings:
             print(f"WARNING: checked-in ledger: {warning}", file=sys.stderr)
-        live = build_ledger(repositories)
+        live = build_ledger(repositories, attestation)
         blockers = _report(live)
         if blockers:
             print(
@@ -535,7 +548,7 @@ def main(argv: list[str] | None = None) -> int:
         print("live controls match the checked-in compliant ledger")
         return 0
 
-    live = build_ledger(repositories)
+    live = build_ledger(repositories, attestation)
     args.ledger.write_text(json.dumps(live, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"wrote {args.ledger}")
     blockers = _report(live)
