@@ -45,7 +45,12 @@ DATA_MODES: tuple[dict[str, object], ...] = (
     {"mode": "none"},
     {"mode": "external-reference", **EXACT_DATA},
     {"mode": "restored-database", **EXACT_DATA},
-    {"mode": "upstream-live", **EXACT_DATA, "egress_allowlist": ["clingen.example.org"]},
+    {
+        "mode": "upstream-live",
+        **EXACT_DATA,
+        "egress_allowlist": ["clingen.example.org"],
+        "reproducible_rollback": False,
+    },
 )
 
 

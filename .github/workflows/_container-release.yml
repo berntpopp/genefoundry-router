@@ -130,6 +130,10 @@ jobs:
             python .container-release-tools/scripts/container_release.py validate-source \
             --event-name "$GITHUB_EVENT_NAME" --event-ref "$EVENT_REF" \
             --event-sha "$EVENT_SHA" --changelog CHANGELOG.md
+          # Fail before build/push on any config the evidence assembler would later reject.
+          uv run --project .container-release-tools \
+            python .container-release-tools/scripts/container_release.py validate-config \
+            --config container-release.json
 
       - name: Gate the deployed Compose overlay against the fleet contract
         if: ${{ inputs.validate_deployed_overlay }}
@@ -989,7 +993,7 @@ jobs:
           # sealed artifacts -- so the contract must reach it as sealed evidence, never by
           # reading container-release.json from a workspace it does not have.
           jq -e '. as $release
-            | .data
+            | (.data // {mode: "none"})
             | {mode}
             + (if has("release_tag") then {release_tag, digest} else {} end)
             + (if has("reproducible_rollback") then {reproducible_rollback} else {} end)

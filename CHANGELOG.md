@@ -2,6 +2,23 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.16] - 2026-11-13
+
+### Fixed
+
+- `validate-config` (and every command that parses `container-release.json`) now applies the exact
+  predicate `assemble-manifest` applies to the sealed data requirements, so a config the evidence
+  assembler would reject fails before the image is built or pushed. strchive-link v0.1.0 declared
+  `upstream-live` without `release_tag`/`digest`: the config gate passed, then assembly rejected it
+  after the image was published, burning the version. Every non-`none` data mode now needs
+  `release_tag` + `digest`, and `upstream-live` needs an explicit `reproducible_rollback: false`.
+- The reusable release workflow's `prepare` job runs `validate-config` unconditionally (the
+  deployed-overlay gate, the only earlier config parse, can be waived), and its data-requirements
+  projection treats an omitted `data` block as `none`, matching the config model's default.
+- A table-driven test runs the workflow's own jq projection and the real assembler for every data
+  mode, contract and adoption, and proves `validate-config` accepts exactly what assembly accepts.
+  All fleet `container-release.json` files still validate.
+
 ## [0.10.15] - 2026-11-13
 
 ### Added

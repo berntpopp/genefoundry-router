@@ -168,6 +168,9 @@ def test_release_config_requires_linux_amd64(
                 "mode": "upstream-live",
                 "image_allowlist": [],
                 "egress_allowlist": ["api.example.test"],
+                "release_tag": "observed-2026.07.13",
+                "digest": f"sha256:{'a' * 64}",
+                "reproducible_rollback": False,
             },
             "upstream-live",
         ),
@@ -265,7 +268,7 @@ def test_data_bound_requires_exact_data_identity(valid_config: dict[str, object]
     valid_config["definitions"] = {"contract": "data-bound"}
     valid_config["data_identity_contract"] = "runtime-v1"
     valid_config["data"] = {"mode": "external-reference", "image_allowlist": []}
-    with pytest.raises(ValidationError, match=r"release_tag.*sha256"):
+    with pytest.raises(ValidationError, match=r"release_tag\n  Field required"):
         ReleaseConfig.model_validate(valid_config)
 
 
