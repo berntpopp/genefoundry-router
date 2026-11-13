@@ -256,6 +256,20 @@ tasks:
     query: search ClinPGx snapshot datasets for pharmacogenomics evidence
     expected: [clinpgx_search_dataset, clinpgx_list_datasets]
 
+  # --- STRchive: tandem-repeat (STR) disease loci and repeat-expansion ranges ---
+  - id: strchive-repeat-thresholds
+    category: gene_disease
+    query: pathogenic CAG repeat expansion threshold for Huntington disease
+    expected: [strchive_get_locus, strchive_search_loci]
+  - id: strchive-loci-by-disease
+    category: gene_disease
+    query: which short tandem repeat loci cause spinocerebellar ataxia
+    expected: [strchive_search_loci]
+  - id: strchive-compare-allele
+    category: gene_disease
+    query: is an allele of 38 repeats in the normal intermediate or pathogenic range
+    expected: [strchive_compare_repeat_length]
+
   # --- cross-cutting first-step resolvers ---
   - id: resolve-gene-generic
     category: nomenclature

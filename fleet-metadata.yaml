@@ -102,6 +102,8 @@ vocabulary:
     - pharmacogenomics
     - gene-drug
     - dosing-guideline
+    - short-tandem-repeat
+    - repeat-expansion
   # Source tier — the upstream's proper noun. These are near-empty topic pages
   # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
   source:
@@ -128,6 +130,7 @@ vocabulary:
     - panelapp
     - mondo
     - mavedb
+    - strchive
     - hpo
     - human-phenotype-ontology
     - metadome
@@ -329,3 +332,10 @@ backends:
       gene-drug interactions, clinical guidelines, dosing recommendations, and variant
       annotations for LLM agents.
     topics: [clinpgx, pharmacogenomics, gene-drug, clinical-genetics, cpic]
+
+  - namespace: strchive
+    description: >-
+      MCP server for STRchive: curated short-tandem-repeat (STR) disease loci with
+      repeat-count ranges, pathogenic motifs, interruptions and hg19/hg38/T2T coordinates
+      from a pinned snapshot, for LLM agents.
+    topics: [strchive, short-tandem-repeat, repeat-expansion, rare-disease, genetics]

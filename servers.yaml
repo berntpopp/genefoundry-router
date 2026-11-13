@@ -244,3 +244,14 @@ servers:
     source_url: https://clinpgx.org/
     tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
     entrypoints: [search_records, get_record, get_related_records, search_dataset]
+
+  # STRchive tandem-repeat disease loci; pinned CC BY 4.0 snapshot (issue #190)
+  - name: strchive
+    repo: berntpopp/strchive-link
+    url_env: GF_STRCHIVE_URL
+    namespace: strchive
+    description: Tandem-repeat (STR) disease loci & repeat ranges
+    source_name: STRchive
+    source_url: https://strchive.org/
+    tags: [short-tandem-repeat, str, repeat-expansion, pathogenic-range, locus, motif]
+    entrypoints: [search_loci, get_locus]
