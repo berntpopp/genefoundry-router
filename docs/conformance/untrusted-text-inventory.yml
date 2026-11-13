@@ -515,3 +515,19 @@ backends:
       clinpgx_link/mcp/untrusted_content.py (v1.1 structural fence; UntrustedText TypedDict;
       forbidden codepoint filter, raw_sha256, source + record_id provenance)
     existing_sanitization: v1.1 fence (fence_text) shipped, released v0.1.0
+
+  - backend: mitomap
+    tool: get_variant
+    json_pointers:
+      - /records/*/references/*/title
+    max_text_bytes: 2097152
+    max_objects: 512
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      mitomap_link/mcp/shaping.py + mitomap_link/mcp/untrusted_content.py (reference titles
+      fenced at standard/full; source "mitomap", record_id "<record>#reference<n>",
+      raw_sha256); search_variants rows reuse the same projection; hostile vector
+      tests/unit/mcp/test_untrusted_content.py::test_hostile_source_prose_is_fenced_on_the_wire
+    existing_sanitization: v1.1 fence shipped from the first release (v0.1.0)
