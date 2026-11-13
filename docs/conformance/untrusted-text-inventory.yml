@@ -519,15 +519,27 @@ backends:
   - backend: mitomap
     tool: get_variant
     json_pointers:
+      - /records/*/disease
+      - /records/*/status_note
       - /records/*/references/*/title
+    surfaces:
+      - {tool: get_variant, pointer: /records/*/disease}
+      - {tool: get_variant, pointer: /records/*/status_note}
+      - {tool: get_variant, pointer: /records/*/references/*/title}
+      - {tool: search_variants, pointer: /results/*/disease}
+      - {tool: search_variants, pointer: /results/*/status_note}
     max_text_bytes: 2097152
-    max_objects: 512
+    max_objects: 128
+    measured_exceptions:
+      - {tool: search_variants, max_objects: 200, reason: "limit<=100 rows x (disease + status_note); search rows carry PMIDs, never fenced titles"}
     compatibility: breaking-v1.1
     test_vector: hostile-upstream-text-v1
     classification: untrusted-text
     evidence: >-
-      mitomap_link/mcp/shaping.py + mitomap_link/mcp/untrusted_content.py (reference titles
-      fenced at standard/full; source "mitomap", record_id "<record>#reference<n>",
-      raw_sha256); search_variants rows reuse the same projection; hostile vector
-      tests/unit/mcp/test_untrusted_content.py::test_hostile_source_prose_is_fenced_on_the_wire
-    existing_sanitization: v1.1 fence shipped from the first release (v0.1.0)
+      mitomap_link/mcp/shaping.py + mitomap_link/mcp/untrusted_content.py (disease and
+      status_note fenced at every response_mode; get_variant reference titles at
+      standard/full capped at 50 per record, an allele has at most 2 records so <=104 objects;
+      source "mitomap", record_id "<record>", "<record>#status_note", "<record>#reference<n>",
+      raw_sha256); tests/unit/test_tools.py::test_disease_text_is_fenced_at_every_mode,
+      test_full_mode_caps_fenced_reference_objects
+    existing_sanitization: reference titles fenced from v0.1.0; disease/status_note from v0.1.1
