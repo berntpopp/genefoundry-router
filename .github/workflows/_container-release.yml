@@ -362,7 +362,8 @@ jobs:
           uv run --project .container-release-tools \
             python .container-release-tools/scripts/container_release.py inspect-oci \
             --layout "$OCI_LAYOUT" "${allowlist_args[@]}" \
-            > "$RUNNER_TEMP/release-build/content-report.json"
+            > "$RUNNER_TEMP/release-build/content-report.json" \
+            || { cat "$RUNNER_TEMP/release-build/content-report.json" >&2; exit 1; }
           image_digest="$(jq -er '.manifests | select(length == 1) | .[0].digest | select(test("^sha256:[0-9a-f]{64}$"))' "$OCI_LAYOUT/index.json")"
           if [ -n "$SOURCE_DIGEST" ]; then test "$image_digest" = "$SOURCE_DIGEST"; fi
           manifest_hex="${image_digest#sha256:}"
