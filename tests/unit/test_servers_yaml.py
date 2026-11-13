@@ -8,8 +8,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_real_servers_yaml_parses():
     backends = load_registry(ROOT / "servers.yaml", {})
     by_name = {b.name: b for b in backends}
-    # 22 backends: the deployed fleet plus clinpgx
-    assert len(backends) == 22
+    # 23 backends: the deployed fleet plus clinpgx and ucsc
+    assert len(backends) == 23
     # hgnc deployed 2026-06-16 (hgnc-link.genefoundry.org); now enabled
     assert by_name["hgnc"].enabled is True
     # the 4 newest backends are now deployed (<name>-link.genefoundry.org) and enabled.
@@ -40,6 +40,7 @@ def test_real_servers_yaml_parses():
     assert by_name["mavedb"].entrypoints == ["search_score_sets"]
     assert by_name["metadome"].entrypoints == ["resolve_transcript", "get_tolerance_landscape"]
     assert by_name["orphanet"].entrypoints == ["resolve_disease"]
+    assert by_name["ucsc"].entrypoints == ["search_genome", "get_region_annotations"]
     # pubtator adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64): it now
     # emits clean leaf names, so the stopgap strip_prefix transform is gone.
     assert by_name["pubtator"].transform is None
