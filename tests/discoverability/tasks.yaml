@@ -265,6 +265,14 @@ tasks:
     category: annotation
     query: get the reference DNA sequence of a small genomic window
     expected: [ucsc_get_reference_sequence]
+  - id: ucsc-blat-sequence
+    category: annotation
+    query: BLAT a DNA sequence to find where it maps in the human genome
+    expected: [ucsc_find_blat_alignments]
+  - id: ucsc-in-silico-pcr
+    category: annotation
+    query: in-silico PCR for a primer pair, product size and specificity
+    expected: [ucsc_predict_pcr_products]
 
   # --- cross-cutting first-step resolvers ---
   - id: resolve-gene-generic

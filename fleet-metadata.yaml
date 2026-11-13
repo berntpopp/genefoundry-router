@@ -336,6 +336,6 @@ backends:
   - namespace: ucsc
     description: >-
       MCP server for the UCSC Genome Browser: curated hg38/hg19 region tracks (genes,
-      repeats, segmental duplications, phyloP conservation, ENCODE cCREs, splicing
-      variants) and bounded reference sequence.
+      repeats, segmental duplications, problematic regions, conservation, cCREs),
+      reference sequence, and BLAT / in-silico PCR.
     topics: [ucsc-genome-browser, genome-browser, genomics, variant-annotation, encode]
