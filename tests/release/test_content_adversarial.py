@@ -489,3 +489,62 @@ def test_production_dockerfile_flattens_a_sanitized_runtime_rootfs() -> None:
     assert "COPY --from=prepared / /" in production
     assert "COPY genefoundry_router" not in production
     assert "USER 10001:10001" in production
+
+
+def _set_index_platform(layout: Path, platform: dict[str, str] | None) -> Path:
+    index = json.loads((layout / "index.json").read_text())
+    descriptor = index["manifests"][0]
+    descriptor.pop("platform")
+    if platform is not None:
+        descriptor["platform"] = platform
+    else:  # the exact shape `oras cp --to-oci-layout` writes (issue #277)
+        descriptor["annotations"] = {"org.opencontainers.image.ref.name": "sha-" + "a" * 40}
+    (layout / "index.json").write_text(json.dumps(index))
+    return layout
+
+
+_AMD64 = {"architecture": "amd64", "os": "linux", "config": {"User": "10001"}, "history": []}
+
+
+def test_oras_layout_without_index_platform_uses_digest_verified_config(tmp_path: Path) -> None:
+    layer = _write_files(tmp_path / "layer.tar", {"opt/app/main.py": b""})
+    layout = _set_index_platform(_oci(tmp_path / "oras", layer, _AMD64), None)
+    report = inspect_oci_layout(layout)
+    assert not report.denied_paths and not report.denied_config and report.inspected_entries
+
+
+@pytest.mark.parametrize(
+    "config_platform",
+    [
+        {"architecture": "arm64", "os": "linux"},
+        {"architecture": "amd64", "os": "windows"},
+        {"os": "linux"},
+        {"architecture": "amd64", "os": "linux", "variant": "v3"},
+    ],
+)
+def test_platformless_index_still_requires_exact_linux_amd64_config(
+    tmp_path: Path, config_platform: dict[str, str]
+) -> None:
+    layer = _write_files(tmp_path / "layer.tar", {"opt/app/main.py": b""})
+    config = {"config": {"User": "10001"}, "history": [], **config_platform}
+    layout = _set_index_platform(_oci(tmp_path / "oras", layer, config), None)
+    with pytest.raises(ContentPolicyError, match="image config platform"):
+        inspect_oci_layout(layout)
+
+
+@pytest.mark.parametrize(
+    ("index_platform", "config_architecture"),
+    [
+        ({"architecture": "arm64", "os": "linux"}, "amd64"),
+        ({"architecture": "amd64", "os": "linux", "variant": "v3"}, "amd64"),
+        ({"architecture": "amd64", "os": "linux"}, "arm64"),
+    ],
+)
+def test_declared_index_platform_must_be_exact_and_agree_with_config(
+    tmp_path: Path, index_platform: dict[str, str], config_architecture: str
+) -> None:
+    layer = _write_files(tmp_path / "layer.tar", {"opt/app/main.py": b""})
+    layout = _oci(tmp_path / "declared", layer, {**_AMD64, "architecture": config_architecture})
+    _set_index_platform(layout, index_platform)
+    with pytest.raises(ContentPolicyError, match="linux/amd64"):
+        inspect_oci_layout(layout)

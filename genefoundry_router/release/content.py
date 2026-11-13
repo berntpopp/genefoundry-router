@@ -207,6 +207,9 @@ def _validate_layer_encoding(descriptor: dict[str, Any], blob: Path) -> None:
         raise ContentPolicyError("OCI layer media type does not match blob encoding")
 
 
+_LINUX_AMD64 = {"architecture": "amd64", "os": "linux"}
+
+
 def inspect_oci_layout(
     layout: Path, policy: ContentPolicy | None = None, allowlist: tuple[str, ...] = ()
 ) -> ContentReport:
@@ -256,7 +259,8 @@ def _inspect_verified_index(
         max_size=16 * 1024 * 1024,
     )
     add_annotation_findings(manifest_desc.get("annotations"), "index.manifests[0]", config_findings)
-    if manifest_desc.get("platform") != {"architecture": "amd64", "os": "linux"}:
+    # `oras cp --to-oci-layout` omits the optional platform; the verified config decides it.
+    if manifest_desc.get("platform", _LINUX_AMD64) != _LINUX_AMD64:
         raise ContentPolicyError("OCI manifest must target exactly linux/amd64")
     manifest, _ = _json_bytes(manifest_path)
     if (
@@ -281,6 +285,7 @@ def _inspect_verified_index(
         not isinstance(config, dict)
         or config.get("architecture") != "amd64"
         or config.get("os") != "linux"
+        or "variant" in config
     ):
         raise ContentPolicyError("image config platform does not match linux/amd64")
     config_values, config_truncated = inspect_config(
