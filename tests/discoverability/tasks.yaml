@@ -256,6 +256,16 @@ tasks:
     query: search ClinPGx snapshot datasets for pharmacogenomics evidence
     expected: [clinpgx_search_dataset, clinpgx_list_datasets]
 
+  # --- UCSC Genome Browser: region tracks and reference sequence ---
+  - id: ucsc-repeats-in-region
+    category: annotation
+    query: which repeat elements or segmental duplications overlap a genomic interval on hg38
+    expected: [ucsc_get_region_annotations]
+  - id: ucsc-reference-sequence
+    category: annotation
+    query: get the reference DNA sequence of a small genomic window
+    expected: [ucsc_get_reference_sequence]
+
   # --- cross-cutting first-step resolvers ---
   - id: resolve-gene-generic
     category: nomenclature

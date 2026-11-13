@@ -515,3 +515,23 @@ backends:
       clinpgx_link/mcp/untrusted_content.py (v1.1 structural fence; UntrustedText TypedDict;
       forbidden codepoint filter, raw_sha256, source + record_id provenance)
     existing_sanitization: v1.1 fence (fence_text) shipped, released v0.1.0
+
+  - backend: ucsc
+    tool: get_region_annotations
+    json_pointers: [/results/*/author, /results/*/title, /results/*/journal]
+    surfaces:
+      - {tool: get_region_annotations, pointer: /results/*/author}
+      - {tool: get_region_annotations, pointer: /results/*/title}
+      - {tool: get_region_annotations, pointer: /results/*/journal}
+      - {tool: search_genome, pointer: /results/*/label}
+      - {tool: search_genome, pointer: /results/*/description}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      ucsc_link/service.py (_shape_record fences TrackSpec.prose_fields -- Varaico
+      author/title/journal, records capped so fenced objects stay <=128; _search_hit fences
+      UCSC search posName/description, <=50 hits x 2) + ucsc_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
