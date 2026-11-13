@@ -2,6 +2,24 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.17] - 2026-11-13
+
+### Fixed
+
+- Container-release re-runs of a fully published release no longer stay red (mitomap-link v0.1.2,
+  run 43409703573):
+  - `finalize` retries (bounded, 6 tries with linear backoff) only GHCR's read-after-write
+    `not found` for the just-copied version tag; any other registry error and any digest mismatch
+    still fail at once. Attempt 1 failed here although the copy had succeeded.
+  - Cross-job evidence artifacts are addressed through the producing job's `artifact_name` output
+    instead of the consumer's own `run_attempt`, so "Re-run failed jobs" finds the sealed evidence
+    the succeeded jobs produced rather than looking for `release-final-<run>-2`.
+  - The full-re-run recovery probe in `prepare` verified attestations with `--repo` only, which
+    demands a signer workflow in the caller repo; every attestation is signed by this reusable
+    workflow, so the probe failed with `missing attestation` for every fleet image. It now verifies
+    provenance and SPDX with the same identity `publish-attest` proves (signer workflow + digest,
+    tag ref, source commit, hosted runners) and no longer hides the verifier's error.
+
 ## [0.10.16] - 2026-11-13
 
 ### Fixed
