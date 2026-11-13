@@ -229,7 +229,8 @@ def test_release_config_rejects_partial_data_identity(mode: str, identity_field:
     )
     config["data"] = data
 
-    with pytest.raises(ValidationError, match="release_tag and digest"):
+    missing = "digest" if identity_field == "release_tag" else "release_tag"
+    with pytest.raises(ValidationError, match=rf"{missing}\n  Field required"):
         ReleaseConfig.model_validate(config)
 
 
@@ -491,6 +492,9 @@ def test_release_config_accepts_exact_paths_and_dns_egress() -> None:
         "mode": "upstream-live",
         "image_allowlist": ["app/data/schema.json"],
         "egress_allowlist": ["api.example.test", "mirror.example.test:443"],
+        "release_tag": "observed-2026.07.13",
+        "digest": f"sha256:{'a' * 64}",
+        "reproducible_rollback": False,
     }
     config["runtime_cache"] = {
         "path": "/var/cache/genefoundry",

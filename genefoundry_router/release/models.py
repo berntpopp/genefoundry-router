@@ -12,6 +12,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StrictInt,
+    TypeAdapter,
     WithJsonSchema,
     model_validator,
 )
@@ -238,45 +239,33 @@ class NoAuthoritativeData(StrictModel):
     schema_compatibility: SchemaCompatibility = ()
 
 
-class OptionalReleaseDataIdentity(StrictModel):
-    """A release-time data identity that must be wholly present or absent."""
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "dependentRequired": {"release_tag": ["digest"], "digest": ["release_tag"]}
-        }
-    )
+class ReleaseDataIdentity(StrictModel):
+    """The exact data identity every authoritative mode seals into release evidence."""
 
     image_allowlist: tuple[ImageLayerPath, ...] = ()
     schema_compatibility: SchemaCompatibility = ()
-    release_tag: DataReleaseTag | None = None
-    digest: Sha256Digest | None = None
-
-    @model_validator(mode="after")
-    def _identity_is_complete_or_absent(self) -> OptionalReleaseDataIdentity:
-        if (self.release_tag is None) != (self.digest is None):
-            raise ValueError("data identity requires both release_tag and digest")
-        return self
+    release_tag: DataReleaseTag
+    digest: Sha256Digest
 
 
-class ExternalReferenceData(OptionalReleaseDataIdentity):
+class ExternalReferenceData(ReleaseDataIdentity):
     """An immutable reference artifact mounted outside the application image."""
 
     mode: Literal["external-reference"]
 
 
-class RestoredDatabaseData(OptionalReleaseDataIdentity):
+class RestoredDatabaseData(ReleaseDataIdentity):
     """An immutable data-only artifact restored into an external database."""
 
     mode: Literal["restored-database"]
 
 
-class UpstreamLiveData(OptionalReleaseDataIdentity):
+class UpstreamLiveData(ReleaseDataIdentity):
     """Transitional authoritative data materialized directly from an upstream."""
 
     mode: Literal["upstream-live"]
     egress_allowlist: Annotated[tuple[DnsEndpoint, ...], Field(min_length=1)]
-    reproducible_rollback: FalseOnly = False
+    reproducible_rollback: FalseOnly  # required: the release workflow seals it only if declared
 
 
 ReleaseDataConfig = Annotated[
@@ -347,15 +336,29 @@ class ReleaseConfig(StrictModel):
         if self.definitions.contract != "data-bound":
             if self.data_identity_contract is not None:
                 raise ValueError("only data-bound services may adopt runtime data identity")
-            return self
-        if self.data.mode == "none":
+        elif self.data.mode == "none":
             raise ValueError("data-bound definitions require authoritative data")
-        if self.data_identity_contract is None:
+        elif self.data_identity_contract is None:
             raise ValueError("data-bound definitions require explicit data_identity_contract")
-        identity = (getattr(self.data, "release_tag", None), getattr(self.data, "digest", None))
-        if None in identity:
-            raise ValueError("data-bound definitions require exact release_tag and sha256 digest")
+        try:
+            _SEALED_DATA_REQUIREMENTS.validate_python(self.sealed_data_requirements())
+        except ValueError as exc:
+            # Same predicate assemble-manifest applies, so a release fails before publish.
+            raise ValueError(f"data cannot be sealed into release evidence: {exc}") from exc
         return self
+
+    def sealed_data_requirements(self) -> dict[str, object]:
+        """Python twin of the capture job's jq projection into data-requirements.json."""
+        data = self.data
+        sealed: dict[str, object] = {"mode": data.mode}
+        if isinstance(data, ReleaseDataIdentity):
+            sealed |= {"release_tag": data.release_tag, "digest": data.digest}
+        if isinstance(data, UpstreamLiveData):
+            sealed["reproducible_rollback"] = data.reproducible_rollback
+        sealed["schema_compatibility"] = list(data.schema_compatibility)
+        if self.definitions.contract == "data-bound":
+            sealed["data_identity_contract"] = self.data_identity_contract
+        return sealed
 
 
 class SourceIdentity(StrictModel):
@@ -474,6 +477,7 @@ DataRequirements = Annotated[
     | UpstreamLiveRequirements,
     Field(discriminator="mode"),
 ]
+_SEALED_DATA_REQUIREMENTS: TypeAdapter[DataRequirements] = TypeAdapter(DataRequirements)
 
 
 class ApplicationReleaseManifest(StrictModel):

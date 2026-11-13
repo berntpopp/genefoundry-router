@@ -123,14 +123,6 @@
     },
     "ExternalReferenceData": {
       "additionalProperties": false,
-      "dependentRequired": {
-        "digest": [
-          "release_tag"
-        ],
-        "release_tag": [
-          "digest"
-        ]
-      },
       "description": "An immutable reference artifact mounted outside the application image.",
       "properties": {
         "image_allowlist": {
@@ -153,40 +145,24 @@
           "type": "array"
         },
         "release_tag": {
-          "anyOf": [
-            {
-              "not": {
-                "enum": [
-                  "latest",
-                  "main",
-                  "master",
-                  "head",
-                  "stable",
-                  "current"
-                ]
-              },
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Release Tag"
+          "not": {
+            "enum": [
+              "latest",
+              "main",
+              "master",
+              "head",
+              "stable",
+              "current"
+            ]
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "title": "Release Tag",
+          "type": "string"
         },
         "digest": {
-          "anyOf": [
-            {
-              "pattern": "^sha256:[0-9a-f]{64}$",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Digest"
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
         },
         "mode": {
           "const": "external-reference",
@@ -195,6 +171,8 @@
         }
       },
       "required": [
+        "release_tag",
+        "digest",
         "mode"
       ],
       "title": "ExternalReferenceData",
@@ -237,14 +215,6 @@
     },
     "RestoredDatabaseData": {
       "additionalProperties": false,
-      "dependentRequired": {
-        "digest": [
-          "release_tag"
-        ],
-        "release_tag": [
-          "digest"
-        ]
-      },
       "description": "An immutable data-only artifact restored into an external database.",
       "properties": {
         "image_allowlist": {
@@ -267,40 +237,24 @@
           "type": "array"
         },
         "release_tag": {
-          "anyOf": [
-            {
-              "not": {
-                "enum": [
-                  "latest",
-                  "main",
-                  "master",
-                  "head",
-                  "stable",
-                  "current"
-                ]
-              },
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Release Tag"
+          "not": {
+            "enum": [
+              "latest",
+              "main",
+              "master",
+              "head",
+              "stable",
+              "current"
+            ]
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "title": "Release Tag",
+          "type": "string"
         },
         "digest": {
-          "anyOf": [
-            {
-              "pattern": "^sha256:[0-9a-f]{64}$",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Digest"
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
         },
         "mode": {
           "const": "restored-database",
@@ -309,6 +263,8 @@
         }
       },
       "required": [
+        "release_tag",
+        "digest",
         "mode"
       ],
       "title": "RestoredDatabaseData",
@@ -490,14 +446,6 @@
     },
     "UpstreamLiveData": {
       "additionalProperties": false,
-      "dependentRequired": {
-        "digest": [
-          "release_tag"
-        ],
-        "release_tag": [
-          "digest"
-        ]
-      },
       "description": "Transitional authoritative data materialized directly from an upstream.",
       "properties": {
         "image_allowlist": {
@@ -520,40 +468,24 @@
           "type": "array"
         },
         "release_tag": {
-          "anyOf": [
-            {
-              "not": {
-                "enum": [
-                  "latest",
-                  "main",
-                  "master",
-                  "head",
-                  "stable",
-                  "current"
-                ]
-              },
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Release Tag"
+          "not": {
+            "enum": [
+              "latest",
+              "main",
+              "master",
+              "head",
+              "stable",
+              "current"
+            ]
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "title": "Release Tag",
+          "type": "string"
         },
         "digest": {
-          "anyOf": [
-            {
-              "pattern": "^sha256:[0-9a-f]{64}$",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Digest"
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
         },
         "mode": {
           "const": "upstream-live",
@@ -571,14 +503,16 @@
         },
         "reproducible_rollback": {
           "const": false,
-          "default": false,
           "title": "Reproducible Rollback",
           "type": "boolean"
         }
       },
       "required": [
+        "release_tag",
+        "digest",
         "mode",
-        "egress_allowlist"
+        "egress_allowlist",
+        "reproducible_rollback"
       ],
       "title": "UpstreamLiveData",
       "type": "object"
