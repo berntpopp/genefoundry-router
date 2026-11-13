@@ -2,6 +2,16 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.10.14] - 2026-11-13
+
+### Fixed
+
+- The shared container-release recovery path (re-run after the `sha-<commit>` alias was already
+  pushed) can pass again: `inspect-oci` accepted only an index descriptor carrying `platform`, which
+  `oras cp --to-oci-layout` never writes. An absent platform is now decided by the digest-verified
+  image config (exactly linux/amd64, no `variant`); a declared platform must still be exact. A failed
+  inspection now prints its report instead of surfacing as a later Trivy failure (#277).
+
 ## [0.10.13] - 2026-11-12
 
 ### Fixed
