@@ -126,6 +126,7 @@ class PackageControl(_StrictModel):
     linked_repository: RepositoryName
     anonymous_pull: bool
     standing_package_pat: bool
+    github_token_publication: bool
     evidence: ControlEvidence
 
 
@@ -348,6 +349,8 @@ def _verified_row_errors(row: VerifiedRepositoryControls) -> list[str]:
         errors.append("anonymous pull is not verified")
     if package.standing_package_pat:
         errors.append("standing package PAT is present")
+    if not package.github_token_publication:
+        errors.append("package is not published with the repository GITHUB_TOKEN")
     retention = row.retention
     if not (
         retention.released_digests

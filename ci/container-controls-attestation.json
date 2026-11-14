@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "confirmed": false,
+  "attested_by": "berntpopp",
+  "attested_at": "2026-11-13T00:00:00Z",
+  "url": "https://github.com/berntpopp/genefoundry-router/issues/155",
+  "controls": {
+    "package linkage": "Every fleet GHCR package ghcr.io/berntpopp/<repo> is public and linked to exactly its source repository berntpopp/<repo> (read-back of GET /users/berntpopp/packages/container/<repo> on 2026-11-13: visibility=public, repository.full_name=<repo> for all 23 fleet repositories).",
+    "GITHUB_TOKEN publication": "GHCR images are published only by the reviewed reusable workflow berntpopp/genefoundry-router/.github/workflows/_container-release.yml, which logs in to ghcr.io with the job's GITHUB_TOKEN under packages: write. No fleet workflow passes any other credential to a registry login, and no backend workflow references any secret.",
+    "standing package PAT absence": "I, the owner, hold no personal access token (classic or fine-grained) with write:packages / packages write access to the fleet packages, other than the interactive gh CLI OAuth session on my own workstation, which is not stored in any repository, environment, Dependabot, or organization secret. Repository/environment/Dependabot secret names across all 23 fleet repositories contain no package or registry credential (2026-11-13 read-back).",
+    "retention": "No package version-retention or cleanup policy, and no workflow that deletes package versions, exists for any fleet package. Every currently pinned image digest and its previous pin (rollback) in ci/fleet-application-releases.json, and the router's last two release digests, are present as package versions (2026-11-13 read-back). I do not delete package versions manually; the digests running in production are the pinned ones.",
+    "ruleset bypass actors": "Every fleet 'Protect semantic release tags' ruleset has exactly one bypass actor, RepositoryRole:5 (repository admin) in mode always; the router 'Protect trusted-builder main' ruleset has no bypass actors (owner-token read-back of GET /repos/<repo>/rulesets/<id> on 2026-11-13)."
+  },
+  "ruleset_bypass_actors": {
+    "tag": [
+      "RepositoryRole:5"
+    ],
+    "main": []
+  }
+}
