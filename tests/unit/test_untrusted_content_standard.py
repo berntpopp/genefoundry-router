@@ -23,6 +23,7 @@ EXPECTED_BACKENDS = {
     "mondo",
     "orphanet",
     "panelapp",
+    "pgscatalog",
     "pubtator",
     "spliceai",
     "stringdb",

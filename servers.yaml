@@ -244,3 +244,16 @@ servers:
     source_url: https://clinpgx.org/
     tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
     entrypoints: [search_records, get_record, get_related_records, search_dataset]
+
+  # pgscatalog-link: live PGS Catalog REST API (no snapshot): polygenic scores, traits,
+  # ancestry, licences, performance metrics, publications (genefoundry-router#288).
+  # Merge only once pgscatalog-link.genefoundry.org is live.
+  - name: pgscatalog
+    repo: berntpopp/pgscatalog-link
+    url_env: GF_PGSCATALOG_URL
+    namespace: pgscatalog
+    description: Polygenic scores, traits, ancestry & performance metrics
+    source_name: PGS Catalog
+    source_url: https://www.pgscatalog.org/
+    tags: [polygenic-score, prs, trait, gwas, ancestry, performance, publication]
+    entrypoints: [resolve_trait, search_scores]

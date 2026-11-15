@@ -515,3 +515,24 @@ backends:
       clinpgx_link/mcp/untrusted_content.py (v1.1 structural fence; UntrustedText TypedDict;
       forbidden codepoint filter, raw_sha256, source + record_id provenance)
     existing_sanitization: v1.1 fence (fence_text) shipped, released v0.1.0
+
+  - backend: pgscatalog
+    tool: get_score_performance
+    json_pointers: [/performance/*/reported]
+    surfaces:
+      - {tool: get_score_performance, pointer: /performance/*/reported}
+      - {tool: get_trait, pointer: /trait/description}
+      - {tool: get_score, pointer: /score/trait_additional}
+      - {tool: get_score, pointer: /score/method_params}
+      - {tool: get_publication, pointer: /publication/title}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      pgscatalog_link/shaping.py (fence(): trait description, score trait_additional and
+      method_params, publication title, and one `reported` block per performance row --
+      phenotype, covariates, comments -- with performance pages capped at 50 rows so fenced
+      objects stay <=128) + pgscatalog_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0

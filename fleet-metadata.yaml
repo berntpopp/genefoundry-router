@@ -102,6 +102,9 @@ vocabulary:
     - pharmacogenomics
     - gene-drug
     - dosing-guideline
+    - polygenic-score
+    - polygenic-risk-score
+    - gwas
   # Source tier — the upstream's proper noun. These are near-empty topic pages
   # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
   source:
@@ -135,6 +138,7 @@ vocabulary:
     - clinpgx
     - cpic
     - pharmgkb
+    - pgs-catalog
 
 # Official MCP Registry (registry.modelcontextprotocol.io) — ROUTER ONLY.
 #
@@ -329,3 +333,10 @@ backends:
       gene-drug interactions, clinical guidelines, dosing recommendations, and variant
       annotations for LLM agents.
     topics: [clinpgx, pharmacogenomics, gene-drug, clinical-genetics, cpic]
+
+  - namespace: pgscatalog
+    description: >-
+      MCP server for the PGS Catalog: published polygenic scores, the traits they predict,
+      development and evaluation ancestry, licences, performance metrics and source
+      publications.
+    topics: [pgs-catalog, polygenic-score, polygenic-risk-score, gwas, genomics]
