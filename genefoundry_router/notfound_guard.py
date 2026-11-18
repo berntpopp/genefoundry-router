@@ -78,7 +78,7 @@ from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.base import ToolResult
 from mcp.shared.exceptions import MCPError
 from mcp.types import TextContent
-from mcp_types import INVALID_PARAMS
+from mcp_types import INVALID_PARAMS, METHOD_NOT_FOUND
 
 from genefoundry_router.registry import NAMESPACE_RE
 from genefoundry_router.tool_error_taxonomy import (
@@ -217,8 +217,7 @@ class NotFoundGuard(Middleware):
         fctx = getattr(context, "fastmcp_context", None)
         message = getattr(context, "message", None)
         name = getattr(message, "name", None)
-        # fastmcp 4's ``call_tool`` meta-tool rejects an unknown target itself (echoing
-        # it) BEFORE re-entering this hook, so preflight its target here too.
+        # fastmcp 4's call_tool meta-tool rejects (and echoes) an unknown target first.
         target = name
         if name == "call_tool":
             arguments = getattr(message, "arguments", None)
@@ -340,6 +339,16 @@ async def _tool_is_unresolved(mcp_server: Any, name: Any) -> bool:
         return False
 
 
+async def _strip_method_not_found_data(ctx: Any, call_next: Any) -> Any:
+    """Drop the caller-supplied method name SDK 2 puts in METHOD_NOT_FOUND ``data``."""
+    try:
+        return await call_next(ctx)
+    except MCPError as exc:
+        if exc.error.code == METHOD_NOT_FOUND and exc.error.data is not None:
+            raise MCPError(code=METHOD_NOT_FOUND, message="Method not found") from None
+        raise
+
+
 def install_protocol_error_handler(mcp_server: Any) -> None:
     """Wrap the tool/resource/prompt request handlers as the OUTERMOST layer.
 
@@ -348,6 +357,8 @@ def install_protocol_error_handler(mcp_server: Any) -> None:
     tool-search transform and every proxy mount) so the handlers exist.
     """
     lowlevel = mcp_server._mcp_server
+    # Outermost: MCP SDK 2 echoes an unknown JSON-RPC method name in METHOD_NOT_FOUND ``data``.
+    lowlevel.middleware.insert(0, _strip_method_not_found_data)
 
     call_tool = lowlevel.get_request_handler("tools/call")
     if call_tool is not None:
@@ -400,9 +411,7 @@ def install_protocol_error_handler(mcp_server: Any) -> None:
             try:
                 return await _orig(ctx, params)
             except Exception:
-                # Re-raise with a FIXED, input-free message so no requested name/URI
-                # (or its code points) reaches the JSON-RPC error frame. SDK 2 maps a
-                # plain exception to code 0, so carry the spec's not-found code (-32602).
+                # FIXED, input-free message; MCPError keeps -32602 (SDK 2 sends plain errors as 0).
                 raise MCPError(code=INVALID_PARAMS, message=_message) from None
 
         lowlevel.add_request_handler(method, entry.params_type, wrapped)
@@ -440,6 +449,11 @@ _SCRUB_MARKERS: tuple[str, ...] = (
     # sibling component-collision warning (echoes the component ``{key!r}``).
     "Error during ",
     "Duplicate ",
+    # MCP SDK 2 ``mcp.server.runner``: echo the caller-chosen method / pre-request frame.
+    "dropped %r",
+    "dropped %s",
+    "dropped a frame",
+    "no handler for notification",
 )
 
 # Logger-name prefixes for the WARNING+ args-redacting fallback: the MCP REQUEST-DISPATCH
@@ -483,6 +497,7 @@ _SOURCE_LOGGERS: tuple[str, ...] = (
     "fastmcp.server.providers.aggregate",  # provider-fault WARNING echoes the name/URI
     "mcp",
     "mcp.server.lowlevel.server",
+    "mcp.server.runner",  # SDK 2 dispatch: "dropped %r" / "no handler for notification %s"
     "mcp.shared.session",
 )
 
