@@ -139,3 +139,17 @@ async def test_expansion_lift_on_pure_search_is_real() -> None:
     assert expanded.hit_at(5) >= 0.90
     assert expanded.hit_at(5) - plain.hit_at(5) >= 0.20
     assert expanded.by_style()["lay"] >= 0.80  # plain BM25: 0.06
+
+
+async def test_bench_regressions_stay_in_the_served_top_five() -> None:
+    """#292: every query a genefoundry-bench run missed must stay reachable in top 5."""
+    tasks = load_tasks(Path(__file__).parent / "bench_regressions.yaml")
+    report = await evaluate(
+        load_catalog(), tasks, _served_pins(), expansions=expansion_texts("builtin")
+    )
+    missed = [
+        (r.task.id, r.search_rank)
+        for r in report.results
+        if not (r.pinned or (r.search_rank is not None and r.search_rank <= 5))
+    ]
+    assert not missed, "\n" + format_report(report)

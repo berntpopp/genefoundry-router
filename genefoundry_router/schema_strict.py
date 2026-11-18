@@ -12,6 +12,8 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
+
 
 def _is_nullable(schema: dict[str, Any]) -> bool:
     """Return True if schema already permits null."""
@@ -156,3 +158,26 @@ def strip_strict_nulls(
         else:
             cleaned[k] = v
     return cleaned
+
+
+class StrictNullMiddleware(Middleware):
+    """Drop strict-mode ``null`` sentinels before any tool runs (issue #293).
+
+    ``tools/list`` advertises strict-shaped schemas (optional fields required + nullable),
+    so strict clients send ``null`` for every unset optional field. Strip those against the
+    tool's ORIGINAL schema so backends and the synthetic tools see exactly what a
+    non-strict client would have sent; genuinely nullable properties keep their ``null``.
+    """
+
+    async def on_call_tool(
+        self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]
+    ) -> Any:
+        message = context.message
+        arguments = getattr(message, "arguments", None)
+        fctx = context.fastmcp_context
+        if arguments and fctx is not None and any(v is None for v in arguments.values()):
+            tool = await fctx.fastmcp.get_tool(message.name)
+            if tool is not None and isinstance(tool.parameters, dict):
+                cleaned = strip_strict_nulls(arguments, tool.parameters)
+                context = context.copy(message=message.model_copy(update={"arguments": cleaned}))
+        return await call_next(context)

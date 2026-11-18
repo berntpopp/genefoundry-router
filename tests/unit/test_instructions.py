@@ -88,3 +88,11 @@ def test_entrypoint_section_omits_disabled_backends() -> None:
     text = build_instructions(reg)
     assert "mondo_resolve_disease" in text
     assert "hgnc_resolve_symbol" not in text
+
+
+def test_instructions_ask_for_one_intent_per_search() -> None:
+    """#292: multi-part questions are split into one search per intent."""
+    from genefoundry_router.registry import BackendDef
+
+    text = build_instructions([BackendDef(name="hgnc", url_env="X", namespace="hgnc")])
+    assert "ONE intent per call" in text

@@ -1,0 +1,19 @@
+# Regression list for failure classes found by genefoundry-bench runs (#292). Phrased
+# generally — NOT the benchmark's question wording, which is held out for re-measurement.
+# Every task must stay in the served top 5 (pins + packaged expansions).
+tasks:
+  # A pair question must reach the network tool, not only the capped neighbourhood list.
+  - id: string-pair-interaction
+    category: ppi
+    query: do two specific proteins interact with each other
+    expected: [stringdb_search_protein_interactions]
+  # A disease -> gene -> location question is two searches (instructions say: one intent per
+  # search); each half must resolve on its own.
+  - id: disease-causal-genes
+    category: gene_disease
+    query: which genes cause a given disease
+    expected: [gencc_get_disease_curations, orphanet_get_disease_genes, clingen_search_validity, gencc_find_curations, hpo_get_genes_for_disease]
+  - id: gene-cytogenetic-location
+    category: nomenclature
+    query: chromosome band location of a gene
+    expected: [hgnc_get_gene, hgnc_resolve_symbol]
