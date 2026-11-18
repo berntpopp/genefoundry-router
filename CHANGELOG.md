@@ -2,6 +2,20 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.12.2] - 2026-11-18
+
+### Fixed
+
+- **Regression from 0.12.0 (do not deploy 0.12.0/0.12.1):** the strict `tools/list` projection
+  closed every open map (an object with arbitrary keys) into an empty object, so a strict-mode
+  client could not pass `call_tool.arguments` (i.e. could not call any unpinned tool), nor
+  `clinpgx_search_records.filters`, `clinpgx_search_dataset.filters`,
+  `vep_annotate_variant.vep_options`. Open maps are now advertised as a JSON-encoded string;
+  `StrictNullMiddleware` decodes them back into objects against each tool's original schema, so
+  backends and the meta `call_tool` receive real objects. Found by the genefoundry-bench audit
+  (#297). Tests prove a strict client can call an unpinned tool through `call_tool` and pass a
+  pinned open map, and that no listed schema contains an unusable closed empty object.
+
 ## [0.12.1] - 2026-11-18
 
 ### Fixed
