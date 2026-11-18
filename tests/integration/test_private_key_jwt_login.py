@@ -69,6 +69,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import fastmcp
+import httpx2
 import pytest
 import respx
 from fastapi.testclient import TestClient
@@ -315,6 +316,20 @@ class OAuthHarness:
         return body["result"]["tools"]
 
 
+class _Httpx2Shim:
+    """The ``httpx2`` module with ``AsyncClient`` pinned to one mock transport."""
+
+    def __init__(self, transport: httpx2.MockTransport) -> None:
+        self._transport = transport
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(httpx2, name)
+
+    def AsyncClient(self, *args: Any, **kwargs: Any) -> httpx2.AsyncClient:  # noqa: N802
+        kwargs["transport"] = self._transport
+        return httpx2.AsyncClient(*args, **kwargs)
+
+
 @pytest.fixture
 def oauth_harness(tmp_path, monkeypatch, gnomad_fake: FastMCP):
     """The REAL router app in oauth mode, with only the network boundary stubbed.
@@ -420,6 +435,27 @@ def oauth_harness(tmp_path, monkeypatch, gnomad_fake: FastMCP):
                 "scope": "openid profile email",
             },
         )
+
+    # fastmcp 4 reaches the IdP (upstream /token + the verifier's JWKS) through
+    # module-level ``httpx2.AsyncClient``; stub exactly those two references.
+    from fastmcp.server.auth.oauth_proxy import upstream as upstream_module
+
+    def idp_handler(request: httpx2.Request) -> httpx2.Response:
+        url = str(request.url)
+        if url == UPSTREAM_JWKS and request.method == "GET":
+            return httpx2.Response(200, json=_jwks(idp_key))
+        if url == UPSTREAM_TOKEN and request.method == "POST":
+            token = upstream_token_response(request)
+            return httpx2.Response(
+                token.status_code,
+                content=token.content,
+                headers={"content-type": "application/json"},
+            )
+        return httpx2.Response(404)
+
+    shim = _Httpx2Shim(httpx2.MockTransport(idp_handler))
+    monkeypatch.setattr(upstream_module, "httpx2", shim)
+    monkeypatch.setattr(jwt_provider, "httpx2", shim)
 
     # respx (httpcore-level) does not intercept TestClient's ASGI transport, so the
     # in-process app traffic is untouched while every real outbound httpx call is mocked.

@@ -173,8 +173,8 @@ def test_cache_does_not_cache_errors() -> None:
     cache.set("vep_recode_variant", {"v": "bad4"}, res4)
     assert cache.get("vep_recode_variant", {"v": "bad4"}) is None
 
-    # 5. MCP CallToolResult with isError=True
-    res5 = CallToolResult(content=[TextContent(type="text", text="Error")], isError=True)
+    # 5. MCP CallToolResult with is_error=True
+    res5 = CallToolResult(content=[TextContent(type="text", text="Error")], is_error=True)
     cache.set("vep_recode_variant", {"v": "bad5"}, res5)
     assert cache.get("vep_recode_variant", {"v": "bad5"}) is None
 

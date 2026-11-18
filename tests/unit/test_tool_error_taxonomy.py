@@ -35,7 +35,7 @@ import httpx
 import pytest
 from fastmcp.client.mixins.tools import _parse_call_tool_result
 from fastmcp.exceptions import ToolError
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools import ToolResult
 
 from genefoundry_router.tool_error_taxonomy import (
     FLEET_ERROR_CODES,
@@ -215,20 +215,29 @@ def _chained(*chain: BaseException) -> BaseException:
 
 
 def test_transport_failure_classifies_timeouts_and_connect_errors() -> None:
-    from mcp.shared.exceptions import McpError
-    from mcp.types import ErrorData
+    import httpx2
+    from mcp.shared.exceptions import MCPError
+    from mcp_types import REQUEST_TIMEOUT
 
     from genefoundry_router.tool_error_taxonomy import transport_failure
 
     request = httpx.Request("POST", "http://backend/mcp")
-    mcp_timeout = McpError(ErrorData(code=408, message="Timed out"))
+    # SDK v2's session timeout is REQUEST_TIMEOUT (-32001), not HTTP 408.
+    mcp_timeout = MCPError(code=REQUEST_TIMEOUT, message="Timed out")
     assert transport_failure(_chained(ToolError("x"), mcp_timeout)) == "backend_timeout"
     assert transport_failure(_chained(ToolError("x"), TimeoutError())) == "backend_timeout"
     read_timeout = httpx.ReadTimeout("t", request=request)
     assert transport_failure(_chained(ToolError("x"), read_timeout)) == "backend_timeout"
     refused = httpx.ConnectError("refused", request=request)
     assert transport_failure(_chained(ToolError("x"), refused)) == "backend_unreachable"
+    # fastmcp 4's proxy transport raises httpx2, not httpx, exceptions.
+    request2 = httpx2.Request("POST", "http://backend/mcp")
+    read_timeout2 = httpx2.ReadTimeout("t", request=request2)
+    assert transport_failure(_chained(ToolError("x"), read_timeout2)) == "backend_timeout"
+    refused2 = httpx2.ConnectError("refused", request=request2)
+    assert transport_failure(_chained(ToolError("x"), refused2)) == "backend_unreachable"
+    assert transport_failure(_chained(ToolError("x"), MCPError(code=408, message="t"))) is None
     # an in-band backend envelope or a non-timeout McpError is NOT a transport failure
     assert transport_failure(ToolError(json.dumps(_envelope()))) is None
-    other = McpError(ErrorData(code=-32602, message="bad params"))
+    other = MCPError(code=-32602, message="bad params")
     assert transport_failure(_chained(ToolError("x"), other)) is None

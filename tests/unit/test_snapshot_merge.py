@@ -80,7 +80,7 @@ def _raw_tools() -> list[Any]:
         Tool(
             name="get_one",
             description="",
-            inputSchema={"type": "object", "properties": {}},
+            input_schema={"type": "object", "properties": {}},
         )
     ]
 

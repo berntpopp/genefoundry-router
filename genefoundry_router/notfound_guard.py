@@ -68,7 +68,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Mapping
-from typing import Any, cast
+from typing import Any
 
 import mcp.types
 import structlog
@@ -76,7 +76,9 @@ from fastmcp.exceptions import NotFoundError as FastMCPNotFoundError
 from fastmcp.exceptions import ResourceError, ToolError
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.base import ToolResult
+from mcp.shared.exceptions import MCPError
 from mcp.types import TextContent
+from mcp_types import INVALID_PARAMS
 
 from genefoundry_router.registry import NAMESPACE_RE
 from genefoundry_router.tool_error_taxonomy import (
@@ -176,6 +178,18 @@ def unknown_tool_result() -> ToolResult:
     return _envelope(_not_found_payload())
 
 
+def _caused_by_not_found(exc: BaseException) -> bool:
+    """True if a FastMCP ``NotFoundError`` is anywhere in ``exc``'s cause chain."""
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    while current is not None and id(current) not in seen:
+        if isinstance(current, FastMCPNotFoundError):
+            return True
+        seen.add(id(current))
+        current = current.__cause__ or current.__context__
+    return False
+
+
 class NotFoundGuard(Middleware):
     """Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary)."""
 
@@ -196,20 +210,26 @@ class NotFoundGuard(Middleware):
         ``get_tool`` resolves mounted-proxy tool names (from mount-cached metadata,
         no blocking remote round-trip) and the synthetic meta-tools, and returns
         ``None`` — it does not raise — for an unknown name. An unknown name is
-        answered here with a fixed, name-free envelope. The ``call_tool`` meta-tool
-        re-enters this hook for its real target, so a bogus target is caught on the
-        inner pass. On any resolution failure we defer to core rather than mask a
+        answered here with a fixed, name-free envelope. The ``call_tool`` meta-tool's
+        target is preflighted the same way (fastmcp 4 checks it before re-entering). On any resolution failure we defer to core rather than mask a
         legitimate call (the Layer-3 backstop still covers a reflected return).
         """
         fctx = getattr(context, "fastmcp_context", None)
-        name = getattr(getattr(context, "message", None), "name", None)
-        if fctx is not None and isinstance(name, str) and name not in _SYNTHETIC:
+        message = getattr(context, "message", None)
+        name = getattr(message, "name", None)
+        # fastmcp 4's ``call_tool`` meta-tool rejects an unknown target itself (echoing
+        # it) BEFORE re-entering this hook, so preflight its target here too.
+        target = name
+        if name == "call_tool":
+            arguments = getattr(message, "arguments", None)
+            target = arguments.get("name") if isinstance(arguments, dict) else None
+        if fctx is not None and isinstance(target, str) and target not in _SYNTHETIC:
             try:
-                tool = await fctx.fastmcp.get_tool(name)
+                tool = await fctx.fastmcp.get_tool(target)
             except Exception:
                 tool = object()
             if tool is None:
-                namespace = name.partition("_")[0]
+                namespace = target.partition("_")[0]
                 if namespace in self.unavailable or self.backend_status.get(namespace) is False:
                     log.warning("mcp_backend_unavailable", namespace=namespace)
                     return backend_unavailable_result(namespace)
@@ -217,7 +237,14 @@ class NotFoundGuard(Middleware):
                 return unknown_tool_result()
         try:
             return await call_next(context)
+        except FastMCPNotFoundError:
+            # The meta-tool's own catalog check (visibility drift past the preflight).
+            log.warning("mcp_unknown_tool")
+            return unknown_tool_result()
         except ToolError as exc:
+            if name == "call_tool" and _caused_by_not_found(exc):
+                log.warning("mcp_unknown_tool")
+                return unknown_tool_result()
             # Only the router's own unclassified failure; never re-wrap a fleet envelope.
             subcode = transport_failure(exc) if error_code(exc) == UNCLASSIFIED_ERROR_CODE else None
             namespace = name.partition("_")[0] if isinstance(name, str) else ""
@@ -258,10 +285,6 @@ class NotFoundGuard(Middleware):
 # ---------------------------------------------------------------------------
 
 
-class ProtocolError(Exception):
-    """A dispatch-level failure re-raised with a FIXED, input-free message."""
-
-
 def _is_structured_envelope(call_result: mcp.types.CallToolResult) -> bool:
     """True if an ``isError`` result carries a structured envelope (has ``error_code``).
 
@@ -281,24 +304,22 @@ def _is_structured_envelope(call_result: mcp.types.CallToolResult) -> bool:
     return isinstance(obj, dict) and "error_code" in obj
 
 
-def _fixed_tool_not_found_result() -> mcp.types.ServerResult:
-    """A fixed, input-free ServerResult for an unknown/failed tool dispatch.
+def _fixed_tool_not_found_result() -> mcp.types.CallToolResult:
+    """A fixed, input-free CallToolResult for an unknown/failed tool dispatch.
 
     Built as an explicit typed ``CallToolResult`` (rather than via ``ToolResult``) so the
     structured envelope and its TextContent mirror match :func:`unknown_tool_result`.
     """
     payload = _not_found_payload()
-    return mcp.types.ServerResult(
-        mcp.types.CallToolResult(
-            content=[
-                TextContent(
-                    type="text",
-                    text=json.dumps(payload, separators=(",", ":"), sort_keys=True),
-                )
-            ],
-            structuredContent=payload,
-            isError=True,
-        )
+    return mcp.types.CallToolResult(
+        content=[
+            TextContent(
+                type="text",
+                text=json.dumps(payload, separators=(",", ":"), sort_keys=True),
+            )
+        ],
+        structured_content=payload,
+        is_error=True,
     )
 
 
@@ -326,18 +347,19 @@ def install_protocol_error_handler(mcp_server: Any) -> None:
     name/URI. Install AFTER all tools/resources/prompts are registered (i.e. after the
     tool-search transform and every proxy mount) so the handlers exist.
     """
-    handlers = mcp_server._mcp_server.request_handlers
+    lowlevel = mcp_server._mcp_server
 
-    call_tool = handlers.get(mcp.types.CallToolRequest)
+    call_tool = lowlevel.get_request_handler("tools/call")
     if call_tool is not None:
 
         async def wrapped_call_tool(
-            request: mcp.types.CallToolRequest,
+            ctx: Any,
+            params: Any,
             *,
-            _orig: Any = call_tool,
-        ) -> mcp.types.ServerResult:
+            _orig: Any = call_tool.handler,
+        ) -> Any:
             try:
-                result = cast(mcp.types.ServerResult, await _orig(request))
+                result = await _orig(ctx, params)
             except FastMCPNotFoundError:
                 # Unknown-tool *raise* drift (should not reach here once Layer 1 is
                 # active) — the exception itself proves not-found; answer with the fixed,
@@ -349,40 +371,41 @@ def install_protocol_error_handler(mcp_server: Any) -> None:
             # KNOWN proxied tool's validation/execution error would be misreported as
             # not_found. Layer 1 already returns a structured envelope for unknown names,
             # so this fires only if preflight was bypassed (resolution drift).
-            root = getattr(result, "root", None)
             if (
-                isinstance(root, mcp.types.CallToolResult)
-                and root.isError
-                and not _is_structured_envelope(root)
-                and await _tool_is_unresolved(mcp_server, getattr(request.params, "name", None))
+                isinstance(result, mcp.types.CallToolResult)
+                and result.is_error
+                and not _is_structured_envelope(result)
+                and await _tool_is_unresolved(mcp_server, getattr(params, "name", None))
             ):
                 return _fixed_tool_not_found_result()
             return result
 
-        handlers[mcp.types.CallToolRequest] = wrapped_call_tool
+        lowlevel.add_request_handler("tools/call", call_tool.params_type, wrapped_call_tool)
 
-    for request_type, message in (
-        (mcp.types.ReadResourceRequest, _UNKNOWN_RESOURCE_MESSAGE),
-        (mcp.types.GetPromptRequest, _UNKNOWN_PROMPT_MESSAGE),
+    for method, message in (
+        ("resources/read", _UNKNOWN_RESOURCE_MESSAGE),
+        ("prompts/get", _UNKNOWN_PROMPT_MESSAGE),
     ):
-        orig = handlers.get(request_type)
-        if orig is None:
+        entry = lowlevel.get_request_handler(method)
+        if entry is None:
             continue
 
         async def wrapped(
-            request: Any,
+            ctx: Any,
+            params: Any,
             *,
-            _orig: Any = orig,
+            _orig: Any = entry.handler,
             _message: str = message,
         ) -> Any:
             try:
-                return await _orig(request)
+                return await _orig(ctx, params)
             except Exception:
                 # Re-raise with a FIXED, input-free message so no requested name/URI
-                # (or its code points) reaches the JSON-RPC error frame.
-                raise ProtocolError(_message) from None
+                # (or its code points) reaches the JSON-RPC error frame. SDK 2 maps a
+                # plain exception to code 0, so carry the spec's not-found code (-32602).
+                raise MCPError(code=INVALID_PARAMS, message=_message) from None
 
-        handlers[request_type] = wrapped
+        lowlevel.add_request_handler(method, entry.params_type, wrapped)
 
 
 # ---------------------------------------------------------------------------

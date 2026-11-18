@@ -72,10 +72,10 @@ def make_cache_key(tool_name: str, arguments: dict[str, Any] | None) -> str:
 
 def is_error_response(result: Any) -> bool:
     """True if result represents any protocol-level or envelope-level execution error."""
-    if getattr(result, "is_error", False) or getattr(result, "isError", False):
+    if getattr(result, "is_error", False):
         return True
 
-    sc = getattr(result, "structured_content", None) or getattr(result, "structuredContent", None)
+    sc = getattr(result, "structured_content", None)
     if isinstance(sc, dict):
         if (
             sc.get("isError") is True
@@ -221,7 +221,7 @@ class ToolResponseCache:
             if getattr(copied_obj, "meta", None) is None:
                 copied_obj.meta = {}
             copied_obj.meta["cached"] = True
-            sc = getattr(copied_obj, "structuredContent", None)
+            sc = getattr(copied_obj, "structured_content", None)
             if isinstance(sc, dict) and isinstance(sc.get("_meta"), dict):
                 sc["_meta"]["cached"] = True
             return copied_obj

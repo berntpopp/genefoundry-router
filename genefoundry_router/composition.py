@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from typing import Any
 from weakref import WeakKeyDictionary
 
-import httpx
+import httpx2
 import structlog
 from fastmcp import FastMCP
 from fastmcp.client.transports import StreamableHttpTransport
@@ -31,19 +31,19 @@ DEFAULT_BACKEND_TIMEOUT = 120.0
 
 force_tool_refresh: ContextVar[bool] = ContextVar("force_tool_refresh", default=False)
 
-_loop_transports: WeakKeyDictionary[asyncio.AbstractEventLoop, httpx.AsyncHTTPTransport] = (
+_loop_transports: WeakKeyDictionary[asyncio.AbstractEventLoop, httpx2.AsyncHTTPTransport] = (
     WeakKeyDictionary()
 )
-_shared_upstream_transport: httpx.AsyncHTTPTransport | None = None
+_shared_upstream_transport: httpx2.AsyncHTTPTransport | None = None
 
 
-def _new_upstream_transport() -> httpx.AsyncHTTPTransport:
-    return httpx.AsyncHTTPTransport(
-        limits=httpx.Limits(max_connections=100, max_keepalive_connections=25),
+def _new_upstream_transport() -> httpx2.AsyncHTTPTransport:
+    return httpx2.AsyncHTTPTransport(
+        limits=httpx2.Limits(max_connections=100, max_keepalive_connections=25),
     )
 
 
-def get_shared_upstream_transport() -> httpx.AsyncHTTPTransport:
+def get_shared_upstream_transport() -> httpx2.AsyncHTTPTransport:
     """Return or initialize the shared upstream HTTP connection pool for the current loop."""
     global _shared_upstream_transport
     try:
@@ -72,16 +72,16 @@ async def close_shared_upstream_transport() -> None:
     _shared_upstream_transport = None
 
 
-class _BorrowedTransport(httpx.AsyncBaseTransport):
-    """Non-closing wrapper around a shared httpx.AsyncHTTPTransport pool.
+class _BorrowedTransport(httpx2.AsyncBaseTransport):
+    """Non-closing wrapper around a shared httpx2.AsyncHTTPTransport pool.
 
     Prevents per-call AsyncClient.aclose() from terminating the connection pool.
     """
 
-    def __init__(self, pool: httpx.AsyncHTTPTransport) -> None:
+    def __init__(self, pool: httpx2.AsyncHTTPTransport) -> None:
         self.pool = pool
 
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+    async def handle_async_request(self, request: httpx2.Request) -> httpx2.Response:
         return await self.pool.handle_async_request(request)
 
     async def aclose(self) -> None:
@@ -90,16 +90,16 @@ class _BorrowedTransport(httpx.AsyncBaseTransport):
 
 
 def default_httpx_client_factory(
-    pool: httpx.AsyncHTTPTransport | None = None,
+    pool: httpx2.AsyncHTTPTransport | None = None,
 ) -> Any:
     """Build an httpx client factory borrowing from a shared transport pool."""
 
-    def factory(**kwargs: Any) -> httpx.AsyncClient:
+    def factory(**kwargs: Any) -> httpx2.AsyncClient:
         transport_pool = pool if pool is not None else get_shared_upstream_transport()
         kwargs["follow_redirects"] = False
         kwargs.setdefault("trust_env", False)
-        kwargs.setdefault("timeout", httpx.Timeout(30.0, read=300.0))
-        return httpx.AsyncClient(
+        kwargs.setdefault("timeout", httpx2.Timeout(30.0, read=300.0))
+        return httpx2.AsyncClient(
             transport=_BorrowedTransport(transport_pool),
             **kwargs,
         )
@@ -160,7 +160,7 @@ def make_proxy_client(
     """Build the router's upstream proxy client with caller-token forwarding DISABLED.
 
     R1.6 — confused-deputy / token-passthrough invariant. fastmcp's ``ProxyClient``
-    sets ``transport.forward_incoming_headers = True`` by default, and its HTTP transport
+    defaults ``forward_incoming_headers=True``, and its HTTP transport
     explicitly re-includes ``authorization`` (which ``get_http_headers`` would otherwise
     strip) — i.e. the caller's bearer token would be forwarded to every backend. The
     router connects to backends on its OWN connection and forwards NOTHING from the
@@ -181,15 +181,11 @@ def make_proxy_client(
             headers={"Authorization": f"Bearer {service_token}"} if service_token else None,
             httpx_client_factory=factory,
         )
-    client = (
-        ProxyClient(transport_target)
-        if timeout is None
-        else ProxyClient(transport_target, timeout=timeout)
-    )
-    transport = getattr(client, "transport", None)
-    if transport is not None and hasattr(transport, "forward_incoming_headers"):
-        transport.forward_incoming_headers = False
-    return client
+    # fastmcp 4 moved the flag from the transport to the client's TransportOptions;
+    # pass it at construction so no attribute probe can silently no-op.
+    if timeout is None:
+        return ProxyClient(transport_target, forward_incoming_headers=False)
+    return ProxyClient(transport_target, timeout=timeout, forward_incoming_headers=False)
 
 
 def _register_via_provider(

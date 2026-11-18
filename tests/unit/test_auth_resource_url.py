@@ -93,7 +93,7 @@ async def test_strict_rfc9728_resource_derivation_without_monkeypatch() -> None:
 
     # Verify no monkeypatch is applied to FastMCP
     assert not getattr(p, "_gf_resource_tolerant", False)
-    assert p._normalize_resource_url(f"{AUDIENCE}/mcp") == f"{AUDIENCE}/mcp"
+    assert p.normalize_resource_url(f"{AUDIENCE}/mcp") == f"{AUDIENCE}/mcp"
 
     proxy = _oauth_proxy(auth)
     proxy.set_mcp_path(LIVE_MOUNT_PATH)  # type: ignore[attr-defined]

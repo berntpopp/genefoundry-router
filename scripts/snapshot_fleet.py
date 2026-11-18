@@ -156,18 +156,17 @@ async def _capture_backend(
     try:
         async with Client(target) as client:
             tools = await client.list_tools()
-            version = None
-            init = getattr(client, "initialize_result", None)
-            if init is not None and getattr(init, "serverInfo", None) is not None:
-                version = init.serverInfo.version  # MCP initialize handshake
+            # Era-neutral: InitializeResult (legacy) or DiscoverResult (2026-07-28).
+            info = client.server_info
+            version = info.version if info is not None else None
         specs = [
             ToolSpec(
                 name=t.name,
                 description=t.description or "",
                 inputSchema=canonical_json_schema(
-                    t.inputSchema or {"type": "object", "properties": {}}
+                    t.input_schema or {"type": "object", "properties": {}}
                 ),
-                outputSchema=canonical_json_schema(t.outputSchema),
+                outputSchema=canonical_json_schema(t.output_schema),
                 annotations=(
                     t.annotations.model_dump(mode="json", exclude_none=False)
                     if t.annotations is not None

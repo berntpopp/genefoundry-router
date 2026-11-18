@@ -131,12 +131,16 @@ def add_host_origin_validation(
 #   mcp-session-id       - the session handle the Streamable HTTP transport requires the
 #                          client to echo on every request after initialize.
 #   mcp-protocol-version - the negotiated protocol version header.
+#   mcp-method, mcp-name - routing headers every request carries on the sessionless
+#                          2026-07-28 protocol era (fastmcp 4 / MCP SDK 2).
 #   last-event-id        - SSE stream resumption.
 MCP_CORS_ALLOW_HEADERS: tuple[str, ...] = (
     "accept",
     "authorization",
     "content-type",
     "last-event-id",
+    "mcp-method",
+    "mcp-name",
     "mcp-protocol-version",
     "mcp-session-id",
 )

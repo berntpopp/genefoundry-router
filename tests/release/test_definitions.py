@@ -97,7 +97,7 @@ def test_capture_accepts_wire_tool_models_and_normalizes_null_description() -> N
     wire_tool = McpTool(
         name="get_capabilities",
         description=None,
-        inputSchema={"type": "object", "properties": {}, "required": []},
+        input_schema={"type": "object", "properties": {}, "required": []},
     )
     mapping_tool: dict[str, object] = {
         "name": "get_capabilities",
