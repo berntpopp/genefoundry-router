@@ -71,6 +71,14 @@ def test_rate_limit_returns_429_after_limit() -> None:
     resp = c.get("/x")
     assert resp.status_code == 429
     assert resp.headers["retry-after"] == "60"
+    # #294: the MCP client parses a non-2xx body as JSON-RPC; anything else becomes the
+    # opaque "Server returned an error response".
+    from mcp.types import JSONRPCError, jsonrpc_message_adapter
+
+    parsed = jsonrpc_message_adapter.validate_json(resp.content, by_name=False)
+    assert isinstance(parsed, JSONRPCError)
+    assert "rate limit exceeded" in parsed.error.message
+    assert parsed.error.data == {"retry_after": 60}
 
 
 def test_spoofed_leftmost_xff_values_share_bucket() -> None:

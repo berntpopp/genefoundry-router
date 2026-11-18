@@ -42,6 +42,18 @@ def _client_key(scope: Scope, trusted_proxy_hops: int) -> str:
     return client_host
 
 
+def _jsonrpc_error(status: int, message: str, retry_after: int | None = None) -> JSONResponse:
+    """An HTTP rejection whose body is a JSON-RPC error, so MCP clients surface ``message``
+    instead of a generic "Server returned an error response" (#294)."""
+    error: dict[str, object] = {"code": -32000, "message": message}
+    headers = None
+    if retry_after is not None:
+        error["data"] = {"retry_after": retry_after}
+        headers = {"Retry-After": str(retry_after)}
+    body = {"jsonrpc": "2.0", "id": None, "error": error}
+    return JSONResponse(body, status_code=status, headers=headers)
+
+
 class _ClientDisconnectedError(Exception):
     """Raised when the client disconnects before the request body completes."""
 
@@ -104,16 +116,14 @@ class RequestLimitMiddleware:
             return
 
         if self._content_length_exceeds(scope):
-            await JSONResponse({"error": "request entity too large"}, status_code=413)(
-                scope, receive, send
-            )
+            await _jsonrpc_error(413, "request entity too large")(scope, receive, send)
             return
 
         if self._rpm > 0 and not self._rate_allowed(scope):
-            await JSONResponse(
-                {"error": "rate limit exceeded"},
-                status_code=429,
-                headers={"Retry-After": str(self._window)},
+            await _jsonrpc_error(
+                429,
+                f"rate limit exceeded; retry after {self._window} s",
+                retry_after=self._window,
             )(scope, receive, send)
             return
 
@@ -128,9 +138,7 @@ class RequestLimitMiddleware:
 
         if buffered is None:
             log.warning("request_too_large", limit=self._max_body)
-            await JSONResponse({"error": "request entity too large"}, status_code=413)(
-                scope, receive, send
-            )
+            await _jsonrpc_error(413, "request entity too large")(scope, receive, send)
             return
 
         await self.app(scope, _replay_receive(buffered, receive), send)
