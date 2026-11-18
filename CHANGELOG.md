@@ -2,6 +2,17 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.12.1] - 2026-11-18
+
+### Fixed
+
+- 429 (rate limit) and 413 (body cap) rejections now carry a JSON-RPC error body
+  (`{"jsonrpc":"2.0","id":null,"error":{"code":-32000,"message":...}}`; the 429 adds
+  `data.retry_after` alongside the `Retry-After` header). MCP clients parse a non-2xx body as
+  JSON-RPC; the old `{"error": ...}` body surfaced as the opaque "Server returned an error
+  response", which hid the cause of intermittent `initialize` failures (#294). The rate limit is
+  keyed per client IP, so parallel clients behind one address share one budget.
+
 ## [0.12.0] - 2026-11-18
 
 ### Changed
