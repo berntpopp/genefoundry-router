@@ -217,10 +217,12 @@ async def test_synthetic_tools_are_cached_per_transform() -> None:
     tools1 = await t1.transform_tools([pinned])
     tools2 = await t1.transform_tools([pinned])
 
-    assert tools1[1] is s1
-    assert tools1[2] is c1
-    assert tools2[1] is s1
-    assert tools2[2] is c1
+    # #293: listings are strict projections of the cached synthetic tools — built once,
+    # reused on relist (#232), while get_tool keeps returning the original for calls.
+    assert tools1[1] is tools2[1] and tools1[1].name == "search_tools"
+    assert tools1[2] is tools2[2] and tools1[2].name == "call_tool"
+    assert tools1[1].parameters["additionalProperties"] is False
+    assert set(tools1[1].parameters["required"]) == set(tools1[1].parameters["properties"])
 
     t2 = CompactBM25SearchTransform(always_visible=["pinned_tool"])
     s_other = t2._make_search_tool()

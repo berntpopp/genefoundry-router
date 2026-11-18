@@ -235,6 +235,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
     ) -> None:
         depth = max(rerank_pool, max_results) if reranker is not None else max_results
         super().__init__(max_results=depth, always_visible=always_visible)
+        self._strict_cache: dict[str, tuple[Tool, Tool]] = {}
         self.served_results = max_results
         self.max_limit = max(rerank_pool, max_results)
         self.expansions = dict(expansions or {})
@@ -310,6 +311,25 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         ]
         self._search_tool = Tool.from_function(fn=search_tools, name=self._search_tool_name)
         return self._search_tool
+
+    async def transform_tools(self, tools: Sequence[Tool]) -> Sequence[Tool]:
+        """Advertise every listed tool with an OpenAI-strict input schema (issue #293).
+
+        Only the listing changes: calls resolve the original tool, and
+        :class:`StrictNullMiddleware` strips the ``null`` sentinels strict clients send.
+        """
+        listed = await super().transform_tools(tools)
+        return [self._strict_listing(tool) for tool in listed]
+
+    def _strict_listing(self, tool: Tool) -> Tool:
+        """Strict projection, cached per source object so a relist does not rebuild (#232)."""
+        cached = self._strict_cache.get(tool.name)
+        if cached is not None and cached[0] is tool:
+            return cached[1]
+        params = to_openai_strict_schema(tool.parameters or {})
+        projected = tool.model_copy(update={"parameters": params})
+        self._strict_cache[tool.name] = (tool, projected)
+        return projected
 
     def _make_call_tool(self) -> Tool:
         """Reuse FastMCP's call_tool proxy with self-healing description and strict-null stripping."""

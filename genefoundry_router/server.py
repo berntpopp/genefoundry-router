@@ -52,6 +52,7 @@ from genefoundry_router.runtime_drift import (
     fingerprint_definitions,
     load_runtime_guard,
 )
+from genefoundry_router.schema_strict import StrictNullMiddleware
 from genefoundry_router.search_rerank import SystemOneReranker
 from genefoundry_router.security import add_host_origin_validation, wrap_mcp_cors
 from genefoundry_router.tool_search import apply_tool_search, resolve_entrypoints
@@ -120,6 +121,7 @@ def build_server(
     # Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary). Registered before
     # ToolResponseCacheMiddleware so quarantined tools cannot be served from cache.
     notfound_guard = NotFoundGuard(BACKEND_STATUS)
+    server.add_middleware(StrictNullMiddleware())  # #293: before guard + cache (stable keys)
     server.add_middleware(notfound_guard)
     server.notfound_guard = notfound_guard  # type: ignore[attr-defined]
     tool_cache = ToolResponseCache(registry)

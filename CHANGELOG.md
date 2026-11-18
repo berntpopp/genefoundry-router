@@ -2,6 +2,33 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.12.0] - 2026-11-18
+
+### Changed
+
+- `tools/list` now advertises every listed tool (pinned entry points, `search_tools`,
+  `call_tool`) with an OpenAI-strict input schema: every property required, optional ones
+  nullable, `additionalProperties: false` (#293). OpenAI with `strict: true` rejected the
+  whole request before ("Missing 'dataset'"). Only the listing changes: a new
+  `StrictNullMiddleware` strips the `null` sentinels strict clients send against each tool's
+  ORIGINAL schema, so backends and the synthetic tools receive what a non-strict client sends;
+  properties the backend itself declares nullable keep their `null`.
+- Server instructions ask for ONE intent per `search_tools` call: a multi-part question
+  (a disease's genes and their chromosome location) is one search per part (#292).
+
+### Added
+
+- `tests/integration/test_strict_pinned_catalog.py`: the real pinned set (servers.yaml over the
+  fleet baseline) must satisfy the strict invariants and stay under a listing budget
+  (~18.1k est. tokens today; ceiling 19k — lower it as pinned schemas are trimmed).
+- `tests/discoverability/bench_regressions.yaml`: failure classes from genefoundry-bench as a
+  recall@5 regression list, phrased generally (not the held-out benchmark wording).
+
+### Not in this release
+
+- Gemini "too many states" (#293) is driven by long enums in backend schemas (ClinPGx);
+  trimming them belongs in the backend and is tracked there. The token budget now blocks growth.
+
 ## [0.11.1] - 2026-11-18
 
 ### Security
