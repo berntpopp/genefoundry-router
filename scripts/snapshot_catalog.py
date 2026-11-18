@@ -33,7 +33,7 @@ DEFAULT_OUT = Path("tests/discoverability/catalog.json")
 
 
 def _entry(tool: Any) -> dict[str, Any]:
-    schema = tool.inputSchema or {}
+    schema = tool.input_schema or {}
     props = schema.get("properties", {}) if isinstance(schema, dict) else {}
     params = {name: (spec.get("description") or "") for name, spec in props.items()}
     tags = sorted((tool.meta or {}).get("fastmcp", {}).get("tags", []))

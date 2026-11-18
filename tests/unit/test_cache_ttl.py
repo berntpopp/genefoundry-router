@@ -22,7 +22,7 @@ def _make_dummy_tool(name: str = "test_tool") -> McpTool:
     return McpTool(
         name=name,
         description="A test tool",
-        inputSchema={"type": "object", "properties": {}},
+        input_schema={"type": "object", "properties": {}},
     )
 
 

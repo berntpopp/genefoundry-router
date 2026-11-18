@@ -9,7 +9,7 @@ The router disables forwarding on every proxy client it builds.
 
 from unittest.mock import AsyncMock, MagicMock
 
-import httpx
+import httpx2
 import pytest
 from fastmcp import FastMCP
 
@@ -27,7 +27,7 @@ from genefoundry_router.registry import BackendDef
 
 def test_make_proxy_client_disables_header_forwarding() -> None:
     client = make_proxy_client("https://backend.example.org/mcp")
-    assert client.transport.forward_incoming_headers is False
+    assert client._transport_options.forward_incoming_headers is False
 
 
 def test_backend_service_token_is_injected_without_caller_forwarding() -> None:
@@ -36,13 +36,13 @@ def test_backend_service_token_is_injected_without_caller_forwarding() -> None:
         service_token="router-owned-secret",  # noqa: S106 - inert test value
     )
     assert client.transport.headers["Authorization"] == "Bearer router-owned-secret"
-    assert client.transport.forward_incoming_headers is False
+    assert client._transport_options.forward_incoming_headers is False
 
 
 def test_blank_backend_service_token_is_not_injected() -> None:
     client = make_proxy_client("https://backend.example.org/mcp", service_token="")
     assert "Authorization" not in client.transport.headers
-    assert client.transport.forward_incoming_headers is False
+    assert client._transport_options.forward_incoming_headers is False
 
 
 def test_register_backend_provider_does_not_forward_caller_headers() -> None:
@@ -54,12 +54,12 @@ def test_register_backend_provider_does_not_forward_caller_headers() -> None:
     providers = [getattr(p, "_inner", p) for p in server.providers]
     provider = next(p for p in providers if isinstance(p, CachedProxyProvider))
     client = provider.client_factory()
-    assert client.transport.forward_incoming_headers is False
+    assert client._transport_options.forward_incoming_headers is False
 
 
 @pytest.mark.asyncio
 async def test_borrowed_transport_aclose_does_not_close_pool() -> None:
-    mock_pool = MagicMock(spec=httpx.AsyncHTTPTransport)
+    mock_pool = MagicMock(spec=httpx2.AsyncHTTPTransport)
     mock_pool.aclose = AsyncMock()
 
     borrowed = _BorrowedTransport(mock_pool)

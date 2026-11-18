@@ -39,7 +39,9 @@ import re
 from typing import Any
 
 import httpx
-from mcp.shared.exceptions import McpError
+import httpx2
+from mcp.shared.exceptions import MCPError
+from mcp_types import REQUEST_TIMEOUT
 
 #: Response-Envelope Standard v1's closed error enum, harmonized across the fleet.
 FLEET_ERROR_CODES: frozenset[str] = frozenset(
@@ -138,7 +140,7 @@ def upstream_request_id(exc: BaseException) -> str | None:
 def transport_failure(exc: BaseException) -> str | None:
     """Classify the router's OWN backend transport failure (issue #272), else ``None``.
 
-    ``backend_timeout`` for ``GF_BACKEND_TIMEOUT`` (the MCP session's 408) or an httpx
+    ``backend_timeout`` for ``GF_BACKEND_TIMEOUT`` (the MCP session's REQUEST_TIMEOUT, -32001 in SDK v2) or an httpx
     timeout; ``backend_unreachable`` for a connect/network error. An in-band backend
     envelope arrives without such a cause and stays ``None``.
     """
@@ -148,11 +150,11 @@ def transport_failure(exc: BaseException) -> str | None:
         if current is None or id(current) in seen:
             return None
         seen.add(id(current))
-        if isinstance(current, McpError) and current.error.code == httpx.codes.REQUEST_TIMEOUT:
+        if isinstance(current, MCPError) and current.error.code == REQUEST_TIMEOUT:
             return "backend_timeout"
-        if isinstance(current, TimeoutError | httpx.TimeoutException):
+        if isinstance(current, TimeoutError | httpx.TimeoutException | httpx2.TimeoutException):
             return "backend_timeout"
-        if isinstance(current, httpx.NetworkError):
+        if isinstance(current, httpx.NetworkError | httpx2.NetworkError):
             return "backend_unreachable"
         current = current.__cause__ or current.__context__
     return None

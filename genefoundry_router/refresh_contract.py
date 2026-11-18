@@ -22,7 +22,9 @@ def validate_fastmcp_refresh_contract() -> None:
         '"Refresh token mapping not found"',
         '"Upstream token not found"',
         '"Refresh not supported for this token"',
-        'f"Upstream refresh failed: {e}"',
+        '"Upstream refresh token was rejected"',
+        '"Upstream access token has a non-positive expires_in"',
+        "except OAuthError as e:",
     )
     if any(fragment not in load_source for fragment in required_load) or any(
         fragment not in exchange_source for fragment in required_exchange

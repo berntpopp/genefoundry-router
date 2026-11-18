@@ -2,6 +2,42 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.11.0] - 2026-11-18
+
+### Changed
+
+- Upgrade FastMCP 3.4.11 → 4.2.2 and the MCP Python SDK 1.30 → 2.3 (prerequisite for serving
+  Skills over MCP, SEP-2640). The router now also speaks the sessionless 2026-07-28 protocol
+  era (`server/discover`, `mcp-method`/`mcp-name` headers) alongside the legacy handshake;
+  backend proxy connections stay on the handshake era, so 3.x and 4.x backends both work.
+- The proxy HTTP pool and transport-error classification moved to `httpx2` (FastMCP 4's client
+  stack); `httpx2` is now a direct dependency. The `beartype<0.23` constraint is dropped.
+
+### Security
+
+- No-token-passthrough: FastMCP 4 moved `forward_incoming_headers` from the transport to the
+  client and defaults it to `True`; the old attribute-probe became a silent no-op. Forwarding is
+  now disabled at `ProxyClient(..., forward_incoming_headers=False)` construction.
+- Not-found reflection guard: Layer 3 ported to SDK 2's `get/add_request_handler`; Layer 1 now
+  also preflights the `call_tool` meta-tool's target, which FastMCP 4 rejects (echoing the name)
+  before re-entering middleware. The resource/prompt backstop now raises
+  `MCPError(INVALID_PARAMS)` with its fixed message (SDK 2 would send a plain exception as code 0).
+- OAuth log redaction: markers re-pinned to FastMCP 4.2.2 (`Upstream OAuth token refresh
+  failed`) plus five new 4.x OAuth log lines (refresh claim extraction, cookie decode, ID-JAG).
+- CORS allows the modern-era `mcp-method` and `mcp-name` request headers.
+
+### Fixed
+
+- Backend timeouts are classified again: SDK 2 signals them as `REQUEST_TIMEOUT` (-32001), not
+  HTTP 408, and FastMCP raises `httpx2` (not `httpx`) transport errors.
+- OAuth refresh observability classifies FastMCP 4's raw upstream `OAuthError` as
+  `upstream_other` instead of `internal_error`.
+
+### Deploy notes
+
+- Rolling order is free (router proxies use the handshake era). OAuthProxy 4.x adds RFC 9207
+  `iss` and asks for consent once more per client with `require_authorization_consent="remember"`.
+
 ## [0.10.17] - 2026-11-13
 
 ### Fixed

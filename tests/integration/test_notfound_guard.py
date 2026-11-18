@@ -27,7 +27,7 @@ from fastmcp import Client, FastMCP
 from fastmcp.server.providers.base import Provider
 from mcp.shared.memory import create_client_server_memory_streams
 from mcp.shared.message import SessionMessage
-from mcp.types import JSONRPCMessage, JSONRPCRequest
+from mcp.types import JSONRPCRequest
 from prometheus_client import generate_latest
 
 from genefoundry_router.config import RouterSettings
@@ -168,7 +168,7 @@ async def _drive_raw(server: FastMCP, method: str, params: dict[str, Any]) -> st
 
             async def run_server() -> None:
                 opts = low.create_initialization_options()
-                await low.run(sr, sw, opts, raise_exceptions=False, stateless=True)
+                await low.run(sr, sw, opts, raise_exceptions=False)
 
             tg.start_soon(run_server)
             await anyio.sleep(0.05)
@@ -182,14 +182,14 @@ async def _drive_raw(server: FastMCP, method: str, params: dict[str, Any]) -> st
                     "clientInfo": {"name": "probe", "version": "0"},
                 },
             )
-            await cw.send(SessionMessage(message=JSONRPCMessage(init)))
+            await cw.send(SessionMessage(message=init))
             with anyio.move_on_after(2.0):
                 await cr.receive()
             req = JSONRPCRequest(jsonrpc="2.0", id=1, method=method, params=params)
-            await cw.send(SessionMessage(message=JSONRPCMessage(req)))
+            await cw.send(SessionMessage(message=req))
             with anyio.move_on_after(2.0):
                 resp = await cr.receive()
-                root = resp.message.root
+                root = resp.message  # SDK v2: JSONRPCMessage is a plain union
                 received = True
                 frame = f"{getattr(root, 'error', None)!r} {getattr(root, 'result', None)!r}"
             await anyio.sleep(0.05)
@@ -257,6 +257,7 @@ async def test_hostile_resource_uri_raw_is_not_reflected(capture_logs) -> None:
     server = _gateway()
     frame = await _drive_raw(server, "resources/read", {"uri": HOSTILE_URI})
     _assert_clean(frame, "hostile-resource-uri caller frame")
+    assert "code=-32602" in frame, frame  # spec not-found code, not SDK 2's bare 0
     _assert_clean(capture_logs.blob(), "hostile-resource-uri logs")
 
 
@@ -271,6 +272,7 @@ async def test_unknown_prompt_raw_is_not_reflected(capture_logs) -> None:
     server = _gateway()
     frame = await _drive_raw(server, "prompts/get", {"name": HOSTILE_PROMPT, "arguments": {}})
     _assert_clean(frame, "unknown-prompt caller frame")
+    assert "code=-32602" in frame, frame
     _assert_clean(capture_logs.blob(), "unknown-prompt logs")
 
 

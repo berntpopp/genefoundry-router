@@ -434,7 +434,7 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         cause = error.__cause__
         if isinstance(cause, OAuthError):
             return "upstream_invalid_grant" if cause.error == "invalid_grant" else "upstream_other"
-        if description.startswith("Upstream refresh failed"):
+        if description == "Upstream access token has a non-positive expires_in":
             return "upstream_other"
         return "internal_error"
 
@@ -474,6 +474,11 @@ class GeneFoundryOAuthProxy(OAuthProxy):
             reason = (
                 "overlapping_attempt" if attempt.overlapping else self._exchange_failure_reason(exc)
             )
+            await observe_in_thread(self._record_refresh, attempt, "failure", reason)
+            raise
+        except OAuthError:
+            # fastmcp 4 re-raises a non-invalid_grant upstream OAuthError unwrapped.
+            reason = "overlapping_attempt" if attempt.overlapping else "upstream_other"
             await observe_in_thread(self._record_refresh, attempt, "failure", reason)
             raise
         except BaseException:

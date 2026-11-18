@@ -39,7 +39,7 @@ async def test_server_surfaces_discovery_instructions(gnomad_fake):
     ]
     server = build_server(settings, registry, proxy_targets={"gnomad": gnomad_fake})
     async with Client(server) as client:
-        instructions = client.initialize_result.instructions or ""
+        instructions = client.instructions or ""
     assert "search_tools" in instructions
     assert "call_tool" in instructions
     assert "gnomad" in instructions
