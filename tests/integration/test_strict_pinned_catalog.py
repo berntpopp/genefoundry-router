@@ -76,3 +76,51 @@ async def test_strict_null_sentinels_are_stripped_before_dispatch() -> None:
     source = (await server.get_tool("gnomad_get_variant_frequencies")).parameters["properties"]
     for key, value in reached.items():
         assert value is not None or _is_nullable(source[key]), key
+
+
+def _closed_empty_maps(node: object, path: str = "root") -> list[str]:
+    """Non-root objects with no properties and extras forbidden: unusable in strict mode."""
+    found: list[str] = []
+    if isinstance(node, dict):
+        if (
+            path != "root"
+            and node.get("type") == "object"
+            and not node.get("properties")
+            and node.get("additionalProperties") is False
+        ):
+            found.append(path)
+        for key, value in node.items():
+            found += _closed_empty_maps(value, f"{path}.{key}")
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            found += _closed_empty_maps(value, f"{path}[{i}]")
+    return found
+
+
+async def test_open_maps_stay_expressible_in_strict_listing() -> None:
+    """Regression (bench audit after #295): open maps closed to {} made call_tool unusable."""
+    server, _ = _pinned_server()
+    async with Client(server) as client:
+        listed = {t.name: t.input_schema for t in await client.list_tools()}
+    for name, schema in listed.items():
+        assert not _closed_empty_maps(schema), (name, _closed_empty_maps(schema))
+        assert "propertyNames" not in json.dumps(schema), name
+    arguments = listed["call_tool"]["properties"]["arguments"]
+    assert {"type": "string"} in [{"type": b.get("type")} for b in arguments["anyOf"]]
+
+
+async def test_strict_client_can_call_any_tool_through_call_tool() -> None:
+    """A strict client passes call_tool.arguments and pinned open maps as JSON strings."""
+    server, _ = _pinned_server()
+    async with Client(server) as client:
+        via_meta = await client.call_tool(
+            "call_tool",
+            {"name": "hgnc_get_gene", "arguments": '{"query": "BRCA1", "response_mode": null}'},
+        )
+        pinned = await client.call_tool(
+            "clinpgx_search_records",
+            {"entity_type": "gene", "filters": '{"gene": "CYP2C19"}', "query": None},
+        )
+    assert json.loads(via_meta.content[0].text)["args"] == {"query": "BRCA1"}
+    reached = json.loads(pinned.content[0].text)["args"]
+    assert reached["filters"] == {"gene": "CYP2C19"}  # decoded back into an object
