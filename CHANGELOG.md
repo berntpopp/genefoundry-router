@@ -2,6 +2,16 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.11.1] - 2026-11-18
+
+### Security
+
+- MCP SDK 2 echoes an unknown JSON-RPC method name verbatim in the `METHOD_NOT_FOUND` error
+  `data` (legacy and 2026-07-28 eras). An outermost low-level middleware now strips it; the
+  SDK 2 runner's "dropped %r" / "no handler for notification" log lines are scrubbed and
+  `mcp.server.runner` joins the scrubbed source loggers. Regression test drives a hostile method
+  over the real app in both eras.
+
 ## [0.11.0] - 2026-11-18
 
 ### Changed

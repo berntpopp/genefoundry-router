@@ -69,3 +69,42 @@ def test_modern_era_discovers_lists_searches_and_fences_unknown_tool(gnomad_fake
 
 def test_cors_allows_modern_era_routing_headers() -> None:
     assert {"mcp-method", "mcp-name"} <= set(MCP_CORS_ALLOW_HEADERS)
+
+
+def test_unknown_jsonrpc_method_is_not_reflected(gnomad_fake) -> None:
+    """SDK 2 echoes an unknown method in METHOD_NOT_FOUND ``data``; the guard strips it."""
+    settings = RouterSettings(_env_file=None)
+    registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
+    app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+    legacy_headers = {
+        "accept": "application/json, text/event-stream",
+        "content-type": "application/json",
+        "mcp-protocol-version": "2025-06-18",
+    }
+    with TestClient(app, follow_redirects=False) as client:
+        client.post(
+            "/mcp",
+            headers=legacy_headers,
+            json={
+                "jsonrpc": "2.0",
+                "id": 0,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-06-18",
+                    "capabilities": {},
+                    "clientInfo": {"name": "probe", "version": "0"},
+                },
+            },
+        )
+        legacy = client.post(
+            "/mcp",
+            headers=legacy_headers,
+            json={"jsonrpc": "2.0", "id": 1, "method": _HOSTILE, "params": {}},
+        )
+        modern = _post(client, 2, _HOSTILE, {})
+
+    for resp in (legacy, modern):
+        error = resp.json()["error"]
+        assert error["code"] == -32601
+        assert "data" not in error
+        assert "evil" not in resp.text and "IGNORE" not in resp.text
