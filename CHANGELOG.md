@@ -4,6 +4,13 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Response-Envelope §2b: accept the identifier the user has** (#319). Entry-point tools accept
+  every identifier form they can already convert, echo `resolved_from: {input, form,
+  resolved_to}`, return candidates instead of guessing on ambiguity, and keep `invalid_input` +
+  the converter in `next_commands` where conversion needs another backend. DoD item added.
+
 ### Fixed
 
 - **Low-confidence fallback serves up to `GF_SEARCH_MAX_RESULTS` hits (was 2).** When the
