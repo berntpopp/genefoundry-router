@@ -1,0 +1,4300 @@
+# Agent-query evaluation set (offline only; added 2026-11-19, #306).
+# 858 distinct `search_tools` queries that LLM agents issued during genefoundry-bench runs
+# (dev-split tool-arm traces; experiments/2026-11-19-search-rerank-profile/trace_queries.json).
+# Synthetic benchmark queries: no user or patient data. They carry NO gold tool label, so
+# `category: agent_trace` marks them unlabeled and `style` records the production outcome
+# under router v0.10.8 + Jev floor 0.3 (prod_empty | prod_hits | prod_mixed).
+# Use: `uv run python scripts/search_rerank_report.py --tasks tests/discoverability/agent_queries.yaml`
+# reports the share each pipeline empties. This is NOT a CI gate or a tuning target:
+# keep descriptions and expansions blind to it, as with heldout_tasks.yaml.
+tasks:
+- id: a-001
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes and chromosome location cytogenetic location gene disease associations
+  expected: []
+- id: a-002
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search disease associated genes resolve disease gene associations
+  expected: []
+- id: a-003
+  category: agent_trace
+  style: prod_hits
+  query: search disease ontology or disease names for GenCC disease identifiers
+  expected: []
+- id: a-004
+  category: agent_trace
+  style: prod_hits
+  query: PanelApp retrieve genes from a panel by panel_id with chromosome location
+  expected: []
+- id: a-005
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location cytogenetic band chromosome position Ensembl gene
+  expected: []
+- id: a-006
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes search disease name associated gene list genetic disease
+  expected: []
+- id: a-007
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet get genes associated with disease get_disease_genes
+  expected: []
+- id: a-008
+  category: agent_trace
+  style: prod_hits
+  query: ClinGen search gene disease validity assertions for distal renal tubular acidosis
+  expected: []
+- id: a-009
+  category: agent_trace
+  style: prod_hits
+  query: get chromosome genomic location gene symbol chromosome coordinates human gene
+  expected: []
+- id: a-010
+  category: agent_trace
+  style: prod_hits
+  query: search gene disease associations by disease name or phenotype disease-to-gene list
+  expected: []
+- id: a-011
+  category: agent_trace
+  style: prod_hits
+  query: search Orphanet disease records by name query disorders search diseases
+  expected: []
+- id: a-012
+  category: agent_trace
+  style: prod_hits
+  query: gene details genomic location chromosome cytogenetic band gene symbol Ensembl gene
+  expected: []
+- id: a-013
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes, gene genomic location chromosome coordinates
+  expected: []
+- id: a-014
+  category: agent_trace
+  style: prod_hits
+  query: disease to gene associations gene disease relation records disease-associated genes GenCC
+  expected: []
+- id: a-015
+  category: agent_trace
+  style: prod_hits
+  query: get gene disease associations for bile acid malabsorption disease genes
+  expected: []
+- id: a-016
+  category: agent_trace
+  style: prod_hits
+  query: HGNC gene record chromosomal location gene symbol chromosome location
+  expected: []
+- id: a-017
+  category: agent_trace
+  style: prod_hits
+  query: get disease details MONDO disease term cross references OMIM, genes
+  expected: []
+- id: a-018
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease and chromosome location genomic coordinates gene disease associations
+  expected: []
+- id: a-019
+  category: agent_trace
+  style: prod_hits
+  query: search genes associated with disease / disease to gene associations Currarino syndrome
+  expected: []
+- id: a-020
+  category: agent_trace
+  style: prod_hits
+  query: get disease curations gene assertions associated with MONDO disease genes
+  expected: []
+- id: a-021
+  category: agent_trace
+  style: prod_hits
+  query: gene genomic location chromosome for HGNC gene symbol chromosome cytogenetic location GRCh38
+  expected: []
+- id: a-022
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease MONDO disease gene associations list
+  expected: []
+- id: a-023
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes list genes for a disease gene-disease associations resolve disease
+  expected: []
+- id: a-024
+  category: agent_trace
+  style: prod_hits
+  query: search gene disease associations causal genes for a disease by disease name or MONDO achromatopsia
+  expected: []
+- id: a-025
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes chromosomal location gene disease associations
+  expected: []
+- id: a-026
+  category: agent_trace
+  style: prod_hits
+  query: disease to genes associated genes for MONDO disease identifier list disease gene association
+  expected: []
+- id: a-027
+  category: agent_trace
+  style: prod_hits
+  query: HGNC get gene record chromosome location
+  expected: []
+- id: a-028
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease and chromosomal location, disease gene list lookup by disease name
+  expected: []
+- id: a-029
+  category: agent_trace
+  style: prod_hits
+  query: gene details genomic chromosome location coordinates gene by symbol
+  expected: []
+- id: a-030
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location cytogenetic band genomic location gene symbol
+  expected: []
+- id: a-031
+  category: agent_trace
+  style: prod_hits
+  query: search disease gene associations gene-disease linked genes from disease name ORPHA MONDO
+  expected: []
+- id: a-032
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search disease curations by disease title return genes associated
+  expected: []
+- id: a-033
+  category: agent_trace
+  style: prod_hits
+  query: get gene details chromosome location cytogenetic band chromosome for gene symbol
+  expected: []
+- id: a-034
+  category: agent_trace
+  style: prod_hits
+  query: find genes associated with disease by disease name gene disease associations
+  expected: []
+- id: a-035
+  category: agent_trace
+  style: prod_hits
+  query: get gene details genomic location chromosome cytogenetic band human gene by symbol
+  expected: []
+- id: a-036
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search disease identifiers by disease name/title, find gene disease curations
+  expected: []
+- id: a-037
+  category: agent_trace
+  style: prod_hits
+  query: search disease gene associations for diabetes mellitus type and retrieve gene chromosome location
+  expected: []
+- id: a-038
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosomal location chromosome cytogenetic location gene symbols
+  expected: []
+- id: a-039
+  category: agent_trace
+  style: prod_hits
+  query: GenCC get genes curations for disease title disease gene validity list genes
+  expected: []
+- id: a-040
+  category: agent_trace
+  style: prod_hits
+  query: MONDO disease details cross references OMIM disease info
+  expected: []
+- id: a-041
+  category: agent_trace
+  style: prod_hits
+  query: hgnc_get_gene full gene record location chromosome cytogenetic location
+  expected: []
+- id: a-042
+  category: agent_trace
+  style: prod_hits
+  query: bulk retrieve gene chromosome location cytogenetic band for list of human gene symbols
+  expected: []
+- id: a-043
+  category: agent_trace
+  style: prod_hits
+  query: Buschke-Ollendorff syndrome associated genes disease gene chromosome cytogenetic location
+  expected: []
+- id: a-044
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene assertions for a disease get disease curations disease MONDO identifier
+  expected: []
+- id: a-045
+  category: agent_trace
+  style: prod_empty
+  query: gene disease associations for a disease phenotype list genes and genomic chromosome location
+  expected: []
+- id: a-046
+  category: agent_trace
+  style: prod_hits
+  query: search disease associated genes phenotype disease gene validity and gene chromosome location
+  expected: []
+- id: a-047
+  category: agent_trace
+  style: prod_hits
+  query: HPO term details get phenotype term annotations genes associated with phenotype
+  expected: []
+- id: a-048
+  category: agent_trace
+  style: prod_hits
+  query: retrieve HPO ontology term by identifier term name
+  expected: []
+- id: a-049
+  category: agent_trace
+  style: prod_hits
+  query: get gene chromosome location cytogenetic band gene details chromosome coordinates
+  expected: []
+- id: a-050
+  category: agent_trace
+  style: prod_hits
+  query: HGNC bulk lookup genes records chromosome location multiple genes
+  expected: []
+- id: a-051
+  category: agent_trace
+  style: prod_hits
+  query: HPO term phenotype search for B cell immunodeficiency phenotype, associated genes
+  expected: []
+- id: a-052
+  category: agent_trace
+  style: prod_hits
+  query: search HPO phenotype ontology terms by text name
+  expected: []
+- id: a-053
+  category: agent_trace
+  style: prod_hits
+  query: gene genomic location chromosome cytogenetic location gene details coordinates chromosome
+  expected: []
+- id: a-054
+  category: agent_trace
+  style: prod_hits
+  query: gencc_search_diseases
+  expected: []
+- id: a-055
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search disease associated genes gene-disease validity resolve disease query
+  expected: []
+- id: a-056
+  category: agent_trace
+  style: prod_hits
+  query: get gene details genomic chromosome location cytogenetic band gene coordinates
+  expected: []
+- id: a-057
+  category: agent_trace
+  style: prod_hits
+  query: search disease gene associations disease title gene curation gene-disease associations
+  expected: []
+- id: a-058
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic location genomic coordinates for genes by symbol
+  expected: []
+- id: a-059
+  category: agent_trace
+  style: prod_hits
+  query: HGNC gene group retrieve all genes in a gene group by group ID
+  expected: []
+- id: a-060
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease and chromosome location cytogenetic location gene disease associations
+  expected: []
+- id: a-061
+  category: agent_trace
+  style: prod_hits
+  query: search disease associated genes gene disease association lookup chromosome cytogenetic location
+  expected: []
+- id: a-062
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease gene associations search genes for disease
+  expected: []
+- id: a-063
+  category: agent_trace
+  style: prod_hits
+  query: gene disease associations and gene chromosome location genomic cytogenetic band
+  expected: []
+- id: a-064
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease by MONDO disease identifier get genes for disease
+  expected: []
+- id: a-065
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location cytogenetic band chromosome coordinates gene symbol
+  expected: []
+- id: a-066
+  category: agent_trace
+  style: prod_hits
+  query: PanelApp get panel genes members by panel id gene list associated disease
+  expected: []
+- id: a-067
+  category: agent_trace
+  style: prod_hits
+  query: search disease associated genes by disease label OMIM gene panel renal tubular acidosis distal genes
+  expected: []
+- id: a-068
+  category: agent_trace
+  style: prod_hits
+  query: search or resolve disease in GenCC diseases by disease name query
+  expected: []
+- id: a-069
+  category: agent_trace
+  style: prod_hits
+  query: search gene disease associations by disease name, list genes associated with disease
+  expected: []
+- id: a-070
+  category: agent_trace
+  style: prod_hits
+  query: get gene details including chromosome, start, end, genomic location for gene symbol
+  expected: []
+- id: a-071
+  category: agent_trace
+  style: prod_hits
+  query: gencc_search_diseases search disease names for gene disease association GenCC
+  expected: []
+- id: a-072
+  category: agent_trace
+  style: prod_hits
+  query: search disease associated genes and gene chromosome location
+  expected: []
+- id: a-073
+  category: agent_trace
+  style: prod_hits
+  query: find genes associated with a disease phenotype or disease-gene relationships
+  expected: []
+- id: a-074
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosomal cytogenetic location gene details human chromosome band
+  expected: []
+- id: a-075
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search disease names terms disease resolver
+  expected: []
+- id: a-076
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes for Currarino syndrome genetic cause genes chromosome cytogenetic locations
+  expected: []
+- id: a-077
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location cytogenetic band chromosome coordinates genomic location
+  expected: []
+- id: a-078
+  category: agent_trace
+  style: prod_hits
+  query: MONDO disease get disease associated genes gene associations MONDO:0976264
+  expected: []
+- id: a-079
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease and chromosome location genomic coordinates gene details
+  expected: []
+- id: a-080
+  category: agent_trace
+  style: prod_hits
+  query: get gene chromosomal location chromosome cytogenetic location gene details genomic coordinates
+  expected: []
+- id: a-081
+  category: agent_trace
+  style: prod_hits
+  query: search disease associated genes for phenotype or disorder and retrieve gene chromosomal location
+  expected: []
+- id: a-082
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene disease validity assertions disease to genes associated records
+  expected: []
+- id: a-083
+  category: agent_trace
+  style: prod_hits
+  query: get gene details chromosome cytogenetic location chromosome band of human gene symbol
+  expected: []
+- id: a-084
+  category: agent_trace
+  style: prod_empty
+  query: disease associated genes list genes for a disease and gene chromosome location cytogenetic bands
+  expected: []
+- id: a-085
+  category: agent_trace
+  style: prod_hits
+  query: search genes associated to disease MONDO disease gene associations
+  expected: []
+- id: a-086
+  category: agent_trace
+  style: prod_hits
+  query: get gene details chromosome location cytogenetic location chromosomal band gene symbol
+  expected: []
+- id: a-087
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet get disease genes associations tool
+  expected: []
+- id: a-088
+  category: agent_trace
+  style: prod_hits
+  query: search Orphanet diseases by name query disease search
+  expected: []
+- id: a-089
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic location gene details genomic location
+  expected: []
+- id: a-090
+  category: agent_trace
+  style: prod_hits
+  query: gene disease associations for disease title genetic related genes query disease
+  expected: []
+- id: a-091
+  category: agent_trace
+  style: prod_hits
+  query: find genes associated with disease and their chromosome locations / cytogenetic location
+  expected: []
+- id: a-092
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search gene disease validity associations by disease
+  expected: []
+- id: a-093
+  category: agent_trace
+  style: prod_hits
+  query: get gene details chromosome location human genome gene symbol location chromosome cytogenetic band
+  expected: []
+- id: a-094
+  category: agent_trace
+  style: prod_hits
+  query: genes associated to MONDO disease ID disease to gene associations
+  expected: []
+- id: a-095
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location genomic location cytogenetic location gene symbol
+  expected: []
+- id: a-096
+  category: agent_trace
+  style: prod_hits
+  query: disease to associated genes retrieve genes for disease MONDO
+  expected: []
+- id: a-097
+  category: agent_trace
+  style: prod_hits
+  query: gene genomic chromosome location cytogenetic band gene details
+  expected: []
+- id: a-098
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes genomic location chromosome cytogenetic location gene details
+  expected: []
+- id: a-099
+  category: agent_trace
+  style: prod_hits
+  query: search genes associated with disease phenotype disease to gene associations
+  expected: []
+- id: a-100
+  category: agent_trace
+  style: prod_hits
+  query: search Orphanet diseases by text term
+  expected: []
+- id: a-101
+  category: agent_trace
+  style: prod_hits
+  query: GenCC get disease gene curations disease title or OMIM
+  expected: []
+- id: a-102
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location cytogenetic band genomic chromosome position gene symbol
+  expected: []
+- id: a-103
+  category: agent_trace
+  style: prod_empty
+  query: GenCC gene disease associations list genes for a disease; gene chromosome location
+  expected: []
+- id: a-104
+  category: agent_trace
+  style: prod_hits
+  query: get gene details chromosome location cytogenetic location chromosome start end gene symbol
+  expected: []
+- id: a-105
+  category: agent_trace
+  style: prod_hits
+  query: disease gene associations catalog list genes for disease phenotype type 1 diabetes mellitus
+  expected: []
+- id: a-106
+  category: agent_trace
+  style: prod_hits
+  query: HGNC get_gene full record location chromosome cytogenetic location
+  expected: []
+- id: a-107
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease and chromosome cytogenetic location gene details chromosome
+  expected: []
+- id: a-108
+  category: agent_trace
+  style: prod_hits
+  query: search genes associated with a disease phenotype disease gene associations
+  expected: []
+- id: a-109
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location cytogenetic band gene genomic location
+  expected: []
+- id: a-110
+  category: agent_trace
+  style: prod_hits
+  query: search HPO phenotype terms by text vascular malformation
+  expected: []
+- id: a-111
+  category: agent_trace
+  style: prod_hits
+  query: HGNC get full gene record gene symbol chromosome location cytogenetic band
+  expected: []
+- id: a-112
+  category: agent_trace
+  style: prod_hits
+  query: search disease associated genes for B-cell immunodeficiency with chromosome / genomic location
+  expected: []
+- id: a-113
+  category: agent_trace
+  style: prod_hits
+  query: HPO search ontology phenotype terms full text phenotype search
+  expected: []
+- id: a-114
+  category: agent_trace
+  style: prod_hits
+  query: gene details gene chromosome location chromosome and cytogenetic band for HGNC gene symbol
+  expected: []
+- id: a-115
+  category: agent_trace
+  style: prod_hits
+  query: get gene genomic coordinates chromosome location for human genes gene details
+  expected: []
+- id: a-116
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet search diseases by disease name query
+  expected: []
+- id: a-117
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene disease associations for disease MONDO gene disease validity
+  expected: []
+- id: a-118
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease phenotype and chromosome location gene disease associations
+  expected: []
+- id: a-119
+  category: agent_trace
+  style: prod_hits
+  query: gene disease validity associations search disease name associated genes OMIM Orphanet gene-disease
+  expected: []
+- id: a-120
+  category: agent_trace
+  style: prod_hits
+  query: HGNC get members of gene group Superoxide dismutases gene group
+  expected: []
+- id: a-121
+  category: agent_trace
+  style: prod_hits
+  query: gene genomic chromosome location coordinates chromosome cytoband for gene symbol
+  expected: []
+- id: a-122
+  category: agent_trace
+  style: prod_hits
+  query: find genes associated with disease MONDO id disease gene association curated genetic disease
+  expected: []
+- id: a-123
+  category: agent_trace
+  style: prod_hits
+  query: gene genomic chromosome location cytogenetic band coordinates chromosome gene details human gene
+  expected: []
+- id: a-124
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search gene-disease associations disease query returns associated gene list for disease
+  expected: []
+- id: a-125
+  category: agent_trace
+  style: prod_hits
+  query: disease gene association search genes for disease disease to gene associations Orphanet
+  expected: []
+- id: a-126
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location chromosome cytogenetic band gene record
+  expected: []
+- id: a-127
+  category: agent_trace
+  style: prod_empty
+  query: get genes associated with disease MONDO disease gene list and gene genomic chromosome location
+  expected: []
+- id: a-128
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location cytogenetic band chromosome start end
+  expected: []
+- id: a-129
+  category: agent_trace
+  style: prod_hits
+  query: OMIM disease associated genes genes for disease HPO disease CURIE or gene disease annotations
+  expected: []
+- id: a-130
+  category: agent_trace
+  style: prod_hits
+  query: mondo get disease details cross references OMIM identifiers disease synonyms
+  expected: []
+- id: a-131
+  category: agent_trace
+  style: prod_hits
+  query: MONDO disease associated genes gene-disease associations for MONDO identifier disease genes
+  expected: []
+- id: a-132
+  category: agent_trace
+  style: prod_hits
+  query: disease to associated genes gene-disease associations and gene chromosome location
+  expected: []
+- id: a-133
+  category: agent_trace
+  style: prod_hits
+  query: search disease gene associations for exact disease title / genes associated phenotype disease
+  expected: []
+- id: a-134
+  category: agent_trace
+  style: prod_hits
+  query: search Orphanet disease disorders by keyword text
+  expected: []
+- id: a-135
+  category: agent_trace
+  style: prod_hits
+  query: gene genomic location chromosome cytogenetic band for gene symbol
+  expected: []
+- id: a-136
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic band gene details gene summary
+  expected: []
+- id: a-137
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease gene associations curated gene disease validity records search disease genes
+  expected: []
+- id: a-138
+  category: agent_trace
+  style: prod_empty
+  query: gencc get disease curations gene assertions disease genes chromosome location
+  expected: []
+- id: a-139
+  category: agent_trace
+  style: prod_hits
+  query: get_disease_curations
+  expected: []
+- id: a-140
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosomal location chromosome cytogenetic band gene genomic location
+  expected: []
+- id: a-141
+  category: agent_trace
+  style: prod_hits
+  query: gene details gene genomic location chromosome GRCh38 chromosome location gene coordinates Ensembl
+  expected: []
+- id: a-142
+  category: agent_trace
+  style: prod_hits
+  query: get genes associated with MONDO disease disease genes curations GenCC
+  expected: []
+- id: a-143
+  category: agent_trace
+  style: prod_hits
+  query: disease gene associations genes linked to disease condition query disease to genes associated
+  expected: []
+- id: a-144
+  category: agent_trace
+  style: prod_hits
+  query: MONDO disease detail retrieve cross references OMIM disease id disease term
+  expected: []
+- id: a-145
+  category: agent_trace
+  style: prod_hits
+  query: get genes associated with disease gene disease curations MONDO disease id
+  expected: []
+- id: a-146
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location genomic location cytogenetic band gene symbol
+  expected: []
+- id: a-147
+  category: agent_trace
+  style: prod_empty
+  query: Orphanet disease associated genes list genes chromosome location disease
+  expected: []
+- id: a-148
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with MONDO disease phenotype disease-gene associations
+  expected: []
+- id: a-149
+  category: agent_trace
+  style: prod_hits
+  query: gene genomic location chromosome cytogenetic band gene details chromosome coordinates
+  expected: []
+- id: a-150
+  category: agent_trace
+  style: prod_hits
+  query: Find genes associated with a disease and their chromosome locations / cytogenetic location
+  expected: []
+- id: a-151
+  category: agent_trace
+  style: prod_hits
+  query: gene-disease associations find disease genes MONDO disease gene related genes chromosome coordinates
+  expected: []
+- id: a-152
+  category: agent_trace
+  style: prod_hits
+  query: get gene details with chromosome location cytogenetic band genome coordinates for gene symbol
+  expected: []
+- id: a-153
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome cytogenetic location chromosome band location gene symbol
+  expected: []
+- id: a-154
+  category: agent_trace
+  style: prod_hits
+  query: search disease associated genes and retrieve gene chromosome location cytogenetic coordinates
+  expected: []
+- id: a-155
+  category: agent_trace
+  style: prod_hits
+  query: disease to genes known associated disease genes search disease name phenotype associated genes
+  expected: []
+- id: a-156
+  category: agent_trace
+  style: prod_hits
+  query: get HGNC full gene record chromosomal location cytogenetic chromosome locus gene symbol
+  expected: []
+- id: a-157
+  category: agent_trace
+  style: prod_hits
+  query: search Orphanet disorders disease names query Orofaciodigital syndrome XIV
+  expected: []
+- id: a-158
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases by disease name genetic condition disease-gene associations
+  expected: []
+- id: a-159
+  category: agent_trace
+  style: prod_hits
+  query: find genes associated with disease / disease-to-gene associations for Medullary thyroid carcinoma
+  expected: []
+- id: a-160
+  category: agent_trace
+  style: prod_hits
+  query: disease gene associations retrieve genes for disease and chromosomal location
+  expected: []
+- id: a-161
+  category: agent_trace
+  style: prod_hits
+  query: get gene details genomic chromosome location start end cytogenetic band
+  expected: []
+- id: a-162
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease gene assertions genes for MONDO disease curations
+  expected: []
+- id: a-163
+  category: agent_trace
+  style: prod_hits
+  query: batch get HGNC gene records location for multiple genes
+  expected: []
+- id: a-164
+  category: agent_trace
+  style: prod_hits
+  query: gene details chromosome location cytogenetic location gene symbol
+  expected: []
+- id: a-165
+  category: agent_trace
+  style: prod_hits
+  query: PanelApp get list genes in panel panel_id region scores
+  expected: []
+- id: a-166
+  category: agent_trace
+  style: prod_hits
+  query: batch multiple HGNC gene records symbols chromosome location cytogenetic location
+  expected: []
+- id: a-167
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic chromosomal band gene details genomic location gene symbol
+  expected: []
+- id: a-168
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease gene curation associations list genes for disease identifier
+  expected: []
+- id: a-169
+  category: agent_trace
+  style: prod_hits
+  query: search genes associated with a disease phenotype disease-to-gene association rare genetic disease
+  expected: []
+- id: a-170
+  category: agent_trace
+  style: prod_hits
+  query: search Orphanet disease disorders by name
+  expected: []
+- id: a-171
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases genetic condition name associations gene disease
+  expected: []
+- id: a-172
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome cytogenetic location genomic location gene details chromosome position
+  expected: []
+- id: a-173
+  category: agent_trace
+  style: prod_hits
+  query: HGNC list genes in gene group Superoxide dismutases group gene group id
+  expected: []
+- id: a-174
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes find genes for disease condition genetic disorder disease-gene associations
+  expected: []
+- id: a-175
+  category: agent_trace
+  style: prod_hits
+  query: UniProt retrieve full protein entry domains domain architecture for gene symbol NUTM2G
+  expected: []
+- id: a-176
+  category: agent_trace
+  style: prod_hits
+  query: get full UniProt protein record annotations protein domains description
+  expected: []
+- id: a-177
+  category: agent_trace
+  style: prod_hits
+  query: uniprot_get_protein
+  expected: []
+- id: a-178
+  category: agent_trace
+  style: prod_hits
+  query: protein domain architecture InterPro Pfam domain annotation for gene protein family NUTM2G
+  expected: []
+- id: a-179
+  category: agent_trace
+  style: prod_empty
+  query: lookup InterPro identifier IPR024309 or Pfam PF12881 domain name description
+  expected: []
+- id: a-180
+  category: agent_trace
+  style: prod_hits
+  query: UniProt SPARQL search example query retrieve protein cross reference Pfam label description
+  expected: []
+- id: a-181
+  category: agent_trace
+  style: prod_hits
+  query: HPO get term details by HPO id ontology term name and synonyms
+  expected: []
+- id: a-182
+  category: agent_trace
+  style: prod_hits
+  query: retrieve article abstract by PMC ID full text metadata abstract PubMed Central
+  expected: []
+- id: a-183
+  category: agent_trace
+  style: prod_hits
+  query: lookup PMC identifier PMC article to PubMed PMID
+  expected: []
+- id: a-184
+  category: agent_trace
+  style: prod_empty
+  query: retrieve full text of PMC article by PMC ID, full article text
+  expected: []
+- id: a-185
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text article fetch by PMC identifier
+  expected: []
+- id: a-186
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central PMC article full text retrieval
+  expected: []
+- id: a-187
+  category: agent_trace
+  style: prod_empty
+  query: search or fetch biomedical literature article full text PMC
+  expected: []
+- id: a-188
+  category: agent_trace
+  style: prod_empty
+  query: get PMC article text using pmcid full text XML
+  expected: []
+- id: a-189
+  category: agent_trace
+  style: prod_empty
+  query: retrieve article document content by PMID PMC id fulltext
+  expected: []
+- id: a-190
+  category: agent_trace
+  style: prod_empty
+  query: literature full text article fetch PMC
+  expected: []
+- id: a-191
+  category: agent_trace
+  style: prod_mixed
+  query: PMC
+  expected: []
+- id: a-192
+  category: agent_trace
+  style: prod_empty
+  query: fetch full text from PubMed Central document XML
+  expected: []
+- id: a-193
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages full text by PMID PMC direct passage retrieval
+  expected: []
+- id: a-194
+  category: agent_trace
+  style: prod_hits
+  query: PubTator diagnostics recent errors recovery
+  expected: []
+- id: a-195
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PMC full text article by PMID and count tables article XML
+  expected: []
+- id: a-196
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central article details full text XML table count PMID
+  expected: []
+- id: a-197
+  category: agent_trace
+  style: prod_empty
+  query: PMC article metadata tables full text by PMID
+  expected: []
+- id: a-198
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC article full text by PMID
+  expected: []
+- id: a-199
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central PMC full text article XML fetch NCBI E-utilities
+  expected: []
+- id: a-200
+  category: agent_trace
+  style: prod_empty
+  query: article full text tables supplementary table PMC
+  expected: []
+- id: a-201
+  category: agent_trace
+  style: prod_empty
+  query: get article content from PubMed Central PMC fulltext tables XML by PMC ID
+  expected: []
+- id: a-202
+  category: agent_trace
+  style: prod_empty
+  query: PMC table count article full text
+  expected: []
+- id: a-203
+  category: agent_trace
+  style: prod_hits
+  query: publication passages full text retrieve sections tables PMID PMC
+  expected: []
+- id: a-204
+  category: agent_trace
+  style: prod_hits
+  query: PubTator diagnostics recent errors
+  expected: []
+- id: a-205
+  category: agent_trace
+  style: prod_empty
+  query: PMC article table extraction count number tables article PMID
+  expected: []
+- id: a-206
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text search retrieve article by PMID PMC API
+  expected: []
+- id: a-207
+  category: agent_trace
+  style: prod_empty
+  query: fetch open access full text PMC article XML metadata body
+  expected: []
+- id: a-208
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central PMC table list table count article
+  expected: []
+- id: a-209
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PMC article full text figure captions by PMC ID
+  expected: []
+- id: a-210
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central PMC full text article lookup captions figures XML
+  expected: []
+- id: a-211
+  category: agent_trace
+  style: prod_empty
+  query: search biomedical literature article PMC full text
+  expected: []
+- id: a-212
+  category: agent_trace
+  style: prod_empty
+  query: fetch full text of PubMed Central article using PMC ID
+  expected: []
+- id: a-213
+  category: agent_trace
+  style: prod_empty
+  query: PMC article figures figure caption legends
+  expected: []
+- id: a-214
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text XML get article PMC identifier
+  expected: []
+- id: a-215
+  category: agent_trace
+  style: prod_empty
+  query: get publication passages full text PMC article figure legends
+  expected: []
+- id: a-216
+  category: agent_trace
+  style: prod_hits
+  query: retrieve article sections passages from PMC full text
+  expected: []
+- id: a-217
+  category: agent_trace
+  style: prod_empty
+  query: fetch figure captions from open access PMC full text for PMID
+  expected: []
+- id: a-218
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text article retrieval BioC figure caption legends captions XML endpoint
+  expected: []
+- id: a-219
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages PMID full article passages
+  expected: []
+- id: a-220
+  category: agent_trace
+  style: prod_empty
+  query: download PMC manuscript XML get figure legends from PMCID
+  expected: []
+- id: a-221
+  category: agent_trace
+  style: prod_hits
+  query: STRING protein interaction between two specific proteins pairwise interaction score MAP3K1 HRAS
+  expected: []
+- id: a-222
+  category: agent_trace
+  style: prod_hits
+  query: HGNC gene details approved symbol aliases synonyms NUTM2G
+  expected: []
+- id: a-223
+  category: agent_trace
+  style: prod_hits
+  query: gene details approved full gene name HGNC name for ENSG00000012048 BRCA1
+  expected: []
+- id: a-224
+  category: agent_trace
+  style: prod_hits
+  query: protein domain architecture domain annotations for gene protein UniProt domains
+  expected: []
+- id: a-225
+  category: agent_trace
+  style: prod_hits
+  query: Get HPO term details for canonical HP ID, including related or child terms
+  expected: []
+- id: a-226
+  category: agent_trace
+  style: prod_hits
+  query: retrieve PMC article abstract by PMC ID, full text or abstract from PubMed Central
+  expected: []
+- id: a-227
+  category: agent_trace
+  style: prod_hits
+  query: resolve PMC ID PMCID to PMID publication identifier
+  expected: []
+- id: a-228
+  category: agent_trace
+  style: prod_empty
+  query: retrieve full text of PubMed Central PMC article by PMC ID
+  expected: []
+- id: a-229
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text article fetch by PMC ID
+  expected: []
+- id: a-230
+  category: agent_trace
+  style: prod_empty
+  query: get full text from Europe PMC / PubMed Central article PMCID
+  expected: []
+- id: a-231
+  category: agent_trace
+  style: prod_empty
+  query: article full text PMC XML download
+  expected: []
+- id: a-232
+  category: agent_trace
+  style: prod_empty
+  query: retrieve article by PMCID full text
+  expected: []
+- id: a-233
+  category: agent_trace
+  style: prod_empty
+  query: get publication passages full article text PMCID PMID
+  expected: []
+- id: a-234
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PMC article full text and count tables from PMID or PMC ID
+  expected: []
+- id: a-235
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central PMC article XML fetch full text by PMID tables count
+  expected: []
+- id: a-236
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PMC full-text article XML, tables, by PMCID
+  expected: []
+- id: a-237
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text XML article tables figure table count
+  expected: []
+- id: a-238
+  category: agent_trace
+  style: prod_empty
+  query: get publication passages PubMed Central full text article content table
+  expected: []
+- id: a-239
+  category: agent_trace
+  style: prod_empty
+  query: NCBI PMC article metadata table list counts BioC full text
+  expected: []
+- id: a-240
+  category: agent_trace
+  style: prod_empty
+  query: fetch article from PubMed Central PMC full text tables
+  expected: []
+- id: a-241
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central PMC article metadata full text XML figures captions
+  expected: []
+- id: a-242
+  category: agent_trace
+  style: prod_empty
+  query: fetch full text of an article from PubMed Central PMC identifier figure legend captions
+  expected: []
+- id: a-243
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text fetch article by PMCID, return figure legends
+  expected: []
+- id: a-244
+  category: agent_trace
+  style: prod_hits
+  query: article figure legends PubMed Central
+  expected: []
+- id: a-245
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC retrieve article full text XML by PMC id
+  expected: []
+- id: a-246
+  category: agent_trace
+  style: prod_empty
+  query: get publication passages full text article figure captions PMC
+  expected: []
+- id: a-247
+  category: agent_trace
+  style: prod_hits
+  query: get_publication_passages
+  expected: []
+- id: a-248
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PMC article figure legends full text passage figure section captions PMID
+  expected: []
+- id: a-249
+  category: agent_trace
+  style: prod_empty
+  query: figure caption extraction figure legend biomedical paper PMC
+  expected: []
+- id: a-250
+  category: agent_trace
+  style: prod_hits
+  query: pubtator diagnostics recent errors
+  expected: []
+- id: a-251
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC XML article body caption figure legends from PMCID
+  expected: []
+- id: a-252
+  category: agent_trace
+  style: prod_hits
+  query: STRING database retrieve interaction score for one pair of proteins two identifiers direct pair edge
+  expected: []
+- id: a-253
+  category: agent_trace
+  style: prod_hits
+  query: ClinGen search gene symbol exact gene lookup and gene disease validity search genes
+  expected: []
+- id: a-254
+  category: agent_trace
+  style: prod_hits
+  query: gene symbol aliases synonyms previous name NUTM2G gene
+  expected: []
+- id: a-255
+  category: agent_trace
+  style: prod_hits
+  query: gene details full approved gene name from Ensembl gene ID or symbol
+  expected: []
+- id: a-256
+  category: agent_trace
+  style: prod_hits
+  query: gnomAD lift over variant genomic coordinate between GRCh37 and GRCh38 variant
+  expected: []
+- id: a-257
+  category: agent_trace
+  style: prod_hits
+  query: protein domain architecture domains in protein for gene NUTM2G UniProt protein features
+  expected: []
+- id: a-258
+  category: agent_trace
+  style: prod_hits
+  query: NUTM2G protein domain family domain type Pfam SMART protein domain annotation
+  expected: []
+- id: a-259
+  category: agent_trace
+  style: prod_hits
+  query: get full UniProt protein record sequence function domain family keywords
+  expected: []
+- id: a-260
+  category: agent_trace
+  style: prod_hits
+  query: uniprot_get_protein accession protein function comments family domains
+  expected: []
+- id: a-261
+  category: agent_trace
+  style: prod_hits
+  query: InterPro Pfam protein sequence domain annotations for gene or protein accession
+  expected: []
+- id: a-262
+  category: agent_trace
+  style: prod_empty
+  query: lookup Pfam accession PF12881 family name domain description
+  expected: []
+- id: a-263
+  category: agent_trace
+  style: prod_hits
+  query: get article abstract by PMC ID PMC article full text abstract
+  expected: []
+- id: a-264
+  category: agent_trace
+  style: prod_hits
+  query: lookup PMC article identifier PMC ID find PMID and abstract PubMed
+  expected: []
+- id: a-265
+  category: agent_trace
+  style: prod_empty
+  query: retrieve full text of PubMed Central PMC article by PMC ID, article full text
+  expected: []
+- id: a-266
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text article fetch
+  expected: []
+- id: a-267
+  category: agent_trace
+  style: prod_empty
+  query: get PMC article full text by PMCID
+  expected: []
+- id: a-268
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC article full text
+  expected: []
+- id: a-269
+  category: agent_trace
+  style: prod_empty
+  query: retrieve article content full text from PMC
+  expected: []
+- id: a-270
+  category: agent_trace
+  style: prod_empty
+  query: download full text XML from PubMed Central using PMC ID
+  expected: []
+- id: a-271
+  category: agent_trace
+  style: prod_empty
+  query: NCBI PMC
+  expected: []
+- id: a-272
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central PMC article full text retrieve article tables count by PMID
+  expected: []
+- id: a-273
+  category: agent_trace
+  style: prod_empty
+  query: search PMC full text article by PMID and extract table count
+  expected: []
+- id: a-274
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PubMed article PMC full text XML tables
+  expected: []
+- id: a-275
+  category: agent_trace
+  style: prod_empty
+  query: PMC Central Open Access API full text XML article table
+  expected: []
+- id: a-276
+  category: agent_trace
+  style: prod_empty
+  query: NCBI PMC fetch article XML PMID full text
+  expected: []
+- id: a-277
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PMC article tables by PMC ID, full text XML, table count
+  expected: []
+- id: a-278
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages full text PMC article article sections
+  expected: []
+- id: a-279
+  category: agent_trace
+  style: prod_empty
+  query: PMC article XML retrieve from PubMed Central by PMCID table elements
+  expected: []
+- id: a-280
+  category: agent_trace
+  style: prod_empty
+  query: retrieve Europe PMC full text XML document by PMID or PMCID
+  expected: []
+- id: a-281
+  category: agent_trace
+  style: prod_empty
+  query: get PMC full text content article by PMID
+  expected: []
+- id: a-282
+  category: agent_trace
+  style: prod_hits
+  query: web search internet search for PMC article tables
+  expected: []
+- id: a-283
+  category: agent_trace
+  style: prod_hits
+  query: article table count PMC publication
+  expected: []
+- id: a-284
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PubMed Central PMC article full text figure captions by PMC ID
+  expected: []
+- id: a-285
+  category: agent_trace
+  style: prod_empty
+  query: PMC article figure legends captions full text
+  expected: []
+- id: a-286
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC full text article XML figure caption
+  expected: []
+- id: a-287
+  category: agent_trace
+  style: prod_empty
+  query: get publication passage full text figures captions PMC
+  expected: []
+- id: a-288
+  category: agent_trace
+  style: prod_hits
+  query: publication passage
+  expected: []
+- id: a-289
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PMC figure legends captions full text XML article PMC ID
+  expected: []
+- id: a-290
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC article full text figure legends
+  expected: []
+- id: a-291
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central PMC open access XML article retrieval
+  expected: []
+- id: a-292
+  category: agent_trace
+  style: prod_hits
+  query: pubtator_get_publication_passages
+  expected: []
+- id: a-293
+  category: agent_trace
+  style: prod_empty
+  query: figure caption article figure legend PMC
+  expected: []
+- id: a-294
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene disease validity assertions for gene NUTM2G dilated cardiomyopathy
+  expected: []
+- id: a-295
+  category: agent_trace
+  style: prod_hits
+  query: search gene-disease association NUTM2G dilated cardiomyopathy literature
+  expected: []
+- id: a-296
+  category: agent_trace
+  style: prod_hits
+  query: HGNC get full gene record aliases previous symbols synonyms gene symbol
+  expected: []
+- id: a-297
+  category: agent_trace
+  style: prod_hits
+  query: HGNC gene full name approved name for gene symbol
+  expected: []
+- id: a-298
+  category: agent_trace
+  style: prod_hits
+  query: get full approved gene name by Ensembl gene ID gene symbol HGNC name
+  expected: []
+- id: a-299
+  category: agent_trace
+  style: prod_hits
+  query: liftover variant coordinate between GRCh37 and GRCh38
+  expected: []
+- id: a-300
+  category: agent_trace
+  style: prod_hits
+  query: list variants in a genomic region interval by coordinates
+  expected: []
+- id: a-301
+  category: agent_trace
+  style: prod_hits
+  query: protein domain annotation Pfam InterPro for a protein or gene
+  expected: []
+- id: a-302
+  category: agent_trace
+  style: prod_empty
+  query: InterPro entry details domain name IPR024309
+  expected: []
+- id: a-303
+  category: agent_trace
+  style: prod_empty
+  query: InterPro protein family domain entry lookup
+  expected: []
+- id: a-304
+  category: agent_trace
+  style: prod_empty
+  query: EBI InterPro API entry name lookup
+  expected: []
+- id: a-305
+  category: agent_trace
+  style: prod_hits
+  query: NCBI gene information for NUTM2G
+  expected: []
+- id: a-306
+  category: agent_trace
+  style: prod_empty
+  query: Pfam domain family PF12881
+  expected: []
+- id: a-307
+  category: agent_trace
+  style: prod_hits
+  query: PMC article abstract full text
+  expected: []
+- id: a-308
+  category: agent_trace
+  style: prod_hits
+  query: resolve PMC ID to PMID
+  expected: []
+- id: a-309
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text article retrieve
+  expected: []
+- id: a-310
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central full text
+  expected: []
+- id: a-311
+  category: agent_trace
+  style: prod_hits
+  query: article full text fetch
+  expected: []
+- id: a-312
+  category: agent_trace
+  style: prod_hits
+  query: PMC article
+  expected: []
+- id: a-313
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text XML
+  expected: []
+- id: a-314
+  category: agent_trace
+  style: prod_empty
+  query: PMCID open access article text
+  expected: []
+- id: a-315
+  category: agent_trace
+  style: prod_hits
+  query: get publication by PMID
+  expected: []
+- id: a-316
+  category: agent_trace
+  style: prod_hits
+  query: PMC ID to PMID convert identifier
+  expected: []
+- id: a-317
+  category: agent_trace
+  style: prod_hits
+  query: BioC full text open access
+  expected: []
+- id: a-318
+  category: agent_trace
+  style: prod_empty
+  query: PMC article full text tables count PMID
+  expected: []
+- id: a-319
+  category: agent_trace
+  style: prod_empty
+  query: PubMed article retrieve full text
+  expected: []
+- id: a-320
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text article
+  expected: []
+- id: a-321
+  category: agent_trace
+  style: prod_hits
+  query: literature article metadata tables figures
+  expected: []
+- id: a-322
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC article full text XML
+  expected: []
+- id: a-323
+  category: agent_trace
+  style: prod_hits
+  query: fetch publication by PMID
+  expected: []
+- id: a-324
+  category: agent_trace
+  style: prod_empty
+  query: PMC OA full text XML efetch article body
+  expected: []
+- id: a-325
+  category: agent_trace
+  style: prod_hits
+  query: count tables figures in article
+  expected: []
+- id: a-326
+  category: agent_trace
+  style: prod_empty
+  query: fetch URL web page HTTP request content
+  expected: []
+- id: a-327
+  category: agent_trace
+  style: prod_empty
+  query: NCBI efetch PMC XML
+  expected: []
+- id: a-328
+  category: agent_trace
+  style: prod_empty
+  query: full text article retrieval open access
+  expected: []
+- id: a-329
+  category: agent_trace
+  style: prod_empty
+  query: pubmed central article sections tables figures count
+  expected: []
+- id: a-330
+  category: agent_trace
+  style: prod_empty
+  query: article
+  expected: []
+- id: a-331
+  category: agent_trace
+  style: prod_empty
+  query: europepmc
+  expected: []
+- id: a-332
+  category: agent_trace
+  style: prod_hits
+  query: bioc full text annotations
+  expected: []
+- id: a-333
+  category: agent_trace
+  style: prod_hits
+  query: fetch retrieve document content from URL or API
+  expected: []
+- id: a-334
+  category: agent_trace
+  style: prod_empty
+  query: table caption figure legend article
+  expected: []
+- id: a-335
+  category: agent_trace
+  style: prod_empty
+  query: PMC article full text figure captions
+  expected: []
+- id: a-336
+  category: agent_trace
+  style: prod_hits
+  query: PubMed Central article retrieve
+  expected: []
+- id: a-337
+  category: agent_trace
+  style: prod_hits
+  query: PMCID to PMID convert identifier
+  expected: []
+- id: a-338
+  category: agent_trace
+  style: prod_hits
+  query: STRING protein-protein interaction score between two specific proteins network
+  expected: []
+- id: a-339
+  category: agent_trace
+  style: prod_hits
+  query: STRING protein-protein interaction network between two proteins
+  expected: []
+- id: a-340
+  category: agent_trace
+  style: prod_hits
+  query: HGNC get gene aliases previous symbols
+  expected: []
+- id: a-341
+  category: agent_trace
+  style: prod_empty
+  query: fetch reference genome sequence base at genomic position
+  expected: []
+- id: a-342
+  category: agent_trace
+  style: prod_hits
+  query: liftover variant GRCh37 to GRCh38
+  expected: []
+- id: a-343
+  category: agent_trace
+  style: prod_hits
+  query: protein domain annotation InterPro Pfam for gene NUTM2G
+  expected: []
+- id: a-344
+  category: agent_trace
+  style: prod_empty
+  query: InterPro entry details IPR024309 IPR024310 Pfam PF12881 domain name
+  expected: []
+- id: a-345
+  category: agent_trace
+  style: prod_hits
+  query: NCBI gene summary NUTM2G protein domain
+  expected: []
+- id: a-346
+  category: agent_trace
+  style: prod_hits
+  query: fetch PMC article abstract full text
+  expected: []
+- id: a-347
+  category: agent_trace
+  style: prod_hits
+  query: PMC ID to PMID convert article
+  expected: []
+- id: a-348
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central article full text
+  expected: []
+- id: a-349
+  category: agent_trace
+  style: prod_empty
+  query: get publication full text by PMCID
+  expected: []
+- id: a-350
+  category: agent_trace
+  style: prod_hits
+  query: literature article text retrieval
+  expected: []
+- id: a-351
+  category: agent_trace
+  style: prod_empty
+  query: PMCID
+  expected: []
+- id: a-352
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text XML retrieve article
+  expected: []
+- id: a-353
+  category: agent_trace
+  style: prod_empty
+  query: PMC open access full text
+  expected: []
+- id: a-354
+  category: agent_trace
+  style: prod_hits
+  query: convert PMCID to PMID identifier mapping
+  expected: []
+- id: a-355
+  category: agent_trace
+  style: prod_hits
+  query: article full text fetch by identifier
+  expected: []
+- id: a-356
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text article tables count
+  expected: []
+- id: a-357
+  category: agent_trace
+  style: prod_empty
+  query: PubMed article full text retrieve
+  expected: []
+- id: a-358
+  category: agent_trace
+  style: prod_hits
+  query: literature
+  expected: []
+- id: a-359
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages full text by PMID
+  expected: []
+- id: a-360
+  category: agent_trace
+  style: prod_hits
+  query: article tables figures metadata
+  expected: []
+- id: a-361
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text XML fetch
+  expected: []
+- id: a-362
+  category: agent_trace
+  style: prod_hits
+  query: PMCID open access article
+  expected: []
+- id: a-363
+  category: agent_trace
+  style: prod_hits
+  query: pubtator article metadata annotations
+  expected: []
+- id: a-364
+  category: agent_trace
+  style: prod_hits
+  query: count tables in article
+  expected: []
+- id: a-365
+  category: agent_trace
+  style: prod_empty
+  query: fetch PubMed Central article by PMCID
+  expected: []
+- id: a-366
+  category: agent_trace
+  style: prod_hits
+  query: PMCID full text retrieval
+  expected: []
+- id: a-367
+  category: agent_trace
+  style: prod_empty
+  query: literature article figures
+  expected: []
+- id: a-368
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC article search full text
+  expected: []
+- id: a-369
+  category: agent_trace
+  style: prod_hits
+  query: BioC export full text annotations
+  expected: []
+- id: a-370
+  category: agent_trace
+  style: prod_hits
+  query: STRING protein-protein interaction between two specific proteins network
+  expected: []
+- id: a-371
+  category: agent_trace
+  style: prod_hits
+  query: STRING database interaction between two specific proteins exact pair network score
+  expected: []
+- id: a-372
+  category: agent_trace
+  style: prod_hits
+  query: PanelApp get panel genes list
+  expected: []
+- id: a-373
+  category: agent_trace
+  style: prod_hits
+  query: OMIM gene disease association NUTM2G
+  expected: []
+- id: a-374
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search genes
+  expected: []
+- id: a-375
+  category: agent_trace
+  style: prod_hits
+  query: ClinGen search genes
+  expected: []
+- id: a-376
+  category: agent_trace
+  style: prod_hits
+  query: gnomad compute variant liftover
+  expected: []
+- id: a-377
+  category: agent_trace
+  style: prod_hits
+  query: protein domain annotation InterPro Pfam for gene or protein
+  expected: []
+- id: a-378
+  category: agent_trace
+  style: prod_hits
+  query: InterPro entry lookup domain name by accession IPR
+  expected: []
+- id: a-379
+  category: agent_trace
+  style: prod_empty
+  query: InterPro protein family domain entry search API
+  expected: []
+- id: a-380
+  category: agent_trace
+  style: prod_empty
+  query: Pfam domain family PF12881 NUT domain
+  expected: []
+- id: a-381
+  category: agent_trace
+  style: prod_hits
+  query: uniprot get protein full entry comments domain
+  expected: []
+- id: a-382
+  category: agent_trace
+  style: prod_hits
+  query: NCBI gene protein conserved domains CDD
+  expected: []
+- id: a-383
+  category: agent_trace
+  style: prod_empty
+  query: PMC article abstract fetch full text
+  expected: []
+- id: a-384
+  category: agent_trace
+  style: prod_empty
+  query: PubMed article abstract by PMCID
+  expected: []
+- id: a-385
+  category: agent_trace
+  style: prod_hits
+  query: literature article metadata abstract
+  expected: []
+- id: a-386
+  category: agent_trace
+  style: prod_empty
+  query: PMC open access article full text by PMCID
+  expected: []
+- id: a-387
+  category: agent_trace
+  style: prod_empty
+  query: literature fetch article text by PMCID
+  expected: []
+- id: a-388
+  category: agent_trace
+  style: prod_hits
+  query: get article
+  expected: []
+- id: a-389
+  category: agent_trace
+  style: prod_hits
+  query: publication full text passages fetch
+  expected: []
+- id: a-390
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text XML article
+  expected: []
+- id: a-391
+  category: agent_trace
+  style: prod_hits
+  query: BioC JSON full text publication
+  expected: []
+- id: a-392
+  category: agent_trace
+  style: prod_empty
+  query: efetch PubMed Central XML full text article
+  expected: []
+- id: a-393
+  category: agent_trace
+  style: prod_hits
+  query: article full text retrieval by identifier
+  expected: []
+- id: a-394
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages full text sections tables
+  expected: []
+- id: a-395
+  category: agent_trace
+  style: prod_empty
+  query: article tables figures count PMC open access
+  expected: []
+- id: a-396
+  category: agent_trace
+  style: prod_empty
+  query: europepmc full text xml
+  expected: []
+- id: a-397
+  category: agent_trace
+  style: prod_hits
+  query: pmcid article metadata journal publication
+  expected: []
+- id: a-398
+  category: agent_trace
+  style: prod_hits
+  query: BioC JSON full text article retrieve by pmid
+  expected: []
+- id: a-399
+  category: agent_trace
+  style: prod_empty
+  query: count tables figures in paper
+  expected: []
+- id: a-400
+  category: agent_trace
+  style: prod_hits
+  query: PMC ID to PMID convert
+  expected: []
+- id: a-401
+  category: agent_trace
+  style: prod_empty
+  query: figure legend caption from open access article
+  expected: []
+- id: a-402
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text article figures
+  expected: []
+- id: a-403
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC open access full text XML
+  expected: []
+- id: a-404
+  category: agent_trace
+  style: prod_hits
+  query: STRING interaction network between two specific proteins
+  expected: []
+- id: a-405
+  category: agent_trace
+  style: prod_hits
+  query: STRING protein-protein interaction network between two proteins score
+  expected: []
+- id: a-406
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease curations genes for disease
+  expected: []
+- id: a-407
+  category: agent_trace
+  style: prod_hits
+  query: PanelApp get panel genes
+  expected: []
+- id: a-408
+  category: agent_trace
+  style: prod_hits
+  query: GenCC get disease curations gene disease associations
+  expected: []
+- id: a-409
+  category: agent_trace
+  style: prod_hits
+  query: GenCC get disease curations genes for disease
+  expected: []
+- id: a-410
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease curations genes for a disease
+  expected: []
+- id: a-411
+  category: agent_trace
+  style: prod_hits
+  query: gnomAD gene details coordinates cytoband
+  expected: []
+- id: a-412
+  category: agent_trace
+  style: prod_hits
+  query: Mondo get disease details xrefs genes
+  expected: []
+- id: a-413
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet get disease genes
+  expected: []
+- id: a-414
+  category: agent_trace
+  style: prod_hits
+  query: HPO disease get disease genes for phenotype OMIM
+  expected: []
+- id: a-415
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases genes associated with disease
+  expected: []
+- id: a-416
+  category: agent_trace
+  style: prod_hits
+  query: MONDO get disease term genes phenotypes
+  expected: []
+- id: a-417
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet disease genes associated
+  expected: []
+- id: a-418
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic band HGNC
+  expected: []
+- id: a-419
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene curations diseases for gene
+  expected: []
+- id: a-420
+  category: agent_trace
+  style: prod_hits
+  query: Mondo get disease details genes phenotypes
+  expected: []
+- id: a-421
+  category: agent_trace
+  style: prod_hits
+  query: OMIM disease gene chromosome location
+  expected: []
+- id: a-422
+  category: agent_trace
+  style: prod_hits
+  query: OMIM phenotype MIM number gene map
+  expected: []
+- id: a-423
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes HPO annotations
+  expected: []
+- id: a-424
+  category: agent_trace
+  style: prod_hits
+  query: search biomedical entities disease gene
+  expected: []
+- id: a-425
+  category: agent_trace
+  style: prod_empty
+  query: disease gene associations for a Mendelian disease list causative genes chromosome location
+  expected: []
+- id: a-426
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease gene validity gene disease associations
+  expected: []
+- id: a-427
+  category: agent_trace
+  style: prod_hits
+  query: get disease genes associated with MONDO term
+  expected: []
+- id: a-428
+  category: agent_trace
+  style: prod_hits
+  query: OMIM disease record genes chromosome location
+  expected: []
+- id: a-429
+  category: agent_trace
+  style: prod_hits
+  query: NCBI gene location chromosome cytogenetic band
+  expected: []
+- id: a-430
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic band Ensembl gene details
+  expected: []
+- id: a-431
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases genes by disease name
+  expected: []
+- id: a-432
+  category: agent_trace
+  style: prod_hits
+  query: MONDO get disease term genes associations
+  expected: []
+- id: a-433
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet disease genes associated genes for disease
+  expected: []
+- id: a-434
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search genes by disease
+  expected: []
+- id: a-435
+  category: agent_trace
+  style: prod_hits
+  query: Mondo disease get genes associations
+  expected: []
+- id: a-436
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location
+  expected: []
+- id: a-437
+  category: agent_trace
+  style: prod_hits
+  query: disease associated genes OpenTargets
+  expected: []
+- id: a-438
+  category: agent_trace
+  style: prod_hits
+  query: DisGeNET gene disease associations
+  expected: []
+- id: a-439
+  category: agent_trace
+  style: prod_hits
+  query: OMIM disease genes medullary thyroid carcinoma
+  expected: []
+- id: a-440
+  category: agent_trace
+  style: prod_hits
+  query: ClinGen gene disease validity search disease
+  expected: []
+- id: a-441
+  category: agent_trace
+  style: prod_hits
+  query: Mondo get disease record xrefs genes
+  expected: []
+- id: a-442
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic band bulk list genes
+  expected: []
+- id: a-443
+  category: agent_trace
+  style: prod_empty
+  query: genes associated with disease phenotype list with chromosome location
+  expected: []
+- id: a-444
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene disease validity curations for a disease
+  expected: []
+- id: a-445
+  category: agent_trace
+  style: prod_hits
+  query: HGNC gene details genomic location chromosome
+  expected: []
+- id: a-446
+  category: agent_trace
+  style: prod_empty
+  query: disease associated genes list with genomic coordinates
+  expected: []
+- id: a-447
+  category: agent_trace
+  style: prod_hits
+  query: genes for a disease Monarch phenotype gene associations
+  expected: []
+- id: a-448
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease curations genes for a MONDO disease
+  expected: []
+- id: a-449
+  category: agent_trace
+  style: prod_hits
+  query: HPO search phenotype term exact label vascular malformation
+  expected: []
+- id: a-450
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic band
+  expected: []
+- id: a-451
+  category: agent_trace
+  style: prod_hits
+  query: HPO search phenotype term by text
+  expected: []
+- id: a-452
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases genes for disease
+  expected: []
+- id: a-453
+  category: agent_trace
+  style: prod_hits
+  query: OMIM disease gene mapping
+  expected: []
+- id: a-454
+  category: agent_trace
+  style: prod_hits
+  query: disease gene associations for a disease or phenotype
+  expected: []
+- id: a-455
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases gene disease associations
+  expected: []
+- id: a-456
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic band coordinates
+  expected: []
+- id: a-457
+  category: agent_trace
+  style: prod_hits
+  query: gnomad get gene details coordinates
+  expected: []
+- id: a-458
+  category: agent_trace
+  style: prod_hits
+  query: search diseases by name OMIM phenotype
+  expected: []
+- id: a-459
+  category: agent_trace
+  style: prod_hits
+  query: gene disease associations search disease
+  expected: []
+- id: a-460
+  category: agent_trace
+  style: prod_hits
+  query: search Mondo disease by synonym or label
+  expected: []
+- id: a-461
+  category: agent_trace
+  style: prod_hits
+  query: OMIM disease phenotype search
+  expected: []
+- id: a-462
+  category: agent_trace
+  style: prod_empty
+  query: MalaCards disease genes
+  expected: []
+- id: a-463
+  category: agent_trace
+  style: prod_hits
+  query: get disease details genes associated with a MONDO disease
+  expected: []
+- id: a-464
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene disease associations for a disease
+  expected: []
+- id: a-465
+  category: agent_trace
+  style: prod_hits
+  query: HPO genes for phenotype term
+  expected: []
+- id: a-466
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease MONDO term
+  expected: []
+- id: a-467
+  category: agent_trace
+  style: prod_hits
+  query: OMIM disease entry genes chromosome location
+  expected: []
+- id: a-468
+  category: agent_trace
+  style: prod_hits
+  query: search diseases by phenotype or OMIM number
+  expected: []
+- id: a-469
+  category: agent_trace
+  style: prod_hits
+  query: MedGen disease genes associated
+  expected: []
+- id: a-470
+  category: agent_trace
+  style: prod_hits
+  query: OMIM phenotype map gene
+  expected: []
+- id: a-471
+  category: agent_trace
+  style: prod_hits
+  query: NCBI gene disease associations
+  expected: []
+- id: a-472
+  category: agent_trace
+  style: prod_hits
+  query: GenCC get disease curations genes associated with disease
+  expected: []
+- id: a-473
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet get disease details genes associated
+  expected: []
+- id: a-474
+  category: agent_trace
+  style: prod_empty
+  query: HPO get disease details name genes
+  expected: []
+- id: a-475
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet search diseases by label
+  expected: []
+- id: a-476
+  category: agent_trace
+  style: prod_hits
+  query: MONDO search disease terms
+  expected: []
+- id: a-477
+  category: agent_trace
+  style: prod_hits
+  query: GenCC get disease curations
+  expected: []
+- id: a-478
+  category: agent_trace
+  style: prod_hits
+  query: get gene details chromosome location cytogenetic band
+  expected: []
+- id: a-479
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet disease genes associated with a rare disease
+  expected: []
+- id: a-480
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease gene associations search diseases
+  expected: []
+- id: a-481
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases genes for disease MONDO
+  expected: []
+- id: a-482
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene disease associations for medullary thyroid carcinoma
+  expected: []
+- id: a-483
+  category: agent_trace
+  style: prod_hits
+  query: HPO genes associated with medullary thyroid carcinoma phenotype
+  expected: []
+- id: a-484
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location HGNC
+  expected: []
+- id: a-485
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene disease associations list genes for a disease
+  expected: []
+- id: a-486
+  category: agent_trace
+  style: prod_hits
+  query: HPO ontology term search phenotype lookup
+  expected: []
+- id: a-487
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases genes disease validity
+  expected: []
+- id: a-488
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases by text
+  expected: []
+- id: a-489
+  category: agent_trace
+  style: prod_hits
+  query: HPO search phenotype terms by text
+  expected: []
+- id: a-490
+  category: agent_trace
+  style: prod_hits
+  query: MONDO get disease details genes associated
+  expected: []
+- id: a-491
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases genes
+  expected: []
+- id: a-492
+  category: agent_trace
+  style: prod_hits
+  query: MONDO disease get genes associations
+  expected: []
+- id: a-493
+  category: agent_trace
+  style: prod_hits
+  query: MONDO disease genes associations
+  expected: []
+- id: a-494
+  category: agent_trace
+  style: prod_hits
+  query: OMIM disease phenotype gene mapping
+  expected: []
+- id: a-495
+  category: agent_trace
+  style: prod_empty
+  query: OMIM disease genes phenotype MIM gene map chromosome location
+  expected: []
+- id: a-496
+  category: agent_trace
+  style: prod_hits
+  query: disease to gene associations
+  expected: []
+- id: a-497
+  category: agent_trace
+  style: prod_hits
+  query: OMIM
+  expected: []
+- id: a-498
+  category: agent_trace
+  style: prod_hits
+  query: gnomad get gene details chromosome location
+  expected: []
+- id: a-499
+  category: agent_trace
+  style: prod_hits
+  query: gencc get disease curations genes for disease
+  expected: []
+- id: a-500
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic band NCBI gene details
+  expected: []
+- id: a-501
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search genes diseases gene-disease validity
+  expected: []
+- id: a-502
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search diseases gene disease validity
+  expected: []
+- id: a-503
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search genes associated with disease
+  expected: []
+- id: a-504
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease list disease genes
+  expected: []
+- id: a-505
+  category: agent_trace
+  style: prod_hits
+  query: Medullary thyroid carcinoma disease genes chromosome location
+  expected: []
+- id: a-506
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease with chromosome location cytogenetic band
+  expected: []
+- id: a-507
+  category: agent_trace
+  style: prod_empty
+  query: list genes for a disease and their genomic coordinates
+  expected: []
+- id: a-508
+  category: agent_trace
+  style: prod_hits
+  query: PanelApp panel genes list for a panel id
+  expected: []
+- id: a-509
+  category: agent_trace
+  style: prod_hits
+  query: PanelApp panel genes list chromosome location
+  expected: []
+- id: a-510
+  category: agent_trace
+  style: prod_hits
+  query: GenCC genes associated with disease MONDO
+  expected: []
+- id: a-511
+  category: agent_trace
+  style: prod_empty
+  query: HPO search term phenotype genes chromosome location
+  expected: []
+- id: a-512
+  category: agent_trace
+  style: prod_hits
+  query: hpo get term
+  expected: []
+- id: a-513
+  category: agent_trace
+  style: prod_hits
+  query: ClinVar search variants by condition disease gene
+  expected: []
+- id: a-514
+  category: agent_trace
+  style: prod_hits
+  query: mondo get disease
+  expected: []
+- id: a-515
+  category: agent_trace
+  style: prod_hits
+  query: HPO get term by id phenotype term details
+  expected: []
+- id: a-516
+  category: agent_trace
+  style: prod_hits
+  query: MGI mammalian phenotype term genes associated with phenotype
+  expected: []
+- id: a-517
+  category: agent_trace
+  style: prod_hits
+  query: MGI search phenotype terms by label
+  expected: []
+- id: a-518
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a MONDO disease
+  expected: []
+- id: a-519
+  category: agent_trace
+  style: prod_hits
+  query: disease gene associations for a MONDO disease
+  expected: []
+- id: a-520
+  category: agent_trace
+  style: prod_hits
+  query: gencc get disease curations gene for disease
+  expected: []
+- id: a-521
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene curations for disease
+  expected: []
+- id: a-522
+  category: agent_trace
+  style: prod_empty
+  query: OMIM disease gene search by phenotype name
+  expected: []
+- id: a-523
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease MONDO identifier
+  expected: []
+- id: a-524
+  category: agent_trace
+  style: prod_hits
+  query: Mondo disease genes associated with disease
+  expected: []
+- id: a-525
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease MONDO id
+  expected: []
+- id: a-526
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease gene curations by MONDO identifier
+  expected: []
+- id: a-527
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease curations gene for disease
+  expected: []
+- id: a-528
+  category: agent_trace
+  style: prod_hits
+  query: search disease by name deafness renal dysfunction gene list
+  expected: []
+- id: a-529
+  category: agent_trace
+  style: prod_hits
+  query: Mondo disease search by name returns genes associated
+  expected: []
+- id: a-530
+  category: agent_trace
+  style: prod_hits
+  query: Orphanet disorder search by label returns genes
+  expected: []
+- id: a-531
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease curations gene-disease for disease MONDO
+  expected: []
+- id: a-532
+  category: agent_trace
+  style: prod_hits
+  query: gene location chromosome band ensembl
+  expected: []
+- id: a-533
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease MONDO term
+  expected: []
+- id: a-534
+  category: agent_trace
+  style: prod_hits
+  query: GenCC disease gene curations by MONDO disease
+  expected: []
+- id: a-535
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease MONDO id gene-disease associations
+  expected: []
+- id: a-536
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with B-cell immunodeficiency
+  expected: []
+- id: a-537
+  category: agent_trace
+  style: prod_hits
+  query: Ablepharon macrostomia syndrome genes
+  expected: []
+- id: a-538
+  category: agent_trace
+  style: prod_hits
+  query: search diseases by name Orphanet or MONDO
+  expected: []
+- id: a-539
+  category: agent_trace
+  style: prod_hits
+  query: Mondo disease genes associated with disease term
+  expected: []
+- id: a-540
+  category: agent_trace
+  style: prod_hits
+  query: Mondo disease associated genes MONDO:0008758
+  expected: []
+- id: a-541
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease MONDO gene-disease association
+  expected: []
+- id: a-542
+  category: agent_trace
+  style: prod_hits
+  query: gencc gene-disease curations for disease MONDO
+  expected: []
+- id: a-543
+  category: agent_trace
+  style: prod_hits
+  query: liftover variant GRCh37 GRCh38 coordinate conversion
+  expected: []
+- id: a-544
+  category: agent_trace
+  style: prod_hits
+  query: liftover hg19 to hg38 coordinate conversion
+  expected: []
+- id: a-545
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central article abstract by PMC ID
+  expected: []
+- id: a-546
+  category: agent_trace
+  style: prod_hits
+  query: fetch PMC full text article abstract
+  expected: []
+- id: a-547
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text article retrieval by PMCID
+  expected: []
+- id: a-548
+  category: agent_trace
+  style: prod_empty
+  query: fetch full text PubMed Central article
+  expected: []
+- id: a-549
+  category: agent_trace
+  style: prod_empty
+  query: PMC3518823
+  expected: []
+- id: a-550
+  category: agent_trace
+  style: prod_hits
+  query: pubmed article abstract text by PMID
+  expected: []
+- id: a-551
+  category: agent_trace
+  style: prod_hits
+  query: literature full text retrieval
+  expected: []
+- id: a-552
+  category: agent_trace
+  style: prod_empty
+  query: PMC article full text tables count by PMID
+  expected: []
+- id: a-553
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC full text article tables
+  expected: []
+- id: a-554
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages full text
+  expected: []
+- id: a-555
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC article full text figure captions by PMCID
+  expected: []
+- id: a-556
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central article figures legends
+  expected: []
+- id: a-557
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text article retrieval
+  expected: []
+- id: a-558
+  category: agent_trace
+  style: prod_empty
+  query: europe PMC full text XML figure caption
+  expected: []
+- id: a-559
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC
+  expected: []
+- id: a-560
+  category: agent_trace
+  style: prod_hits
+  query: liftover variant GRCh37 GRCh38 coordinates
+  expected: []
+- id: a-561
+  category: agent_trace
+  style: prod_hits
+  query: liftover hg19 to hg38 coordinates
+  expected: []
+- id: a-562
+  category: agent_trace
+  style: prod_empty
+  query: fetch PubMed Central article abstract by PMC id
+  expected: []
+- id: a-563
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central full text fetch
+  expected: []
+- id: a-564
+  category: agent_trace
+  style: prod_empty
+  query: PMC article full text tables by PMID
+  expected: []
+- id: a-565
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central full text article tables
+  expected: []
+- id: a-566
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text XML tables
+  expected: []
+- id: a-567
+  category: agent_trace
+  style: prod_empty
+  query: get full text article by PMCID
+  expected: []
+- id: a-568
+  category: agent_trace
+  style: prod_hits
+  query: publication passages
+  expected: []
+- id: a-569
+  category: agent_trace
+  style: prod_empty
+  query: PMC article figure captions full text
+  expected: []
+- id: a-570
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central article figures captions by PMCID
+  expected: []
+- id: a-571
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC full text article
+  expected: []
+- id: a-572
+  category: agent_trace
+  style: prod_hits
+  query: Europe PMC article fetch by identifier
+  expected: []
+- id: a-573
+  category: agent_trace
+  style: prod_hits
+  query: UniProt protein domain features by accession
+  expected: []
+- id: a-574
+  category: agent_trace
+  style: prod_empty
+  query: PMC article abstract fetch by PMCID
+  expected: []
+- id: a-575
+  category: agent_trace
+  style: prod_hits
+  query: PubMed Central article abstract retrieval
+  expected: []
+- id: a-576
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC full text article by PMC ID
+  expected: []
+- id: a-577
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central full text retrieval
+  expected: []
+- id: a-578
+  category: agent_trace
+  style: prod_empty
+  query: PMC article full text
+  expected: []
+- id: a-579
+  category: agent_trace
+  style: prod_hits
+  query: full text article
+  expected: []
+- id: a-580
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages pubtator full text
+  expected: []
+- id: a-581
+  category: agent_trace
+  style: prod_empty
+  query: PMC article tables count by PMID full text
+  expected: []
+- id: a-582
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central article full text figures tables
+  expected: []
+- id: a-583
+  category: agent_trace
+  style: prod_empty
+  query: PMC open access full text table count
+  expected: []
+- id: a-584
+  category: agent_trace
+  style: prod_empty
+  query: get publication passages figure legends by PMCID
+  expected: []
+- id: a-585
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text XML fetch article figures
+  expected: []
+- id: a-586
+  category: agent_trace
+  style: prod_hits
+  query: variant liftover between genome builds GRCh37 GRCh38
+  expected: []
+- id: a-587
+  category: agent_trace
+  style: prod_hits
+  query: liftover genome coordinates hg19 to hg38
+  expected: []
+- id: a-588
+  category: agent_trace
+  style: prod_hits
+  query: protein domain annotation for a gene
+  expected: []
+- id: a-589
+  category: agent_trace
+  style: prod_hits
+  query: InterPro Pfam domain family lookup protein
+  expected: []
+- id: a-590
+  category: agent_trace
+  style: prod_hits
+  query: search HPO terms by name or synonym
+  expected: []
+- id: a-591
+  category: agent_trace
+  style: prod_hits
+  query: get abstract for PubMed Central PMC article
+  expected: []
+- id: a-592
+  category: agent_trace
+  style: prod_hits
+  query: convert PMC ID to PMID PubMed ID mapping
+  expected: []
+- id: a-593
+  category: agent_trace
+  style: prod_hits
+  query: fetch full text PMC article bioC open access
+  expected: []
+- id: a-594
+  category: agent_trace
+  style: prod_empty
+  query: fetch full text of a PubMed Central PMC article by PMC id
+  expected: []
+- id: a-595
+  category: agent_trace
+  style: prod_empty
+  query: PMC article full text retrieval
+  expected: []
+- id: a-596
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central article text
+  expected: []
+- id: a-597
+  category: agent_trace
+  style: prod_empty
+  query: full text article Europe PMC efetch
+  expected: []
+- id: a-598
+  category: agent_trace
+  style: prod_hits
+  query: literature publication abstract text fetch
+  expected: []
+- id: a-599
+  category: agent_trace
+  style: prod_hits
+  query: convert PMC id to PMID resolve PubMed id
+  expected: []
+- id: a-600
+  category: agent_trace
+  style: prod_empty
+  query: BioC XML full text open access article sections
+  expected: []
+- id: a-601
+  category: agent_trace
+  style: prod_empty
+  query: get full text of open access paper by PMID or DOI
+  expected: []
+- id: a-602
+  category: agent_trace
+  style: prod_hits
+  query: publication passages full text
+  expected: []
+- id: a-603
+  category: agent_trace
+  style: prod_hits
+  query: BioC raw document fetch PMID bioc passage offset pagination
+  expected: []
+- id: a-604
+  category: agent_trace
+  style: prod_hits
+  query: PubMed Central article metadata fetch
+  expected: []
+- id: a-605
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages full text sections
+  expected: []
+- id: a-606
+  category: agent_trace
+  style: prod_hits
+  query: PMC ID conversion PMID to PMCID
+  expected: []
+- id: a-607
+  category: agent_trace
+  style: prod_empty
+  query: BioC full text XML fetch PMC open access article
+  expected: []
+- id: a-608
+  category: agent_trace
+  style: prod_empty
+  query: Europe PMC full text search article
+  expected: []
+- id: a-609
+  category: agent_trace
+  style: prod_hits
+  query: fetch article full text tables figures sections count
+  expected: []
+- id: a-610
+  category: agent_trace
+  style: prod_empty
+  query: eutils efetch esummary NCBI
+  expected: []
+- id: a-611
+  category: agent_trace
+  style: prod_empty
+  query: pmc article bioc passages table caption
+  expected: []
+- id: a-612
+  category: agent_trace
+  style: prod_empty
+  query: literature full text retrieval open access
+  expected: []
+- id: a-613
+  category: agent_trace
+  style: prod_hits
+  query: text mining document passages annotations
+  expected: []
+- id: a-614
+  category: agent_trace
+  style: prod_empty
+  query: fetch url web page http request
+  expected: []
+- id: a-615
+  category: agent_trace
+  style: prod_hits
+  query: article annotations entities full text PMC
+  expected: []
+- id: a-616
+  category: agent_trace
+  style: prod_hits
+  query: ncbi database query ids
+  expected: []
+- id: a-617
+  category: agent_trace
+  style: prod_hits
+  query: publication figures tables structure sections article
+  expected: []
+- id: a-618
+  category: agent_trace
+  style: prod_hits
+  query: pubmed article references citations count
+  expected: []
+- id: a-619
+  category: agent_trace
+  style: prod_hits
+  query: biocjson bioc xml export
+  expected: []
+- id: a-620
+  category: agent_trace
+  style: prod_hits
+  query: open access fulltext article text passages
+  expected: []
+- id: a-621
+  category: agent_trace
+  style: prod_hits
+  query: table caption count tables in article
+  expected: []
+- id: a-622
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages section text results methods
+  expected: []
+- id: a-623
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC article full text figures captions
+  expected: []
+- id: a-624
+  category: agent_trace
+  style: prod_hits
+  query: PubMed Central article content retrieval
+  expected: []
+- id: a-625
+  category: agent_trace
+  style: prod_hits
+  query: resolve PMC id to PMID conversion
+  expected: []
+- id: a-626
+  category: agent_trace
+  style: prod_hits
+  query: GenCC search genes diseases gene-disease validity curations
+  expected: []
+- id: a-627
+  category: agent_trace
+  style: prod_empty
+  query: fetch reference base sequence at genomic position
+  expected: []
+- id: a-628
+  category: agent_trace
+  style: prod_hits
+  query: gnomad variant details annotations
+  expected: []
+- id: a-629
+  category: agent_trace
+  style: prod_hits
+  query: gene at genomic coordinate region overlap lookup
+  expected: []
+- id: a-630
+  category: agent_trace
+  style: prod_hits
+  query: vep liftover variant between genome assemblies
+  expected: []
+- id: a-631
+  category: agent_trace
+  style: prod_hits
+  query: liftover genome coordinate conversion hg19 to hg38
+  expected: []
+- id: a-632
+  category: agent_trace
+  style: prod_hits
+  query: get protein details domains features UniProt
+  expected: []
+- id: a-633
+  category: agent_trace
+  style: prod_hits
+  query: InterPro Pfam protein domain annotation lookup
+  expected: []
+- id: a-634
+  category: agent_trace
+  style: prod_empty
+  query: resolve InterPro entry IPR id name lookup
+  expected: []
+- id: a-635
+  category: agent_trace
+  style: prod_hits
+  query: InterPro
+  expected: []
+- id: a-636
+  category: agent_trace
+  style: prod_empty
+  query: protein family signature entry details description database
+  expected: []
+- id: a-637
+  category: agent_trace
+  style: prod_hits
+  query: domain
+  expected: []
+- id: a-638
+  category: agent_trace
+  style: prod_hits
+  query: get abstract for PMC article PubMed Central full text
+  expected: []
+- id: a-639
+  category: agent_trace
+  style: prod_hits
+  query: convert PMC ID to PMID lookup PubMed ID from PMC accession
+  expected: []
+- id: a-640
+  category: agent_trace
+  style: prod_empty
+  query: fetch full text of a PMC article by PMC ID
+  expected: []
+- id: a-641
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central article full text retrieval
+  expected: []
+- id: a-642
+  category: agent_trace
+  style: prod_hits
+  query: literature full text passages article text
+  expected: []
+- id: a-643
+  category: agent_trace
+  style: prod_hits
+  query: PMC ID fetch article abstract metadata
+  expected: []
+- id: a-644
+  category: agent_trace
+  style: prod_hits
+  query: resolve PMC ID to PMID identifier conversion
+  expected: []
+- id: a-645
+  category: agent_trace
+  style: prod_empty
+  query: PMC article full text tables PMID
+  expected: []
+- id: a-646
+  category: agent_trace
+  style: prod_hits
+  query: PubMed article metadata publication
+  expected: []
+- id: a-647
+  category: agent_trace
+  style: prod_empty
+  query: get publication passages full text PMC
+  expected: []
+- id: a-648
+  category: agent_trace
+  style: prod_hits
+  query: passages article text annotations
+  expected: []
+- id: a-649
+  category: agent_trace
+  style: prod_empty
+  query: NCBI E-utilities efetch BioC XML full text
+  expected: []
+- id: a-650
+  category: agent_trace
+  style: prod_hits
+  query: article structure figures tables count sections
+  expected: []
+- id: a-651
+  category: agent_trace
+  style: prod_empty
+  query: fetch web page URL content
+  expected: []
+- id: a-652
+  category: agent_trace
+  style: prod_empty
+  query: literature evidence retrieval article full text open access
+  expected: []
+- id: a-653
+  category: agent_trace
+  style: prod_hits
+  query: PMC open access annotations bioc
+  expected: []
+- id: a-654
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC article full text figure captions
+  expected: []
+- id: a-655
+  category: agent_trace
+  style: prod_empty
+  query: full text article retrieval figure caption PMC id
+  expected: []
+- id: a-656
+  category: agent_trace
+  style: prod_hits
+  query: Europe PMC annotations passages
+  expected: []
+- id: a-657
+  category: agent_trace
+  style: prod_hits
+  query: convert PMC id to PMID lookup article metadata
+  expected: []
+- id: a-658
+  category: agent_trace
+  style: prod_empty
+  query: fetch full text open access article BioC XML PMC OA service
+  expected: []
+- id: a-659
+  category: agent_trace
+  style: prod_hits
+  query: article sections figures tables captions text
+  expected: []
+- id: a-660
+  category: agent_trace
+  style: prod_hits
+  query: pubtator publication annotations full text
+  expected: []
+- id: a-661
+  category: agent_trace
+  style: prod_empty
+  query: fetch URL web page http request download
+  expected: []
+- id: a-662
+  category: agent_trace
+  style: prod_hits
+  query: NCBI eutils efetch pubmed abstract
+  expected: []
+- id: a-663
+  category: agent_trace
+  style: prod_empty
+  query: literature full text body paragraphs open access article
+  expected: []
+- id: a-664
+  category: agent_trace
+  style: prod_empty
+  query: biocjson biocxml export passages document
+  expected: []
+- id: a-665
+  category: agent_trace
+  style: prod_hits
+  query: article text extraction scrape paper content
+  expected: []
+- id: a-666
+  category: agent_trace
+  style: prod_empty
+  query: pubmed central pmc fulltext
+  expected: []
+- id: a-667
+  category: agent_trace
+  style: prod_empty
+  query: openalex crossref semantic scholar works metadata
+  expected: []
+- id: a-668
+  category: agent_trace
+  style: prod_hits
+  query: passages
+  expected: []
+- id: a-669
+  category: agent_trace
+  style: prod_hits
+  query: search PanelApp panels for a gene membership
+  expected: []
+- id: a-670
+  category: agent_trace
+  style: prod_hits
+  query: protein domain annotation Pfam InterPro domain type
+  expected: []
+- id: a-671
+  category: agent_trace
+  style: prod_hits
+  query: resolve InterPro entry name lookup Pfam accession description
+  expected: []
+- id: a-672
+  category: agent_trace
+  style: prod_hits
+  query: get abstract for PubMed Central article PMC ID
+  expected: []
+- id: a-673
+  category: agent_trace
+  style: prod_hits
+  query: convert PMC ID to PMID resolve identifier
+  expected: []
+- id: a-674
+  category: agent_trace
+  style: prod_empty
+  query: retrieve full text of a PMC article by PMC ID
+  expected: []
+- id: a-675
+  category: agent_trace
+  style: prod_hits
+  query: pubtator literature search article
+  expected: []
+- id: a-676
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages full text document fetch
+  expected: []
+- id: a-677
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages pmids
+  expected: []
+- id: a-678
+  category: agent_trace
+  style: prod_empty
+  query: PMC article full text tables count
+  expected: []
+- id: a-679
+  category: agent_trace
+  style: prod_empty
+  query: PubMed Central full text article
+  expected: []
+- id: a-680
+  category: agent_trace
+  style: prod_empty
+  query: eutils efetch pmcid fetch article XML
+  expected: []
+- id: a-681
+  category: agent_trace
+  style: prod_hits
+  query: article metadata tables figures
+  expected: []
+- id: a-682
+  category: agent_trace
+  style: prod_hits
+  query: pubmed PMID lookup
+  expected: []
+- id: a-683
+  category: agent_trace
+  style: prod_empty
+  query: fetch PMC article by PMCID full text
+  expected: []
+- id: a-684
+  category: agent_trace
+  style: prod_hits
+  query: article tables
+  expected: []
+- id: a-685
+  category: agent_trace
+  style: prod_hits
+  query: preflight review sources
+  expected: []
+- id: a-686
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages full text annotations
+  expected: []
+- id: a-687
+  category: agent_trace
+  style: prod_empty
+  query: retrieve PMC article full text figure captions
+  expected: []
+- id: a-688
+  category: agent_trace
+  style: prod_empty
+  query: PMC article text
+  expected: []
+- id: a-689
+  category: agent_trace
+  style: prod_hits
+  query: pubmed literature article abstract
+  expected: []
+- id: a-690
+  category: agent_trace
+  style: prod_hits
+  query: resolve PMC ID to PMID PubMed Central article identifier conversion
+  expected: []
+- id: a-691
+  category: agent_trace
+  style: prod_hits
+  query: panelapp search genes in panels by gene symbol
+  expected: []
+- id: a-692
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic band for a gene symbol
+  expected: []
+- id: a-693
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease MONDO gene-disease associations
+  expected: []
+- id: a-694
+  category: agent_trace
+  style: prod_hits
+  query: get genes associated with a disease MONDO
+  expected: []
+- id: a-695
+  category: agent_trace
+  style: prod_hits
+  query: get genes associated with a disease MONDO id
+  expected: []
+- id: a-696
+  category: agent_trace
+  style: prod_hits
+  query: OMIM disease gene lookup by OMIM id
+  expected: []
+- id: a-697
+  category: agent_trace
+  style: prod_hits
+  query: get genes associated with a disease
+  expected: []
+- id: a-698
+  category: agent_trace
+  style: prod_hits
+  query: get genes associated with an Orphanet disease
+  expected: []
+- id: a-699
+  category: agent_trace
+  style: prod_hits
+  query: get genes associated with a disease MONDO term
+  expected: []
+- id: a-700
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease MONDO id
+  expected: []
+- id: a-701
+  category: agent_trace
+  style: prod_empty
+  query: search HPO phenotype terms by name and find associated genes
+  expected: []
+- id: a-702
+  category: agent_trace
+  style: prod_hits
+  query: get chromosome location cytogenetic band of a gene
+  expected: []
+- id: a-703
+  category: agent_trace
+  style: prod_hits
+  query: find genes associated with a disease or phenotype term
+  expected: []
+- id: a-704
+  category: agent_trace
+  style: prod_hits
+  query: search ontology phenotype terms by name to find term id
+  expected: []
+- id: a-705
+  category: agent_trace
+  style: prod_hits
+  query: GenCC gene disease associations for a disease mondo
+  expected: []
+- id: a-706
+  category: agent_trace
+  style: prod_hits
+  query: get genes for a MONDO disease id gene list
+  expected: []
+- id: a-707
+  category: agent_trace
+  style: prod_hits
+  query: get gene chromosome location cytogenetic band genomic coordinates
+  expected: []
+- id: a-708
+  category: agent_trace
+  style: prod_hits
+  query: find genes associated with a disease
+  expected: []
+- id: a-709
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease MONDO
+  expected: []
+- id: a-710
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease, gene-disease association
+  expected: []
+- id: a-711
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease
+  expected: []
+- id: a-712
+  category: agent_trace
+  style: prod_hits
+  query: get gene details chromosome location
+  expected: []
+- id: a-713
+  category: agent_trace
+  style: prod_hits
+  query: find genes associated with a disease, OMIM phenotype to genes
+  expected: []
+- id: a-714
+  category: agent_trace
+  style: prod_hits
+  query: search OMIM disease by name, OMIM phenotype lookup
+  expected: []
+- id: a-715
+  category: agent_trace
+  style: prod_hits
+  query: NCBI E-utilities esearch efetch gene database chromosome location
+  expected: []
+- id: a-716
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages by PMID full text
+  expected: []
+- id: a-717
+  category: agent_trace
+  style: prod_hits
+  query: OMIM mim number disease search esearch
+  expected: []
+- id: a-718
+  category: agent_trace
+  style: prod_hits
+  query: disease to gene association genes for a disease
+  expected: []
+- id: a-719
+  category: agent_trace
+  style: prod_hits
+  query: find genes associated with a disease, disease-gene associations
+  expected: []
+- id: a-720
+  category: agent_trace
+  style: prod_hits
+  query: DisGeNET disease gene associations curated
+  expected: []
+- id: a-721
+  category: agent_trace
+  style: prod_hits
+  query: OMIM search disease phenotype gene lookup
+  expected: []
+- id: a-722
+  category: agent_trace
+  style: prod_empty
+  query: search diseases by name in HPO disease ontology annotations
+  expected: []
+- id: a-723
+  category: agent_trace
+  style: prod_hits
+  query: MedGen concept lookup disease genes chromosome location
+  expected: []
+- id: a-724
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location cytogenetic band lookup
+  expected: []
+- id: a-725
+  category: agent_trace
+  style: prod_empty
+  query: HPO disease search by disease name find disease id
+  expected: []
+- id: a-726
+  category: agent_trace
+  style: prod_hits
+  query: disease search ontology term lookup MONDO Orphanet
+  expected: []
+- id: a-727
+  category: agent_trace
+  style: prod_empty
+  query: search NCBI genes by disease name and return chromosome location
+  expected: []
+- id: a-728
+  category: agent_trace
+  style: prod_hits
+  query: gene search chromosome band location
+  expected: []
+- id: a-729
+  category: agent_trace
+  style: prod_hits
+  query: NCBI gene esearch esummary disease genes
+  expected: []
+- id: a-730
+  category: agent_trace
+  style: prod_hits
+  query: HGNC batch resolve multiple gene symbols locations
+  expected: []
+- id: a-731
+  category: agent_trace
+  style: prod_hits
+  query: convert NCBI gene id to gene symbol lookup
+  expected: []
+- id: a-732
+  category: agent_trace
+  style: prod_hits
+  query: NCBI E-utilities esummary gene record chromosome
+  expected: []
+- id: a-733
+  category: agent_trace
+  style: prod_hits
+  query: get genes associated with a disease or phenotype term
+  expected: []
+- id: a-734
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location genomic position
+  expected: []
+- id: a-735
+  category: agent_trace
+  style: prod_hits
+  query: get genes associated with a disease MONDO gene-disease associations
+  expected: []
+- id: a-736
+  category: agent_trace
+  style: prod_hits
+  query: gene disease associations curated list for a disease name
+  expected: []
+- id: a-737
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with a disease, chromosome location of gene
+  expected: []
+- id: a-738
+  category: agent_trace
+  style: prod_hits
+  query: get genes for a disease, disease gene associations, mondo disease details
+  expected: []
+- id: a-739
+  category: agent_trace
+  style: prod_hits
+  query: get gene details
+  expected: []
+- id: a-740
+  category: agent_trace
+  style: prod_hits
+  query: hgnc_get_gene
+  expected: []
+- id: a-741
+  category: agent_trace
+  style: prod_hits
+  query: get protein location or gene location
+  expected: []
+- id: a-742
+  category: agent_trace
+  style: prod_hits
+  query: get gene details chromosome
+  expected: []
+- id: a-743
+  category: agent_trace
+  style: prod_hits
+  query: get panel genes
+  expected: []
+- id: a-744
+  category: agent_trace
+  style: prod_hits
+  query: get full text of PMC article or publication passages
+  expected: []
+- id: a-745
+  category: agent_trace
+  style: prod_empty
+  query: get full text of PMC article or count tables in PMC article
+  expected: []
+- id: a-746
+  category: agent_trace
+  style: prod_hits
+  query: get publication passages
+  expected: []
+- id: a-747
+  category: agent_trace
+  style: prod_hits
+  query: get publication abstract or passages
+  expected: []
+- id: a-748
+  category: agent_trace
+  style: prod_hits
+  query: get protein details uniprot
+  expected: []
+- id: a-749
+  category: agent_trace
+  style: prod_hits
+  query: uniprot get protein features
+  expected: []
+- id: a-750
+  category: agent_trace
+  style: prod_hits
+  query: pubtator get publication passages
+  expected: []
+- id: a-751
+  category: agent_trace
+  style: prod_hits
+  query: get PubMed or PMC article abstract by ID
+  expected: []
+- id: a-752
+  category: agent_trace
+  style: prod_empty
+  query: get full text of PMC article
+  expected: []
+- id: a-753
+  category: agent_trace
+  style: prod_empty
+  query: PMC article PubMed full text
+  expected: []
+- id: a-754
+  category: agent_trace
+  style: prod_empty
+  query: PMC article tables count
+  expected: []
+- id: a-755
+  category: agent_trace
+  style: prod_hits
+  query: PubMed PMC
+  expected: []
+- id: a-756
+  category: agent_trace
+  style: prod_empty
+  query: PMC article figure captions
+  expected: []
+- id: a-757
+  category: agent_trace
+  style: prod_hits
+  query: PMC PubMed article content
+  expected: []
+- id: a-758
+  category: agent_trace
+  style: prod_hits
+  query: HGNC gene aliases details
+  expected: []
+- id: a-759
+  category: agent_trace
+  style: prod_hits
+  query: uniprot get protein
+  expected: []
+- id: a-760
+  category: agent_trace
+  style: prod_hits
+  query: get PMC article abstract by ID
+  expected: []
+- id: a-761
+  category: agent_trace
+  style: prod_empty
+  query: PubMed full text
+  expected: []
+- id: a-762
+  category: agent_trace
+  style: prod_hits
+  query: literature article
+  expected: []
+- id: a-763
+  category: agent_trace
+  style: prod_hits
+  query: PubMed PMC article
+  expected: []
+- id: a-764
+  category: agent_trace
+  style: prod_hits
+  query: PMID article
+  expected: []
+- id: a-765
+  category: agent_trace
+  style: prod_hits
+  query: PMC content
+  expected: []
+- id: a-766
+  category: agent_trace
+  style: prod_hits
+  query: article table count
+  expected: []
+- id: a-767
+  category: agent_trace
+  style: prod_empty
+  query: PMC table count
+  expected: []
+- id: a-768
+  category: agent_trace
+  style: prod_hits
+  query: gene aliases HGNC
+  expected: []
+- id: a-769
+  category: agent_trace
+  style: prod_hits
+  query: PMC article content fetch
+  expected: []
+- id: a-770
+  category: agent_trace
+  style: prod_hits
+  query: PMCID PMC3518823
+  expected: []
+- id: a-771
+  category: agent_trace
+  style: prod_hits
+  query: count tables article
+  expected: []
+- id: a-772
+  category: agent_trace
+  style: prod_hits
+  query: get genes for disease
+  expected: []
+- id: a-773
+  category: agent_trace
+  style: prod_hits
+  query: get gene chromosome location
+  expected: []
+- id: a-774
+  category: agent_trace
+  style: prod_hits
+  query: genes for disease
+  expected: []
+- id: a-775
+  category: agent_trace
+  style: prod_hits
+  query: gnomad get gene details
+  expected: []
+- id: a-776
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome location coordinates
+  expected: []
+- id: a-777
+  category: agent_trace
+  style: prod_hits
+  query: orphanet get disease
+  expected: []
+- id: a-778
+  category: agent_trace
+  style: prod_hits
+  query: gencc
+  expected: []
+- id: a-779
+  category: agent_trace
+  style: prod_hits
+  query: gene coordinates chromosome location
+  expected: []
+- id: a-780
+  category: agent_trace
+  style: prod_hits
+  query: gene location
+  expected: []
+- id: a-781
+  category: agent_trace
+  style: prod_hits
+  query: gene location chromosome
+  expected: []
+- id: a-782
+  category: agent_trace
+  style: prod_hits
+  query: NUTM2G protein domain
+  expected: []
+- id: a-783
+  category: agent_trace
+  style: prod_hits
+  query: hpo_get_term
+  expected: []
+- id: a-784
+  category: agent_trace
+  style: prod_hits
+  query: PMC article fetch
+  expected: []
+- id: a-785
+  category: agent_trace
+  style: prod_hits
+  query: figure captions
+  expected: []
+- id: a-786
+  category: agent_trace
+  style: prod_hits
+  query: ClinGen gene validity
+  expected: []
+- id: a-787
+  category: agent_trace
+  style: prod_hits
+  query: dilated cardiomyopathy gene
+  expected: []
+- id: a-788
+  category: agent_trace
+  style: prod_hits
+  query: clingen gene search
+  expected: []
+- id: a-789
+  category: agent_trace
+  style: prod_hits
+  query: gene details aliases
+  expected: []
+- id: a-790
+  category: agent_trace
+  style: prod_hits
+  query: protein domain
+  expected: []
+- id: a-791
+  category: agent_trace
+  style: prod_hits
+  query: HPO search term
+  expected: []
+- id: a-792
+  category: agent_trace
+  style: prod_hits
+  query: abstract PMID
+  expected: []
+- id: a-793
+  category: agent_trace
+  style: prod_empty
+  query: PMC full text
+  expected: []
+- id: a-794
+  category: agent_trace
+  style: prod_hits
+  query: NUTM2G dilated cardiomyopathy
+  expected: []
+- id: a-795
+  category: agent_trace
+  style: prod_hits
+  query: search_genes
+  expected: []
+- id: a-796
+  category: agent_trace
+  style: prod_hits
+  query: gene aliases hgnc
+  expected: []
+- id: a-797
+  category: agent_trace
+  style: prod_hits
+  query: gene full name lookup symbol
+  expected: []
+- id: a-798
+  category: agent_trace
+  style: prod_hits
+  query: UniProt protein details
+  expected: []
+- id: a-799
+  category: agent_trace
+  style: prod_hits
+  query: metadome protein domains
+  expected: []
+- id: a-800
+  category: agent_trace
+  style: prod_hits
+  query: fetch article abstract pmc
+  expected: []
+- id: a-801
+  category: agent_trace
+  style: prod_hits
+  query: gencc_search_genes
+  expected: []
+- id: a-802
+  category: agent_trace
+  style: prod_hits
+  query: clingen_search_genes
+  expected: []
+- id: a-803
+  category: agent_trace
+  style: prod_hits
+  query: Distal renal tubular acidosis genes
+  expected: []
+- id: a-804
+  category: agent_trace
+  style: prod_hits
+  query: distal renal tubular acidosis OMIM
+  expected: []
+- id: a-805
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with distal renal tubular acidosis
+  expected: []
+- id: a-806
+  category: agent_trace
+  style: prod_hits
+  query: Currarino syndrome gene
+  expected: []
+- id: a-807
+  category: agent_trace
+  style: prod_hits
+  query: Currarino syndrome Orphanet
+  expected: []
+- id: a-808
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with disease
+  expected: []
+- id: a-809
+  category: agent_trace
+  style: prod_hits
+  query: gencc disease genes
+  expected: []
+- id: a-810
+  category: agent_trace
+  style: prod_hits
+  query: gnomad_search_genes
+  expected: []
+- id: a-811
+  category: agent_trace
+  style: prod_hits
+  query: Mitochondrial DNA depletion syndrome 4A Alpers type gene
+  expected: []
+- id: a-812
+  category: agent_trace
+  style: prod_hits
+  query: Mitochondrial DNA depletion syndrome 4A
+  expected: []
+- id: a-813
+  category: agent_trace
+  style: prod_hits
+  query: CFHR5 gene chromosome location
+  expected: []
+- id: a-814
+  category: agent_trace
+  style: prod_hits
+  query: Corneal fleck dystrophy gene
+  expected: []
+- id: a-815
+  category: agent_trace
+  style: prod_hits
+  query: Corneal fleck dystrophy Orphanet
+  expected: []
+- id: a-816
+  category: agent_trace
+  style: prod_hits
+  query: Orofaciodigital syndrome XIV gene
+  expected: []
+- id: a-817
+  category: agent_trace
+  style: prod_hits
+  query: gencc disease
+  expected: []
+- id: a-818
+  category: agent_trace
+  style: prod_hits
+  query: gencc disease curations
+  expected: []
+- id: a-819
+  category: agent_trace
+  style: prod_hits
+  query: Medullary thyroid carcinoma genes
+  expected: []
+- id: a-820
+  category: agent_trace
+  style: prod_hits
+  query: Medullary thyroid carcinoma Orphanet
+  expected: []
+- id: a-821
+  category: agent_trace
+  style: prod_hits
+  query: gene location tool
+  expected: []
+- id: a-822
+  category: agent_trace
+  style: prod_hits
+  query: Medullary thyroid carcinoma gene
+  expected: []
+- id: a-823
+  category: agent_trace
+  style: prod_hits
+  query: disease gene association diabetes
+  expected: []
+- id: a-824
+  category: agent_trace
+  style: prod_hits
+  query: Buschke-Ollendorff syndrome gene
+  expected: []
+- id: a-825
+  category: agent_trace
+  style: prod_hits
+  query: vascular malformation genes
+  expected: []
+- id: a-826
+  category: agent_trace
+  style: prod_hits
+  query: orphanet vascular malformation
+  expected: []
+- id: a-827
+  category: agent_trace
+  style: prod_hits
+  query: vascular malformation hpo
+  expected: []
+- id: a-828
+  category: agent_trace
+  style: prod_hits
+  query: gene disease associations
+  expected: []
+- id: a-829
+  category: agent_trace
+  style: prod_hits
+  query: Split-foot malformation with mesoaxial polydactyly gene
+  expected: []
+- id: a-830
+  category: agent_trace
+  style: prod_hits
+  query: Split-foot malformation with mesoaxial polydactyly
+  expected: []
+- id: a-831
+  category: agent_trace
+  style: prod_hits
+  query: Split-foot malformation with mesoaxial polydactyly disease
+  expected: []
+- id: a-832
+  category: agent_trace
+  style: prod_hits
+  query: OMIM split foot malformation mesoaxial polydactyly
+  expected: []
+- id: a-833
+  category: agent_trace
+  style: prod_hits
+  query: Pigmented nodular adrenocortical disease genes
+  expected: []
+- id: a-834
+  category: agent_trace
+  style: prod_hits
+  query: Distal renal tubular acidosis Orphanet
+  expected: []
+- id: a-835
+  category: agent_trace
+  style: prod_hits
+  query: genes related to Pseudohypoparathyroidism type Ic
+  expected: []
+- id: a-836
+  category: agent_trace
+  style: prod_hits
+  query: Chronic atrial and intestinal dysrhythmia gene
+  expected: []
+- id: a-837
+  category: agent_trace
+  style: prod_hits
+  query: SLC10A2 gene location
+  expected: []
+- id: a-838
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with bile acid malabsorption
+  expected: []
+- id: a-839
+  category: agent_trace
+  style: prod_hits
+  query: bile acid malabsorption MONDO
+  expected: []
+- id: a-840
+  category: agent_trace
+  style: prod_hits
+  query: CFHR5 gene location
+  expected: []
+- id: a-841
+  category: agent_trace
+  style: prod_hits
+  query: NEU1 gene chromosome location
+  expected: []
+- id: a-842
+  category: agent_trace
+  style: prod_hits
+  query: disease gene association
+  expected: []
+- id: a-843
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with diabetes mellitus
+  expected: []
+- id: a-844
+  category: agent_trace
+  style: prod_hits
+  query: Buschke-Ollendorff syndrome MONDO
+  expected: []
+- id: a-845
+  category: agent_trace
+  style: prod_hits
+  query: genes associated with vascular malformation
+  expected: []
+- id: a-846
+  category: agent_trace
+  style: prod_hits
+  query: gene chromosome coordinates
+  expected: []
+- id: a-847
+  category: agent_trace
+  style: prod_hits
+  query: Split-foot malformation with mesoaxial polydactyly gene GLI3
+  expected: []
+- id: a-848
+  category: agent_trace
+  style: prod_hits
+  query: Pigmented nodular adrenocortical disease MONDO
+  expected: []
+- id: a-849
+  category: agent_trace
+  style: prod_hits
+  query: gene details
+  expected: []
+- id: a-850
+  category: agent_trace
+  style: prod_hits
+  query: Distal renal tubular acidosis OMIM
+  expected: []
+- id: a-851
+  category: agent_trace
+  style: prod_hits
+  query: disease curations
+  expected: []
+- id: a-852
+  category: agent_trace
+  style: prod_hits
+  query: POLG gene chromosome location
+  expected: []
+- id: a-853
+  category: agent_trace
+  style: prod_hits
+  query: disease gene associations
+  expected: []
+- id: a-854
+  category: agent_trace
+  style: prod_hits
+  query: orphanet disease
+  expected: []
+- id: a-855
+  category: agent_trace
+  style: prod_hits
+  query: Split foot malformation mesoaxial polydactyly OMIM
+  expected: []
+- id: a-856
+  category: agent_trace
+  style: prod_hits
+  query: MAP3K20 gene
+  expected: []
+- id: a-857
+  category: agent_trace
+  style: prod_hits
+  query: ClinGen gene disease validity
+  expected: []
+- id: a-858
+  category: agent_trace
+  style: prod_hits
+  query: search gene by symbol
+  expected: []

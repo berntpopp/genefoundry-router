@@ -2,6 +2,24 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.12.7] - 2026-11-19
+
+### Changed
+
+- **Reranker candidate text (#306):** the System One reranker read only a tool's name and
+  the first 300 description characters, so a correct tool whose lead does not say what it
+  returns scored under the floor although BM25 ranked it near the top. Each candidate now
+  adds a compact parameter summary (names, enum values) and the tool's expansion keywords,
+  each part capped and the whole capped at 800 characters; catalog-only and deterministic.
+  The floor is unchanged.
+
+### Added
+
+- `tests/discoverability/agent_queries.yaml`: the 858 genefoundry-bench agent search
+  queries (synthetic, unlabeled) as an offline evaluation set;
+  `scripts/search_rerank_report.py --tasks` on it reports the share emptied versus
+  production. Not a CI gate or tuning target.
+
 ## [0.12.6] - 2026-11-19
 
 ### Added

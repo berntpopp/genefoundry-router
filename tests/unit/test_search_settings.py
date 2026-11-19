@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from genefoundry_router.config import RouterSettings
+from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.search_rerank import SystemOneReranker, build_reranker
 
 URL = "https://openrouter.ai/api/v1/systemone"
@@ -53,6 +54,8 @@ def test_hosted_jev_via_openrouter(monkeypatch: pytest.MonkeyPatch) -> None:
     assert rr.config.min_score == 0.3
     assert rr.config.api_key is not None
     assert rr.config.api_key.get_secret_value() == "sk-or-secret"
+    assert rr.keywords == expansion_texts("builtin", only=("keywords",), sep=", ")
+    assert "pmid 1" not in rr.keywords["pubtator_get_publication_passages"]  # no queries
 
 
 def test_self_hosted_onejev_without_key() -> None:

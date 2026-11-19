@@ -12,7 +12,13 @@ import pytest
 import structlog
 from fastmcp.tools.base import Tool
 
-from genefoundry_router.search_rerank import MAX_QUERY_CHARS, RerankConfig, SystemOneReranker
+from genefoundry_router.search_rerank import (
+    MAX_CANDIDATE_CHARS,
+    MAX_QUERY_CHARS,
+    RerankConfig,
+    SystemOneReranker,
+    candidate_text,
+)
 
 URL = "https://rerank.example/api/v1/systemone"
 QUERY = "is this DNA change seen in healthy people from BRCA1 patient 4711"
@@ -60,7 +66,8 @@ async def test_noul_request_contract_and_ranking() -> None:
     q0 = body["questions"]["t0"]
     assert q0["type"] == "noul" and set(q0["criteria"]) == {"true", "false"}
     desc = q0["instructions"]["tool"]["description"]
-    assert len(desc) <= 300 and "  " not in desc and "\n" not in desc
+    assert desc.startswith("a_x does things. With whitespace.")
+    assert len(desc) <= MAX_CANDIDATE_CHARS and "  " not in desc and "\n" not in desc
 
 
 async def test_no_authorization_header_without_key() -> None:
@@ -296,3 +303,49 @@ async def test_aclose_releases_the_client() -> None:
     rr = _reranker(_noul_handler({"a_x": 0.5}, []))
     await rr.aclose()
     assert rr._client.is_closed
+
+
+def _passages_tool(description: str = "Fetch citable passages for PMIDs.") -> Tool:
+    return Tool(
+        name="pubtator_get_publication_passages",
+        description=description,
+        parameters={
+            "type": "object",
+            "properties": {
+                "pmids": {"type": "array", "items": {"type": "integer"}},
+                "mode": {"enum": ["compact_passages", "full_abstract", "section_text"]},
+                "verbosity": {"anyOf": [{"enum": ["lean", "full"]}, {"type": "null"}]},
+                "sections": {"type": "array", "items": {"enum": ["methods", "results"]}},
+            },
+        },
+    )
+
+
+def test_candidate_text_has_lead_params_enums_and_keywords() -> None:
+    text = candidate_text(_passages_tool(), 300, "full text retrieval, figure legends")
+    assert text == (
+        "Fetch citable passages for PMIDs. | Parameters: pmids, "
+        "mode (compact_passages|full_abstract|section_text), verbosity (lean|full), "
+        "sections (methods|results) | Keywords: full text retrieval, figure legends"
+    )
+
+
+def test_candidate_text_is_capped() -> None:
+    tool = _passages_tool("lead " * 400)
+    tool.parameters["properties"].update({f"p{i}": {"enum": ["v" * 50]} for i in range(50)})
+    text = candidate_text(tool, 300, "kw, " * 500)
+    assert len(text) < MAX_CANDIDATE_CHARS  # each part has its own cap: none crowds out the rest
+    assert text.startswith("lead lead") and "| Parameters: pmids" in text
+    assert "| Keywords: kw, kw" in text
+    assert len(candidate_text(tool, 5000, "kw")) == MAX_CANDIDATE_CHARS  # hard total cap
+
+
+async def test_request_carries_keywords_for_known_tools_only() -> None:
+    seen: list[dict[str, Any]] = []
+    cfg = RerankConfig(url=URL, model="m")
+    handler = _noul_handler({"a_x": 0.5, "b_y": 0.4}, seen)
+    rr = SystemOneReranker(cfg, transport=httpx.MockTransport(handler), keywords={"a_x": "alpha"})
+    assert await rr.rerank(QUERY, _tools("a_x", "b_y")) is not None
+    qs = seen[0]["body"]["questions"]
+    assert qs["t0"]["instructions"]["tool"]["description"].endswith("| Keywords: alpha")
+    assert "Keywords" not in qs["t1"]["instructions"]["tool"]["description"]
