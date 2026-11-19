@@ -28,7 +28,9 @@ def test_real_servers_yaml_parses():
     # every enabled backend declares >=1 canonical entry point — pinned + named in the
     # server instructions so each domain's front-door tool is deterministically
     # discoverable regardless of BM25 ranking (discoverability-benchmark follow-up to #3).
-    assert all(by_name[n].entrypoints for n in by_name), "each backend needs an entrypoint"
+    # clinpgx exempt — owner decision 2026-11-19: clinpgx un-pinned (pinned budget); restore when clinpgx-link#56 lands
+    unpinned = {n for n in by_name if not by_name[n].entrypoints}
+    assert unpinned == {"clinpgx"}, "each other backend needs an entrypoint"
     assert "resolve_variant_id" in by_name["gnomad"].entrypoints
     # #320: disease/phenotype front doors are the ranked text searches, not exact resolvers.
     assert by_name["mondo"].entrypoints == ["search_diseases", "resolve_disease"]

@@ -110,7 +110,8 @@ async def test_pubtator_search_is_reachable_without_pins() -> None:
 async def test_bm25_without_expansion_still_meets_the_golden_bar() -> None:
     # GF_SEARCH_EXPANSIONS=off must remain a safe fallback, not a cliff.
     report = await evaluate(load_catalog(), load_tasks(), _served_pins())
-    assert report.score_out_of_10 >= 9.0, "\n" + format_report(report)
+    # 8.9 (was 9.0): owner decision 2026-11-19: clinpgx un-pinned (pinned budget); restore when clinpgx-link#56 lands
+    assert report.score_out_of_10 >= 8.9, "\n" + format_report(report)
     assert report.hit_at(5) >= 0.95
 
 
@@ -140,7 +141,10 @@ async def test_heldout_discoverability_meets_bar() -> None:
     assert report.score_out_of_10 >= 9.0, detail
     assert report.hit_at(5) >= 0.95, detail
     assert min(report.by_style().values()) >= 0.80, detail  # no phrasing style left behind
-    assert min(report.by_category().values()) >= 7.0, detail
+    categories = report.by_category()
+    # pharmacogenomics 6.0 (was 7.0): owner decision 2026-11-19: clinpgx un-pinned (pinned budget); restore when clinpgx-link#56 lands
+    assert categories.pop("pharmacogenomics") >= 6.0, detail
+    assert min(categories.values()) >= 7.0, detail
 
 
 async def test_expansion_lift_on_pure_search_is_real() -> None:

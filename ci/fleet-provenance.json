@@ -1853,9 +1853,7 @@
         "updated_at": "2026-11-18T19:07:09.820302Z"
       },
       "domain": "Pharmacogenomics / gene-drug guidelines",
-      "entrypoints": [
-        "search_records"
-      ],
+      "entrypoints": [],
       "name": "clinpgx",
       "namespace": "clinpgx",
       "release": {
@@ -6193,6 +6191,7 @@
       "entrypoints": [
         "resolve_variant_id",
         "search_genes",
+        "get_variant_frequencies",
         "get_gene_variants"
       ],
       "name": "gnomad",
