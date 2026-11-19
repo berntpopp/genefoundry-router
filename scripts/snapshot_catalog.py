@@ -11,9 +11,8 @@ which the reranker's parameter summary reads. Online; needs GF_*_URL in env:
 
     uv run --env-file ci/fleet-urls.env python scripts/snapshot_catalog.py
 
-Faithfulness note: tags are captured as the router surfaces them here (historically empty,
-because tag injection is a normalization-pass concern); keeping the same basis means the
-benchmark score stays comparable to the prior bar.
+Faithfulness note: the router's normalization pass (renames + servers.yaml tag injection)
+runs before capture, so tags match what production indexes.
 """
 
 from __future__ import annotations
@@ -28,6 +27,7 @@ from typing import Any
 from fastmcp import Client
 
 from genefoundry_router.config import RouterSettings, load_registry
+from genefoundry_router.normalization import apply_normalizations
 from genefoundry_router.search_rerank import enum_values
 from genefoundry_router.server import build_server
 
@@ -57,6 +57,8 @@ async def _run(servers_file: str, out: Path) -> None:
     # enable_search=False → the BM25 transform is not applied, so list_tools() returns the
     # FULL federated catalog (post-namespace), which is exactly what the index is built over.
     server = build_server(settings, registry, enable_search=False)
+    # the same post-mount pass production runs at startup: renames + servers.yaml tag injection
+    await apply_normalizations(server, registry)
     async with Client(server) as client:
         tools = await client.list_tools()
     entries = sorted((_entry(t) for t in tools), key=lambda e: e["name"])
