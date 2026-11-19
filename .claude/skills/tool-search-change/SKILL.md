@@ -19,3 +19,6 @@ Follow `AGENTS.md` first. The router doesn't author backend tools; it exposes tw
 
 - Bloating `search_tools` results with full schemas/`_meta` — it's the token-lean discovery path.
 - Breaking the `search_tools -> call_tool` handshake the tool descriptions promise.
+- Testing the strict `tools/list` projection only by listing — assert it with a REAL `call_tool` call; open maps (`additionalProperties`) travel as JSON strings and must round-trip.
+- Forgetting what the reranker sees: name + description lead + params (incl. enums) + expansion keywords (`genefoundry_router/data/tool-expansions.json`) — a change to any of them moves rankings; re-run `make bench-rerank`.
+- Assuming hint rewriting is catalog-checked: bare-name prefixing in `hints.py` is verb-prefix based (Tool-Naming v1.1 verbs), so any verb_noun word gets prefixed.

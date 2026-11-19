@@ -47,6 +47,9 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
   scan + SBOM). The router's `docker/` is the reference implementation; copy it, don't reinvent.
 - **Backends are unauthenticated by design** (the router owns edge auth at the trust boundary) —
   they MUST be reachable only through the router/reverse proxy, never published directly.
+- **Two skill folders:** `.claude/skills/` = developer skills for working on this repo
+  (`.agents/skills` symlinks to it for Codex/Gemini/Cursor); `skills/` = research workflow skills
+  the router will serve to MCP clients as product content (see `skills/README.md`).
 
 ## Fleet deploy contract
 

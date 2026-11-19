@@ -15,3 +15,8 @@ Follow `AGENTS.md` first.
 4. `make snapshot-catalog` and review; re-pin the drift baseline (`make snapshot-baseline`) only after reviewing the diff.
 5. Verify single-source versioning (no `serverInfo.version` framework leak) and hardened container overlays (`ports: !reset []`, cap-drop, read-only).
 6. Confirm the auth posture for the target env (edge auth on for public; secure-by-default guard intact); record residual risks.
+7. After pushing tag `vx.y.z` the Container release run appears within seconds; approve its `release` environment gate via `gh api repos/berntpopp/genefoundry-router/actions/runs/<id>/pending_deployments` — it can gate 2–3 times (`status: waiting` is the gate, not a slow build).
+
+## Common mistakes
+
+- `gh release create` by hand — NEVER: releases are immutable, so an empty release burns the version for good. The tag push drives the release workflow.
