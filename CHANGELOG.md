@@ -4,6 +4,13 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.8] - 2026-11-19
+
+### Fixed
+
+- **ChatGPT apps created before v0.10.4 can connect again.** `/authorize` rewrites exactly the legacy doubled resource (`…/mcp/mcp`, advertised by the PRM up to v0.10.3) to the canonical resource before FastMCP's RFC 8707 check, so the canonical value goes upstream and the token audience is unchanged; every other resource is still `invalid_target`. Each rewrite logs `oauth_resource_alias` and increments `genefoundry_oauth_resource_alias_total`.
+- **Per-account rate-limit overrides keyed on a client id now apply.** FastMCP 4's `MultiAuth` rewrites `AccessToken.client_id` into a source-qualified JSON tuple, so `GF_RATE_LIMIT_OVERRIDES={"gfbench": 600}` never matched and service accounts got the default quota; the limiter now matches the verified `original_client_id`.
+
 ## [0.13.7] - 2026-11-19
 
 ### Changed

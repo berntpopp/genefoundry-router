@@ -136,6 +136,12 @@ OAUTH_REFRESH_FAILURES = Counter(
     ["client_class", "reason"],
     registry=METRICS_REGISTRY,
 )
+OAUTH_RESOURCE_ALIAS = Counter(
+    "genefoundry_oauth_resource_alias_total",
+    "OAuth authorizes whose legacy doubled resource was rewritten to the canonical one",
+    ["client_class"],
+    registry=METRICS_REGISTRY,
+)
 _REFRESH_RESTORE_LOCK = threading.Lock()
 _RESTORED_REFRESH_SOURCES: set[str] = set()
 

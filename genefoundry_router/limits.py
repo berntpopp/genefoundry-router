@@ -287,7 +287,10 @@ class AccountRateLimitMiddleware(RequestLimitMiddleware):
 
     def _limit_for(self, token: AccessToken) -> int:
         """Effective limit for this token; ``0`` = not limited."""
-        for name in (token.subject, token.client_id):
+        # FastMCP 4 MultiAuth rewrites client_id to a qualified JSON tuple; the verified
+        # claim survives as original_client_id (absent on SDK-only tokens).
+        client_id = getattr(token, "original_client_id", None) or token.client_id
+        for name in (token.subject, client_id):
             if name and name in self._overrides:
                 value = self._overrides[name]
                 return 0 if value == "unlimited" else int(value)
