@@ -4516,7 +4516,7 @@
   },
   {
     "name": "mondo_get_disease",
-    "description": "Return a Mondo disease term: definition, synonyms, grouped cross-references, direct parents and children, top-level groupings, subsets, obsolescence (replaced_by/consider), and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. The term accepts a MONDO id, a label/synonym, or an external xref CURIE (resolved first). Pass fields=['xrefs.OMIM', ...] for a sparse projection. Signature: get_disease(term, response_mode=, fields=).",
+    "description": "Return a Mondo disease term: definition, synonyms, grouped cross-references, direct parents and children, top-level groupings, subsets, obsolescence (replaced_by/consider), and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. causal_genes: [] means Mondo asserts none; the field is absent only when the loaded data predates the gene table. The term accepts a MONDO id, a label/synonym, or an external xref CURIE (resolved first). Pass fields=['xrefs.OMIM', ...] for a sparse projection. Signature: get_disease(term, response_mode=, fields=).",
     "tags": [
       "disease",
       "ontology"
@@ -4689,7 +4689,7 @@
   },
   {
     "name": "mondo_resolve_disease",
-    "description": "Resolve a disease label, synonym, MONDO id, or external cross-reference CURIE (OMIM/Orphanet/DOID/...) to the canonical Mondo term {mondo_id, name, match_type} and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. A near-miss or acronym-like label falls back to a conservative fuzzy match (match_type='fuzzy'). The strongest match type wins (primary label > exact synonym > related synonym); only a tie returns ambiguous_query with candidates, each carrying match_type and score; an obsolete id returns not_found with its successor. Signature: resolve_disease(query, response_mode=).",
+    "description": "Resolve a disease label, synonym, MONDO id, or external cross-reference CURIE (OMIM/Orphanet/DOID/...) to the canonical Mondo term {mondo_id, name, match_type} and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. causal_genes: [] means Mondo asserts none; the field is absent only when the loaded data predates the gene table. A near-miss or acronym-like label falls back to a conservative fuzzy match (match_type='fuzzy'). The strongest match type wins (primary label > exact synonym > related synonym); only a tie returns ambiguous_query with candidates, each carrying match_type and score; an obsolete id returns not_found with its successor. Signature: resolve_disease(query, response_mode=).",
     "tags": [
       "disease",
       "ontology",
@@ -6298,7 +6298,7 @@
   },
   {
     "name": "pubtator_search_literature",
-    "description": "Use this when a user needs to search PubMed through PubTator3: returns ranked articles with PMID, title, journal, year and citation. Supports flat filters, section filters, and coverage='preflight'. If preflight_error_code is coverage_preflight_internal_error, retryable=false means continue with results or inspect diagnostics.",
+    "description": "Use this when a user needs PubMed biomedical literature search via PubTator3: returns ranked articles (PMID, title, journal, year, citation). Supports flat and section filters and coverage='preflight'. If preflight_error_code is coverage_preflight_internal_error, retryable=false: continue with results or inspect diagnostics.",
     "tags": [
       "entity",
       "literature"
