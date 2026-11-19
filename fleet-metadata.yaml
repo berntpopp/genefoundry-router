@@ -70,6 +70,8 @@ vocabulary:
     - loss-of-function
     - acmg
     - splicing
+    - short-tandem-repeat
+    - repeat-expansion
     - gene-curation
     - gene-disease
     - gene-panel
@@ -102,8 +104,6 @@ vocabulary:
     - pharmacogenomics
     - gene-drug
     - dosing-guideline
-    - short-tandem-repeat
-    - repeat-expansion
   # Source tier — the upstream's proper noun. These are near-empty topic pages
   # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
   source:
@@ -119,6 +119,7 @@ vocabulary:
     - gencc
     - litvar
     - string-db
+    - strchive
     - autopvs1
     - spliceai
     - pangolin
@@ -130,7 +131,6 @@ vocabulary:
     - panelapp
     - mondo
     - mavedb
-    - strchive
     - hpo
     - human-phenotype-ontology
     - metadome
@@ -246,6 +246,13 @@ backends:
       partners, and functional enrichment analysis — as typed tools for LLM agents.
     topics: [string-db, protein-protein-interaction, network-biology, proteomics, functional-enrichment]
 
+  - namespace: strchive
+    description: >-
+      MCP server for STRchive: curated short-tandem-repeat (STR) disease loci with
+      repeat-count ranges, pathogenic motifs, interruptions and hg19/hg38/T2T coordinates
+      from a pinned snapshot, for LLM agents.
+    topics: [strchive, short-tandem-repeat, repeat-expansion, rare-disease, genetics]
+
   - namespace: autopvs1
     description: >-
       MCP server for AutoPVS1: automated ACMG PVS1 loss-of-function evidence for sequence
@@ -332,10 +339,3 @@ backends:
       gene-drug interactions, clinical guidelines, dosing recommendations, and variant
       annotations for LLM agents.
     topics: [clinpgx, pharmacogenomics, gene-drug, clinical-genetics, cpic]
-
-  - namespace: strchive
-    description: >-
-      MCP server for STRchive: curated short-tandem-repeat (STR) disease loci with
-      repeat-count ranges, pathogenic motifs, interruptions and hg19/hg38/T2T coordinates
-      from a pinned snapshot, for LLM agents.
-    topics: [strchive, short-tandem-repeat, repeat-expansion, rare-disease, genetics]

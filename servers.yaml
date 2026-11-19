@@ -100,6 +100,20 @@ servers:
     tags: [ppi, network]
     entrypoints: [get_interaction_partners]
 
+  # STRchive tandem-repeat disease loci; upstream-live, digest-pinned CC BY 4.0 file (v0.3.0;
+  # issue #190). Staged: flip `enabled` to true once strchive-link.genefoundry.org is live and
+  # the baseline is re-pinned.
+  - name: strchive
+    repo: berntpopp/strchive-link
+    url_env: GF_STRCHIVE_URL
+    namespace: strchive
+    description: Tandem-repeat (STR) disease loci & repeat ranges
+    source_name: STRchive
+    source_url: https://strchive.org/
+    tags: [short-tandem-repeat, str, repeat-expansion, pathogenic-range, locus, motif]
+    entrypoints: [search_loci, get_locus]
+    enabled: false
+
   - name: autopvs1
     repo: berntpopp/autopvs1-link
     url_env: GF_AUTOPVS1_URL
@@ -244,17 +258,3 @@ servers:
     source_url: https://clinpgx.org/
     tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
     entrypoints: [search_records, get_record, get_related_records, search_dataset]
-
-  # STRchive tandem-repeat disease loci; upstream-live, digest-pinned CC BY 4.0 file (v0.3.0;
-  # issue #190). Staged: flip `enabled` to true once strchive-link.genefoundry.org is live and
-  # the baseline is re-pinned.
-  - name: strchive
-    repo: berntpopp/strchive-link
-    url_env: GF_STRCHIVE_URL
-    namespace: strchive
-    description: Tandem-repeat (STR) disease loci & repeat ranges
-    source_name: STRchive
-    source_url: https://strchive.org/
-    tags: [short-tandem-repeat, str, repeat-expansion, pathogenic-range, locus, motif]
-    entrypoints: [search_loci, get_locus]
-    enabled: false
