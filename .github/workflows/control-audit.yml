@@ -63,6 +63,7 @@ jobs:
             mondo-link
             orphanet-link
             panelapp-link
+            pgscatalog-link
             pubtator-link
             spliceailookup-link
             stringdb-link

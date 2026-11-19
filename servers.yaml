@@ -246,8 +246,9 @@ servers:
     entrypoints: [search_records, get_record, get_related_records, search_dataset]
 
   # pgscatalog-link: live PGS Catalog REST API (no snapshot): polygenic scores, traits,
-  # ancestry, licences, performance metrics, publications (genefoundry-router#288).
-  # Merge only once pgscatalog-link.genefoundry.org is live.
+  # ancestry, licences, performance metrics, publications (v0.3.2; genefoundry-router#288).
+  # Staged: flip `enabled` to true once pgscatalog-link.genefoundry.org is live and the
+  # baseline is re-pinned.
   - name: pgscatalog
     repo: berntpopp/pgscatalog-link
     url_env: GF_PGSCATALOG_URL
@@ -257,3 +258,4 @@ servers:
     source_url: https://www.pgscatalog.org/
     tags: [polygenic-score, prs, trait, gwas, ancestry, performance, publication]
     entrypoints: [resolve_trait, search_scores]
+    enabled: false

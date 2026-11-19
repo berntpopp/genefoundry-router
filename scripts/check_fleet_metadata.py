@@ -204,10 +204,12 @@ def main() -> int:
             f"backend {missing!r} is enabled in servers.yaml but absent from "
             f"fleet-metadata.yaml — it would ship with no description and no topics"
         )
-    for orphan in sorted(set(declared) - set(expected)):
-        errors.append(
-            f"backend {orphan!r} is in fleet-metadata.yaml but not enabled in servers.yaml"
-        )
+    # Staged (`enabled: false`) backends may carry metadata; only unregistered ones are orphans.
+    registered = {
+        s["namespace"] for s in yaml.safe_load(SERVERS.read_text(encoding="utf-8"))["servers"]
+    }
+    for orphan in sorted(set(declared) - registered):
+        errors.append(f"backend {orphan!r} is in fleet-metadata.yaml but not in servers.yaml")
     dupes = {x for x in declared if declared.count(x) > 1}
     for d in sorted(dupes):
         errors.append(f"backend {d!r} is declared twice in fleet-metadata.yaml")

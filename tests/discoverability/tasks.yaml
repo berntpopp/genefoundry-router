@@ -256,16 +256,6 @@ tasks:
     query: search ClinPGx snapshot datasets for pharmacogenomics evidence
     expected: [clinpgx_search_dataset, clinpgx_list_datasets]
 
-  # --- PGS Catalog: polygenic scores ---
-  - id: pgscatalog-scores-for-trait
-    category: gene_disease
-    query: which published polygenic risk scores exist for coronary artery disease
-    expected: [pgscatalog_search_scores, pgscatalog_resolve_trait]
-  - id: pgscatalog-score-performance
-    category: gene_disease
-    query: how well does a polygenic score perform, AUROC or hazard ratio in a validation cohort
-    expected: [pgscatalog_get_score_performance]
-
   # --- cross-cutting first-step resolvers ---
   - id: resolve-gene-generic
     category: nomenclature
