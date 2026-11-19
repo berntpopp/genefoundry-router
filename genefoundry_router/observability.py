@@ -37,6 +37,7 @@ from genefoundry_router.refresh_observability import (
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.tool_error_taxonomy import (
     error_code,
+    result_error_code,
     upstream_request_id,
     upstream_status,
 )
@@ -520,7 +521,11 @@ class AuditLogMiddleware(Middleware):
             raise
         # OTel ``error.type``: an in-band isError result is "tool_error"; no hit fields
         outcome: dict[str, Any] = (
-            {"outcome": "error", "error_type": "tool_error"}
+            {
+                "outcome": "error",
+                "error_type": "tool_error",
+                "error_code": result_error_code(result),
+            }
             if getattr(result, "is_error", False)
             else {"outcome": "ok", **await resolve_search_hits(context, result)}
         )

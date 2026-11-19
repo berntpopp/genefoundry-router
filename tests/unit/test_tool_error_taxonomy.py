@@ -241,3 +241,29 @@ def test_transport_failure_classifies_timeouts_and_connect_errors() -> None:
     assert transport_failure(ToolError(json.dumps(_envelope()))) is None
     other = MCPError(code=-32602, message="bad params")
     assert transport_failure(_chained(ToolError("x"), other)) is None
+
+
+def test_transport_failure_classifies_the_sdk_http_error_standin() -> None:
+    """#325: a backend 403/5xx reaches the router only as the SDK's fixed -32603 stand-in."""
+    from mcp.shared.exceptions import MCPError
+    from mcp_types import INTERNAL_ERROR
+
+    from genefoundry_router.tool_error_taxonomy import transport_failure
+
+    standin = MCPError(code=INTERNAL_ERROR, message="Server returned an error response")
+    assert transport_failure(_chained(ToolError("x"), standin)) == "backend_http_error"
+    # a backend's own JSON-RPC internal error is not a transport failure
+    own = MCPError(code=INTERNAL_ERROR, message="boom")
+    assert transport_failure(_chained(ToolError("x"), own)) is None
+
+
+def test_result_error_code_reads_an_in_band_envelope() -> None:
+    """#325: the guard's own not_found/upstream_unavailable RESULTS were logged codeless."""
+    from fastmcp.tools.base import ToolResult
+
+    from genefoundry_router.notfound_guard import backend_unavailable_result, unknown_tool_result
+    from genefoundry_router.tool_error_taxonomy import result_error_code
+
+    assert result_error_code(unknown_tool_result()) == "not_found"
+    assert result_error_code(backend_unavailable_result("vep")) == "upstream_unavailable"
+    assert result_error_code(ToolResult(content="plain")) == UNCLASSIFIED_ERROR_CODE

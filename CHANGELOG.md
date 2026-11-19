@@ -4,6 +4,24 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A backend that answers 403/5xx now reads as unavailable, not as an unknown tool (#325).**
+  The MCP SDK drops the HTTP status from a non-2xx answer; the router now classifies the
+  SDK's stand-in as `upstream_unavailable` / `error_subcode: backend_http_error` and logs
+  `backend_http_error` with `namespace` and `status` from a per-backend response hook, so a
+  proxy ACL change (the 46 h 403 incident) can be alerted on.
+- **Audit `error_code` for in-band error results (#325).** The router's own `not_found` /
+  `upstream_unavailable` envelopes are returned as `isError` results and were logged without a
+  code; `tool_call` now carries it.
+- **`mcp_unknown_tool` carries `requested_sha256` (#325):** a 16-hex SHA-256 prefix of the
+  requested name, so repeats can be counted and a suspected name confirmed without the raw
+  caller text reaching the log.
+- **Startup harvest retries for ~60 s before logging ERROR (#325).** Backends booting alongside
+  the router were logged as `backend_unreachable` / `backend_list_failed` ERRORs; the startup
+  harvest now logs those at WARNING and re-harvests at 5/10/15/30 s; only a backend still down
+  after the last retry is an ERROR.
+
 ## [0.13.4] - 2026-11-19
 
 ### Added

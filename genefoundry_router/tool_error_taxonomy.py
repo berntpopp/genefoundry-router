@@ -41,7 +41,7 @@ from typing import Any
 import httpx
 import httpx2
 from mcp.shared.exceptions import MCPError
-from mcp_types import REQUEST_TIMEOUT
+from mcp_types import INTERNAL_ERROR, REQUEST_TIMEOUT
 
 #: Response-Envelope Standard v1's closed error enum, harmonized across the fleet.
 FLEET_ERROR_CODES: frozenset[str] = frozenset(
@@ -69,6 +69,10 @@ _REQUEST_ID_PATTERN = re.compile(r"\A[0-9a-fA-F][0-9a-fA-F-]{7,63}\Z")
 #: Depth limit when walking ``__cause__``/``__context__``; a chain can be cyclic or long.
 _CAUSE_CHAIN_LIMIT = 8
 
+#: The MCP SDK's fixed stand-in when a backend answers a request with a non-2xx HTTP status
+#: (403 from a proxy ACL, 5xx) and no JSON-RPC body: the status itself is dropped (#325).
+_HTTP_ERROR_STANDIN = "Server returned an error response"
+
 
 def _envelope(exc: BaseException) -> dict[str, Any] | None:
     """Parse the error envelope out of an exception message, or ``None``."""
@@ -85,7 +89,16 @@ def error_code(exc: BaseException) -> str:
     Reads the flat ``error_code``/``code`` frame the fleet emits, and the nested
     ``error.code`` variant, and admits a value ONLY if it is a member of the closed enum.
     """
-    payload = _envelope(exc)
+    return _payload_code(_envelope(exc))
+
+
+def result_error_code(result: Any) -> str:
+    """Bounded error code of an in-band ``isError`` tool result (the guard's own envelopes)."""
+    payload = getattr(result, "structured_content", None)
+    return _payload_code(payload if isinstance(payload, dict) else None)
+
+
+def _payload_code(payload: dict[str, Any] | None) -> str:
     if payload is None:
         return UNCLASSIFIED_ERROR_CODE
     candidates = [payload.get("error_code"), payload.get("code")]
@@ -141,7 +154,8 @@ def transport_failure(exc: BaseException) -> str | None:
     """Classify the router's OWN backend transport failure (issue #272), else ``None``.
 
     ``backend_timeout`` for ``GF_BACKEND_TIMEOUT`` (the MCP session's REQUEST_TIMEOUT, -32001 in SDK v2) or an httpx
-    timeout; ``backend_unreachable`` for a connect/network error. An in-band backend
+    timeout; ``backend_unreachable`` for a connect/network error; ``backend_http_error`` for
+    a non-2xx HTTP answer (e.g. a 403 from the proxy, #325). An in-band backend
     envelope arrives without such a cause and stays ``None``.
     """
     seen: set[int] = set()
@@ -152,6 +166,12 @@ def transport_failure(exc: BaseException) -> str | None:
         seen.add(id(current))
         if isinstance(current, MCPError) and current.error.code == REQUEST_TIMEOUT:
             return "backend_timeout"
+        if (
+            isinstance(current, MCPError)
+            and current.error.code == INTERNAL_ERROR
+            and current.error.message == _HTTP_ERROR_STANDIN
+        ):
+            return "backend_http_error"
         if isinstance(current, TimeoutError | httpx.TimeoutException | httpx2.TimeoutException):
             return "backend_timeout"
         if isinstance(current, httpx.NetworkError | httpx2.NetworkError):

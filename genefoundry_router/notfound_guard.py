@@ -80,6 +80,7 @@ from mcp.shared.exceptions import MCPError
 from mcp.types import TextContent
 from mcp_types import INVALID_PARAMS, METHOD_NOT_FOUND
 
+from genefoundry_router.audit_identity import unknown_name_fields
 from genefoundry_router.registry import NAMESPACE_RE
 from genefoundry_router.tool_error_taxonomy import (
     UNCLASSIFIED_ERROR_CODE,
@@ -168,13 +169,14 @@ def transport_failure_error(namespace: str, subcode: str) -> ToolError:
     return ToolError(json.dumps(payload, separators=(",", ":"), sort_keys=True))
 
 
-def unknown_tool_result() -> ToolResult:
+def unknown_tool_result(requested: object = None) -> ToolResult:
     """Return a fixed, name-free ``not_found`` envelope for an unknown tool.
 
     Carries both ``structured_content`` and a matching TextContent JSON mirror, built
     from constants only. There is deliberately no ``_meta.tool`` — the requested
-    (caller-controlled) name is never reflected back.
+    (caller-controlled) name is never reflected back; the log gets only its hash (#325).
     """
+    log.warning("mcp_unknown_tool", **unknown_name_fields(requested))
     return _envelope(_not_found_payload())
 
 
@@ -232,18 +234,15 @@ class NotFoundGuard(Middleware):
                 if namespace in self.unavailable or self.backend_status.get(namespace) is False:
                     log.warning("mcp_backend_unavailable", namespace=namespace)
                     return backend_unavailable_result(namespace)
-                log.warning("mcp_unknown_tool")
-                return unknown_tool_result()
+                return unknown_tool_result(target)
         try:
             return await call_next(context)
         except FastMCPNotFoundError:
             # The meta-tool's own catalog check (visibility drift past the preflight).
-            log.warning("mcp_unknown_tool")
-            return unknown_tool_result()
+            return unknown_tool_result(target)
         except ToolError as exc:
             if name == "call_tool" and _caused_by_not_found(exc):
-                log.warning("mcp_unknown_tool")
-                return unknown_tool_result()
+                return unknown_tool_result(target)
             # Only the router's own unclassified failure; never re-wrap a fleet envelope.
             subcode = transport_failure(exc) if error_code(exc) == UNCLASSIFIED_ERROR_CODE else None
             namespace = name.partition("_")[0] if isinstance(name, str) else ""

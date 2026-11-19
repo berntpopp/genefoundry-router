@@ -30,6 +30,9 @@ DEFAULT_CACHE_TTL = 300
 DEFAULT_BACKEND_TIMEOUT = 120.0
 
 force_tool_refresh: ContextVar[bool] = ContextVar("force_tool_refresh", default=False)
+# True while the startup harvest is still retrying (#325): a backend booting alongside the
+# router is expected to be down, so its list failure is a warning, not an ERROR.
+harvest_settling: ContextVar[bool] = ContextVar("harvest_settling", default=False)
 
 _loop_transports: WeakKeyDictionary[asyncio.AbstractEventLoop, httpx2.AsyncHTTPTransport] = (
     WeakKeyDictionary()
@@ -140,7 +143,7 @@ class CachedProxyProvider(ProxyProvider):
                 # call_tool said not_found; record it so the guard can say unavailable.
                 if self._backend is not None:
                     set_backend_up(self._backend, up=False, tools=0)
-                    log.error(
+                    (log.warning if harvest_settling.get() else log.error)(
                         "backend_list_failed",
                         namespace=self._backend.namespace,
                         error_type=type(exc).__name__,
@@ -151,11 +154,27 @@ class CachedProxyProvider(ProxyProvider):
             return [t.model_copy(deep=True) for t in tools]
 
 
+def _observe_http_errors(factory: Any, namespace: str) -> Any:
+    """Log a backend's non-2xx HTTP status, which the MCP SDK drops from its error (#325)."""
+
+    async def hook(response: httpx2.Response) -> None:
+        if response.status_code >= 400:
+            log.warning("backend_http_error", namespace=namespace, status=response.status_code)
+
+    def observed(**kwargs: Any) -> httpx2.AsyncClient:
+        client: httpx2.AsyncClient = factory(**kwargs)
+        client.event_hooks["response"].append(hook)
+        return client
+
+    return observed
+
+
 def make_proxy_client(
     target: Any,
     timeout: float | None = None,
     service_token: str | None = None,
     httpx_client_factory: Any | None = None,
+    namespace: str | None = None,
 ) -> ProxyClient:
     """Build the router's upstream proxy client with caller-token forwarding DISABLED.
 
@@ -176,6 +195,8 @@ def make_proxy_client(
             if httpx_client_factory is not None
             else default_httpx_client_factory()
         )
+        if namespace is not None:
+            factory = _observe_http_errors(factory, namespace)
         transport_target = StreamableHttpTransport(
             target,
             headers={"Authorization": f"Bearer {service_token}"} if service_token else None,
@@ -210,6 +231,7 @@ def _register_via_provider(
             timeout,
             service_token=backend.service_token,
             httpx_client_factory=httpx_client_factory,
+            namespace=backend.namespace,
         ),
         cache_ttl=float(ttl),
         backend=backend,
