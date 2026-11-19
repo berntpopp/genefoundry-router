@@ -61,7 +61,7 @@ def test_get_diagnostics_zero_argument_passes() -> None:
     for name in ("get_diagnostics", "clinvar_get_diagnostics", "hpo_diagnostics"):
         tool = {
             "name": name,
-            "description": "Zero-argument health check.",
+            "description": "Returns backend health; takes no arguments.",
             "inputSchema": {
                 "type": "object",
                 "properties": {},
@@ -116,3 +116,45 @@ def test_check_backend_reports_s5_violations() -> None:
     }
     violations = check_backend("demo", backend_entry)
     assert any(v.rule == "S5" for v in violations)
+
+
+# D1 (Tool-Schema Documentation Standard v1.1): real fleet leads, verbatim first sentences.
+D1_PASS = [
+    "Return a Mondo disease term: definition, synonyms, grouped cross-references.",  # returns
+    "Retrieve homology scores for proteins showing sequence similarity.",  # output verb
+    "Use this to search ClinGen dosage (genes + regions) by text or ISCA region.",
+    "Use this for ClinGen clinical actionability of a gene: adult/pediatric status, release.",
+    "Use this when a caller needs allele counts; returns per-population frequencies.",
+    "Batch lookup → one {gene, panels} row per symbol.",
+]
+D1_FAIL = [
+    "Use this when a user needs PubMed literature search through PubTator3.",
+    "Signature: get_tolerance_landscape(transcript_id, position_start=, limit=).",
+    "Perform functional enrichment analysis.",
+    "Convenience orchestration tool. Returns a GeneReview summary.",  # returns is sentence 2
+    "Use this when a caller needs variant details. This tool does NOT return ClinVar.",
+    "Use this when a client needs supported tools. Returns ~7kB.",
+    "",
+]
+
+
+def test_d1_lead_states_return_on_real_fleet_leads() -> None:
+    from surface import lead_states_return
+
+    assert [d for d in D1_PASS if not lead_states_return(d)] == []
+    assert [d for d in D1_FAIL if lead_states_return(d)] == []
+
+
+def test_d1_negated_and_sized_returns_do_not_count() -> None:
+    from surface import lead_states_return
+
+    assert not lead_states_return("Use this for variant details; does not return ClinVar.")
+    assert not lead_states_return("Use this when a client needs capabilities; returns ~7kB.")
+
+
+def test_d1_is_flagged_but_advisory() -> None:
+    from check_tool_surface import ADVISORY
+
+    tool = {"name": "search_literature", "description": D1_FAIL[0], "inputSchema": {}}
+    assert [v.rule for v in lint_tool_schema(tool)] == ["D1"]
+    assert "D1" in ADVISORY
