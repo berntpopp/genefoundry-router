@@ -114,7 +114,7 @@ class RouterSettings(BaseSettings):
 
     # Pinned tools in tools/list (#320): default = every servers.yaml entry point; minimal =
     # GF_PINNED_MINIMAL; none = search_tools + call_tool only. A request may override it with
-    # the X-GF-Pinned-Mode header (listing only). Unlisted tools stay callable via call_tool.
+    # the X-GF-Pinned-Mode header (listing, instructions, hint call form). Unlisted tools stay callable via call_tool.
     GF_PINNED_MODE: Literal["default", "minimal", "none"] = "default"
     GF_PINNED_MINIMAL: list[str] = [
         "hgnc_resolve_symbol",

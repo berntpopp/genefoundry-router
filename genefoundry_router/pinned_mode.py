@@ -3,9 +3,10 @@
 ``GF_PINNED_MODE`` sets the default; the ``X-GF-Pinned-Mode`` request header overrides it so
 one deployment can be measured in every mode. Applied in the search transform's
 ``transform_tools`` (the tools/list projection), NOT a list middleware: middleware also wraps
-the catalog that ``search_tools``/``call_tool`` read, which must keep every tool. Both only
-filter the LISTING: authorization, call routing and rate limits never read them, and every
-tool stays callable via ``call_tool``.
+the catalog that ``search_tools``/``call_tool`` read, which must keep every tool. The same
+mode picks the ``initialize``/``server/discover`` instructions and the hint call form. None of
+it reaches authorization, call routing or rate limits, and every tool stays callable via
+``call_tool``.
 """
 
 from __future__ import annotations

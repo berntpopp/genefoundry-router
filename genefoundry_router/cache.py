@@ -21,6 +21,7 @@ from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools.base import ToolResult
 
 from genefoundry_router.observability import TOOL_CACHE_HITS, TOOL_CACHE_MISSES
+from genefoundry_router.pinned_mode import PinnedMode, request_mode
 from genefoundry_router.registry import BackendDef
 
 log = structlog.get_logger(__name__)
@@ -337,8 +338,9 @@ class ToolResponseCache:
 class ToolResponseCacheMiddleware(Middleware):
     """FastMCP Middleware hooking tool invocations for response caching."""
 
-    def __init__(self, cache: ToolResponseCache) -> None:
+    def __init__(self, cache: ToolResponseCache, pinned_default: PinnedMode = "default") -> None:
         self.cache = cache
+        self.pinned_default = pinned_default
 
     async def on_call_tool(
         self,
@@ -350,6 +352,9 @@ class ToolResponseCacheMiddleware(Middleware):
             return await call_next(context)
 
         arguments = getattr(context.message, "arguments", None)
+        mode = request_mode(self.pinned_default)
+        if mode != self.pinned_default:  # hint rewrites follow the request's mode (#320)
+            arguments = {**(arguments or {}), "\x00pinned_mode": mode}
         cached = self.cache.get(name, arguments)
         if cached is not None:
             return cached
