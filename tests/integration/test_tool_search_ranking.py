@@ -110,16 +110,19 @@ async def test_reranker_failure_falls_back_to_bm25_order() -> None:
     assert fake.calls
 
 
-async def test_floor_dropping_everything_serves_two_low_confidence_bm25_hits() -> None:
-    """#303: a sub-floor shortlist is never a bare []; the top 2 BM25 hits come back flagged."""
-    query = "variant splice frequencies"
-    bm25 = await _search(_server(CompactBM25SearchTransform(max_results=2)), query)
-    scores = {"s_predict_splicing": 0.2, "g_get_variant_frequencies": 0.1}
-    fake = FakeReranker("rank", scores, min_score=0.3)
-    hits = await _search(_server(CompactBM25SearchTransform(max_results=5, reranker=fake)), query)
+async def test_floor_dropping_everything_serves_max_results_low_confidence_bm25_hits() -> None:
+    """#303: a sub-floor shortlist is never a bare []; up to max_results BM25 hits come back
+    flagged (the right tool can sit at BM25 rank 4, so 2 was too few)."""
+    query = "variant splice coverage gene symbol"
+    bm25 = await _search(_server(CompactBM25SearchTransform(max_results=4)), query)
+    assert len(bm25) == 4
+    fake = FakeReranker("rank", {"s_predict_splicing": 0.2}, min_score=0.3)
+    hits = await _search(_server(CompactBM25SearchTransform(max_results=4, reranker=fake)), query)
     assert [h["name"] for h in hits] == [h["name"] for h in bm25]
     assert all(h["low_confidence"] is True for h in hits)
-    assert {h["name"]: h["relevance"] for h in hits} == {h["name"]: scores[h["name"]] for h in bm25}
+    assert {h["name"]: h["relevance"] for h in hits} == {
+        h["name"]: fake.scores.get(h["name"], 0.0) for h in bm25
+    }
     assert hits[0]["call"]["tool"] == "call_tool"
 
 

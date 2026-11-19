@@ -52,10 +52,6 @@ DEFAULT_ALWAYS_VISIBLE: list[str] = [
 
 _MAX_RETURN_FIELDS = 12
 
-# When the reranker floor drops every candidate, serve this many top BM25 hits flagged
-# ``low_confidence`` instead of a bare [] that reads as "the fleet cannot do this" (#303).
-_LOW_CONFIDENCE_HITS = 2
-
 # How many extra copies of the high-signal "field" tokens (tool name, un-namespaced
 # leaf, and tags — which FastMCP's flat BM25 index ignores) to fold into the indexed
 # document. Repetition raises those tokens' term-frequency so a query that matches a
@@ -275,7 +271,9 @@ class CompactBM25SearchTransform(BM25SearchTransform):
                 kept = [t for t, score in ranked if score >= self.reranker.min_score][:served]
                 if kept or not shortlist:
                     return kept, {t.name: scores[t.name] for t in kept}, False
-                fallback = shortlist[: min(_LOW_CONFIDENCE_HITS, served)]
+                # Floor dropped all: serve the BM25 top ``served`` flagged ``low_confidence``,
+                # not a bare [] that reads as "the fleet cannot do this" (#303).
+                fallback = shortlist[:served]
                 return fallback, {t.name: scores[t.name] for t in fallback}, True
         return shortlist[:served], None, False
 
