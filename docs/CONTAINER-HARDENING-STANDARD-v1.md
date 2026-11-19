@@ -147,7 +147,7 @@ A consistent, audited hardening baseline across the fleet is exactly such a meas
 |---|---|
 | Multi-stage minimal image, non-root, healthcheck, frozen install | `docker/Dockerfile` |
 | read-only rootfs, `cap_drop`, `no-new-privileges`, `init`, resource limits, log rotation | `docker/docker-compose.prod.yml` |
-| expose-only behind reverse proxy, `ports: !reset []` | `docker/docker-compose.npm.yml` |
+| expose-only behind reverse proxy, standalone deployed file | `docker/docker-compose.npm.yml` |
 | secret exclusion from image | `.dockerignore` |
 
 Each `-link` repo already mirrors the `-link` Docker layout; this standard says **adopt the

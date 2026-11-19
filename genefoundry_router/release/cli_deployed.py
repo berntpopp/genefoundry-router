@@ -70,7 +70,10 @@ def register(
 
         def operation() -> Any:
             parsed = ReleaseConfig.model_validate(read_object(config))
-            files = tuple(compose_file) if compose_file else parsed.service.deployed_compose_files
+            # The model default is never trusted here: the deployed file must be declared.
+            explicit = "deployed_compose_files" in parsed.service.model_fields_set
+            declared_files = parsed.service.deployed_compose_files if explicit else ()
+            files = tuple(compose_file) if compose_file else declared_files
 
             def report(violations: tuple[str, ...]) -> Any:
                 for violation in violations:

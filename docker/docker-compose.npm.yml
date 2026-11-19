@@ -1,24 +1,79 @@
+# The ONE file the fleet controller deploys (Deploy Contract v1, C1): standalone, never
+# layered on docker-compose.yml / docker-compose.prod.yml. Keep the security boundary in
+# step with those files by hand; tests/unit/docker/test_compose.py guards it.
+# Literal project name (C2): without it Compose names the project after this file's
+# directory, `docker`, which every fleet repo shares.
+name: genefoundry-router
+
 services:
   genefoundry-router:
+    # C3: one fleet-wide image variable; GENEFOUNDRY_IMAGE stays a fallback for one release.
+    image: ${GF_IMAGE:-${GENEFOUNDRY_IMAGE:?set GF_IMAGE to a verified digest-addressed image}}
+    pull_policy: missing
     # NPM resolves its upstream by container name (`proxy_pass http://genefoundry_router:8000`),
-    # so this overlay must pin it. Without it Compose auto-names the container
+    # so this file must pin it. Without it Compose auto-names the container
     # `genefoundry-router-genefoundry-router-1`, nginx cannot resolve the upstream, and the
     # public /mcp endpoint goes down. Worse, an unresolvable upstream also makes `nginx -s
     # reload` fail, which blocks NPM config changes for every other site on the host.
     container_name: genefoundry_router
-    # !reset (not []) is required: Compose MERGES list fields across -f overlays, so a
-    # plain `ports: []` would NOT drop the base file's "${...:-8010}:8000" mapping — it
-    # would stay published on the host, exposing the auth=none gateway on the public IP.
-    # Behind NPM the router must be expose-only (reachable solely via the proxy network).
-    ports: !reset []
-    expose:
-      - "8000"
-    pull_policy: missing
     # GeneFoundry deploy contract: the fleet controller (strato_v6_docker_npm,
     # scripts/utils/deployment_preflight.py) accepts a declared user only as numeric
     # non-root, and its runtime observer proves the effective uid from /proc.
     # This is THIS image's own uid:gid (docker/Dockerfile) -- sibling -link images differ.
     user: "10001:10001"
+    env_file:
+      - path: ../.env
+        required: false
+      - path: ../.env.docker
+        required: false
+    environment:
+      GF_HOST: 0.0.0.0
+      GF_PORT: 8000
+      GF_MCP_PATH: /mcp
+      GF_DEPLOYMENT_MODE: production
+      GF_LOG_LEVEL: INFO
+      GF_ALLOWED_HOSTS: "${GF_ALLOWED_HOSTS:?set the public router hostname}"
+      GF_HEALTHCHECK_HOST: "${GF_HEALTHCHECK_HOST:?set the public health-check Host}"
+      GF_DRIFT_MODE: enforce
+      GF_DRIFT_BASELINE: "${GF_DRIFT_BASELINE:-}"
+      GF_REFRESH_OBSERVABILITY_DB: /data/genefoundry/refresh-observability.sqlite3
+      # OAuthProxy persists its DCR client registrations, auth codes, and refresh tokens as
+      # an encrypted FileTreeStore under $FASTMCP_HOME, on the durable fastmcp_data volume.
+      FASTMCP_HOME: /data/fastmcp
+    # Behind NPM the router is expose-only (reachable solely via the proxy network): a
+    # published port would expose the auth=none gateway on the public IP.
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f -H \"Host: $${GF_HEALTHCHECK_HOST}\" http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    volumes:
+      - fastmcp_data:/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    init: true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+          pids: 256
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    # Only the external proxy network (C6): a single-service project network would take an
+    # address pool for nothing.
     networks:
       - npm-network
 
@@ -27,3 +82,9 @@ networks:
     external: true
     # The nginx-proxy-manager container is attached to npm_default on the VPS; default to it.
     name: ${NPM_NETWORK_NAME:-npm_default}
+
+volumes:
+  fastmcp_data:
+    # C5: pinned to the name the volume already has in production (project-prefixed by the
+    # old layered stack) so the OAuth state survives; never let Compose derive it.
+    name: genefoundry-router_fastmcp_data

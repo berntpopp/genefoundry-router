@@ -9,8 +9,8 @@ runtime configuration and auth live in [`configuration.md`](configuration.md).
 ## Fleet controller deploy contract
 
 The fleet controller (`strato_v6_docker_npm`, `scripts/utils/deployment_preflight.py`)
-deploys `docker/docker-compose.yml` + `docker/docker-compose.prod.yml` +
-`docker/docker-compose.npm.yml` as one stack, and its `canonical_projection` accepts a
+deploys `docker/docker-compose.npm.yml` alone — a standalone file, per
+[`DEPLOY-CONTRACT-STANDARD-v1.md`](DEPLOY-CONTRACT-STANDARD-v1.md) — and its `canonical_projection` accepts a
 declared `user` only as numeric non-root — the runtime observer separately proves the
 effective uid from `/proc`. `docker/docker-compose.npm.yml` therefore declares
 `user: "10001:10001"`, this image's own uid:gid from `docker/Dockerfile`'s
@@ -60,10 +60,10 @@ prerequisites; the workflow must remain disabled until those controls are in pla
 Self-check the rendered stack against the controller's own projection before deploying:
 
 ```bash
-export GENEFOUNDRY_IMAGE="ghcr.io/berntpopp/genefoundry-router@sha256:<digest>"
+export GF_IMAGE="ghcr.io/berntpopp/genefoundry-router@sha256:<digest>"
 export GF_ALLOWED_HOSTS="genefoundry.org" GF_HEALTHCHECK_HOST="genefoundry.org"
-docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml \
-  -f docker/docker-compose.npm.yml config --format json > /tmp/genefoundry-router-rendered.json
+docker compose -f docker/docker-compose.npm.yml config --format json \
+  > /tmp/genefoundry-router-rendered.json
 # from the strato_v6_docker_npm checkout:
 uv run python -c "
 import sys, json; sys.path.insert(0, 'scripts')
@@ -100,12 +100,16 @@ uv run python scripts/container_release.py validate-deployed-overlay \
 
 | Rule | Requirement | Failure it prevents |
 | --- | --- | --- |
-| `deployed-file-set` | An overlay using `!reset`/`!override` must declare every file the controller deploys | Gating an overlay alone when it is deployed layered validates a stack nobody runs, and silently passes the one that is deployed. |
+| `single-deployed-file` | `service.deployed_compose_files` is declared explicitly and names exactly one file (Deploy Contract C1) | A stack layered from several files is deployed differently by every tool that forgets one. |
+| `deployed-file-set` | That file uses no `!reset`/`!override` | A merge directive means the file is layered on others, so gating it alone validates a stack nobody runs. |
+| `project-name` | A literal top-level `name:` (C2) | Without it Compose names the project after the directory, and every repo's `docker/` collides in one `docker` project. |
+| `volume-name` | Every top-level volume has an explicit `name:` (C5) | An unnamed volume follows the project name, so a rename starts the service on an empty volume. |
+| `internal-network` | A non-external network has ≥2 services and an `ipam` subnet from the registry (C6) | Each project network takes a Docker default address pool; single-service networks exhausted them on 2026-11-19. |
 | `numeric-user` | `user: "<uid>:<gid>"`, this image's own numeric ids | A named or absent user cannot be proven non-root from `/proc`; the controller refuses to deploy it. |
 | `restart-policy` | `restart: unless-stopped` on every long-running service, `restart: "no"` on run-once ones | An `on-failure` container does not come back after a host reboot or a Docker upgrade. |
 | `no-deploy-restart-policy` | No `deploy.restart_policy`, anywhere | Compose applies `deploy.restart_policy` *instead of* `restart`, silently swapping a reboot-surviving container onto `on-failure`; the runtime observer then reports `restart policy differs from Compose`. |
 | `healthcheck-start-period` | A healthcheck with an explicit `start_period` on every non-init service | Without one the deploy cannot wait for readiness, and a slow first start is reported UNHEALTHY and rolled back. |
-| `application-image` | `image: ${<PROJECT>_IMAGE:?...}` (a digest reference at deploy) | A tag or a literal image lets the deploy run code no one pinned; the required variable makes a missing or wrong digest a hard error. |
+| `application-image` | `image: ${GF_IMAGE:-${<PROJECT>_IMAGE:?...}}` or `${GF_IMAGE:?...}` (a digest reference at deploy) | A tag or a literal image lets the deploy run code no one pinned; the required variable makes a missing or wrong digest a hard error. |
 | `sidecar-image` | A declared sidecar runs exactly its declared third-party image | An undeclared third-party image makes the stack ambiguous, so the controller keys on the wrong service. |
 | `single-application-image` | Exactly one image variable across the application services | A two-image stack is refused with `target Compose projection does not name one application image`. |
 | `volumes` | Named volumes or tmpfs only; a bind only if `read_only: true` and listed in `deployed_seed_binds` | Host state the release does not carry, or an image-declared `VOLUME`, surfaces as `container mounts are invalid`. |
@@ -122,11 +126,11 @@ waits on it with `condition: service_completed_successfully`. Init services are 
 
 ### `container-release.json` fields
 
-All three are optional and live under `service`:
+They live under `service`; only `deployed_compose_files` is required by the gate:
 
 | Field | Default | Meaning |
 | --- | --- | --- |
-| `deployed_compose_files` | `["docker/docker-compose.npm.yml"]` | Every Compose file the fleet controller deploys, in overlay order. Declare the full list when the overlay is layered on the base files rather than deployed standalone. |
+| `deployed_compose_files` | none — must be declared | The one standalone Compose file the fleet controller deploys. The gate refuses a missing key or more than one file. |
 | `deployed_seed_binds` | `[]` | Container paths that may be `read_only: true` bind mounts (a seed directory staged on the host). Any other bind is refused. |
 | `deployed_sidecars` | `[]` | `{"name": ..., "image": ...}` for each service running a third-party image, so the controller can key on the application service. |
 
@@ -136,11 +140,7 @@ Example, for a stack with a Postgres sidecar and a seed bind:
 "service": {
   "name": "example-link",
   "compose_files": ["docker/docker-compose.yml", "docker/docker-compose.prod.yml"],
-  "deployed_compose_files": [
-    "docker/docker-compose.yml",
-    "docker/docker-compose.prod.yml",
-    "docker/docker-compose.npm.yml"
-  ],
+  "deployed_compose_files": ["docker/docker-compose.npm.yml"],
   "deployed_seed_binds": ["/seed"],
   "deployed_sidecars": [{"name": "postgres", "image": "postgres:16-alpine"}]
 }

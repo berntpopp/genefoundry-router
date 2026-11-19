@@ -22,7 +22,7 @@ from genefoundry_router.release.compose_deployed import (
 
 DIGEST = "sha256:" + "a" * 64
 IMAGE = f"ghcr.io/example/placeholder@{DIGEST}"
-TEMPLATE = "${EXAMPLE_LINK_IMAGE:?Set EXAMPLE_LINK_IMAGE to ghcr.io/x/y@sha256:<digest>}"
+TEMPLATE = "${GF_IMAGE:-${EXAMPLE_LINK_IMAGE:?Set GF_IMAGE to ghcr.io/x/y@sha256:<digest>}}"
 
 
 def _application(**overrides: Any) -> dict[str, Any]:
@@ -174,7 +174,15 @@ def test_init_service_must_not_be_restarted() -> None:
 
 @pytest.mark.parametrize(
     "template",
-    ["ghcr.io/x/y:1.2.3", f"ghcr.io/x/y@{DIGEST}", "${EXAMPLE_IMAGE}", "${example_image:?set}"],
+    [
+        "ghcr.io/x/y:1.2.3",
+        f"ghcr.io/x/y@{DIGEST}",
+        "${EXAMPLE_IMAGE}",
+        "${example_image:?set}",
+        "${EXAMPLE_LINK_IMAGE:?set}",
+        "${GF_IMAGE:-ghcr.io/x/y:latest}",
+        "${OTHER:-${EXAMPLE_LINK_IMAGE:?set}}",
+    ],
 )
 def test_application_image_must_be_a_required_variable(template: str) -> None:
     raw = {"name": "example-link-npm", "services": {"app": {"image": template}}}
@@ -187,7 +195,7 @@ def test_second_application_image_is_refused_as_a_two_image_stack() -> None:
         "name": "example-link-npm",
         "services": {
             "app": {"image": TEMPLATE},
-            "db": {"image": "${OTHER_IMAGE:?set it}"},
+            "db": {"image": "${GF_IMAGE:?set it}"},
         },
     }
     rendered = _rendered(app=_application(), db=_application())
@@ -347,16 +355,81 @@ def test_layered_overlay_alone_is_refused_as_the_deployed_file_set() -> None:
     assert _rules(violations) == {"deployed-file-set"}
 
 
+NAMED = "name: example-link\n"
+
+
 def test_self_contained_overlay_alone_is_accepted_as_the_deployed_file_set() -> None:
-    sources = {"docker/docker-compose.npm.yml": "services:\n  app:\n    expose: ['8000']\n"}
+    sources = {
+        "docker/docker-compose.npm.yml": NAMED
+        + "services:\n  app:\n    expose: ['8000']\n"
+        + "volumes:\n  data:\n    name: ${GF_DATA_VOLUME:-example-data-${GF_DATA_RELEASE_TAG}}\n"
+    }
 
     assert validate_deployed_file_set(sources, ["docker/docker-compose.npm.yml"]) == ()
 
 
-def test_a_declared_multi_file_set_may_use_merge_directives() -> None:
-    sources = {
-        "docker/docker-compose.yml": "services:\n  app:\n    ports: ['8000:8000']\n",
-        "docker/docker-compose.npm.yml": "services:\n  app:\n    ports: !reset []\n",
-    }
+@pytest.mark.parametrize("declared", [[], ["docker/docker-compose.yml", "docker/npm.yml"]])
+def test_anything_but_one_declared_deployed_file_is_refused(declared: list[str]) -> None:
+    sources = dict.fromkeys(declared, NAMED + "services:\n  app:\n    ports: !reset []\n")
 
-    assert validate_deployed_file_set(sources, list(sources)) == ()
+    assert _rules(validate_deployed_file_set(sources, declared)) == {"single-deployed-file"}
+
+
+@pytest.mark.parametrize("header", ["", "name: ${COMPOSE_NAME:-x}\n", "name: ''\n"])
+def test_deployed_file_without_a_literal_project_name_is_refused(header: str) -> None:
+    sources = {"docker/docker-compose.npm.yml": header + "services:\n  app: {}\n"}
+
+    violations = validate_deployed_file_set(sources, ["docker/docker-compose.npm.yml"])
+
+    assert _rules(violations) == {"project-name"}
+
+
+@pytest.mark.parametrize("volume", ["  data:\n", "  data: {}\n", "  data:\n    external: false\n"])
+def test_volume_without_an_explicit_name_is_refused(volume: str) -> None:
+    sources = {"docker/docker-compose.npm.yml": NAMED + "volumes:\n" + volume}
+
+    violations = validate_deployed_file_set(sources, ["docker/docker-compose.npm.yml"])
+
+    assert _rules(violations) == {"volume-name"}
+
+
+def _networked(**networks: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Two services: `app` on every given network, `db` only on `internal`."""
+    app = _application(networks=dict.fromkeys(networks))
+    db = _application(networks={"internal": None})
+    rendered = _rendered(app=app, db=db) | {"networks": networks}
+    return rendered, _raw("app", "db")
+
+
+SUBNET = {"config": [{"subnet": "10.251.3.0/28"}]}
+
+
+def test_shared_internal_network_with_a_registry_subnet_passes() -> None:
+    rendered, raw = _networked(
+        internal={"name": "x_internal", "ipam": SUBNET},
+        npm={"name": "npm_default", "external": True},
+    )
+
+    assert "internal-network" not in _rules(validate_deployed_overlay(rendered, raw))
+
+
+@pytest.mark.parametrize(
+    "network",
+    [{"name": "x_internal"}, {"name": "x_internal", "ipam": {"config": [{}]}}],
+)
+def test_internal_network_without_a_subnet_is_refused(network: dict[str, Any]) -> None:
+    rendered, raw = _networked(internal=network)
+
+    assert "internal-network" in _rules(validate_deployed_overlay(rendered, raw))
+
+
+def test_single_service_internal_network_is_refused() -> None:
+    rendered, raw = _networked(
+        internal={"name": "x_internal", "ipam": SUBNET},
+        solo={"name": "x_solo", "ipam": SUBNET},
+    )
+
+    flagged = [v for v in validate_deployed_overlay(rendered, raw) if "internal-network" in v]
+
+    assert len(flagged) == 1
+    assert flagged[0].startswith("solo: internal-network")
