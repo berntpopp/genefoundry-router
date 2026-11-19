@@ -4,6 +4,8 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.4] - 2026-11-19
+
 ### Added
 
 - **Pinned mode (#320).** `GF_PINNED_MODE=default|minimal|none` (default unchanged) picks
