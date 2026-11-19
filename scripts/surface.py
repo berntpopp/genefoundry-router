@@ -43,7 +43,8 @@ _VERB_LEAD = re.compile(
 )
 # "Returns X" / "→ X"; not "does not return", not a size ("Returns ~7kB").
 _RETURNS = re.compile(
-    r"(?<!not )(?<!n't )(?<!never )\breturn(?:s|ed|ing)?\b(?!\s*[~<\d])|→|->", re.IGNORECASE
+    r"(?<!not )(?<!n't )(?<!n\u2019t )(?<!never )\breturn(?:s|ed|ing)?\b(?!\s*[~<\d])|→|->",
+    re.IGNORECASE,
 )
 # "Use this for a gene dossier: constraint, transcripts, ..." — a labelled field list.
 _FIELD_LIST = re.compile(r"\w+\W+\w+[^:]*:\s+[^.;:]+,")

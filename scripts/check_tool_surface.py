@@ -50,7 +50,6 @@ from surface import (
     tokens,
 )
 
-
 ADVISORY = {"D1"}  # warn-only until a repo opts in with --strict-lead
 
 
@@ -138,7 +137,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Enforce the fleet's tool-surface standards")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--baseline", default=BASELINE)
-    parser.add_argument("--rule", help="report only this rule (e.g. D1), listing every finding")
+    parser.add_argument(
+        "--rule",
+        choices=["B1", "B2", "S1", "S2", "S3", "S5", "D1"],  # a typo must not report "conformant"
+        help="report only this rule, listing every finding",
+    )
     parser.add_argument("--strict-lead", action="store_true", help="fail on D1 instead of warning")
     args = parser.parse_args()
 

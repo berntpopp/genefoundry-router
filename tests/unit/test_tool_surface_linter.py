@@ -149,6 +149,7 @@ def test_d1_negated_and_sized_returns_do_not_count() -> None:
     from surface import lead_states_return
 
     assert not lead_states_return("Use this for variant details; does not return ClinVar.")
+    assert not lead_states_return("Use this for variant details; it doesn\u2019t return ClinVar.")
     assert not lead_states_return("Use this when a client needs capabilities; returns ~7kB.")
 
 
