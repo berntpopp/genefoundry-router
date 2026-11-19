@@ -1081,7 +1081,7 @@
   },
   {
     "name": "clinpgx_search_records",
-    "description": "Find ClinPGx genes, chemicals, variants, labels, guideline/summary/variant annotations by exact live filters or installed dataset memberships; returns PA accessions to reuse in get_record/get_related_records. Filter keys are per entity_type (see filters); summary_annotation accepts level_of_evidence. Star alleles: get_record(entity_type='haplotype', source='website').",
+    "description": "Find pharmacogenomic gene-drug (PharmGKB/ClinPGx) records (genes, drugs (chemical), variants, alleles/haplotypes, clinical (summary)/variant annotations, guidelines, labels) by exact live filters or installed dataset memberships; returns PA accessions for get_record/get_related_records. Not drug-drug interactions. Filter keys are per entity_type (see filters); summary_annotation accepts level_of_evidence. Star alleles: get_record(entity_type='haplotype', source='website').",
     "tags": [
       "dosing",
       "drug",
@@ -4172,7 +4172,7 @@
   },
   {
     "name": "metadome_resolve_transcript",
-    "description": "Resolve a gene symbol or versioned ENST id; for a gene returns its MetaDome transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then request_tolerance_landscape.",
+    "description": "Resolve a gene symbol or versioned ENST id to the MetaDome transcript (GRCh37 or GRCh38 build) to use for its missense tolerance landscape; for a gene returns its transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then request_tolerance_landscape.",
     "tags": [
       "domain",
       "protein",

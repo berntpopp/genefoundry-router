@@ -105,7 +105,7 @@ def test_manual_keywords_lead_the_keywords_and_survive_the_cap(tmp_path: Path) -
     assert text["x_tool"].startswith("PMC g0 ") and f"g{MAX_ITEMS_PER_FIELD - 1}" not in text
 
 
-def test_regeneration_keeps_the_manual_overlay(tmp_path: Path, monkeypatch) -> None:
+def _gen_module():  # type: ignore[no-untyped-def]
     root = Path(__file__).resolve().parents[2]
     spec = importlib.util.spec_from_file_location(
         "gen_exp", root / "scripts/gen_tool_expansions.py"
@@ -113,13 +113,44 @@ def test_regeneration_keeps_the_manual_overlay(tmp_path: Path, monkeypatch) -> N
     assert spec and spec.loader
     gen = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(gen)
+    return gen
+
+
+def _regenerate(tmp_path: Path, monkeypatch, *flags: str) -> dict[str, object]:  # type: ignore[no-untyped-def]
+    gen = _gen_module()
     monkeypatch.setattr(gen, "_generate", lambda *a: {"queries": ["new q"], "keywords": ["new"]})
     monkeypatch.setenv("OPENROUTER_API_KEY", "test")
     catalog = _write(tmp_path, [{"name": "x_tool", "description": "changed", "params": {}}])
     out = tmp_path / "out.json"
-    stale = {"source_sha256": "old", "queries": [], "keywords": ["k"], "manual_keywords": ["PMC"]}
+    stale = {
+        "source_sha256": "old",
+        "queries": ["old q"],
+        "keywords": ["K", "New", "Häufigkeit"],
+        "manual_keywords": ["PMC"],
+    }
     out.write_text(json.dumps(_doc({"x_tool": stale})), encoding="utf-8")
     argv = ["--catalog", str(catalog), "--out", str(out), "--cache-dir", str(tmp_path / "c")]
-    assert gen.main(argv) == 0
-    entry = json.loads(out.read_text(encoding="utf-8"))["tools"]["x_tool"]
+    assert gen.main([*argv, *flags]) == 0
+    return json.loads(out.read_text(encoding="utf-8"))["tools"]["x_tool"]  # type: ignore[no-any-return]
+
+
+def test_regeneration_keeps_old_keywords_and_the_manual_overlay(
+    tmp_path: Path, monkeypatch
+) -> None:
+    # Generation is stochastic: a description tweak must not delete (e.g. German) vocabulary.
+    entry = _regenerate(tmp_path, monkeypatch)
+    assert entry["keywords"] == ["new", "K", "Häufigkeit"]  # new first, case-insensitive dedupe
+    assert entry["queries"] == ["new q"] and entry["manual_keywords"] == ["PMC"]
+
+
+def test_fresh_regeneration_drops_old_keywords(tmp_path: Path, monkeypatch) -> None:
+    entry = _regenerate(tmp_path, monkeypatch, "--fresh")
     assert entry["keywords"] == ["new"] and entry["manual_keywords"] == ["PMC"]
+
+
+def test_keyword_carry_over_respects_the_cap() -> None:
+    gen = _gen_module()
+    new = {"queries": ["q"], "keywords": [f"n{i}" for i in range(30)]}
+    merged = gen.carry_over(new, {"keywords": [f"o{i}" for i in range(30)]})
+    assert len(merged["keywords"]) == MAX_ITEMS_PER_FIELD
+    assert merged["keywords"][:31] == [*new["keywords"], "o0"] and merged["queries"] == ["q"]

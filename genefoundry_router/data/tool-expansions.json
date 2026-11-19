@@ -726,7 +726,18 @@
     "mode of inheritance",
     "curation summary",
     "expert panel curation",
-    "MONDO"
+    "MONDO",
+    "gene-disease relationship",
+    "GDR",
+    "No Evidence",
+    "clinical validity score",
+    "assertion level",
+    "curation"
+   ],
+   "manual_keywords": [
+    "is this gene really linked to the disease",
+    "Gen-Krankheits-Validität",
+    "validité gène-maladie"
    ]
   },
   "clingen_get_server_capabilities": {
@@ -780,7 +791,17 @@
     "api manifest",
     "introspection",
     "endpoint listing",
-    "supported operations"
+    "supported operations",
+    "server status",
+    "dataset availability",
+    "documentation",
+    "endpoints",
+    "health check",
+    "supported endpoints",
+    "API schema",
+    "release version",
+    "rate limit hints",
+    "system metadata"
    ]
   },
   "clingen_get_variant_interpretation": {
@@ -1085,7 +1106,20 @@
     "specification registry",
     "curation rules",
     "strength adjustments",
-    "expert panel thresholds"
+    "expert panel thresholds",
+    "ACMG guidelines",
+    "strength modifiers",
+    "evidence codes",
+    "curation standards",
+    "variant classification rules",
+    "expert panel criteria",
+    "ClinGen specifications",
+    "VCEP",
+    "ACMG code",
+    "curation guideline",
+    "rule modification",
+    "PVS1",
+    "BA1 cutoff"
    ]
   },
   "clingen_search_dosage": {
@@ -1135,7 +1169,24 @@
     "copy number variation",
     "dosage map",
     "DECIPHER",
-    "ClinGen dosage"
+    "ClinGen dosage",
+    "HI",
+    "TS",
+    "copy number",
+    "score 3",
+    "score 0",
+    "region",
+    "gene",
+    "ClinGen",
+    "structural variant",
+    "DGV"
+   ],
+   "manual_keywords": [
+    "one copy missing",
+    "extra copy",
+    "Haploinsuffizienz",
+    "haploinsuffisance",
+    "haploinsuficiencia"
    ]
   },
   "clingen_search_genes": {
@@ -1189,7 +1240,20 @@
     "dosage availability",
     "actionability status",
     "pre-flight check",
-    "gene entity"
+    "gene entity",
+    "alias",
+    "symbol",
+    "canonical",
+    "resolution",
+    "identifier",
+    "official name",
+    "gene ID",
+    "lookup",
+    "validate",
+    "existence check",
+    "standardize",
+    "nomenclature",
+    "entry check"
    ]
   },
   "clingen_search_validity": {
@@ -1500,7 +1564,18 @@
     "source config",
     "pinned snapshot",
     "backend diagnostics",
-    "smoke test"
+    "smoke test",
+    "pinned data",
+    "cached hits",
+    "metadata inspection",
+    "fixed gene evidence",
+    "configuration check",
+    "secrets hidden",
+    "local paths",
+    "response mode",
+    "diagnostics",
+    "cache verification",
+    "evidence source"
    ]
   },
   "clinpgx_get_record": {
@@ -1551,7 +1626,21 @@
     "rsID defining variant",
     "JSON pointer",
     "VIP gene",
-    "dosing guideline"
+    "dosing guideline",
+    "guideline",
+    "drug-gene interaction",
+    "allele definition",
+    "clinical recommendation",
+    "dosage adjustment",
+    "phenotype prediction",
+    "diplotype",
+    "RFC 6901",
+    "pointer path",
+    "pharmacogenomics",
+    "view projection",
+    "PA id",
+    "metabolizer status",
+    "VIP"
    ]
   },
   "clinpgx_get_related_records": {
@@ -1598,7 +1687,30 @@
     "pharmacogenetic interaction",
     "variant annotation",
     "multilink annotation",
-    "summary annotation"
+    "summary annotation",
+    "pharmacogenomics",
+    "drug-gene interaction",
+    "guideline cross-reference",
+    "API pair mode",
+    "relationship mapping",
+    "variant-drug link",
+    "live join",
+    "source website",
+    "entity relationship",
+    "PGx evidence",
+    "drug-gene pair",
+    "PGx",
+    "gene-drug interaction",
+    "VIP",
+    "dosing guideline",
+    "diplotype",
+    "phenotype association",
+    "pair mode"
+   ],
+   "manual_keywords": [
+    "dosing guideline",
+    "Dosierungsempfehlung",
+    "recommandation posologique"
    ]
   },
   "clinpgx_get_server_capabilities": {
@@ -1649,7 +1761,23 @@
     "api_contract_defaults",
     "valid search keys",
     "source routing",
-    "numeric detail ids"
+    "numeric detail ids",
+    "endpoints",
+    "limits",
+    "quota",
+    "catalog",
+    "inventory",
+    "defaults",
+    "status",
+    "features",
+    "discovery",
+    "overview",
+    "rate limits",
+    "quotas",
+    "server metadata",
+    "supported features",
+    "contract defaults",
+    "runtime limits"
    ]
   },
   "clinpgx_get_source_content": {
@@ -1699,7 +1827,24 @@
     "base64 payload",
     "content resolution",
     "blob retrieval",
-    "paginated source"
+    "paginated source",
+    "binary blob",
+    "byte offset",
+    "chunked read",
+    "archive member",
+    "snapshot bytes",
+    "provenance",
+    "cpic guideline",
+    "star allele",
+    "dosage table",
+    "utf-8 string",
+    "base64 decode",
+    "opaque ref",
+    "digest",
+    "raw payload",
+    "base64 stream",
+    "cached response",
+    "slice content"
    ]
   },
   "clinpgx_get_website_data": {
@@ -1853,7 +1998,22 @@
     "prescribing guideline",
     "package insert",
     "dosing table",
-    "PGx snapshot"
+    "PGx snapshot",
+    "drug-gene interaction",
+    "pharmacokinetics",
+    "adverse drug reaction",
+    "genotype-phenotype",
+    "dosage recommendation",
+    "therapeutic efficacy",
+    "canonical gene",
+    "snapshot index",
+    "member_sha256",
+    "snapshot member",
+    "offline dataset",
+    "DPYD",
+    "CYP2D6",
+    "CYP2C19",
+    "VKORC1"
    ]
   },
   "clinpgx_search_records": {
@@ -1902,7 +2062,30 @@
     "VIP gene",
     "pharmacokinetics",
     "metabolizer phenotype",
-    "toxicogenomics"
+    "toxicogenomics",
+    "PGx",
+    "prescribing guideline",
+    "medication response",
+    "adverse drug reaction",
+    "therapeutic efficacy",
+    "dosage recommendation",
+    "phenotype prediction",
+    "biomarker",
+    "CYP450",
+    "diplotype",
+    "drug toxicity marker"
+   ],
+   "manual_keywords": [
+    "drug response",
+    "which dose",
+    "medication and genes",
+    "Arzneimittel",
+    "Dosierung",
+    "médicament",
+    "posologie",
+    "medicamento",
+    "Pharmakogenetik",
+    "pharmacogénétique"
    ]
   },
   "clinvar_get_gene_clinvar_summary": {
@@ -1956,7 +2139,25 @@
     "conflicting interpretations count",
     "associated traits",
     "ClinVar overview",
-    "aggregate mutations"
+    "aggregate mutations",
+    "pathogenic",
+    "likely pathogenic",
+    "benign",
+    "clinical significance",
+    "variant landscape",
+    "classification tally",
+    "gold stars",
+    "trait distribution",
+    "concordance",
+    "conflicting interpretations",
+    "likely pathogenic count"
+   ],
+   "manual_keywords": [
+    "review stars",
+    "Übersicht",
+    "synthèse",
+    "étoiles",
+    "resumen"
    ]
   },
   "clinvar_get_server_capabilities": {
@@ -2050,7 +2251,25 @@
     "VUS",
     "likely pathogenic",
     "gold stars",
-    "clinical interpretation"
+    "clinical interpretation",
+    "clinical significance",
+    "citation",
+    "normalized classification",
+    "single variant",
+    "transcript-qualified",
+    "dbSNP rsID",
+    "HGVS lookup",
+    "expert panel assertion"
+   ],
+   "manual_keywords": [
+    "is this variant harmful",
+    "disease-causing",
+    "pathogen",
+    "krankheitsverursachend",
+    "pathogène",
+    "patógena",
+    "klinische Bedeutung",
+    "signification clinique"
    ]
   },
   "clinvar_get_variants": {
@@ -2104,7 +2323,18 @@
     "clinical significance array",
     "bulk star rating",
     "VCF variant list annotation",
-    "parallel variant lookup"
+    "parallel variant lookup",
+    "array",
+    "classification",
+    "multi-lookup",
+    "batch query",
+    "bulk lookup",
+    "multi-variant",
+    "VCV accession",
+    "rsID list",
+    "clinical significance",
+    "bulk annotation",
+    "pathogenicity batch"
    ]
   },
   "clinvar_get_variants_by_gene": {
@@ -2154,7 +2384,26 @@
     "curated mutations",
     "OMIM alleles",
     "VUS list",
-    "mutation catalog"
+    "mutation catalog",
+    "clinical significance",
+    "pathogenicity",
+    "allele ID",
+    "variation ID",
+    "submitters",
+    "evidence level",
+    "variant catalog",
+    "mutation list",
+    "RCV accessions",
+    "pathogenic",
+    "likely pathogenic",
+    "VUS",
+    "variation landscape",
+    "aggregate variants"
+   ],
+   "manual_keywords": [
+    "all reported variants in a gene",
+    "pathogene Varianten im Gen",
+    "variants pathogènes du gène"
    ]
   },
   "clinvar_get_variants_by_pmid": {
@@ -2252,7 +2501,25 @@
     "likely pathogenic",
     "HGVS query",
     "free-text search",
-    "variation name"
+    "variation name",
+    "VariationID",
+    "trait",
+    "condition",
+    "disease association",
+    "submitter conflict",
+    "phenotype search",
+    "trait lookup",
+    "condition mapping",
+    "loose text matching",
+    "HGNC filter",
+    "ACMG classification"
+   ],
+   "manual_keywords": [
+    "harmful variants",
+    "disease-causing variants",
+    "pathogene Varianten",
+    "variants pathogènes",
+    "variantes patógenas"
    ]
   },
   "gencc_find_curations": {
@@ -2305,7 +2572,26 @@
     "curation registry",
     "clingen validity",
     "assertion database",
-    "evidence criteria"
+    "evidence criteria",
+    "organization",
+    "paging",
+    "batch filter",
+    "HGNC",
+    "MONDO",
+    "OMIM",
+    "assertion status",
+    "curation matrix",
+    "assertion filtering",
+    "disputed evidence",
+    "PanelApp curations",
+    "GenCC browser"
+   ],
+   "manual_keywords": [
+    "gene disease link",
+    "Gen-Krankheit",
+    "gène-maladie",
+    "Erbgang",
+    "mode de transmission"
    ]
   },
   "gencc_get_disease_curations": {
@@ -2358,7 +2644,26 @@
     "moderate",
     "disputed",
     "conflict flag",
-    "curated disease genes"
+    "curated disease genes",
+    "GenCC",
+    "clinical validity",
+    "gene-disease relationship",
+    "assertion",
+    "curation",
+    "harmonized title",
+    "causal genes",
+    "clinical curation",
+    "curated genes",
+    "submitter breakdown",
+    "moderate evidence",
+    "phenotype genes",
+    "disease panel genes"
+   ],
+   "manual_keywords": [
+    "which genes cause this disease",
+    "Krankheitsgene",
+    "gènes de la maladie",
+    "genes de la enfermedad"
    ]
   },
   "gencc_get_diseases_curations": {
@@ -2411,7 +2716,21 @@
     "clinical validity",
     "Orphanet batch",
     "OMIM disease list",
-    "phenotype to gene batch"
+    "phenotype to gene batch",
+    "gene-disease relationship",
+    "submitter assertions",
+    "multiple diseases",
+    "disease curation",
+    "validity assertions",
+    "ClinGen",
+    "PanelApp",
+    "Orphanet",
+    "gene disease validity",
+    "curated disease panels",
+    "MONDO batch",
+    "OMIM curations",
+    "multi-disease query",
+    "consensus assertions"
    ]
   },
   "gencc_get_gencc_diagnostics": {
@@ -2513,7 +2832,21 @@
     "moderate evidence",
     "strong evidence",
     "curation conflict",
-    "disease associations"
+    "disease associations",
+    "curation",
+    "strong",
+    "moderate",
+    "limited",
+    "clinical validity",
+    "HGNC CURIE",
+    "submitter conflict",
+    "Gene Curation Coalition"
+   ],
+   "manual_keywords": [
+    "which diseases does this gene cause",
+    "Gen-Krankheit",
+    "gène-maladie",
+    "gen-enfermedad"
    ]
   },
   "gencc_get_gene_disease_assertion": {
@@ -2622,7 +2955,19 @@
     "HGNC batch",
     "MONDO mapping",
     "panel validation",
-    "assertion matrix"
+    "assertion matrix",
+    "GenCC",
+    "clinical validity",
+    "gene-disease association",
+    "assertion",
+    "batch lookup",
+    "curation status",
+    "disease validity",
+    "evidence summary",
+    "gene-disease validity",
+    "panel curation",
+    "multiple genes",
+    "batch query"
    ]
   },
   "gencc_get_server_capabilities": {
@@ -2773,7 +3118,21 @@
     "gene symbol validation",
     "disease title match",
     "entity linker",
-    "ontology resolver"
+    "ontology resolver",
+    "canonicalize",
+    "symbol resolution",
+    "entity linking",
+    "preferred term",
+    "concept ID",
+    "terminology service",
+    "identifier conversion",
+    "identifier normalization",
+    "entity resolver",
+    "HGNC mapping",
+    "OMIM conversion",
+    "free text resolution",
+    "harmonization",
+    "cross-reference lookup"
    ]
   },
   "gencc_search_diseases": {
@@ -2927,7 +3286,23 @@
     "authors",
     "NCBI",
     "MEDLINE",
-    "abstract text"
+    "abstract text",
+    "ncbi efetch",
+    "paper overview",
+    "reference metadata",
+    "journal abstract",
+    "publication info",
+    "live fetch",
+    "corpus version",
+    "structured errors",
+    "E-utilities",
+    "Bookshelf",
+    "publication summary",
+    "NCBI E-utils",
+    "citation abstract",
+    "article synopsis",
+    "literature fetch",
+    "chapter abstract"
    ]
   },
   "genereviews_get_chapter_metadata": {
@@ -2974,7 +3349,22 @@
     "heading_path",
     "section index",
     "chapter hierarchy",
-    "NCBI Bookshelf metadata"
+    "NCBI Bookshelf metadata",
+    "outline",
+    "structure",
+    "table_ids",
+    "captions",
+    "passage_count",
+    "section_list",
+    "chapter_info",
+    "nbk_id",
+    "gene_symbols",
+    "hierarchy",
+    "Bookshelf outline",
+    "table manifest",
+    "revision history",
+    "heading hierarchy",
+    "table_id list"
    ]
   },
   "genereviews_get_chapter_section": {
@@ -3076,7 +3466,22 @@
     "surveillance guidelines",
     "corpus fallback",
     "live text retrieval",
-    "chapter dump"
+    "chapter dump",
+    "Bookshelf",
+    "full text",
+    "complete chapter",
+    "diagnostic criteria",
+    "unstructured text",
+    "entire article",
+    "prose",
+    "guidelines",
+    "treatment protocols",
+    "raw content",
+    "live Bookshelf",
+    "untruncated chapter",
+    "chapter prose",
+    "management section",
+    "differential diagnosis section"
    ]
   },
   "genereviews_get_genereview_summary": {
@@ -3127,7 +3532,29 @@
     "curated review",
     "expert consensus",
     "disease overview",
-    "Bookshelf chapter"
+    "Bookshelf chapter",
+    "expert curated",
+    "diagnostic criteria overview",
+    "management guidelines summary",
+    "inheritance pattern",
+    "molecular genetics overview",
+    "agent review",
+    "NBK ID",
+    "defining corpus",
+    "lean response",
+    "abstract metadata",
+    "gene-centric review",
+    "curated clinical genetics",
+    "NBK ID resolver",
+    "gene review digest",
+    "management overview",
+    "genetic counseling guide"
+   ],
+   "manual_keywords": [
+    "disease summary",
+    "Zusammenfassung",
+    "résumé",
+    "resumen"
    ]
   },
   "genereviews_get_license": {
@@ -3436,7 +3863,29 @@
     "NCBI Books",
     "literature curation",
     "monogenic disorder review",
-    "gene disease entry"
+    "gene disease entry",
+    "clinical synopsis",
+    "expert curated",
+    "diagnostic criteria",
+    "management guidelines",
+    "disease description",
+    "genetic counseling",
+    "inheritance pattern",
+    "molecular genetics",
+    "chapter summary",
+    "clinical overview",
+    "phenotype description",
+    "treatment recommendations",
+    "surveillance protocols",
+    "NCBI E-utils",
+    "NBK ID"
+   ],
+   "manual_keywords": [
+    "disease overview",
+    "patient guide",
+    "Krankheitsübersicht",
+    "revue génétique",
+    "fiche maladie"
    ]
   },
   "genereviews_search_passages": {
@@ -3485,7 +3934,37 @@
     "chapter passage",
     "RRF reranking",
     "phenotype correlation",
-    "Bookshelf passage search"
+    "Bookshelf passage search",
+    "GeneReviews",
+    "NBK",
+    "Bookshelf",
+    "clinical guidelines",
+    "treatment protocol",
+    "molecular pathology",
+    "expert review",
+    "inheritance pattern",
+    "penetrance",
+    "Bookshelf search",
+    "treatment recommendations",
+    "NCBI Bookshelf text",
+    "hybrid retrieval",
+    "RRF",
+    "reciprocal rank fusion",
+    "corpus snippets",
+    "expert consensus reviews",
+    "genetic counseling guidance"
+   ],
+   "manual_keywords": [
+    "management",
+    "follow-up",
+    "treatment",
+    "surveillance",
+    "Behandlung",
+    "Therapie",
+    "prise en charge",
+    "traitement",
+    "tratamiento",
+    "diagnostic criteria"
    ]
   },
   "genereviews_search_passages_batch": {
@@ -3538,7 +4017,21 @@
     "NBK multi search",
     "sectioned literature queries",
     "vector batch search",
-    "deduplicated hits"
+    "deduplicated hits",
+    "bulk search",
+    "async",
+    "multiple genes",
+    "section-specific",
+    "rerank",
+    "passage retrieval",
+    "diagnostic criteria",
+    "GeneReviews corpus",
+    "concurrent search",
+    "parallel passage retrieval",
+    "Bookshelf batch search",
+    "query batching",
+    "clinical report pipeline",
+    "evidence harvesting"
    ]
   },
   "gnomad_compare_variant_across_datasets": {
@@ -3590,7 +4083,22 @@
     "population delta",
     "AF shift",
     "exome vs genome frequency",
-    "historical frequency"
+    "historical frequency",
+    "allele frequency shift",
+    "cross-dataset comparison",
+    "gnomAD v2 vs v3 vs v4",
+    "AF delta",
+    "population divergence",
+    "release comparison",
+    "r2.1 r3 r4",
+    "frequency trend",
+    "AC AN changes",
+    "version drift",
+    "popmax difference",
+    "liftover comparison",
+    "dataset presence",
+    "global AF change",
+    "subpopulation variance"
    ]
   },
   "gnomad_compute_carrier_frequency": {
@@ -3641,7 +4149,29 @@
     "q^2",
     "heterozygous frequency",
     "unaffected carrier",
-    "population prevalence"
+    "population prevalence",
+    "carrier frequency",
+    "Wilson CI",
+    "confidence interval",
+    "autosomal recessive",
+    "autosomal dominant",
+    "X-linked",
+    "heterozygote frequency",
+    "homozygote frequency",
+    "disease prevalence",
+    "recessive carrier rate",
+    "carrier screening",
+    "population genetics"
+   ],
+   "manual_keywords": [
+    "how many people carry",
+    "carrier chance",
+    "healthy carriers",
+    "Trägerfrequenz",
+    "Überträger",
+    "fréquence des porteurs",
+    "porteurs hétérozygotes",
+    "frecuencia de portadores"
    ]
   },
   "gnomad_compute_gene_carrier_frequency": {
@@ -3694,7 +4224,30 @@
     "carrier screening",
     "recessive burden",
     "popmax carrier",
-    "pathogenic variant aggregation"
+    "pathogenic variant aggregation",
+    "allele frequency aggregation",
+    "HWE",
+    "pathogenic variant burden",
+    "ClinVar gold stars",
+    "population stratification",
+    "recessive risk",
+    "variant filtering",
+    "ACMG BA1",
+    "gnomAD release",
+    "heterozygote frequency",
+    "genetic prevalence",
+    "homozygote exclusion",
+    "expanded carrier screening",
+    "ClinVar P/LP aggregation"
+   ],
+   "manual_keywords": [
+    "how many people carry",
+    "healthy carriers",
+    "recessive disease carriers",
+    "Trägerfrequenz",
+    "Überträger",
+    "fréquence des porteurs",
+    "frecuencia de portadores"
    ]
   },
   "gnomad_compute_variant_liftover": {
@@ -3743,7 +4296,14 @@
     "crossmap",
     "chain file",
     "assembly conversion",
-    "build translation"
+    "build translation",
+    "assembly mapping",
+    "reference genome",
+    "variant remapping",
+    "chromosome coordinates",
+    "genome build",
+    "hg19 to hg38",
+    "position translation"
    ]
   },
   "gnomad_get_clinvar_meta": {
@@ -3793,7 +4353,20 @@
     "provenance",
     "annotation date",
     "clinvar update",
-    "data freeze"
+    "data freeze",
+    "revision",
+    "timestamp",
+    "integration status",
+    "data freshness",
+    "clinvar build",
+    "annotation version",
+    "server capabilities",
+    "dataset currency",
+    "update log",
+    "data snapshot",
+    "clinvar metadata",
+    "NCBI ClinVar dump",
+    "variant archive"
    ]
   },
   "gnomad_get_clinvar_variant_details": {
@@ -3842,7 +4415,18 @@
     "submitter text",
     "assertion criteria",
     "star rating",
-    "condition"
+    "condition",
+    "clinical assertion",
+    "conflicting interpretations",
+    "ClinVar release",
+    "submission date",
+    "expert panel",
+    "practice guideline",
+    "clnsig",
+    "submitter evidence",
+    "VCV",
+    "SCV",
+    "ACMG rating"
    ]
   },
   "gnomad_get_coverage": {
@@ -3891,7 +4475,27 @@
     "median_coverage",
     "coverage bins",
     "low coverage region",
-    "sequencing blind spots"
+    "sequencing blind spots",
+    "fraction over 20x",
+    "fraction over 30x",
+    "mean depth",
+    "median depth",
+    "callable regions",
+    "bin counts",
+    "per-position depth",
+    "data quality metric",
+    "confidence score",
+    "coverage summary",
+    "capture efficiency",
+    "callable loci",
+    "missingness"
+   ],
+   "manual_keywords": [
+    "sequencing depth",
+    "well covered",
+    "Abdeckung",
+    "Sequenziertiefe",
+    "couverture"
    ]
   },
   "gnomad_get_diagnostics": {
@@ -3991,7 +4595,23 @@
     "MANE select",
     "mis_z",
     "syn_z",
-    "transcript structure"
+    "transcript structure",
+    "genomic bounds",
+    "start position",
+    "end position",
+    "intolerance score",
+    "gene metadata",
+    "missense Z",
+    "observed expected ratio",
+    "synonymous Z"
+   ],
+   "manual_keywords": [
+    "can people live with one broken copy",
+    "loss-of-function intolerance",
+    "Funktionsverlust",
+    "Intoleranz",
+    "contrainte génique",
+    "intolérance"
    ]
   },
   "gnomad_get_gene_summary": {
@@ -4093,7 +4713,25 @@
     "rare variant list",
     "gnomad_r4",
     "exome variants",
-    "genome variants"
+    "genome variants",
+    "allele count",
+    "population breakdown",
+    "missense",
+    "LoF",
+    "per-variant",
+    "GRCh38",
+    "GRCh37",
+    "consequence",
+    "VEP",
+    "loss-of-function",
+    "subcohorts"
+   ],
+   "manual_keywords": [
+    "all known variants in a gene",
+    "normal variation",
+    "Varianten im Gen",
+    "variantes du gène",
+    "variantes del gen"
    ]
   },
   "gnomad_get_mitochondrial_variant": {
@@ -4144,7 +4782,21 @@
     "LHON",
     "haplogroup",
     "m.3243A>G",
-    "mitochondrial genome"
+    "mitochondrial genome",
+    "M-POS-REF-ALT",
+    "histogram",
+    "distribution",
+    "allele frequency",
+    "variant id",
+    "mito",
+    "MT-TL1",
+    "MT-ND4"
+   ],
+   "manual_keywords": [
+    "mitochondrial DNA",
+    "mtDNA",
+    "Heteroplasmie",
+    "hétéroplasmie"
    ]
   },
   "gnomad_get_region": {
@@ -4196,7 +4848,22 @@
     "interval query",
     "100kb window",
     "regional variants",
-    "contig range"
+    "contig range",
+    "regional annotation",
+    "small region",
+    "GRCh37 legacy",
+    "ClinVar density",
+    "gene density",
+    "genomic coordinates",
+    "window query",
+    "GRCh38",
+    "GRCh37",
+    "chr-pos-pos",
+    "sub-100kb",
+    "clinical significance",
+    "pathogenic variants",
+    "genomic slice",
+    "bounded range"
    ]
   },
   "gnomad_get_server_capabilities": {
@@ -4251,7 +4918,19 @@
     "GRCh38",
     "NFE",
     "AFR",
-    "EAS"
+    "EAS",
+    "capabilities",
+    "populations",
+    "release date",
+    "clinvar version",
+    "supported tools",
+    "workflows",
+    "server info",
+    "dataset list",
+    "gnomad r4",
+    "service status",
+    "configuration",
+    "v4.1"
    ]
   },
   "gnomad_get_structural_variant": {
@@ -4306,7 +4985,23 @@
     "allele number",
     "inversion length",
     "genotype quality histogram",
-    "SV allele frequency"
+    "SV allele frequency",
+    "translocation",
+    "CPX",
+    "copy number",
+    "gnomAD SV",
+    "histograms",
+    "genotype quality",
+    "GRCh38",
+    "complex rearrangement",
+    "popmax"
+   ],
+   "manual_keywords": [
+    "large deletion",
+    "large duplication",
+    "strukturelle Variante",
+    "variant structurel",
+    "variante estructural"
    ]
   },
   "gnomad_get_transcript_details": {
@@ -4357,7 +5052,18 @@
     "intron exon structure",
     "isoform anatomy",
     "coding exons",
-    "UTR coordinates"
+    "UTR coordinates",
+    "intron boundaries",
+    "isoform architecture",
+    "CDS",
+    "RNA-seq summary",
+    "Ensembl ID",
+    "gene model",
+    "exon coordinates",
+    "transcript structure",
+    "CDS coordinates",
+    "tissue TPM",
+    "MANE Select isoform"
    ]
   },
   "gnomad_get_variant_details": {
@@ -4409,7 +5115,33 @@
     "exome frequencies",
     "genome frequencies",
     "subcohorts",
-    "gnomad_r4"
+    "gnomad_r4",
+    "VEP annotation",
+    "SpliceAI score",
+    "missense impact",
+    "functional annotation",
+    "variant effect",
+    "CADD score",
+    "REVEL score",
+    "LoFTEE",
+    "MANE Select",
+    "consequence type",
+    "protein change",
+    "genomic context",
+    "VEP",
+    "in silico",
+    "missense"
+   ],
+   "manual_keywords": [
+    "what does this variant do",
+    "protein effect",
+    "in silico predictors",
+    "Variante",
+    "Häufigkeit",
+    "Allelfrequenz",
+    "variante",
+    "effet sur la protéine",
+    "efecto en la proteína"
    ]
   },
   "gnomad_get_variant_frequencies": {
@@ -4458,7 +5190,32 @@
     "PM2",
     "allele count",
     "Whiffin",
-    "ancestry breakdown"
+    "ancestry breakdown",
+    "gnomAD",
+    "ethnicity breakdown",
+    "cohort statistics",
+    "carrier rate",
+    "variant density",
+    "homozygote count",
+    "heterozygote count",
+    "subcohorts",
+    "continental ancestry",
+    "carrier rate baseline",
+    "gnomad_r4",
+    "exome frequencies",
+    "genome frequencies"
+   ],
+   "manual_keywords": [
+    "how common",
+    "how rare",
+    "healthy people",
+    "general population",
+    "Allelfrequenz",
+    "Häufigkeit",
+    "Bevölkerung",
+    "fréquence allélique",
+    "population générale",
+    "frecuencia alélica"
    ]
   },
   "gnomad_resolve_variant_id": {
@@ -4509,7 +5266,23 @@
     "mitochondrial variant",
     "partial coordinate search",
     "variant resolver",
-    "allele frequency enrichment"
+    "allele frequency enrichment",
+    "rsid conversion",
+    "hgvs to gnomad",
+    "major consequence",
+    "popmax af",
+    "gnomad v4",
+    "grch38 variant",
+    "top hits",
+    "enriched search",
+    "variant lookup",
+    "variant identifier",
+    "identifier resolution",
+    "fuzzy coordinate",
+    "GRCh38",
+    "GRCh37",
+    "rs lookup",
+    "variant search"
    ]
   },
   "gnomad_search_genes": {
@@ -4563,7 +5336,20 @@
     "prefix search",
     "typeahead",
     "gene resolver",
-    "gene name"
+    "gene name",
+    "gene symbol",
+    "alias",
+    "HGNC",
+    "synonym",
+    "previous symbol",
+    "locus tag",
+    "build GRCh38",
+    "build GRCh37",
+    "gene lookup",
+    "ENSG identifier",
+    "gene prefix",
+    "fuzzy query",
+    "canonical name"
    ]
   },
   "gnomad_search_structural_variants": {
@@ -4613,7 +5399,27 @@
     "gnomad_sv_r2_1",
     "SV frequency",
     "genomic rearrangement",
-    "microdeletion"
+    "microdeletion",
+    "deletion",
+    "breakend",
+    "complex rearrangement",
+    "large variant",
+    "sv_type",
+    "structural allele",
+    "genome architecture",
+    "macro-variant",
+    "DEL",
+    "DUP",
+    "INV",
+    "CPX",
+    "rearrangement",
+    "structural alteration"
+   ],
+   "manual_keywords": [
+    "large deletions in a region",
+    "strukturelle Varianten",
+    "variants structuraux",
+    "variantes estructurales"
    ]
   },
   "gnomad_search_variants": {
@@ -4665,7 +5471,19 @@
     "legacy alias",
     "dbSNP to gnomAD",
     "partial coordinate search",
-    "chrM lookup"
+    "chrM lookup",
+    "canonical ID",
+    "gnomAD v4",
+    "GRCh38",
+    "gene symbol",
+    "major consequence",
+    "variant search",
+    "rsID lookup",
+    "dbSNP",
+    "major_consequence",
+    "fuzzy variant query",
+    "gnomad_r2_1",
+    "variant identifier"
    ]
   },
   "gtex_fetch": {
@@ -5186,7 +6004,23 @@
     "canonical symbol",
     "gene synonyms",
     "HUGO",
-    "gene metadata"
+    "gene metadata",
+    "withdrawn",
+    "chromosome location",
+    "status",
+    "enzyme nomenclature",
+    "refseq accessions",
+    "ensembl id",
+    "uniprot id",
+    "gene nomenclature",
+    "former symbol"
+   ],
+   "manual_keywords": [
+    "official gene name",
+    "gene synonyms",
+    "Gensymbol",
+    "symbole du gène",
+    "synonymes"
    ]
   },
   "hgnc_get_gene_cross_references": {
@@ -5440,7 +6274,20 @@
     "CCDS lookup",
     "NCBI Gene ID",
     "identifier resolver",
-    "MGI to human gene"
+    "MGI to human gene",
+    "identifier conversion",
+    "cross-reference lookup",
+    "Entrez Gene",
+    "Ensembl stable ID",
+    "UniProt accession",
+    "RefSeq mRNA",
+    "MANE transcript",
+    "OMIM phenotype",
+    "UCSC knownGene",
+    "VEGA archive",
+    "CCDS consensus",
+    "MGI mouse ortholog",
+    "RGD rat ortholog"
    ]
   },
   "hgnc_resolve_symbol": {
@@ -5491,7 +6338,32 @@
     "NCBI synonym",
     "official nomenclature",
     "gene symbol checker",
-    "HUGO"
+    "HUGO",
+    "canonicalize",
+    "obsolete symbol",
+    "alias mapping",
+    "gene nomenclature",
+    "symbol conversion",
+    "legacy name",
+    "current symbol",
+    "identifier resolution",
+    "synonym lookup",
+    "official name",
+    "approved_symbol",
+    "canonical symbol",
+    "gene symbol disambiguation",
+    "HGNC lookup",
+    "gene alias resolver",
+    "successor record"
+   ],
+   "manual_keywords": [
+    "official gene name",
+    "old gene name",
+    "Gensymbol",
+    "symbole du gène",
+    "símbolo del gen",
+    "veraltet",
+    "obsolète"
    ]
   },
   "hgnc_resolve_symbols_batch": {
@@ -5545,7 +6417,26 @@
     "HGNC ID resolution",
     "bulk standardization",
     "identifier reconciliation",
-    "previous symbols"
+    "previous symbols",
+    "deprecated",
+    "nomenclature update",
+    "HGNC ID conversion",
+    "gene list cleanup",
+    "symbol validation",
+    "obsolete",
+    "current symbol",
+    "nomenclature",
+    "synonyms",
+    "aliases",
+    "harmonize",
+    "HGVS",
+    "gene panel"
+   ],
+   "manual_keywords": [
+    "update a gene list",
+    "outdated gene names",
+    "Genliste",
+    "liste de gènes"
    ]
   },
   "hgnc_search_genes": {
@@ -5596,7 +6487,21 @@
     "HGNC ID lookup",
     "partial gene name",
     "approved name",
-    "nomenclature search"
+    "nomenclature search",
+    "symbol fragment",
+    "gene name",
+    "relevance ranked",
+    "fuzzy match",
+    "symbol lookup",
+    "partial symbol",
+    "locus name",
+    "gene synonym"
+   ],
+   "manual_keywords": [
+    "find a gene",
+    "Gen suchen",
+    "rechercher un gène",
+    "buscar gen"
    ]
   },
   "hpo_get_diagnostics": {
@@ -6373,7 +7278,32 @@
     "entity linking",
     "UMLS CUI",
     "SNOMED CT mapping",
-    "phenotype entity recognition"
+    "phenotype entity recognition",
+    "mapping",
+    "synonym resolution",
+    "ontology alignment",
+    "standardize",
+    "lookup",
+    "translation",
+    "identifier conversion",
+    "concept matching",
+    "disambiguation",
+    "legacy ID",
+    "term harmonization",
+    "phenotype normalization",
+    "canonical HP ID",
+    "term resolution",
+    "obsolete replacement"
+   ],
+   "manual_keywords": [
+    "symptom",
+    "clinical feature",
+    "Symptom",
+    "Merkmal",
+    "symptôme",
+    "síntoma",
+    "Phänotyp",
+    "phénotype"
    ]
   },
   "hpo_resolve_xref": {
@@ -6479,7 +7409,25 @@
     "UMLS xref",
     "SNOMED cross reference",
     "text query",
-    "phenotypic feature"
+    "phenotypic feature",
+    "trait",
+    "label",
+    "xref",
+    "CURIE",
+    "text mining",
+    "clinical manifestation",
+    "symptom search",
+    "definition search",
+    "phenomapping"
+   ],
+   "manual_keywords": [
+    "symptom",
+    "clinical sign",
+    "Symptom",
+    "symptôme",
+    "síntoma",
+    "phénotype",
+    "fenotipo"
    ]
   },
   "litvar_get_server_capabilities": {
@@ -6579,7 +7527,23 @@
     "PubTator",
     "text mining",
     "rsID",
-    "HGVS"
+    "HGVS",
+    "journal entries",
+    "citation count",
+    "publication list",
+    "academic sources",
+    "case reports",
+    "LitVar2",
+    "scientific evidence"
+   ],
+   "manual_keywords": [
+    "papers about this variant",
+    "case reports",
+    "Publikationen",
+    "Literatur",
+    "articles scientifiques",
+    "artículos científicos",
+    "publicaciones"
    ]
   },
   "litvar_get_variant_summary": {
@@ -7606,7 +8570,21 @@
     "hotspot comparison",
     "paralog conservation",
     "MANE Select",
-    "batch residue query"
+    "batch residue query",
+    "positional tolerance",
+    "meta-domain alignment",
+    "homologous evidence",
+    "constraint score",
+    "amino acid position",
+    "intolerance metric",
+    "residue comparison",
+    "gnomAD coverage",
+    "sliding window dN/dS",
+    "multi-residue tolerance",
+    "missense intolerance score",
+    "Pf00102",
+    "per-position constraint",
+    "regional missense constraint"
    ]
   },
   "metadome_get_diagnostics": {
@@ -7657,7 +8635,23 @@
     "debug logs",
     "data versions",
     "service diagnostics",
-    "backend monitoring"
+    "backend monitoring",
+    "cache hit ratio",
+    "pinned data",
+    "response time",
+    "health check",
+    "debug",
+    "troubleshoot",
+    "metrics snapshot",
+    "LRU size",
+    "on-disk cache",
+    "capabilities",
+    "latency percentiles",
+    "p99",
+    "LRU stats",
+    "disk usage",
+    "error rates",
+    "runtime metrics"
    ]
   },
   "metadome_get_meta_domain": {
@@ -7710,7 +8704,21 @@
     "sw_dn_ds",
     "paralogous missense",
     "consensus position",
-    "domain homolog"
+    "domain homolog",
+    "Pfam family",
+    "aligned residues",
+    "cross-species",
+    "gnomAD",
+    "ClinVar",
+    "pathogenic",
+    "normal variants",
+    "residue mapping",
+    "homolog gene",
+    "landscape",
+    "tolerance",
+    "homologous variants",
+    "cross-protein alignment",
+    "Pfam domain family"
    ]
   },
   "metadome_get_position_tolerance": {
@@ -7761,7 +8769,30 @@
     "MetaDome score",
     "pathogenicity landscape",
     "Ensembl transcript",
-    "intolerance landscape"
+    "intolerance landscape",
+    "residue intolerance",
+    "Pfam domain overlap",
+    "meta-domain",
+    "sliding window coverage",
+    "positional annotation",
+    "variant evidence",
+    "protein residue",
+    "1-based position",
+    "tolerance landscape",
+    "critical region",
+    "functional impact",
+    "conservation score",
+    "sliding window dn/ds",
+    "missense tolerance",
+    "protein constraint",
+    "sub-domain constraint"
+   ],
+   "manual_keywords": [
+    "is this protein position tolerant",
+    "Toleranz",
+    "tolérance",
+    "faux-sens",
+    "Missense"
    ]
   },
   "metadome_get_protein_domains": {
@@ -7812,7 +8843,22 @@
     "homology domain",
     "conserved region",
     "structural domain",
-    "Pfam accession"
+    "Pfam accession",
+    "meta-domain",
+    "homologous mapping",
+    "alignment depth",
+    "start stop positions",
+    "protein structure annotation",
+    "functional units",
+    "transcript landscape",
+    "isoform domains",
+    "structural features",
+    "sequence conservation",
+    "homology mapping",
+    "protein topology",
+    "motif",
+    "functional domain",
+    "residue boundaries"
    ]
   },
   "metadome_get_server_capabilities": {
@@ -7863,7 +8909,23 @@
     "service info",
     "genome build",
     "pipeline workflow",
-    "supported endpoints"
+    "supported endpoints",
+    "server info",
+    "build id",
+    "data release",
+    "limits",
+    "quotas",
+    "error taxonomy",
+    "response modes",
+    "workflow guide",
+    "discovery",
+    "health check",
+    "policy notes",
+    "discovery endpoint",
+    "API schema",
+    "service introspection",
+    "system status",
+    "frozen tools"
    ]
   },
   "metadome_get_tolerance_landscape": {
@@ -7916,7 +8978,28 @@
     "protein landscape",
     "gnomAD missense depletion",
     "transcript tolerance profile",
-    "amino acid constraint"
+    "amino acid constraint",
+    "missense tolerance ratio",
+    "MTR",
+    "Pfam domains",
+    "positional annotation",
+    "residue constraint",
+    "intolerance score",
+    "sliding window",
+    "evolutionary conservation",
+    "variant effect prediction",
+    "transcript build",
+    "homologous positions",
+    "constraint metrics",
+    "dn/ds",
+    "missense depletion"
+   ],
+   "manual_keywords": [
+    "which parts of the protein tolerate changes",
+    "Toleranz",
+    "tolérance",
+    "tolerancia",
+    "missense tolerance"
    ]
   },
   "metadome_get_variant_counts": {
@@ -7970,7 +9053,20 @@
     "missense count",
     "variant density",
     "amino acid burden",
-    "clinvar tally"
+    "clinvar tally",
+    "allele count",
+    "residue coverage",
+    "Pfam mapping",
+    "missense burden",
+    "positional annotation",
+    "variant aggregation",
+    "clinical significance count",
+    "population frequency",
+    "pathogenic variant count",
+    "benign variant count",
+    "transcript position",
+    "meta-domain evidence",
+    "residue annotations"
    ]
   },
   "metadome_request_tolerance_landscape": {
@@ -8022,7 +9118,22 @@
     "MANE Select",
     "regional tolerance",
     "Pfam mapping",
-    "ENST"
+    "ENST",
+    "protein domain tolerance",
+    "variant effect prediction",
+    "sequence conservation",
+    "homologous positions",
+    "residue sensitivity",
+    "Pfam coverage",
+    "background selection",
+    "evolutionary constraint",
+    "transcript version",
+    "poll handle",
+    "meta-domain",
+    "job submission",
+    "sliding window dN/dS",
+    "transcript precompute",
+    "Ensembl transcript build"
    ]
   },
   "metadome_resolve_transcript": {
@@ -8075,7 +9186,21 @@
     "longest transcript",
     "analyzable transcript",
     "MetaDome workflow entry",
-    "transcript selection"
+    "transcript selection",
+    "canonical",
+    "GRCh37",
+    "Ensembl",
+    "isoform",
+    "protein length",
+    "aa_length",
+    "versioned",
+    "mapping",
+    "identifier resolution",
+    "RefSeq conversion",
+    "coding sequence",
+    "Ensembl transcript",
+    "hg19",
+    "HGNC to ENST"
    ]
   },
   "metadome_summarize_intolerant_regions": {
@@ -8127,7 +9252,22 @@
     "sliding window",
     "protein hot spots",
     "ENST",
-    "protein domain constraint"
+    "protein domain constraint",
+    "missense tolerance",
+    "constrained residues",
+    "contiguous regions",
+    "critical domains",
+    "functional constraint",
+    "residue runs",
+    "landscape summary",
+    "top ranked",
+    "threshold filtering",
+    "protein conservation",
+    "variant evidence",
+    "meta-domain",
+    "missense constraint",
+    "constrained coding regions",
+    "CCR"
    ]
   },
   "mgi_find_markers_by_phenotype": {
@@ -8488,7 +9628,29 @@
     "mouse model symptoms",
     "null allele phenotype",
     "mouse KO traits",
-    "phenotypic spectrum"
+    "phenotypic spectrum",
+    "mouse traits",
+    "observed phenotypes",
+    "phenotypic profile",
+    "MP annotations",
+    "phenotype summary",
+    "deduplicated terms",
+    "support-ordered",
+    "single-locus",
+    "non-conditional",
+    "ortholog phenotypes",
+    "mouse knockout phenotype",
+    "MGI_GenePheno",
+    "allelic composition"
+   ],
+   "manual_keywords": [
+    "mouse model",
+    "knockout mouse",
+    "Mausmodell",
+    "Maus",
+    "souris",
+    "modèle murin",
+    "ratón"
    ]
   },
   "mgi_get_mp_term": {
@@ -8741,7 +9903,29 @@
     "mouse gene alias",
     "MGI search",
     "gene lookup",
-    "lncRNA marker"
+    "lncRNA marker",
+    "synonym",
+    "locus",
+    "QTL",
+    "genetic marker",
+    "mouse genome",
+    "ortholog lookup",
+    "symbol resolution",
+    "mouse marker search",
+    "MGI text search",
+    "mouse gene synonym",
+    "MGI symbol lookup",
+    "murine marker",
+    "gene symbol fuzzy search",
+    "MGI ID query",
+    "mouse genome informatics",
+    "transgene symbol"
+   ],
+   "manual_keywords": [
+    "mouse gene",
+    "Mausgen",
+    "gène de souris",
+    "gen de ratón"
    ]
   },
   "mgi_search_phenotype_terms": {
@@ -8793,7 +9977,22 @@
     "phenotype definition",
     "mouse disease trait",
     "MP accession",
-    "phenotype concept resolver"
+    "phenotype concept resolver",
+    "MP ID resolution",
+    "clinical feature mapping",
+    "ontology search",
+    "phenotype annotation",
+    "MP term lookup",
+    "morphological defect",
+    "physiological anomaly",
+    "behavioral phenotype",
+    "systematic phenotyping",
+    "mouse phenotype lookup",
+    "ontology resolver",
+    "MP definition",
+    "HPO to MP",
+    "phenome mapping",
+    "phenotype term FTS"
    ]
   },
   "mondo_get_diagnostics": {
@@ -8898,7 +10097,29 @@
     "OMIM xref",
     "disease card",
     "exact_synonym",
-    "germline basis"
+    "germline basis",
+    "ontology term",
+    "disease concept",
+    "OMIM mapping",
+    "Orphanet ID",
+    "UMLS CUI",
+    "MeSH term",
+    "SNOMED CT",
+    "is_a parents",
+    "is_a children",
+    "obsolete",
+    "xref",
+    "consider",
+    "UMLS",
+    "MeSH",
+    "NCIT"
+   ],
+   "manual_keywords": [
+    "disease definition",
+    "Krankheit",
+    "maladie",
+    "enfermedad",
+    "synonymes"
    ]
   },
   "mondo_get_disease_ancestors": {
@@ -9320,7 +10541,29 @@
     "HGNC causal symbol",
     "disease entity linking",
     "monogenic disease identifier",
-    "CURIE resolution"
+    "CURIE resolution",
+    "standardize",
+    "map",
+    "convert",
+    "lookup",
+    "identifier",
+    "synonym",
+    "alias",
+    "disambiguate",
+    "ontology ID",
+    "entity resolution",
+    "normalization",
+    "string matching",
+    "cross-reference mapping",
+    "deprecated ID"
+   ],
+   "manual_keywords": [
+    "disease name",
+    "condition",
+    "Erkrankung",
+    "Krankheit",
+    "maladie",
+    "enfermedad"
    ]
   },
   "mondo_resolve_disease_batch": {
@@ -9480,7 +10723,27 @@
     "obsolete diseases",
     "CURIE query",
     "Mondo lookup",
-    "disease index"
+    "disease index",
+    "phenotype",
+    "clinical name",
+    "synonym",
+    "definition",
+    "OMIM",
+    "Orphanet",
+    "DOID",
+    "UMLS",
+    "MeSH",
+    "SNOMED",
+    "ICD-10",
+    "rare disease",
+    "ontology term"
+   ],
+   "manual_keywords": [
+    "disease name",
+    "Krankheit",
+    "maladie",
+    "enfermedad",
+    "syndrome"
    ]
   },
   "orphanet_find_diseases_by_gene": {
@@ -9998,7 +11261,30 @@
     "Orphadata",
     "germline genetics",
     "ORPHAcode gene mapping",
-    "causal locus"
+    "causal locus",
+    "gene panel",
+    "Ensembl ID",
+    "OMIM mapping",
+    "pathogenicity",
+    "disease mechanism",
+    "locus",
+    "inheritance genes",
+    "biomarkers",
+    "therapeutic targets",
+    "causative gene",
+    "disease-causing locus",
+    "germline etiology",
+    "HGNC symbol",
+    "gene-disease pair",
+    "causal variants",
+    "allelic heterogeneity",
+    "molecular etiology"
+   ],
+   "manual_keywords": [
+    "genes behind a rare disease",
+    "seltene Erkrankung",
+    "maladie rare",
+    "enfermedad rara"
    ]
   },
   "orphanet_get_disease_natural_history": {
@@ -10466,7 +11752,27 @@
     "Orphadata",
     "canonical name",
     "obsolete diseases",
-    "RD-Connect"
+    "RD-Connect",
+    "rare disease",
+    "disorder definition",
+    "medical condition",
+    "pathology name",
+    "syndrome search",
+    "disease label",
+    "obsolete terms",
+    "text search",
+    "relevance ranking",
+    "synonym lookup",
+    "free text",
+    "disease index",
+    "rare disease FTS",
+    "disorder query"
+   ],
+   "manual_keywords": [
+    "rare disease",
+    "seltene Erkrankung",
+    "maladie rare",
+    "enfermedad rara"
    ]
   },
   "panelapp_compare_panels": {
@@ -10985,7 +12291,22 @@
     "citation tree",
     "evidence network",
     "topic clustering",
-    "literature mapping"
+    "literature mapping",
+    "bibliometric mapping",
+    "literature expansion",
+    "seeded search",
+    "co-citation analysis",
+    "entity-anchored search",
+    "graph traversal",
+    "related work discovery",
+    "academic mapping",
+    "contextual expansion",
+    "literature review aid",
+    "evidence map",
+    "research graph",
+    "seed paper expansion",
+    "topic mapping",
+    "literature clusters"
    ]
   },
   "pubtator_convert_article_ids": {
@@ -11039,7 +12360,20 @@
     "DOI mapping",
     "id_converter",
     "Entrez ID translation",
-    "citation ID resolver"
+    "citation ID resolver",
+    "PubMed ID",
+    "article identifier",
+    "citation ID",
+    "identifier mapping",
+    "bibliographic ID",
+    "canonical ID",
+    "auto-detect",
+    "reference ID",
+    "literature ID",
+    "ID converter",
+    "PMID mapping",
+    "resolve DOI",
+    "PMC ID conversion"
    ]
   },
   "pubtator_diagnostics": {
@@ -11091,7 +12425,22 @@
     "troubleshooting",
     "subsystem error",
     "daemon status",
-    "recovery steps"
+    "recovery steps",
+    "downtime",
+    "connectivity",
+    "operational",
+    "service availability",
+    "system check",
+    "api status",
+    "healthcheck",
+    "circuit breaker",
+    "subsystem status",
+    "service recovery",
+    "API outage",
+    "NCBI status",
+    "connection retry",
+    "service degradation",
+    "backend diagnostics"
    ]
   },
   "pubtator_estimate_publication_context": {
@@ -11141,7 +12490,24 @@
     "word count check",
     "full-text volume",
     "chunk estimate",
-    "PubTator3 text size"
+    "PubTator3 text size",
+    "count",
+    "size",
+    "passage_count",
+    "context_size",
+    "payload_estimate",
+    "BioC_sections",
+    "full_text_availability",
+    "compact_passages",
+    "abstract_only",
+    "table_inclusion",
+    "reference_list",
+    "retrieval_budget",
+    "token estimation",
+    "payload sizing",
+    "dry run",
+    "preflight size",
+    "context budget"
    ]
   },
   "pubtator_find_entity_relations": {
@@ -11195,7 +12561,20 @@
     "treats relation",
     "causes relation",
     "biomedical entity linking",
-    "literature graph expansion"
+    "literature graph expansion",
+    "chemical-gene interactions",
+    "disease-drug associations",
+    "semantic relations",
+    "corpus building",
+    "entity graph",
+    "treats",
+    "causes",
+    "associates",
+    "target concept filter",
+    "BioC relations",
+    "literature co-occurrence",
+    "chemical-disease interaction",
+    "gene-disease association"
    ]
   },
   "pubtator_find_related_articles": {
@@ -11246,7 +12625,24 @@
     "forward citations",
     "backward citations",
     "PubMed neighbor",
-    "related papers"
+    "related papers",
+    "reference mining",
+    "related works",
+    "references list",
+    "pubmed neighbors",
+    "corpus building",
+    "article linkage",
+    "seed articles",
+    "corpus expansion",
+    "related manuscripts",
+    "reference tracking",
+    "PMID network"
+   ],
+   "manual_keywords": [
+    "similar papers",
+    "ähnliche Artikel",
+    "articles similaires",
+    "artículos similares"
    ]
   },
   "pubtator_find_related_evidence_candidates": {
@@ -11296,7 +12692,24 @@
     "evidence discovery",
     "passage extraction feed",
     "PubTator3",
-    "co-citation graph"
+    "co-citation graph",
+    "bibliographic expansion",
+    "full-text preference",
+    "corpus expansion",
+    "related literature",
+    "compact payload",
+    "citation graph",
+    "evidence candidates",
+    "reference-linked",
+    "PubMed Central",
+    "PMC open access",
+    "PMC OA",
+    "seed paper",
+    "citation network",
+    "co-citation",
+    "bibliographic coupling",
+    "full text retrieval",
+    "PMC fulltext"
    ]
   },
   "pubtator_get_citation": {
@@ -11349,7 +12762,21 @@
     "PubMed identifier resolution",
     "NLM citation matcher",
     "reference string resolver",
-    "extract PMID from text"
+    "extract PMID from text",
+    "reference string parsing",
+    "free-text citation",
+    "PMID extraction",
+    "article identifier resolution",
+    "journal citation match",
+    "literature reference resolver",
+    "pubmed id lookup",
+    "citation to pmid",
+    "bibliography normalization",
+    "ref string conversion",
+    "paper identifier search",
+    "citation matching",
+    "reference resolver",
+    "unstructured citation"
    ]
   },
   "pubtator_get_evidence_certainty": {
@@ -11403,7 +12830,20 @@
     "review_id",
     "supporting passages",
     "systematic review curation",
-    "evidence evaluation"
+    "evidence evaluation",
+    "reliability",
+    "verdict",
+    "classification confidence",
+    "evidence level",
+    "certainty label",
+    "user annotation",
+    "manual curation status",
+    "interpretation confidence",
+    "curation evaluation",
+    "evidence weight",
+    "evidence strength",
+    "curator judgment",
+    "certainty score"
    ]
   },
   "pubtator_get_mesh": {
@@ -11455,7 +12895,21 @@
     "MeSH tree",
     "literature indexing",
     "PubTator MeSH",
-    "MEDLINE headings"
+    "MEDLINE headings",
+    "search expansion",
+    "synonyms",
+    "biomedical indexing",
+    "literature search terms",
+    "NLM taxonomy",
+    "descriptor lookup",
+    "indexer terms",
+    "search concepts"
+   ],
+   "manual_keywords": [
+    "MeSH terms",
+    "Schlagwörter",
+    "termes MeSH",
+    "términos MeSH"
    ]
   },
   "pubtator_get_neighboring_review_passages": {
@@ -11509,7 +12963,20 @@
     "passage neighborhood",
     "evidence expansion",
     "preceding passage",
-    "succeeding passage"
+    "succeeding passage",
+    "context expansion",
+    "neighboring text",
+    "surrounding sentences",
+    "passage adjacency",
+    "same section",
+    "prepared review",
+    "citation context",
+    "snippet expansion",
+    "review corpus",
+    "adjacent paragraphs",
+    "anchor chunk",
+    "sliding window",
+    "subsequent passage"
    ]
   },
   "pubtator_get_pmc_annotations": {
@@ -11559,7 +13026,24 @@
     "BioC parser",
     "open access PMC text",
     "entity recognition export",
-    "PubTator fulltext"
+    "PubTator fulltext",
+    "raw annotations",
+    "full-text tagging",
+    "entity recognition output",
+    "NLP export",
+    "serialized annotations",
+    "PMC full text",
+    "PubTator Central export",
+    "document level annotations",
+    "structured text mining",
+    "BioCreative format",
+    "annotation dump",
+    "machine readable tags",
+    "PubMed Central",
+    "NER",
+    "entity recognition",
+    "concept tagging",
+    "text mining"
    ]
   },
   "pubtator_get_publication_annotations": {
@@ -11609,7 +13093,24 @@
     "passage annotations",
     "mention extraction",
     "literature curation",
-    "PubTator format"
+    "PubTator format",
+    "raw annotations",
+    "entity recognition",
+    "NER output",
+    "PMID export",
+    "PubTator Central",
+    "text mining results",
+    "structured annotations",
+    "annotation dump",
+    "BioC JSON",
+    "BioC XML",
+    "NER tags",
+    "concept spans",
+    "text mining",
+    "entity offsets",
+    "raw annotation dump",
+    "bioc export",
+    "corpus annotation"
    ]
   },
   "pubtator_get_publication_citation_graph": {
@@ -11660,7 +13161,20 @@
     "backward citation",
     "doi resolution",
     "pmid graph",
-    "citation tree"
+    "citation tree",
+    "citation graph",
+    "co-citation",
+    "publication neighbors",
+    "literature mapping",
+    "bibliometrics",
+    "reference expansion",
+    "impact tracking",
+    "bibliography graph",
+    "incoming citations",
+    "outgoing references",
+    "nodes edges",
+    "bibliometric graph",
+    "seed PMID"
    ]
   },
   "pubtator_get_publication_metadata": {
@@ -11713,7 +13227,21 @@
     "reference formatting",
     "esummary",
     "citation generator",
-    "pubmed id lookup"
+    "pubmed id lookup",
+    "bibliographic",
+    "journal",
+    "abstract",
+    "issn",
+    "publication type",
+    "citation format",
+    "nlm",
+    "bibliographic metadata",
+    "citation style",
+    "PMID metadata",
+    "MeSH headings",
+    "reference manager import",
+    "literature citation",
+    "MEDLINE record"
    ]
   },
   "pubtator_get_publication_passages": {
@@ -11767,7 +13295,20 @@
     "table captions",
     "results section text",
     "PMC XML text extraction",
-    "evidence sentence fetching"
+    "evidence sentence fetching",
+    "abstract extraction",
+    "full text retrieval",
+    "passage mining",
+    "section filtering",
+    "open access text",
+    "pmid content",
+    "bioC passages",
+    "evidence text",
+    "methods section",
+    "results section",
+    "reference list",
+    "compact mode",
+    "PubTator3"
    ],
    "manual_keywords": [
     "PubMed Central",
@@ -11835,7 +13376,20 @@
     "harvest progress",
     "article staging",
     "coverage hints",
-    "job status"
+    "job status",
+    "progress",
+    "completion",
+    "pipeline state",
+    "corpus build",
+    "indexing status",
+    "preparation phase",
+    "session health",
+    "coverage metrics",
+    "candidate count",
+    "workflow step",
+    "processing log",
+    "ingestion status",
+    "corpus staging"
    ]
   },
   "pubtator_get_review_audit_trail": {
@@ -11890,7 +13444,19 @@
     "evidence provenance",
     "staged audit",
     "snippet log",
-    "ACMG audit"
+    "ACMG audit",
+    "change log",
+    "passage history",
+    "compliance record",
+    "version control",
+    "review integrity",
+    "passage metadata",
+    "session audit",
+    "modification history",
+    "evidence tracking",
+    "copy-ready export",
+    "recorded passages",
+    "verification log"
    ]
   },
   "pubtator_get_review_context": {
@@ -11944,7 +13510,20 @@
     "evidence sentences",
     "ranked excerpts",
     "BioC text snippet",
-    "PMID passage filter"
+    "PMID passage filter",
+    "curated excerpts",
+    "literature synthesis",
+    "grounded text",
+    "citation-ready",
+    "keyword query",
+    "PMID filter",
+    "section restrict",
+    "audit trace",
+    "grounded evidence",
+    "literature extraction",
+    "compact snippets",
+    "BioC alternative",
+    "PMID text chunks"
    ]
   },
   "pubtator_get_review_context_batch": {
@@ -11998,7 +13577,20 @@
     "evidence mining",
     "literature snippets",
     "sub-query merger",
-    "context snippets"
+    "context snippets",
+    "batch retrieval",
+    "passage extraction",
+    "multi-query",
+    "evidence quotes",
+    "text mining",
+    "literature excerpts",
+    "compact passages",
+    "budgeted retrieval",
+    "snippet generation",
+    "context fetching",
+    "query variants",
+    "merged passages",
+    "passage batching"
    ]
   },
   "pubtator_get_review_index_summary": {
@@ -12052,7 +13644,20 @@
     "review metrics",
     "review index overview",
     "PubTator review metadata",
-    "evidence index size"
+    "evidence index size",
+    "review index summary",
+    "persisted review stats",
+    "indexed passage count",
+    "stored review overview",
+    "literature collection summary",
+    "prepared review stats",
+    "index inspection summary",
+    "review corpus size",
+    "saved review abstract",
+    "indexed PMID count",
+    "review preparation status",
+    "evidence set summary",
+    "curated literature stats"
    ]
   },
   "pubtator_get_review_passages_by_id": {
@@ -12105,7 +13710,21 @@
     "offline passage retrieval",
     "evidence snippet",
     "stored literature slice",
-    "curation audit"
+    "curation audit",
+    "prepared passages",
+    "exact text",
+    "context blocks",
+    "stored segments",
+    "session scoped",
+    "char cap",
+    "passage_ids",
+    "review_id",
+    "no upstream call",
+    "passage ID",
+    "cached excerpts",
+    "offline retrieval",
+    "local index lookup",
+    "stable passage identifier"
    ]
   },
   "pubtator_get_server_capabilities": {
@@ -12159,7 +13778,20 @@
     "payload constraints",
     "tool metadata",
     "server discovery",
-    "system options"
+    "system options",
+    "server info",
+    "supported tools",
+    "formats",
+    "limitations",
+    "gateway features",
+    "service list",
+    "compatibility",
+    "api features",
+    "output formats",
+    "server metadata",
+    "service discovery",
+    "endpoint schema",
+    "system limitations"
    ]
   },
   "pubtator_get_text_annotation_results": {
@@ -12211,7 +13843,22 @@
     "job ID",
     "text tagging",
     "entity offsets",
-    "concept normalization"
+    "concept normalization",
+    "annotation_results",
+    "NER_output",
+    "text_mining_results",
+    "entity_extraction_data",
+    "job_output",
+    "retrieval",
+    "fetch_annotations",
+    "processed_text",
+    "bio_entities",
+    "tagged_text",
+    "nlp_session",
+    "result_dump",
+    "annotation_batch",
+    "BioC XML",
+    "BioC JSON"
    ]
   },
   "pubtator_get_variant_evidence": {
@@ -12263,7 +13910,22 @@
     "biomedical citations",
     "PubTator3",
     "variant bibliography",
-    "cDNA change"
+    "cDNA change",
+    "variant annotation",
+    "clinical evidence",
+    "supporting literature",
+    "PMID association",
+    "gene-variant link",
+    "mutation validation",
+    "pathogenicity support",
+    "citation tracking",
+    "HGVS lookup",
+    "rsID evidence",
+    "protein change",
+    "allelic evidence",
+    "biomedical text mining",
+    "variant-disease association",
+    "PubMed citations"
    ]
   },
   "pubtator_inspect_review_index": {
@@ -12317,7 +13979,20 @@
     "literature index inspection",
     "corpus sanity check",
     "per-source summary",
-    "sampled passages"
+    "sampled passages",
+    "index inspection",
+    "indexing failures",
+    "sample passages",
+    "review audit",
+    "evidence sampling",
+    "index stats",
+    "content verification",
+    "pagination cursor",
+    "review integrity",
+    "text samples",
+    "index diagnostics",
+    "section coverage",
+    "review index inspection"
    ]
   },
   "pubtator_list_evidence_certainty": {
@@ -12370,7 +14045,21 @@
     "evidence quality",
     "review annotations",
     "certainty tiers",
-    "evidence weighting"
+    "evidence weighting",
+    "judgments",
+    "ratings",
+    "labels",
+    "annotations",
+    "audit",
+    "curation",
+    "manual_review",
+    "evidence_strength",
+    "certainty_scores",
+    "user_tags",
+    "review_metadata",
+    "classification_status",
+    "stored_judgments",
+    "GRADE assessment"
    ]
   },
   "pubtator_list_research_sessions": {
@@ -12422,7 +14111,22 @@
     "literature queue",
     "batch progress",
     "cursor pagination",
-    "workflow state"
+    "workflow state",
+    "sessions",
+    "research context",
+    "staging area",
+    "review history",
+    "activity log",
+    "workspace list",
+    "orientation",
+    "recent work",
+    "review_id lookup",
+    "compact summary",
+    "active contexts",
+    "pubtator workflow state",
+    "session tracker",
+    "review_id",
+    "staged sessions"
    ]
   },
   "pubtator_list_review_indexes": {
@@ -12475,7 +14179,21 @@
     "literature cache",
     "batch review",
     "indexed documents",
-    "evidence catalog"
+    "evidence catalog",
+    "review index",
+    "review collection",
+    "indexed reviews",
+    "PubTator review",
+    "index summary",
+    "review stats",
+    "prepared passages",
+    "index inventory",
+    "review registry",
+    "review corpora",
+    "build status",
+    "indexed PMIDs",
+    "corpus catalogue",
+    "index footprint"
    ]
   },
   "pubtator_preflight_review_sources": {
@@ -12525,7 +14243,21 @@
     "Europe PMC",
     "PMC OA subset",
     "unpaywall",
-    "corpus validation"
+    "corpus validation",
+    "PDF retrieval",
+    "pmid validation",
+    "literature preflight",
+    "manuscript availability",
+    "pubmed central status",
+    "text mining readiness",
+    "corpus quality check",
+    "open access check",
+    "PMID coverage",
+    "PMC OA",
+    "bioc source check",
+    "text retrieval feasibility",
+    "corpus indexing preparation",
+    "PMC availability"
    ]
   },
   "pubtator_search_biomedical_entities": {
@@ -12576,7 +14308,23 @@
     "cell line identifier",
     "named entity recognition",
     "concept autocomplete",
-    "bioc concepts"
+    "bioc concepts",
+    "concept mapping",
+    "normalization",
+    "identifier lookup",
+    "gene symbol resolution",
+    "disease ontology mapping",
+    "chemical identifier",
+    "variant normalization",
+    "MeSH term ID",
+    "autocomplete entities",
+    "concept lookup",
+    "PubTator ID",
+    "entity autocomplete",
+    "biomedical NER",
+    "concept identifier",
+    "variant resolver",
+    "grounding"
    ]
   },
   "pubtator_search_guidelines": {
@@ -12626,7 +14374,15 @@
     "ESMO guidelines",
     "meta-analysis review",
     "management protocol",
-    "surveillance consensus"
+    "surveillance consensus",
+    "best practice",
+    "review article",
+    "guideline boosting",
+    "filter:guideline",
+    "clinical practice guidelines",
+    "care standards",
+    "expert panel report",
+    "PubTator3 literature filters"
    ]
   },
   "pubtator_search_literature": {
@@ -12679,7 +14435,30 @@
     "free-text literature",
     "bibliographic search",
     "entity-aware search",
-    "MeSH text match"
+    "MeSH text match",
+    "full text",
+    "biomedical literature",
+    "scientific papers",
+    "clinical trials",
+    "gene-disease association",
+    "variant interpretation",
+    "citation search",
+    "PubMed query",
+    "literature mining",
+    "PMC full-text search",
+    "entity text search",
+    "biomedical articles",
+    "NLM search",
+    "HGVS text match"
+   ],
+   "manual_keywords": [
+    "papers",
+    "research articles",
+    "Literatur",
+    "Fachartikel",
+    "articles scientifiques",
+    "littérature",
+    "artículos científicos"
    ]
   },
   "pubtator_suggest_corpus": {
@@ -12731,7 +14510,22 @@
     "PubTator3",
     "automated literature review",
     "topic bibliography",
-    "guideline filtering"
+    "guideline filtering",
+    "bibliography generator",
+    "reading list builder",
+    "systematic review search",
+    "guideline aggregator",
+    "PMID curation",
+    "literature seeding",
+    "citation collection",
+    "research corpus assembly",
+    "review article finder",
+    "consensus statement search",
+    "meta-analysis sources",
+    "clinical evidence pack",
+    "topic overview papers",
+    "key references",
+    "core papers"
    ]
   },
   "pubtator_workflow_help": {
@@ -12782,7 +14576,23 @@
     "walkthrough",
     "clinical genetics review",
     "PubTator3 workflow",
-    "tool sequence"
+    "tool sequence",
+    "workflow",
+    "canonical",
+    "clinical_genetics_review",
+    "setup",
+    "initialization",
+    "onboarding",
+    "tutorial",
+    "best practices",
+    "evidence gathering",
+    "review protocol",
+    "meta",
+    "step-by-step guide",
+    "pipeline order",
+    "corpus curation pipeline",
+    "tool chaining",
+    "workflow sequence"
    ]
   },
   "spliceai_get_server_capabilities": {
@@ -12835,7 +14645,21 @@
     "GRCh38",
     "capabilities version",
     "lean mode",
-    "backend spec"
+    "backend spec",
+    "limits",
+    "constraints",
+    "schemas",
+    "documentation",
+    "lean",
+    "full",
+    "hash",
+    "API documentation",
+    "service discovery",
+    "introspection",
+    "schema",
+    "score glossary",
+    "thresholds",
+    "workflow guide"
    ]
   },
   "spliceai_predict_pangolin": {
@@ -12888,7 +14712,27 @@
     "pseudoexon activation",
     "intron retention",
     "MANE select splicing",
-    "tissue-agnostic splicing"
+    "tissue-agnostic splicing",
+    "pangolin",
+    "splicing impact",
+    "independent model",
+    "single variant",
+    "transcript isoform",
+    "acceptor site",
+    "donor site",
+    "cryptic splice",
+    "masked scores",
+    "splice disruption",
+    "cryptic splicing",
+    "acceptor loss",
+    "donor gain",
+    "MANE select"
+   ],
+   "manual_keywords": [
+    "splicing effect",
+    "Spleißen",
+    "épissage",
+    "empalme"
    ]
   },
   "spliceai_predict_spliceai": {
@@ -12937,7 +14781,21 @@
     "DS_DL",
     "SpliceAI-10k",
     "cryptic splice",
-    "splice disruption"
+    "splice disruption",
+    "splice gain",
+    "splice loss",
+    "donor site",
+    "acceptor site",
+    "raw scores",
+    "masked interpretation",
+    "deep intronic",
+    "spliceogenic"
+   ],
+   "manual_keywords": [
+    "splicing effect",
+    "Spleißen",
+    "épissage",
+    "empalme"
    ]
   },
   "spliceai_predict_splicing": {
@@ -12988,7 +14846,23 @@
     "donor loss",
     "consensus prediction",
     "deep learning splicing",
-    "VUS reclassification"
+    "VUS reclassification",
+    "intronic retention",
+    "SpliceAI",
+    "splicing consequence",
+    "RNA processing",
+    "model agreement",
+    "HGVS splicing",
+    "variant effect predictor",
+    "cryptic splice",
+    "splice site disruption"
+   ],
+   "manual_keywords": [
+    "does this variant affect splicing",
+    "Spleißen",
+    "Spleißvorhersage",
+    "épissage",
+    "empalme"
    ]
   },
   "spliceai_predict_splicing_batch": {
@@ -13096,7 +14970,19 @@
     "canonical format",
     "ref mismatch",
     "Ensembl lookup",
-    "most severe consequence"
+    "most severe consequence",
+    "HGVS",
+    "rsID",
+    "canonical",
+    "VCF",
+    "coordinates",
+    "reference allele",
+    "ref check",
+    "Ensembl VEP",
+    "consequence",
+    "gene symbol",
+    "variant resolution",
+    "SPDI"
    ]
   },
   "spliceai_warmup": {
@@ -13147,7 +15033,23 @@
     "Cloud Run prewarming",
     "instance readiness",
     "ping server",
-    "batch prep"
+    "batch prep",
+    "latency",
+    "startup time",
+    "container warming",
+    "cloud run scale",
+    "overhead reduction",
+    "instance warmup",
+    "response time",
+    "ping",
+    "keep-alive",
+    "latency mitigation",
+    "Cloud Run",
+    "healthcheck ping",
+    "serverless idle",
+    "concurrency prep",
+    "provisioned concurrency",
+    "raw vs masked"
    ]
   },
   "stringdb_compute_functional_enrichment": {
@@ -13198,7 +15100,19 @@
     "FDR",
     "adjusted p-value",
     "pathway enrichment",
-    "functional profiling"
+    "functional profiling",
+    "gene set enrichment",
+    "GSEA",
+    "KEGG",
+    "false discovery rate",
+    "term annotation",
+    "Benjamini-Hochberg"
+   ],
+   "manual_keywords": [
+    "what do these genes have in common",
+    "Anreicherung",
+    "enrichissement",
+    "enriquecimiento"
    ]
   },
   "stringdb_compute_ppi_enrichment": {
@@ -13251,7 +15165,21 @@
     "confidence score cutoff",
     "background proteome",
     "subnetwork significance",
-    "protein connectivity"
+    "protein connectivity",
+    "PPI",
+    "interaction density",
+    "network topology",
+    "physical associations",
+    "complex membership",
+    "statistical overrepresentation",
+    "hypergeometric test",
+    "confidence threshold",
+    "STRING API",
+    "protein complexes",
+    "interactome significance",
+    "network connectivity",
+    "functional coupling",
+    "excess edges"
    ]
   },
   "stringdb_get_functional_annotations": {
@@ -13353,7 +15281,29 @@
     "STRING-db",
     "subnetwork",
     "taxon 9606",
-    "node degrees"
+    "node degrees",
+    "PPI",
+    "protein-protein interactions",
+    "associates",
+    "linked proteins",
+    "network nodes",
+    "complex members",
+    "functional associations",
+    "STRING database",
+    "partner proteins",
+    "interaction network",
+    "first-degree interactors",
+    "PPI network expansion",
+    "STRINGdb",
+    "functional association",
+    "protein interactome"
+   ],
+   "manual_keywords": [
+    "what does this protein work with",
+    "binding partners",
+    "Interaktionspartner",
+    "partenaires d'interaction",
+    "socios de interacción"
    ]
   },
   "stringdb_get_network_image": {
@@ -13664,7 +15614,28 @@
     "confidence cutoff",
     "taxon 9606",
     "STRING score",
-    "neighbor expansion"
+    "neighbor expansion",
+    "STRING",
+    "protein network",
+    "interaction map",
+    "co-expression",
+    "neighborhood",
+    "confidence score",
+    "network expansion",
+    "molecular complex",
+    "pathway context",
+    "interactors",
+    "STRING-db",
+    "physical interactions",
+    "first-degree neighbors",
+    "9606"
+   ],
+   "manual_keywords": [
+    "protein network",
+    "Proteinnetzwerk",
+    "Protein-Interaktion",
+    "réseau protéique",
+    "red de proteínas"
    ]
   },
   "uniprot_find_proteins": {
@@ -14012,7 +15983,25 @@
     "domains",
     "active site",
     "binding site",
-    "disulfide bond"
+    "disulfide bond",
+    "phosphorylation site",
+    "transmembrane helix",
+    "active site residue",
+    "binding pocket",
+    "alpha helix",
+    "beta strand",
+    "sequence annotation",
+    "functional region",
+    "catalytic site",
+    "beta sheet",
+    "zinc finger",
+    "domain boundary"
+   ],
+   "manual_keywords": [
+    "protein domains",
+    "Proteindomänen",
+    "domaines protéiques",
+    "dominios proteicos"
    ]
   },
   "uniprot_get_protein_go_terms": {
@@ -14420,7 +16409,24 @@
     "FALDO",
     "ontology endpoint",
     "UniProtKB RDF",
-    "escape hatch query"
+    "escape hatch query",
+    "custom query",
+    "ontology lookup",
+    "GO terms",
+    "cross-references",
+    "isoforms",
+    "sequence features",
+    "taxon filter",
+    "bounded select",
+    "escape hatch",
+    "SPARQL endpoint",
+    "RDF triplestore",
+    "up:Protein",
+    "SELECT ASK",
+    "UniProt RDF",
+    "SPARQL 1.1",
+    "ontology query",
+    "prefix up:"
    ]
   },
   "vep_annotate_variant": {
@@ -14522,7 +16528,27 @@
     "MANE Select",
     "CADD",
     "high-throughput VEP",
-    "variant effect predictor batch"
+    "variant effect predictor batch",
+    "Ensembl",
+    "deduplication",
+    "compact",
+    "verbosity",
+    "chunked",
+    "batch VEP",
+    "consequence prediction",
+    "multi-variant",
+    "missense consequence",
+    "transcript impact",
+    "frameshift prediction",
+    "loss of function",
+    "CADD score"
+   ],
+   "manual_keywords": [
+    "many variants at once",
+    "variant list",
+    "Konsequenz",
+    "conséquence",
+    "consecuencia"
    ]
   },
   "vep_check_upstream_health": {
@@ -14781,7 +16807,25 @@
     "pre-annotation",
     "CHR-POS-REF-ALT",
     "allele resolution",
-    "GRCh38 normalization"
+    "GRCh38 normalization",
+    "normalize",
+    "canonicalize",
+    "recode",
+    "convert",
+    "map",
+    "coordinates",
+    "assembly",
+    "VCF coordinates",
+    "hgvs to vcf",
+    "variant normalizer",
+    "CHR POS REF ALT",
+    "Ensembl REST",
+    "most severe consequence"
+   ],
+   "manual_keywords": [
+    "which gene is this variant in",
+    "Variante",
+    "variante"
    ]
   }
  }

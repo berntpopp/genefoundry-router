@@ -1960,3 +1960,9 @@ tasks:
   query: escribe una función en JavaScript que ordene una lista de números
   expected: []
   confidence: high
+- id: h-neg-ddi-lay
+  category: negative
+  style: negative
+  query: can I safely take two prescription medicines at the same time
+  expected: []
+  confidence: high

@@ -1,6 +1,6 @@
 # Regression list for failure classes found by genefoundry-bench runs (#292). Phrased
 # generally — NOT the benchmark's question wording, which is held out for re-measurement.
-# Every task must stay in the served top 5 (pins + packaged expansions).
+# Every task must stay in the BM25 search top 5 (packaged expansions; pins do not count).
 tasks:
   # A pair question must reach the network tool, not only the capped neighbourhood list.
   - id: string-pair-interaction
@@ -35,3 +35,13 @@ tasks:
     category: literature
     query: read the tables in a PubMed Central paper
     expected: [pubtator_get_publication_passages]
+  # 2026-11-19: a regeneration dropped the non-English vocabulary, so a German frequency
+  # question fell out of the BM25 shortlist; the manual_keywords overlay now carries it.
+  - id: variant-frequency-german
+    category: variant_frequency
+    query: Wie selten ist eine Genvariante in der Bevölkerung?
+    expected: [gnomad_get_variant_frequencies, gnomad_get_variant_details]
+  - id: variant-frequency-spanish
+    category: variant_frequency
+    query: frecuencia de una variante genética en la población general
+    expected: [gnomad_get_variant_frequencies, gnomad_get_variant_details]
