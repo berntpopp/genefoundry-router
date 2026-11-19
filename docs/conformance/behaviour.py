@@ -21,6 +21,9 @@ Nothing enforced them. This does.
   3. THE ERROR AN LLM CANNOT ACT ON. A missing argument answered with `not_found` /
      "The requested tool is not available" — telling the model the tool does not exist.
 
+Advisory (WARN, never affects the verdict): a `resolve_*` miss should be a `not_found` carrying
+`_meta.next_commands` (Response-Envelope Standard v1 §2a).
+
 The probes are derived from the server's OWN advertised schema. There is no per-repo config file
 to write, and none to forget: every declared enum is probed, so a tool is gated the day it ships.
 That is deliberate. A hand-maintained list of probes is the same bug one level up — whoever
@@ -100,6 +103,7 @@ class Report:
     failed: list[str] = field(default_factory=list)
     ungated: list[str] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)
+    warned: list[str] = field(default_factory=list)
 
     def check(self, label: str, ok: bool, detail: str = "") -> bool:
         if ok:
@@ -122,6 +126,10 @@ class Report:
     def skip(self, label: str, why: str) -> None:
         """Genuinely inconclusive — an unreachable upstream. Does not count against conformance."""
         self.skipped.append(f"{label} — {why}")
+
+    def warn(self, label: str, why: str) -> None:
+        """Advisory only (e.g. Response-Envelope §2a). Never counts against conformance."""
+        self.warned.append(f"{label} — {why}")
 
     @property
     def conformant(self) -> bool:
@@ -655,6 +663,41 @@ def check_total_is_not_the_page_size(
     )
 
 
+def check_resolver_miss(
+    rep: Report, probe: Probe, tool: dict[str, Any], base: dict[str, Any]
+) -> None:
+    """WARN unless a `resolve_*` miss is a `not_found` with `_meta.next_commands` (Envelope §2a)."""
+    name = tool["name"]
+    if "resolve" not in name or "batch" in name:
+        return
+    props = properties(tool)
+    key = next(
+        (
+            k
+            for k in base
+            if is_stringy(props.get(k) or {})
+            and not takes_array(props.get(k) or {})
+            and enum_of(props.get(k) or {}) is None
+        ),
+        None,
+    )
+    if key is None:
+        return
+    label = f"{name}: a resolver miss is an honest not_found with next_commands"
+    try:
+        result = probe.call(name, {**base, key: SENTINEL})
+    except (ProtocolError, httpx.HTTPError):
+        return  # a rejected value or a flaky upstream says nothing about a miss; advisory only
+    env = envelope(result)
+    if not is_error_result(result, env):
+        rep.warn(label, f"a miss on {key!r} answered success, not not_found")
+    elif env.get("error_code") == "not_found":
+        if (env.get("_meta") or {}).get("next_commands"):
+            rep.passed.append(label)
+        else:
+            rep.warn(label, "the not_found carries no _meta.next_commands")
+
+
 def _substantive_payload(res: dict[str, Any], env: dict[str, Any]) -> Any:
     if env:
         return {k: v for k, v in env.items() if k not in ("_meta", "meta", "response_mode")}
@@ -812,6 +855,7 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
             continue
 
         check_declared_enums(rep, probe, tool, base)
+        check_resolver_miss(rep, probe, tool, base)
 
         control = rows(control_env)
         if control:
@@ -852,6 +896,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  SKIP  {line}")
     for line in rep.ungated:
         print(f"  UNGATED  {line}")
+    for line in rep.warned:
+        print(f"  WARN  {line}")
     for line in rep.failed:
         print(f"  FAIL  {line}")
 
