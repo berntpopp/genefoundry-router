@@ -29,7 +29,7 @@ from genefoundry_router.composition import (
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
 from genefoundry_router.hints import NamespaceHintMiddleware
-from genefoundry_router.instructions import build_instructions
+from genefoundry_router.instructions import PinnedModeInstructions, build_instructions
 from genefoundry_router.limits import (
     account_rate_limit_middleware,
     add_request_limits,
@@ -65,7 +65,12 @@ from genefoundry_router.runtime_drift import (
 from genefoundry_router.schema_strict import StrictNullMiddleware
 from genefoundry_router.search_rerank import SystemOneReranker
 from genefoundry_router.security import add_host_origin_validation, wrap_mcp_cors
-from genefoundry_router.tool_search import apply_tool_search, listed_pins, resolve_entrypoints
+from genefoundry_router.tool_search import (
+    apply_tool_search,
+    listed_pins,
+    pin_policy,
+    resolve_entrypoints,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -138,21 +143,24 @@ def build_server(
     # Layer 1 (tool-name preflight) + Layer 2 (resource-read boundary). Registered before
     # ToolResponseCacheMiddleware so quarantined tools cannot be served from cache.
     notfound_guard = NotFoundGuard(BACKEND_STATUS)
+    policy = pin_policy(registry, settings)
+    server.add_middleware(
+        PinnedModeInstructions(registry, policy, lambda: notfound_guard.unavailable)
+    )
     server.add_middleware(StrictNullMiddleware())  # #293: before guard + cache (stable keys)
     server.add_middleware(notfound_guard)
     server.notfound_guard = notfound_guard  # type: ignore[attr-defined]
     server.add_middleware(ArgumentGuard())  # #158: after the name guard (unknown -> not_found)
     tool_cache = ToolResponseCache(registry)
-    server.add_middleware(ToolResponseCacheMiddleware(tool_cache))
+    server.add_middleware(ToolResponseCacheMiddleware(tool_cache, settings.GF_PINNED_MODE))
     server.tool_cache = tool_cache  # type: ignore[attr-defined]
     if settings.GF_REWRITE_HINTS:
         # Finding 1 — namespace bare tool references embedded in backend responses so the
         # fleet's self-healing hints resolve through call_tool. Registered innermost so
         # hint rewrites are cached (issue #230). Enabled backends only.
         namespaces = {b.namespace for b in registry if b.enabled}
-        # ponytail: call form follows GF_PINNED_MODE, not X-GF-Pinned-Mode (rewrites are cached,
-        # #230); a header-overridden session may see a bare pinned name. call_tool still works.
-        server.add_middleware(NamespaceHintMiddleware(namespaces, listed_pins(registry, settings)))
+        # Call form follows the request's X-GF-Pinned-Mode (#320); the cache keys on it (#230).
+        server.add_middleware(NamespaceHintMiddleware(namespaces, policy.listed))
     for backend in registry:
         if not backend.enabled:
             log.info("backend_skipped", backend=backend.name, reason="disabled")

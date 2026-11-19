@@ -17,8 +17,12 @@ instructions focus on the cross-tool *workflow*, not on repeating per-tool docs.
 
 from __future__ import annotations
 
-from collections.abc import Collection
+from collections.abc import Callable, Collection
+from typing import Any
 
+from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
+
+from genefoundry_router.pinned_mode import PinPolicy, request_mode
 from genefoundry_router.registry import BackendDef, qualified_name
 
 
@@ -109,3 +113,45 @@ a backend's data. Each backend keeps its own response envelope, citation contrac
 and disclaimers — follow the instructions of the backend whose tool you call and \
 paste any `recommended_citation` verbatim. Research use only; not clinical decision \
 support."""
+
+
+class PinnedModeInstructions(Middleware):
+    """Answer ``initialize`` / ``server/discover`` with the request's ``X-GF-Pinned-Mode``
+    instructions (#320), so a ``none``-mode client is not told about pins it cannot see.
+
+    Only the returned text changes; auth and routing never read it.
+    """
+
+    def __init__(
+        self,
+        registry: list[BackendDef],
+        policy: PinPolicy,
+        unavailable: Callable[[], Collection[str]],
+    ) -> None:
+        self._registry = registry
+        self._policy = policy
+        self._unavailable = unavailable
+
+    def _override(self) -> str | None:
+        mode = request_mode(self._policy.default)
+        if mode == self._policy.default:
+            return None  # server.instructions already matches
+        down = self._unavailable()
+        live = [b for b in self._registry if b.namespace not in down]
+        return build_instructions(live, self._policy.listed(mode))
+
+    async def on_initialize(self, context: MiddlewareContext[Any], call_next: CallNext) -> Any:
+        result = await call_next(context)
+        text = self._override()
+        if result is None or text is None:
+            return result
+        return result.model_copy(update={"instructions": text})
+
+    async def on_discover(self, context: MiddlewareContext[Any], call_next: CallNext) -> Any:
+        result = await call_next(context)
+        text = self._override()
+        if text is None:
+            return result
+        if isinstance(result, dict):
+            return {**result, "instructions": text}
+        return result.model_copy(update={"instructions": text})

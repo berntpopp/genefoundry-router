@@ -86,3 +86,47 @@ def test_header_overrides_the_listing_per_request(gnomad_fake) -> None:
         assert _list_with_header(client, "everything") == META | pins  # invalid -> default
         assert _list_with_header(client, "none") == META  # no cross-request state
         assert _list_with_header(client, "default") == META | pins
+
+
+def _rpc(client: TestClient, method: str, params: dict, mode: str | None) -> dict:
+    headers = {"accept": "application/json, text/event-stream"}
+    if mode is not None:
+        headers["x-gf-pinned-mode"] = mode
+    body = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
+    response = client.post("/mcp", headers=headers, json=body)
+    assert response.status_code == 200, response.text
+    return response.json()["result"]
+
+
+def test_header_also_selects_instructions_and_hint_call_form() -> None:
+    """The coordinator's #320 follow-up: X-GF-Pinned-Mode filtered tools/list only, so a
+    none-mode client was still told about pins (instructions) and handed bare pinned names
+    (hints) it cannot see. Both now follow the request's mode; the cache keys on it."""
+    from fastmcp import FastMCP
+
+    backend = FastMCP("vep-link")
+
+    @backend.tool(name="annotate_variant")
+    async def annotate_variant(variant: str = "") -> dict:
+        """Return a success whose prose names the pinned sibling."""
+        return {"success": True, "message": "Try recode_variant next."}
+
+    registry = [
+        BackendDef(name="vep", url_env="X", namespace="vep", entrypoints=["recode_variant"])
+    ]
+    app = build_app(RouterSettings(_env_file=None), registry, proxy_targets={"vep": backend})
+    init = {
+        "protocolVersion": "2025-06-18",
+        "capabilities": {},
+        "clientInfo": {"name": "t", "version": "0"},
+    }
+    call = {"name": "vep_annotate_variant", "arguments": {"variant": "1-1-A-G"}}
+    with TestClient(app, follow_redirects=False) as client:
+        default_text = _rpc(client, "initialize", init, None)["instructions"]
+        none_text = _rpc(client, "initialize", init, "none")["instructions"]
+        bare = _rpc(client, "tools/call", call, None)["structuredContent"]["message"]
+        routed = _rpc(client, "tools/call", call, "none")["structuredContent"]["message"]
+    assert "vep_recode_variant" in default_text and "COMMON ENTRY POINTS" in default_text
+    assert "vep_recode_variant" not in none_text and "through `call_tool`" in none_text
+    assert bare == "Try vep_recode_variant next."
+    assert routed == 'Try call_tool(name="vep_recode_variant") next.'

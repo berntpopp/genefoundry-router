@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from typing import Any
 
 import structlog
@@ -140,9 +140,14 @@ def _rewrite_result(
 class NamespaceHintMiddleware(Middleware):
     """Rewrite bare tool references in tool results to their namespaced form."""
 
-    def __init__(self, namespaces: set[str], pinned: Collection[str] = ()) -> None:
+    def __init__(
+        self,
+        namespaces: set[str],
+        pinned: Collection[str] | Callable[[], Collection[str]] = (),
+    ) -> None:
         self._namespaces = set(namespaces)
-        self._pinned = frozenset(pinned)
+        # A callable is read per call: the request's X-GF-Pinned-Mode picks the call form.
+        self._pinned = pinned if callable(pinned) else frozenset(pinned)
 
     async def on_call_tool(
         self,
@@ -159,4 +164,5 @@ class NamespaceHintMiddleware(Middleware):
         ns = name.split("_", 1)[0]
         if ns not in self._namespaces:
             return result
-        return _rewrite_result(result, ns, self._namespaces, self._pinned)
+        pinned = self._pinned() if callable(self._pinned) else self._pinned
+        return _rewrite_result(result, ns, self._namespaces, pinned)

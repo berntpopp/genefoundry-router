@@ -428,14 +428,18 @@ def resolve_entrypoints(registry: list[BackendDef]) -> list[str]:
     return pins or list(DEFAULT_ALWAYS_VISIBLE)
 
 
-def listed_pins(registry: list[BackendDef], settings: RouterSettings) -> frozenset[str]:
-    """Pinned names the server-default ``GF_PINNED_MODE`` lists (instructions, hint form)."""
-    policy = PinPolicy(
+def pin_policy(registry: list[BackendDef], settings: RouterSettings) -> PinPolicy:
+    """The pinned names per mode for ``registry``, defaulting to ``GF_PINNED_MODE``."""
+    return PinPolicy(
         tuple(resolve_entrypoints(registry)),
         tuple(settings.GF_PINNED_MINIMAL),
         settings.GF_PINNED_MODE,
     )
-    return policy.listed(settings.GF_PINNED_MODE)
+
+
+def listed_pins(registry: list[BackendDef], settings: RouterSettings) -> frozenset[str]:
+    """Pinned names the server-default ``GF_PINNED_MODE`` lists (the static instructions)."""
+    return pin_policy(registry, settings).listed(settings.GF_PINNED_MODE)
 
 
 def apply_tool_search(
