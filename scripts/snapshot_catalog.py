@@ -6,7 +6,8 @@ with no regenerator, so it silently went stale when the fleet grew — hpo/maved
 orphanet were added afterward and had 0 tools in it. This script makes the snapshot
 reproducible: it builds the router exactly as production does (namespaced, search DISABLED
 so the full catalog is visible) and captures, per tool, the fields FastMCP's BM25 index
-reads — name, description, and per-parameter descriptions. Online; needs GF_*_URL in env:
+reads — name, description, and per-parameter descriptions — plus parameter enum values,
+which the reranker's parameter summary reads. Online; needs GF_*_URL in env:
 
     uv run --env-file ci/fleet-urls.env python scripts/snapshot_catalog.py
 
@@ -27,6 +28,7 @@ from typing import Any
 from fastmcp import Client
 
 from genefoundry_router.config import RouterSettings, load_registry
+from genefoundry_router.search_rerank import enum_values
 from genefoundry_router.server import build_server
 
 DEFAULT_OUT = Path("tests/discoverability/catalog.json")
@@ -37,12 +39,16 @@ def _entry(tool: Any) -> dict[str, Any]:
     props = schema.get("properties", {}) if isinstance(schema, dict) else {}
     params = {name: (spec.get("description") or "") for name, spec in props.items()}
     tags = sorted((tool.meta or {}).get("fastmcp", {}).get("tags", []))
-    return {
+    entry: dict[str, Any] = {
         "name": tool.name,
         "description": tool.description or "",
         "tags": tags,
         "params": params,
     }
+    # the reranker's parameter summary reads enum values; keep them so the bench matches prod
+    if enums := {name: v for name, spec in props.items() if (v := enum_values(spec))}:
+        entry["enums"] = enums
+    return entry
 
 
 async def _run(servers_file: str, out: Path) -> None:

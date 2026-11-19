@@ -138,7 +138,9 @@ async def test_search_hits_carry_a_working_call_example(gnomad_fake):
     # Issue #299: an unpinned hit must say "go through call_tool"; a pinned one is direct.
     settings = RouterSettings(_env_file=None)
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
-    server = build_server(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+    server = build_server(
+        settings, registry, proxy_targets={"gnomad": gnomad_fake}, enable_search=False
+    )
     apply_tool_search(server, settings, always_visible=["gnomad_search_genes"])
     async with Client(server) as client:
         hits = (await client.call_tool("search_tools", {"query": "gene", "limit": 20})).data
@@ -146,5 +148,10 @@ async def test_search_hits_carry_a_working_call_example(gnomad_fake):
         assert calls["gnomad_search_genes"] == {"tool": "gnomad_search_genes", "arguments": {}}
         name, call = next((n, c) for n, c in calls.items() if n != "gnomad_search_genes")
         assert call["tool"] == "call_tool" and call["arguments"]["name"] == name
+        # strict tools/list advertises call_tool.arguments as a JSON string: show that form
+        advertised = {t.name: t for t in await client.list_tools()}["call_tool"]
+        arg_schema = advertised.input_schema["properties"]["arguments"]
+        assert "string" in [alt.get("type") for alt in arg_schema["anyOf"]]
+        assert call["arguments"]["arguments"] == "{}"
         result = await client.call_tool(call["tool"], call["arguments"], raise_on_error=False)
-    assert "not found" not in str(result.content).lower()
+    assert not result.is_error, result.content

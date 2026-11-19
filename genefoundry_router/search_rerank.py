@@ -114,7 +114,7 @@ def _describe(tool: Tool, limit: int) -> str:
     return " ".join((tool.description or "").split())[:limit]
 
 
-def _enum(schema: Any) -> list[Any]:
+def enum_values(schema: Any) -> list[Any]:
     """Enum values of a property, also behind ``anyOf`` (Optional) or array ``items``."""
     if not isinstance(schema, dict):
         return []
@@ -130,7 +130,7 @@ def _param_summary(tool: Tool) -> str:
     if not isinstance(props, dict):
         return ""
     parts = [
-        f"{name} ({'|'.join(map(str, values))})" if (values := _enum(schema)) else str(name)
+        f"{name} ({'|'.join(map(str, values))})" if (values := enum_values(schema)) else str(name)
         for name, schema in props.items()
     ]
     return ", ".join(parts)[:MAX_PARAMS_CHARS]

@@ -2,6 +2,31 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.12.8] - 2026-11-19
+
+### Fixed
+
+- **Hint rewriting reaches every prose field:** bare sibling tool names were rewritten only
+  in `message`/`hint`, so gnomad's `recovery` and `build_note` still named tools the router
+  does not know. A key is now prose when it is, or ends in `_`, one of `message`, `hint(s)`,
+  `note(s)`, `recovery`, `guidance`, `suggestion`, `warning(s)`, `caveat`, `help`; string
+  values and lists of strings under it are rewritten. Identifiers, enums (`recovery_action`,
+  `reason`) and backend data records are never regex-rewritten.
+- **`call` examples match the advertised schema:** the strict listing advertises
+  `call_tool.arguments` as a JSON string, so an unpinned hit's example now reads
+  `{"tool": "call_tool", "arguments": {"name": "<ns>_<tool>", "arguments": "{}"}}`, and the
+  integration test calls it verbatim.
+
+### Changed
+
+- **Discovery snapshot keeps parameter enum values** (`scripts/snapshot_catalog.py`,
+  `load_catalog()`), so the offline bench gives the reranker the same parameter summary as
+  production. `catalog.json` was backfilled offline from `tests/fixtures/fleet_manifest.json`
+  (same 2026-10-04 capture; all 285 tools matched).
+- Held-out discovery set: 40 more out-of-scope tasks (24 → 64).
+- `docs/discovery.md`: the rerank floor is model-specific; re-measure on both eval sets
+  before changing it.
+
 ## [0.12.7] - 2026-11-19
 
 ### Changed

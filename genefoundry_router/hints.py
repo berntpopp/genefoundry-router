@@ -35,8 +35,15 @@ _SYNTHETIC = {"search_tools", "call_tool"}
 # at free-text fields.
 TOOL_REF_KEYS = {"tool", "fallback_tool", "tool_name", "next_tool"}
 _BARE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-# Prose fields whose text names sibling tools ("Try search_genes.") — issue #299.
-PROSE_KEYS = {"message", "hint"}
+# Prose fields whose text names sibling tools ("Try search_genes.") — issue #299. A key is
+# prose when it IS one of these words or ENDS in ``_<word>`` (gnomad's ``recovery``,
+# ``build_note``; ``usage_notes``, ``warnings``). Everything else — identifiers, enums such as
+# ``recovery_action``/``reason``, and backend data records — is never regex-rewritten; a
+# string value or a list of strings under a prose key is.
+PROSE_KEYS = {
+    "message", "hint", "hints", "note", "notes", "recovery", "guidance", "suggestion",
+    "warning", "warnings", "caveat", "help",
+}  # fmt: skip
 # A bare tool name in prose starts with a Tool-Naming v1.1 verb (mirror of cli.py's tiers).
 # ponytail: verb-shaped, not catalog-checked; a verb_noun word that is no tool gets prefixed too.
 _PROSE_TOOL_RE = re.compile(
@@ -50,6 +57,10 @@ def _is_rewritable(value: str, namespaces: set[str]) -> bool:
     if not _BARE_NAME_RE.match(value):
         return False
     return value.split("_", 1)[0] not in namespaces  # already-namespaced -> leave as-is
+
+
+def _is_prose_key(key: Any) -> bool:
+    return isinstance(key, str) and key.lower().rsplit("_", 1)[-1] in PROSE_KEYS
 
 
 def _rewrite_prose(text: str, ns: str, pinned: Collection[str]) -> str:
@@ -80,11 +91,18 @@ def rewrite_tool_refs(obj: Any, ns: str, namespaces: set[str], pinned: Collectio
             ):
                 obj[key] = f"{ns}_{value}"
                 count += 1
-            elif key in PROSE_KEYS and isinstance(value, str):
+            elif _is_prose_key(key) and isinstance(value, str):
                 new = _rewrite_prose(value, ns, pinned)
                 if new != value:
                     obj[key] = new
                     count += 1
+            elif _is_prose_key(key) and isinstance(value, list):
+                for i, item in enumerate(value):  # e.g. ``warnings: [str, ...]``
+                    if isinstance(item, str) and (new := _rewrite_prose(item, ns, pinned)) != item:
+                        value[i] = new
+                        count += 1
+                    elif not isinstance(item, str):
+                        count += rewrite_tool_refs(item, ns, namespaces, pinned)
             else:
                 count += rewrite_tool_refs(value, ns, namespaces, pinned)
     elif isinstance(obj, list):

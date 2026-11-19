@@ -35,6 +35,21 @@ def test_catalog_snapshot_is_the_real_fleet() -> None:
         assert n in names
 
 
+def test_catalog_keeps_enum_values_for_the_reranker() -> None:
+    # the reranker's parameter summary must match production, enum values included
+    from types import SimpleNamespace
+
+    from genefoundry_router.search_rerank import candidate_text
+    from scripts.snapshot_catalog import _entry
+
+    tools = {t.name: t for t in load_catalog()}
+    text = candidate_text(tools["autopvs1_get_cnv_pvs1_data"], 200)
+    assert "genome_build (hg19|hg38)" in text
+    schema = {"properties": {"b": {"description": "x", "anyOf": [{"enum": ["a"]}, {}]}}}
+    entry = _entry(SimpleNamespace(name="t", description="", meta=None, input_schema=schema))
+    assert entry["enums"] == {"b": ["a"]}
+
+
 def test_tasks_target_tools_that_exist() -> None:
     catalog = {t.name for t in load_catalog()}
     tasks = load_tasks()
@@ -153,3 +168,10 @@ async def test_bench_regressions_stay_in_the_served_top_five() -> None:
         if not (r.pinned or (r.search_rank is not None and r.search_rank <= 5))
     ]
     assert not missed, "\n" + format_report(report)
+
+
+def test_heldout_set_has_enough_out_of_scope_negatives() -> None:
+    # a rerank-floor change needs more than a couple dozen "nothing fits" requests to rest on
+    negatives = [t for t in load_tasks(HELDOUT_TASKS, include_negatives=True) if not t.expected]
+    assert len(negatives) >= 60
+    assert len({t.query for t in negatives}) == len(negatives)
