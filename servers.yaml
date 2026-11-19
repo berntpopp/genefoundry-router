@@ -20,6 +20,22 @@ servers:
     tags: [variant, gene, frequency, population]
     entrypoints: [resolve_variant_id, search_genes, get_variant_frequencies, get_gene_variants]
 
+  # ucsc-link: live UCSC Genome Browser JSON API, curated hg38/hg19 track allowlist (incl. MANE,
+  # ENCODE blacklist / GRC / GIAB problematic regions) + bounded reference sequence, and BLAT /
+  # in-silico PCR on the deployment's own Kent gfServer (v0.4.0; genefoundry-router#191).
+  # Staged: flip `enabled` to true once ucsc-link.genefoundry.org is live and the baseline
+  # is re-pinned.
+  - name: ucsc
+    repo: berntpopp/ucsc-link
+    url_env: GF_UCSC_URL
+    namespace: ucsc
+    description: Genome Browser region tracks, reference sequence, BLAT & in-silico PCR
+    source_name: UCSC Genome Browser
+    source_url: https://genome.ucsc.edu/
+    tags: [genomics, region, repeat, conservation, regulatory, sequence, track, blat, pcr]
+    entrypoints: [search_genome, get_region_annotations]
+    enabled: false
+
   - name: gtex
     repo: berntpopp/gtex-link
     url_env: GF_GTEX_URL
@@ -244,19 +260,3 @@ servers:
     source_url: https://clinpgx.org/
     tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
     entrypoints: [search_records, get_record, get_related_records, search_dataset]
-
-  # ucsc-link: live UCSC Genome Browser JSON API, curated hg38/hg19 track allowlist (incl. MANE,
-  # ENCODE blacklist / GRC / GIAB problematic regions) + bounded reference sequence, and BLAT /
-  # in-silico PCR on the deployment's own Kent gfServer (v0.4.0; genefoundry-router#191).
-  # Staged: flip `enabled` to true once ucsc-link.genefoundry.org is live and the baseline
-  # is re-pinned.
-  - name: ucsc
-    repo: berntpopp/ucsc-link
-    url_env: GF_UCSC_URL
-    namespace: ucsc
-    description: Genome Browser region tracks, reference sequence, BLAT & in-silico PCR
-    source_name: UCSC Genome Browser
-    source_url: https://genome.ucsc.edu/
-    tags: [genomics, region, repeat, conservation, regulatory, sequence, track, blat, pcr]
-    entrypoints: [search_genome, get_region_annotations]
-    enabled: false

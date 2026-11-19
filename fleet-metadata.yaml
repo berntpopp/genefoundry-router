@@ -58,6 +58,7 @@ vocabulary:
   # Domain tier — the field a reader browses.
   domain:
     - genomics
+    - genome-browser
     - genetics
     - clinical-genetics
     - rare-disease
@@ -102,7 +103,6 @@ vocabulary:
     - pharmacogenomics
     - gene-drug
     - dosing-guideline
-    - genome-browser
   # Source tier — the upstream's proper noun. These are near-empty topic pages
   # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
   source:
@@ -126,6 +126,8 @@ vocabulary:
     - clinvar
     - vep
     - ensembl
+    - ucsc-genome-browser
+    - encode
     - panelapp
     - mondo
     - mavedb
@@ -134,8 +136,6 @@ vocabulary:
     - metadome
     - orphanet
     - clinpgx
-    - ucsc-genome-browser
-    - encode
     - cpic
     - pharmgkb
 
@@ -190,6 +190,13 @@ backends:
       gene constraint, coverage, structural and mitochondrial variants, and liftover —
       as typed tools for LLM agents.
     topics: [gnomad, genomics, variant-interpretation, population-genetics, allele-frequency]
+
+  - namespace: ucsc
+    description: >-
+      MCP server for the UCSC Genome Browser: curated hg38/hg19 region tracks (genes,
+      repeats, segmental duplications, problematic regions, conservation, cCREs),
+      reference sequence, and BLAT / in-silico PCR.
+    topics: [ucsc-genome-browser, genome-browser, genomics, variant-annotation, encode]
 
   - namespace: gtex
     description: >-
@@ -332,10 +339,3 @@ backends:
       gene-drug interactions, clinical guidelines, dosing recommendations, and variant
       annotations for LLM agents.
     topics: [clinpgx, pharmacogenomics, gene-drug, clinical-genetics, cpic]
-
-  - namespace: ucsc
-    description: >-
-      MCP server for the UCSC Genome Browser: curated hg38/hg19 region tracks (genes,
-      repeats, segmental duplications, problematic regions, conservation, cCREs),
-      reference sequence, and BLAT / in-silico PCR.
-    topics: [ucsc-genome-browser, genome-browser, genomics, variant-annotation, encode]

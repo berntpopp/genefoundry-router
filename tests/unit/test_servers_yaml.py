@@ -36,9 +36,9 @@ def test_real_servers_yaml_parses():
         "get_genes_for_phenotype",
     ]
     assert by_name["mavedb"].entrypoints == ["search_score_sets"]
+    assert by_name["ucsc"].entrypoints == ["search_genome", "get_region_annotations"]
     assert by_name["metadome"].entrypoints == ["resolve_transcript", "get_tolerance_landscape"]
     assert by_name["orphanet"].entrypoints == ["resolve_disease"]
-    assert by_name["ucsc"].entrypoints == ["search_genome", "get_region_annotations"]
     # pubtator adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64): it now
     # emits clean leaf names, so the stopgap strip_prefix transform is gone.
     assert by_name["pubtator"].transform is None
