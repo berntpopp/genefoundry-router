@@ -1854,10 +1854,7 @@
       },
       "domain": "Pharmacogenomics / gene-drug guidelines",
       "entrypoints": [
-        "search_records",
-        "get_record",
-        "get_related_records",
-        "search_dataset"
+        "search_records"
       ],
       "name": "clinpgx",
       "namespace": "clinpgx",
@@ -4014,7 +4011,7 @@
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
-        "resolve_identifier"
+        "get_gene_curations"
       ],
       "name": "gencc",
       "namespace": "gencc",
@@ -8871,7 +8868,7 @@
       },
       "domain": "Phenotype ontology & associations",
       "entrypoints": [
-        "resolve_term",
+        "search_terms",
         "get_phenotypes_for_gene",
         "get_genes_for_phenotype"
       ],
@@ -15146,6 +15143,7 @@
       },
       "domain": "Disease ontology / cross-references",
       "entrypoints": [
+        "search_diseases",
         "resolve_disease"
       ],
       "name": "mondo",
@@ -15913,7 +15911,7 @@
       },
       "domain": "Rare disease ontology & associations",
       "entrypoints": [
-        "resolve_disease"
+        "search_diseases"
       ],
       "name": "orphanet",
       "namespace": "orphanet",

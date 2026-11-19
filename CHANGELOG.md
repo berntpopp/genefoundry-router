@@ -4,6 +4,23 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Pinned mode (#320).** `GF_PINNED_MODE=default|minimal|none` (default unchanged) picks
+  which pinned tools `tools/list` shows; `minimal` lists `GF_PINNED_MINIMAL` (6 front doors),
+  `none` only `search_tools` + `call_tool`. The request header `X-GF-Pinned-Mode` overrides
+  it per request (allowed in CORS); it filters the listing only. Instructions follow the mode.
+  Strict listing: ~17.1k / ~3.2k / ~0.8k tokens.
+
+### Changed
+
+- **Search-first pins (#320).** Resolvers were the top production error class. Pins now:
+  `hpo_search_terms` (was `hpo_resolve_term`), `orphanet_search_diseases` (was
+  `orphanet_resolve_disease`), `mondo_search_diseases` added before `mondo_resolve_disease`,
+  `gencc_get_gene_curations` (was `gencc_resolve_identifier`); dropped `clinpgx_get_record`,
+  `clinpgx_get_related_records`, `clinpgx_search_dataset` (each needs an id from another
+  tool). 32 → 30 pins; listing ~18.1k → ~17.1k tokens; offline discoverability unchanged.
+
 ## [0.13.3] - 2026-11-19
 
 Deploy candidate. Summarises everything since v0.13.2, including three changes that shipped

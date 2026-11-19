@@ -112,6 +112,19 @@ class RouterSettings(BaseSettings):
     # Rewrite bare tool references in backend responses to namespaced form (Finding 1).
     GF_REWRITE_HINTS: bool = True
 
+    # Pinned tools in tools/list (#320): default = every servers.yaml entry point; minimal =
+    # GF_PINNED_MINIMAL; none = search_tools + call_tool only. A request may override it with
+    # the X-GF-Pinned-Mode header (listing only). Unlisted tools stay callable via call_tool.
+    GF_PINNED_MODE: Literal["default", "minimal", "none"] = "default"
+    GF_PINNED_MINIMAL: list[str] = [
+        "hgnc_resolve_symbol",
+        "gnomad_resolve_variant_id",
+        "clinvar_get_variant",
+        "clingen_get_gene_validity",
+        "mondo_search_diseases",
+        "hpo_search_terms",
+    ]
+
     # Discovery
     GF_POLL_INTERVAL: float = 0  # seconds; 0 disables the polling re-list
     GF_DRIFT_MODE: Literal["off", "warn", "enforce"] = "warn"

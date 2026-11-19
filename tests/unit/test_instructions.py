@@ -110,3 +110,12 @@ def test_search_is_not_described_as_bm25_only() -> None:
     text = build_instructions(_registry())
     assert "BM25" not in text
     assert "search over the federated catalog" in text
+
+
+def test_instructions_follow_the_listed_pins() -> None:
+    """#320: GF_PINNED_MODE=none lists no pins, so the text must not promise any."""
+    none = build_instructions(_registry(), listed=frozenset())
+    assert "COMMON ENTRY POINTS" not in none
+    assert "Only `search_tools` and `call_tool` appear" in none
+    minimal = build_instructions(_registry(), listed={"gnomad_search_genes"})
+    assert "gnomad_search_genes" in minimal and "gnomad_resolve_variant_id" not in minimal

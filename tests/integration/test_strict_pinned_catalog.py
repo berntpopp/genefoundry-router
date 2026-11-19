@@ -20,10 +20,10 @@ ROOT = Path(__file__).resolve().parents[2]
 BASELINE = ROOT / "genefoundry_router" / "data" / "fleet-baseline.json"
 # ~4 chars/token, same estimator as scripts/surface.py. Ceiling for the advertised listing;
 # lower it as pinned schemas are trimmed (#293), never raise it to admit growth.
-PINNED_LISTING_TOKEN_BUDGET = 19_000  # measured ~18.1k on 2026-11-18
+PINNED_LISTING_TOKEN_BUDGET = 18_000  # measured ~17.1k on 2026-11-19 (#320; was ~18.1k)
 
 
-def _pinned_server():
+def _pinned_server(settings: RouterSettings | None = None):
     manifest = load_manifest(BASELINE)
     registry = [
         b
@@ -34,7 +34,7 @@ def _pinned_server():
         b.namespace: make_backend_from_spec(b.namespace, manifest.backends[b.namespace])
         for b in registry
     }
-    settings = RouterSettings(_env_file=None)
+    settings = settings or RouterSettings(_env_file=None)
     pins = resolve_entrypoints(registry)
     return build_server(settings, registry, proxy_targets=targets, enable_search=True), pins
 

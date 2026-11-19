@@ -30,16 +30,17 @@ def test_real_servers_yaml_parses():
     # discoverable regardless of BM25 ranking (discoverability-benchmark follow-up to #3).
     assert all(by_name[n].entrypoints for n in by_name), "each backend needs an entrypoint"
     assert "resolve_variant_id" in by_name["gnomad"].entrypoints
-    assert by_name["mondo"].entrypoints == ["resolve_disease"]
-    assert by_name["gencc"].entrypoints == ["resolve_identifier"]
+    # #320: disease/phenotype front doors are the ranked text searches, not exact resolvers.
+    assert by_name["mondo"].entrypoints == ["search_diseases", "resolve_disease"]
+    assert by_name["gencc"].entrypoints == ["get_gene_curations"]
     assert by_name["hpo"].entrypoints == [
-        "resolve_term",
+        "search_terms",
         "get_phenotypes_for_gene",
         "get_genes_for_phenotype",
     ]
     assert by_name["mavedb"].entrypoints == ["search_score_sets"]
     assert by_name["metadome"].entrypoints == ["resolve_transcript", "get_tolerance_landscape"]
-    assert by_name["orphanet"].entrypoints == ["resolve_disease"]
+    assert by_name["orphanet"].entrypoints == ["search_diseases"]
     # pubtator adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64): it now
     # emits clean leaf names, so the stopgap strip_prefix transform is gone.
     assert by_name["pubtator"].transform is None

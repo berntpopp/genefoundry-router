@@ -17,18 +17,21 @@ instructions focus on the cross-tool *workflow*, not on repeating per-tool docs.
 
 from __future__ import annotations
 
+from collections.abc import Collection
+
 from genefoundry_router.registry import BackendDef, qualified_name
 
 
-def _entrypoints_block(registry: list[BackendDef]) -> str:
-    """One line per enabled backend that declares canonical resolvers, naming the
-    namespaced tools so the model can call them directly — the always-read complement
-    to pinning that survives even when a host drops the server instructions."""
-    lines = [
-        f"  - {b.namespace}: " + ", ".join(qualified_name(b.namespace, e) for e in b.entrypoints)
-        for b in registry
-        if b.enabled and b.entrypoints
-    ]
+def _entrypoints_block(registry: list[BackendDef], listed: Collection[str] | None) -> str:
+    """One line per enabled backend with a LISTED entry point, naming the namespaced tools
+    so the model can call them directly — the always-read complement to pinning that
+    survives even when a host drops the server instructions."""
+    lines = []
+    for b in registry:
+        names = [qualified_name(b.namespace, e) for e in b.entrypoints if b.enabled]
+        names = [n for n in names if listed is None or n in listed]
+        if names:
+            lines.append(f"  - {b.namespace}: " + ", ".join(names))
     if not lines:
         return ""
     body = "\n".join(lines)
@@ -40,13 +43,24 @@ def _entrypoints_block(registry: list[BackendDef]) -> str:
     )
 
 
-def build_instructions(registry: list[BackendDef]) -> str:
+def build_instructions(registry: list[BackendDef], listed: Collection[str] | None = None) -> str:
     """Return the orientation text for the ``genefoundry`` MCP server.
 
     Lists the enabled backends' namespaces so the model knows the breadth of the
     federated catalog without a ``search_tools`` round-trip; disabled/url-less
-    backends are mounted nowhere, so they are omitted.
+    backends are mounted nowhere, so they are omitted. ``listed`` is the pinned set the
+    server lists (``GF_PINNED_MODE``, #320); ``None`` means every entry point.
     """
+    pinned = _entrypoints_block(registry, listed)
+    if pinned:
+        listing = (
+            "Only `search_tools`, `call_tool`, and a few pinned canonical resolvers "
+            "(see COMMON ENTRY POINTS) appear in the top-level tool list."
+        )
+        direct = "Only the pinned entry points may be called directly."
+    else:
+        listing = "Only `search_tools` and `call_tool` appear in the top-level tool list."
+        direct = "Invoke every fleet tool through `call_tool`."
     namespaces = sorted(b.namespace for b in registry if b.enabled)
     breadth = (
         f"{len(namespaces)} domain backends ({', '.join(namespaces)})"
@@ -59,14 +73,13 @@ genefoundry is a META-ROUTER (a gateway), not a data server. It federates the \
 GeneFoundry "-link" fleet — {breadth} — behind ONE MCP endpoint and exposes a \
 SEARCH SURFACE instead of listing its whole ~200-tool catalog at once.
 
-WHAT IS LISTED vs WHAT EXISTS. Only `search_tools`, `call_tool`, and a few pinned \
-canonical resolvers (see COMMON ENTRY POINTS) appear in the top-level tool list. \
+WHAT IS LISTED vs WHAT EXISTS. {listing} \
 Every other capability — across {catalog} — is present and callable, but it is \
 reached THROUGH search, not shown up front. If a capability (splicing prediction, \
 VEP consequence, ClinVar significance, disease ontology, gene-disease curation, \
 expression, literature, …) is absent from your client's tool list, that does NOT \
 mean it is missing — it means you have not searched yet. Call `search_tools` before \
-concluding a tool does not exist.{_entrypoints_block(registry)}
+concluding a tool does not exist.{pinned}
 
 WORKFLOW.
   1. `search_tools(query="<natural language>")` — search over the federated catalog \
@@ -80,7 +93,7 @@ genes sit on the chromosome) needs one search per part, chained on the first res
   3. `call_tool(name="<namespace>_<tool>", arguments={{…}})` to invoke it — each hit's \
 `call` field is that call, ready to fill. A tool that is NOT in your client's tool list \
 is invoked ONLY through `call_tool`: calling its name directly fails in clients that \
-check names against the listed tools. Only the pinned entry points may be called directly.
+check names against the listed tools. {direct}
 
 DO NOT DEFEAT YOURSELF. `search_tools` returns data; it does not load anything into \
 your client, and you do NOT need to re-run any client/host-side tool search to \
