@@ -40,6 +40,7 @@ sys.path.insert(0, str(ROOT))
 
 from genefoundry_router.search_expansion import (  # noqa: E402
     FORMAT_VERSION,
+    MANUAL_FIELD,
     catalog_entry_sha256,
 )
 
@@ -187,7 +188,10 @@ def main(argv: list[str] | None = None) -> int:
 
             with cf.ThreadPoolExecutor(8) as pool:
                 for name, merged in pool.map(work, todo):
-                    tools[name] = {"source_sha256": shas[name], **merged}
+                    # The hand-curated overlay survives regeneration.
+                    manual = existing.get(name, {}).get(MANUAL_FIELD)
+                    extra = {MANUAL_FIELD: manual} if manual else {}
+                    tools[name] = {"source_sha256": shas[name], **merged, **extra}
 
     previous: dict[str, Any] = {}
     if args.out.exists():
