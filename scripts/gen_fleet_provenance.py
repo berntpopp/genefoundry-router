@@ -148,7 +148,9 @@ def render() -> dict[str, Any]:
             }
         )
 
-    total_repos = len(metadata.get("backends", {})) + 1
+    total_repos = (
+        len(backend_entries) + 1
+    )  # enabled backends + router; a staged backend is not counted
     return {
         "schema_version": 1,
         "fleet": {
