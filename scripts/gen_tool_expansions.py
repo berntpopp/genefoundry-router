@@ -14,6 +14,12 @@ Responses are cached on disk (keyed by model + prompt), so re-runs are free.
     OPENROUTER_API_KEY=... uv run python scripts/gen_tool_expansions.py            # update stale
     uv run python scripts/gen_tool_expansions.py --check                           # CI-style: exit 1 if stale
     uv run python scripts/gen_tool_expansions.py --all                             # regenerate everything
+    uv run python scripts/gen_tool_expansions.py --fresh                           # drop carried-over text
+
+A regenerated entry keeps its previous keywords after the new ones (generation is
+stochastic, so a description tweak must never delete vocabulary); ``--fresh`` resets.
+Queries are not carried over: doubling them dilutes BM25 length normalisation (measured on
+the held-out set: lower MRR, and a bench regression fell out of the top 5).
 
 Run it after ``make snapshot-catalog`` (``make expansions``). The API key is read from the
 environment and never printed or written.
@@ -41,6 +47,7 @@ sys.path.insert(0, str(ROOT))
 from genefoundry_router.search_expansion import (  # noqa: E402
     FORMAT_VERSION,
     MANUAL_FIELD,
+    MAX_ITEMS_PER_FIELD,
     catalog_entry_sha256,
 )
 
@@ -79,8 +86,8 @@ Other tools from the same backend (write queries that fit the TARGET better than
 {sib or "(none)"}
 
 Return ONLY JSON: {{"queries": [...10 strings...], "keywords": [...10-15 strings...]}}
-queries: 10 diverse, realistic requests: 2-3 from a clinician/patient in lay wording, 3 from a bioinformatician using jargon and abbreviations, 3 concrete requests naming example entities (real gene symbols, variants like 17-43045712-G-A or NM_000059.4:c.68_69del, rsIDs, HPO/MONDO IDs, diseases, tissues), 1 in German or French. Vary length and phrasing; do not copy the tool name.
-keywords: synonyms, abbreviations, alternative database/field names and related terms a user might search with that are NOT already obvious from the name (e.g. "AF", "MAF", "allele freq", "popmax"); include 2-3 plain-language (lay) terms and the German, French and Spanish words for the tool's core concept."""
+queries: 10 diverse, realistic requests: 2-3 from a clinician/patient in lay wording, 3 from a bioinformatician using jargon and abbreviations, 2 concrete requests naming example entities (real gene symbols, variants like 17-43045712-G-A or NM_000059.4:c.68_69del, rsIDs, HPO/MONDO IDs, diseases, tissues), 1 in German and 1 in French. Vary length and phrasing; do not copy the tool name.
+keywords: synonyms, abbreviations, alternative database/field names and related terms a user might search with that are NOT already obvious from the name (e.g. "AF", "MAF", "allele freq", "popmax")."""
 
 
 def _generate(
@@ -133,6 +140,12 @@ def _merge(parts: list[dict[str, list[str]]]) -> dict[str, list[str]]:
     return merged
 
 
+def carry_over(new: dict[str, list[str]], old: dict[str, Any]) -> dict[str, list[str]]:
+    """Keep the previous entry's keywords after the new ones, deduped and capped."""
+    keywords = _merge([new, {"keywords": old.get("keywords", [])}])["keywords"]
+    return {**new, "keywords": keywords[:MAX_ITEMS_PER_FIELD]}
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
@@ -141,6 +154,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--models", default=",".join(DEFAULT_MODELS))
     ap.add_argument("--all", action="store_true", help="regenerate every entry")
     ap.add_argument("--check", action="store_true", help="report staleness; exit 1 if stale")
+    ap.add_argument("--fresh", action="store_true", help="don't carry over previous keywords")
     args = ap.parse_args(argv)
 
     catalog: list[dict[str, Any]] = json.loads(args.catalog.read_text(encoding="utf-8"))
@@ -188,6 +202,8 @@ def main(argv: list[str] | None = None) -> int:
 
             with cf.ThreadPoolExecutor(8) as pool:
                 for name, merged in pool.map(work, todo):
+                    if not args.fresh:
+                        merged = carry_over(merged, existing.get(name, {}))
                     # The hand-curated overlay survives regeneration.
                     manual = existing.get(name, {}).get(MANUAL_FIELD)
                     extra = {MANUAL_FIELD: manual} if manual else {}
