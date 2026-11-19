@@ -7,6 +7,7 @@ caller-supplied name is allowed to become in a log line or a Prometheus label.
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 from genefoundry_router.registry import is_client_safe_name
@@ -33,6 +34,21 @@ def safe_log_identity(name: str, resolved: bool) -> tuple[str, str]:
         return _UNKNOWN_IDENTITY
     namespace = name.split("_", 1)[0] if "_" in name else "_root"
     return name, namespace
+
+
+def unknown_name_fields(requested: object) -> dict[str, str]:
+    """Correlatable but non-reflecting fields for an unknown tool name (#325).
+
+    A truncated SHA-256 lets an operator count repeats and confirm a suspected name offline
+    without the caller's raw (possibly hostile) text ever reaching the log.
+    """
+    if not isinstance(requested, str) or not requested:
+        return {}
+    return {
+        "requested_sha256": hashlib.sha256(requested.encode("utf-8", "surrogatepass")).hexdigest()[
+            :16
+        ]
+    }
 
 
 async def resolve_log_identity(context: Any) -> tuple[str, str]:

@@ -112,3 +112,43 @@ async def test_backend_that_drops_mid_life_reports_unavailable_not_not_found(
             res = await client.call_tool("gnomad_search_genes", {}, raise_on_error=False)
             assert not res.is_error
             assert BACKEND_STATUS["gnomad"] is True
+
+
+@pytest.mark.parametrize("recovers", [True, False])
+async def test_startup_harvest_retries_before_logging_an_error(
+    gnomad_fake: FastMCP, monkeypatch: pytest.MonkeyPatch, recovers: bool
+) -> None:
+    """#325: a reboot harvested before the backends were up and logged 22 false ERRORs.
+    The startup harvest now retries with backoff; only a backend still down errors."""
+    import asyncio
+
+    import structlog
+
+    registry = [
+        BackendDef(name="gnomad", url_env="X", namespace="gnomad", entrypoints=["search_genes"])
+    ]
+    real = server_module.apply_normalizations
+    calls = 0
+
+    async def _booting(*args: object) -> object:
+        nonlocal calls
+        calls += 1
+        return await real(*args) if recovers and calls > 1 else []
+
+    monkeypatch.setattr(server_module, "apply_normalizations", _booting)
+    monkeypatch.setattr(server_module, "STARTUP_HARVEST_RETRY_DELAYS", (0.0, 0.0))
+    app = build_app(RouterSettings(), registry, proxy_targets={"gnomad": gnomad_fake})
+    with structlog.testing.capture_logs() as logs:
+        monkeypatch.setattr(server_module, "log", structlog.get_logger("server"))
+        async with app.router.lifespan_context(app):
+            for _ in range(100):
+                if calls >= (2 if recovers else 3):
+                    break
+                await asyncio.sleep(0.01)
+            await asyncio.sleep(0.01)
+            unavailable = app.state.mcp_server.notfound_guard.unavailable
+    levels = [e["log_level"] for e in logs if e.get("event") == "backend_unreachable"]
+    if recovers:
+        assert levels == ["warning"] and unavailable == frozenset()
+    else:
+        assert levels == ["warning", "warning", "error"] and unavailable == {"gnomad"}

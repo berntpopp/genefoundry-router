@@ -167,3 +167,38 @@ def test_oauth_resource_url_and_metadata_match_audience(mcp_path: str) -> None:
         # 4. Proxy _resource_url matches expected audience
         proxy = _oauth_proxy(app.state.mcp_server.auth)
         assert str(proxy._resource_url).rstrip("/") == expected_audience  # type: ignore[attr-defined]
+
+
+def test_doubled_resource_authorize_is_a_clean_invalid_target(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """#325: 187 ChatGPT authorizes with resource …/mcp/mcp hit the generic handler (500 path)
+    on v0.10.8. Through the live app it must be an RFC 8707 invalid_target redirect."""
+    from urllib.parse import parse_qs, urlsplit
+
+    app = build_app(_settings("oauth"), [])
+    with TestClient(app, raise_server_exceptions=False) as client:
+        assert client.get("/.well-known/oauth-protected-resource/mcp").json()["resource"] == (
+            AUDIENCE
+        )
+        callback = "https://chatgpt.com/connector_platform_oauth_redirect"
+        registered = client.post(
+            "/register", json={"redirect_uris": [callback], "token_endpoint_auth_method": "none"}
+        )
+        response = client.get(
+            "/authorize",
+            params={
+                "response_type": "code",
+                "client_id": registered.json()["client_id"],
+                "redirect_uri": callback,
+                "code_challenge": "x" * 43,
+                "code_challenge_method": "S256",
+                "state": "s",
+                "resource": f"{AUDIENCE}/mcp",
+            },
+            follow_redirects=False,
+        )
+    assert response.status_code == 302
+    query = parse_qs(urlsplit(response.headers["location"]).query)
+    assert query["error"] == ["invalid_target"]
+    assert "Unexpected error" not in caplog.text

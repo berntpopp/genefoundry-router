@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
 from collections.abc import Sequence
 from contextlib import asynccontextmanager
@@ -20,7 +21,11 @@ from genefoundry_router.argument_guard import ArgumentGuard
 from genefoundry_router.auth import build_auth, resolve_refresh_observability_hmac_key
 from genefoundry_router.authorization import WriteAuthorizationMiddleware
 from genefoundry_router.cache import ToolResponseCache, ToolResponseCacheMiddleware
-from genefoundry_router.composition import close_shared_upstream_transport, register_backend
+from genefoundry_router.composition import (
+    close_shared_upstream_transport,
+    harvest_settling,
+    register_backend,
+)
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
 from genefoundry_router.hints import NamespaceHintMiddleware
@@ -63,6 +68,10 @@ from genefoundry_router.security import add_host_origin_validation, wrap_mcp_cor
 from genefoundry_router.tool_search import apply_tool_search, listed_pins, resolve_entrypoints
 
 log = structlog.get_logger(__name__)
+
+# Re-harvest a startup that found backends down (they boot alongside the router, #325):
+# ~60 s of backoff before a still-missing backend is logged at ERROR.
+STARTUP_HARVEST_RETRY_DELAYS: tuple[float, ...] = (5.0, 10.0, 15.0, 30.0)
 
 
 async def _run_refresh_heartbeat(ledger: RefreshLedger) -> None:
@@ -209,9 +218,15 @@ def build_app(
         middleware=account_rate_limit_middleware(settings),
     )
 
-    async def _refresh_catalog(phase: Literal["startup", "poll"]) -> None:
-        tools = await apply_normalizations(server, registry)
-        unreachable = _seed_reachability(registry, tools)
+    async def _refresh_catalog(
+        phase: Literal["startup", "poll"], *, settling: bool = False
+    ) -> set[str]:
+        token = harvest_settling.set(settling)
+        try:
+            tools = await apply_normalizations(server, registry)
+            unreachable = _seed_reachability(registry, tools)
+        finally:
+            harvest_settling.reset(token)
         # Advertise only what the live catalog serves (issue #256): instructions/pins named
         # every configured backend even when it harvested 0 tools, so agents called dead pins.
         live = [b for b in registry if b.namespace not in unreachable]
@@ -223,9 +238,20 @@ def build_app(
             phase=phase,
             unreachable=unreachable,
         )
+        return unreachable
 
     async def _relist() -> None:
         await _refresh_catalog("poll")
+
+    async def _settle_startup_harvest() -> None:
+        last = len(STARTUP_HARVEST_RETRY_DELAYS) - 1
+        for attempt, delay in enumerate(STARTUP_HARVEST_RETRY_DELAYS):
+            await asyncio.sleep(delay)
+            try:
+                if not await _refresh_catalog("poll", settling=attempt < last):
+                    return
+            except Exception as exc:  # a retry must never take the router down
+                log.warning("startup_harvest_retry_failed", error_type=type(exc).__name__)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> Any:
@@ -233,7 +259,7 @@ def build_app(
         teardown_complete = False
         try:
             async with mcp_app.lifespan(_app):
-                await _refresh_catalog("startup")
+                down = await _refresh_catalog("startup", settling=True)
                 search = apply_tool_search(  # ordering: after normalization
                     server, settings, always_visible=resolve_entrypoints(registry)
                 )
@@ -248,9 +274,14 @@ def build_app(
                     heartbeat_task = asyncio.create_task(_run_refresh_heartbeat(refresh_ledger))
                 else:
                     heartbeat_task = None
+                settle = asyncio.create_task(_settle_startup_harvest()) if down else None
                 try:
                     yield
                 finally:
+                    if settle is not None:
+                        settle.cancel()
+                        with contextlib.suppress(asyncio.CancelledError):
+                            await settle
                     if heartbeat_task is not None:
                         heartbeat_task.cancel()
                         await heartbeat_task
@@ -445,7 +476,7 @@ def _seed_reachability(registry: list[BackendDef], tools: Sequence[Tool]) -> set
         set_backend_up(backend, up=n > 0, tools=n)
         if n == 0:
             unreachable.add(backend.namespace)
-            log.error(
+            (log.warning if harvest_settling.get() else log.error)(
                 "backend_unreachable",
                 backend=backend.name,
                 namespace=backend.namespace,
