@@ -2,6 +2,32 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.13.0] - 2026-11-19
+
+### Added
+
+- **Per-account rate limit.** With auth on, `GF_RATE_LIMIT_RPM` now limits each verified
+  account instead of each client IP. The bucket is the verified token's `sub`, or its client
+  id when it has no `sub`. A new middleware inside FastMCP's authentication layer reads only
+  the `AccessToken` the verifier accepted, so a header can never choose the account. One
+  account shares one bucket across all its IPs.
+- `GF_RATE_LIMIT_OVERRIDES`: a JSON object mapping a token subject or client id to a positive
+  requests/min value or `"unlimited"`, e.g. `'{"gfbench": 600, "<owner-sub>": "unlimited"}'`.
+  It is validated at startup. Startup rejects an override keyed on `GF_OAUTH_CLIENT_ID`,
+  because every interactive OAuth user shares that client id.
+- `GF_RATE_LIMIT_IP_RPM`: the pre-auth per-IP DoS floor. When unset it equals
+  `GF_RATE_LIMIT_RPM`, so an upgrade changes nothing. An authenticated production router
+  refuses an explicit `<=0`.
+- Responses carry `RateLimit-Policy` and `RateLimit` headers (IETF
+  draft-ietf-httpapi-ratelimit-headers-11), one `"ip"` line and one `"account"` line. No
+  partition key is sent.
+
+### Changed
+
+- A 429's `Retry-After` and `error.data.retry_after` now give the seconds until the window
+  resets. They used to give the full 60 s window. Logs record a 429 by `policy` and `limit`
+  only; account and IP are never logged.
+
 ## [0.12.8] - 2026-11-19
 
 ### Fixed
