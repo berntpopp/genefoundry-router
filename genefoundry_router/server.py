@@ -141,6 +141,8 @@ def build_server(
         # fleet's self-healing hints resolve through call_tool. Registered innermost so
         # hint rewrites are cached (issue #230). Enabled backends only.
         namespaces = {b.namespace for b in registry if b.enabled}
+        # ponytail: call form follows GF_PINNED_MODE, not X-GF-Pinned-Mode (rewrites are cached,
+        # #230); a header-overridden session may see a bare pinned name. call_tool still works.
         server.add_middleware(NamespaceHintMiddleware(namespaces, listed_pins(registry, settings)))
     for backend in registry:
         if not backend.enabled:
