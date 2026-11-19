@@ -63,8 +63,9 @@ Gemini Remote MCP (snake_case, `[a-z0-9_]`, ≤ 64 chars).
    parameter summary (names and enum values) and its expansion keywords, capped at 800
    characters (#306): the lead alone often does not say what a tool returns. Hits are reordered, carry a `relevance` field, and with
    `GF_SEARCH_RERANK_MIN_SCORE` anything below the floor is dropped. If the floor drops every
-   candidate, the top 2 BM25 hits are served with `"low_confidence": true` (and their
-   `relevance`) instead of five wrong tools or a bare `[]`, which agents read as "the fleet
+   candidate, the top `GF_SEARCH_MAX_RESULTS` BM25 hits (or the caller's `limit`) are served
+   with `"low_confidence": true` (and their
+   `relevance`) instead of unflagged wrong tools or a bare `[]`, which agents read as "the fleet
    cannot do this" (#303). The flag is the abstention signal; `[]` now means BM25 found no
    candidate at all. Any error or timeout serves the BM25 order (fail-open) and pauses the
    stage for 30 s.
@@ -91,21 +92,21 @@ tests/discoverability/agent_queries.yaml` reports the share each pipeline emptie
 
 `GF_SEARCH_RERANK_MIN_SCORE` is a probability cut-off, and each decision model calibrates its
 probabilities differently, so a floor tuned for one model does not carry over to another.
-genefoundry-bench re-measured on v0.12.8 (enum-aware snapshot; 64 out-of-scope negatives,
-195 in-scope tasks, 858 agent queries; no fallbacks):
 
-`typesafe/jev-1.13` — hit@1 0.913, p50/p95 216/274 ms. The highest out-of-scope scores were
-0.19, 0.17 and 0.15.
+`typesafe/jev-1.13`, measured by genefoundry-bench on the v0.13.3 candidate text (65
+out-of-scope negatives, 195 in-scope tasks, 856 agent queries of which 272 ask for literature
+full text; no fallbacks). hit@1 0.908 and hit@5 0.979 at every floor below. The highest
+out-of-scope score is 0.21.
 
-| Floor | Out-of-scope rejected | In-scope emptied | Agent queries emptied |
-|---|---|---|---|
-| 0.10 | 93.8% | 0% | 0.4% |
-| 0.15 | 95.3% | 0% | 2.7% |
-| 0.20 | 100% | 0% | 4.9% |
-| 0.25 | 100% | 0% | 7.8% |
-| 0.30 | 100% | 0% | 11.3% |
+| Floor | Out-of-scope rejected | In-scope emptied | Agent queries emptied | Full-text queries emptied |
+|---|---|---|---|---|
+| 0.20 | 64/65 | 1/195 (0.5%) | 3.7% | 6.3% |
+| 0.22 | 65/65 | 1/195 | 4.9% | 8.1% |
+| 0.25 | 65/65 | 1/195 | 6.8% | 11.5% |
+| 0.30 | 65/65 | 1/195 | 9.6% | 16.7% |
 
-`google/gemini-decision-1` — hit@1 0.897, p50/p95 356/673 ms.
+`google/gemini-decision-1`, last measured on the older v0.12.8 candidate text (64 negatives,
+so not like-for-like with the table above): hit@1 0.897, p50/p95 356/673 ms.
 
 | Floor | Out-of-scope rejected | In-scope emptied | Agent queries emptied |
 |---|---|---|---|
@@ -113,15 +114,15 @@ genefoundry-bench re-measured on v0.12.8 (enum-aware snapshot; 64 out-of-scope n
 | 0.20 | 100% | 0.5% | 2.6% |
 | 0.30 | 100% | 1.0% | 4.1% |
 
-The earlier "about 0.1 for Gemini" came from only 24 negatives and was wrong: 0.20 is the
-lowest floor that rejects all 64 negatives for both models. For Jev 1.13 with the v0.12.8+
-candidate text, use `GF_SEARCH_RERANK_MIN_SCORE=0.20`, with the `low_confidence` fallback as
-the safety net. The margin over the highest negative (0.19) is thin, so 0.20–0.25 is the
-defensible range. The code default stays `0.0` (floor off); the production value is a deploy
-decision. Re-measure whenever the model or the candidate text changes, on both eval sets:
+For Jev 1.13 with the current candidate text, use `GF_SEARCH_RERANK_MIN_SCORE=0.25`. 0.22 is
+the lowest floor that rejects all 65 negatives; 0.25 leaves a 0.04 margin over the highest
+negative. A search the floor empties still gets up to `GF_SEARCH_MAX_RESULTS` BM25 candidates
+flagged `low_confidence`, so the higher floor costs little. The margin is small, so the code
+default stays `0.0` (floor off), the production value is a deploy decision, and you should
+re-measure whenever the model or the candidate text changes, on both eval sets:
 
 ```bash
-uv run python scripts/search_rerank_report.py                      # held-out set, 64 out-of-scope
+uv run python scripts/search_rerank_report.py                      # held-out set, 65 out-of-scope
 uv run python scripts/search_rerank_report.py --tasks tests/discoverability/agent_queries.yaml
 ```
 
@@ -147,7 +148,7 @@ GF_SEARCH_RERANK=systemone
 GF_SEARCH_RERANK_URL=https://openrouter.ai/api/v1/systemone
 GF_SEARCH_RERANK_MODEL=typesafe/jev-1.13
 GF_SEARCH_RERANK_API_KEY=sk-or-...
-GF_SEARCH_RERANK_MIN_SCORE=0.20
+GF_SEARCH_RERANK_MIN_SCORE=0.25
 
 # self-hosted OneJev on a VPS (github.com/OmniJev/OneJev: `qev serve --model OmniJev/OneJev-4B`)
 GF_SEARCH_RERANK=systemone

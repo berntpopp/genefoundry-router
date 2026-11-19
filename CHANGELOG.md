@@ -6,6 +6,15 @@ All notable changes to genefoundry-router are documented here.
 
 ### Fixed
 
+- **Low-confidence fallback serves up to `GF_SEARCH_MAX_RESULTS` hits (was 2).** When the
+  rerank floor drops every candidate, the BM25 top `GF_SEARCH_MAX_RESULTS` (or the caller's
+  `limit`) come back flagged `low_confidence`. genefoundry-bench found the right tool at BM25
+  rank 4 for "get full text of PMC article", which the 2-hit fallback hid.
+- **Recommended Jev 1.13 floor is now `GF_SEARCH_RERANK_MIN_SCORE=0.25` (was 0.20).**
+  Re-measured on the current candidate text: the highest out-of-scope score is now 0.21, so
+  0.20 rejects 64/65 negatives (the miss: "drug-drug interactions"); 0.25 rejects 65/65 and
+  empties 6.8% of agent queries, each of which still gets the low-confidence fallback. The
+  code default stays `0.0`; re-measure when the model or the candidate text changes.
 - **Expansion regeneration no longer deletes vocabulary.** The D1 rollout changed 126 tool
   descriptions, so `make expansions` regenerated those entries from scratch; generation is
   stochastic, and German queries fell from 45 to 30, which pushed e.g. a German
