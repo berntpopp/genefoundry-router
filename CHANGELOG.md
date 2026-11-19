@@ -4,6 +4,13 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.7] - 2026-11-19
+
+### Changed
+
+- Pin `gnomad_get_variant_frequencies` again; clinpgx is no longer pinned and is reached via `search_tools` (pinned-listing budget, until clinpgx-link#56 slims `search_records`).
+- Discoverability bars adjusted for the un-pinned clinpgx: golden no-expansion 9.0 → 8.9, held-out pharmacogenomics minimum 7.0 → 6.0.
+
 ### Added
 
 - **Deploy Contract Standard v1 (`docs/DEPLOY-CONTRACT-STANDARD-v1.md`).** One deployed
