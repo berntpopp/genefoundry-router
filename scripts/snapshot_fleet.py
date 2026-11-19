@@ -168,12 +168,12 @@ async def _capture_backend(
                 ),
                 outputSchema=canonical_json_schema(t.output_schema),
                 annotations=(
-                    t.annotations.model_dump(mode="json", exclude_none=False)
+                    t.annotations.model_dump(mode="json", by_alias=True, exclude_none=False)
                     if t.annotations is not None
                     else None
                 ),
                 execution=(
-                    t.execution.model_dump(mode="json", exclude_none=False)
+                    t.execution.model_dump(mode="json", by_alias=True, exclude_none=False)
                     if t.execution is not None
                     else None
                 ),

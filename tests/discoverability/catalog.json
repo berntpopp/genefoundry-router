@@ -325,7 +325,7 @@
   },
   {
     "name": "clingen_get_gene_validity",
-    "description": "Use this to list ClinGen gene-disease validity assertions (Definitive\u2026Refuted) for one gene, optionally filtered by classification or mode of inheritance. Each record carries a CGGV permalink + recommended_citation. Returns ~1-6kB.",
+    "description": "List ClinGen gene-disease validity assertions for one gene; returns per disease the classification (Definitive\u2026Refuted), MONDO id, mode of inheritance, expert panel, classified date, CGGV permalink and recommended_citation. Returns ~1-6kB.",
     "tags": [
       "curation",
       "gene-disease",
@@ -366,7 +366,7 @@
   },
   {
     "name": "clingen_get_server_capabilities",
-    "description": "Use this when a client needs the supported tools, ClinGen datasets + per-domain snapshot freshness, recommended workflows, token-cost hints, error taxonomy, parameter conventions, or the capabilities_version content hash. Returns ~4kB.",
+    "description": "Get this server's capabilities: supported tools, ClinGen datasets + per-domain snapshot freshness, recommended workflows, token-cost hints, error taxonomy, parameter conventions, and the capabilities_version content hash. Returns ~4kB.",
     "tags": [
       "curation",
       "gene-disease",
@@ -516,7 +516,7 @@
   },
   {
     "name": "clingen_search_cspec",
-    "description": "Use this to full-text search the CSpec catalog (spec labels, criteria descriptions, attachment filenames). Each hit names its entity_type + ids so you can chain into get_cspec or get_cspec_criterion. Paginated; returns ~1-6kB.",
+    "description": "Search the ClinGen criteria-specification (CSpec) catalog full-text across spec labels, criteria descriptions, and attachment filenames; returns matching specs, criteria, and files. Each hit names its entity_type + ids so you can chain into get_cspec or get_cspec_criterion. Paginated; returns ~1-6kB.",
     "tags": [
       "cspec",
       "curation",
@@ -530,7 +530,7 @@
   },
   {
     "name": "clingen_search_dosage",
-    "description": "Use this to search ClinGen dosage (genes + regions) by text, ISCA region, cytoband, or haplo/triplo score, optionally restricted to gene or region records. Paginated; a `truncated` block appears when more matches exist. Returns ~2-10kB.",
+    "description": "Search ClinGen dosage-sensitivity curations of genes and recurrent CNV regions (ISCA) by text, ISCA region id, cytoband, or haplo/triplo score; returns per record its haploinsufficiency + triplosensitivity scores with interpretation, cytoband, GRCh37/GRCh38 coordinates and permalink. Optionally restrict to gene or region records. Paginated; a `truncated` block appears when more matches exist. Returns ~2-10kB.",
     "tags": [
       "curation",
       "dosage",
@@ -580,7 +580,7 @@
   },
   {
     "name": "clingen_search_genes",
-    "description": "Use this FIRST to resolve a free-text gene (symbol / HGNC id / alias) into a canonical ClinGen gene plus its per-domain availability and counts. Follow the _meta.next_commands into get_gene_summary. Unknown input returns a not_found envelope with a fallback. Returns ~1-3kB.",
+    "description": "Resolve a free-text gene (symbol / HGNC id / alias) to its canonical ClinGen gene; returns resolved_symbol plus candidates with per-domain availability and record counts. Use this FIRST, before any gene-keyed tool. Follow the _meta.next_commands into get_gene_summary. Unknown input returns a not_found envelope with a fallback. Returns ~1-3kB.",
     "tags": [
       "curation",
       "gene",
@@ -791,21 +791,12 @@
       "variant"
     ],
     "params": {
-      "probe_upstream": "Request fixed gene evidence; cached hits are identified.",
-      "response_mode": "Response detail mode."
-    },
-    "enums": {
-      "response_mode": [
-        "minimal",
-        "compact",
-        "standard",
-        "full"
-      ]
+      "probe_upstream": "Request fixed gene evidence; cached hits are identified."
     }
   },
   {
     "name": "clinpgx_get_record",
-    "description": "Get one exact entity without changing source; use source='website' for guideline URLs.",
+    "description": "Get one ClinPGx record by exact ID (gene, drug, variant, haplotype, drug label, guideline, or summary/variant annotation) without changing source. source='website' serves guideline URLs and haplotype star-allele definitions (function, defining rsIDs); numeric-id families (summary/variant annotation, literature) take the decimal id from search.",
     "tags": [
       "dosing",
       "drug",
@@ -823,7 +814,7 @@
       "view": "ClinPGx upstream projection for live API reads.",
       "pointer": "RFC 6901 pointer in decoded API data or the normalized local record.",
       "pointers": "Ordered scalar RFC 6901 pointers; mutually exclusive with pointer.",
-      "response_mode": "Response detail preference; does not change source identity."
+      "response_mode": "Detail tier; never changes source identity. minimal|compact|standard project verified fields per family. Rows of families without a verified profile return deferred_content=true (retrieved but withheld, not missing); recovery_action=retry_with_response_mode_full means full inlines them, otherwise read them with get_source_content."
     },
     "enums": {
       "entity_type": [
@@ -863,7 +854,7 @@
   },
   {
     "name": "clinpgx_get_related_records",
-    "description": "Use known IDs for live reports or joins. Guideline URLs live under source='website'.",
+    "description": "Get records linked to known ClinPGx IDs: gene+drug guideline, label, summary or variant annotations (pair mode, other_id), or all objects connected to one ID (relationship). See result_type for modes. For gene+drug guidelines prefer search_records(entity_type='guideline_annotation', filters={gene, chemical: PA accessions}); the live pair report can omit CPIC/DPWG. Guideline URLs: get_record(source='website').",
     "tags": [
       "dosing",
       "drug",
@@ -876,7 +867,7 @@
     ],
     "params": {
       "record_id": "Exact ClinPGx identifier or returned local record_id; numeric-detail families reuse the decimal id returned by search_records.",
-      "result_type": "Use relationship without other_id for API connected-object mode; API pair mode requires other_id and a mapped result type published by capabilities.",
+      "result_type": "Mode is chosen by arguments. API connected-object (omit other_id): relationship, lists objects of other_type linked to record_id. API pair (other_id required): guideline_annotation|label|multilink_annotation|pathway|summary_annotation|variant_annotation, records linking both IDs (e.g. gene PA124 + chemical PA449053). source='download' (installed snapshot only): allele|evidence|literature|relationship.",
       "other_id": "Second exact ClinPGx ID; when supplied, selects live API pair mode.",
       "entity_type": "Object class owning record_id; documentation-only and cursor-bound, not sent upstream as a pair filter.",
       "other_type": "Target connected-object type sent upstream without other_id; documentation-only and cursor-bound in pair mode, not an upstream pair filter.",
@@ -885,7 +876,8 @@
       "limit": "Maximum rows returned on this page.",
       "offset": "Zero-based offset; cannot accompany cursor.",
       "cursor": "Opaque continuation returned for the same selectors and source identity.",
-      "response_mode": "Response detail preference; does not change source identity."
+      "response_mode": "Detail tier; never changes source identity. minimal|compact|standard project verified fields per family. Rows of families without a verified profile return deferred_content=true (retrieved but withheld, not missing); recovery_action=retry_with_response_mode_full means full inlines them, otherwise read them with get_source_content.",
+      "shape": "Opt-in, API only: shapes the whole row list fetched with filters, not just this page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts. See _meta.shaping."
     },
     "enums": {
       "result_type": [
@@ -894,14 +886,11 @@
         "guideline_annotation",
         "label",
         "literature",
-        "literature_annotation",
         "multilink_annotation",
         "pathway",
         "relationship",
         "summary_annotation",
-        "variant_annotation",
-        "vip",
-        "vip_variant"
+        "variant_annotation"
       ],
       "entity_type": [
         "Gene",
@@ -934,7 +923,7 @@
   },
   {
     "name": "clinpgx_get_server_capabilities",
-    "description": "Discover tools and source limits; non-full modes use api_contract_defaults, while full expands every API row.",
+    "description": "ClinPGx calling contract and server capabilities: valid search filter keys and values per entity_type, source routing (api/website/download), relationship modes and result types, response_mode rules, numeric detail ids. Call when unsure how to ask or when an error names it; non-full modes use api_contract_defaults, full expands every API row.",
     "tags": [
       "dosing",
       "drug",
@@ -958,7 +947,7 @@
   },
   {
     "name": "clinpgx_get_source_content",
-    "description": "Read retained source content in digest-bound, progressing chunks.",
+    "description": "Read retained ClinPGx source content (a deferred_content row's fallback_args, or any content_ref) by JSON pointer in digest-bound, progressing chunks.",
     "tags": [
       "dosing",
       "drug",
@@ -1053,7 +1042,7 @@
   },
   {
     "name": "clinpgx_search_dataset",
-    "description": "Search indexed rows within an installed snapshot dataset. Rows include member_sha256.",
+    "description": "Search rows of an installed ClinPGx/PharmGKB snapshot dataset (e.g. clinical annotations, drug labels, CPIC alleles, guidelines); returns matching rows with record_id and member_sha256.",
     "tags": [
       "dataset",
       "dosing",
@@ -1092,7 +1081,7 @@
   },
   {
     "name": "clinpgx_search_records",
-    "description": "Search exact live fields or installed dataset memberships.",
+    "description": "Find ClinPGx genes, chemicals, variants, labels, guideline/summary/variant annotations by exact live filters or installed dataset memberships; returns PA accessions to reuse in get_record/get_related_records. Filter keys are per entity_type (see filters); summary_annotation accepts level_of_evidence. Star alleles: get_record(entity_type='haplotype', source='website').",
     "tags": [
       "dosing",
       "drug",
@@ -1105,14 +1094,15 @@
     ],
     "params": {
       "entity_type": "Entity family to search in the selected source.",
-      "query": "Literal AND-token local text query; unavailable for API searches.",
-      "filters": "ANDed canonical filters (annotation_id, chemical, gene, id, name, resource_id, source, variant); API choices vary by entity.",
+      "query": "Literal AND-token local text query; unavailable for API searches. Rejected (invalid_input) for guideline_annotation, label, pathway, summary_annotation, variant_annotation: use filters.",
+      "filters": "ANDed exact filters; keys depend on entity_type. API keys: pathway: id; gene: gene|id; chemical: chemical|id|name; disease: id; variant: variant; literature: id|resource_id; guideline_annotation: chemical|gene|source; label: chemical|gene|source; summary_annotation: annotation_id|chemical|gene|id|level_of_evidence|variant; variant_annotation: gene|variant. A PA accession is accepted by gene/chemical/name on gene, chemical and label and by chemical on summary_annotation; guideline_annotation gene/chemical take PA accessions only; other name/symbol keys reject PA values. level_of_evidence: 1A|1B|2A|2B|3|4. Download keys: annotation_id|chemical|gene|id|name|source|variant.",
       "source": "Source policy: auto routes exact filters to API and broad queries locally.",
       "view": "ClinPGx upstream projection for live API reads.",
       "limit": "Maximum rows returned on this page.",
       "offset": "Zero-based offset; cannot accompany cursor.",
       "cursor": "Opaque continuation returned for the same selectors and source identity.",
-      "response_mode": "Response detail preference; does not change source identity."
+      "response_mode": "Detail tier; never changes source identity. minimal|compact|standard project verified fields per family. Rows of families without a verified profile return deferred_content=true (retrieved but withheld, not missing); recovery_action=retry_with_response_mode_full means full inlines them, otherwise read them with get_source_content.",
+      "shape": "Opt-in, API only: shapes the whole row list fetched with filters, not just this page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts. See _meta.shaping."
     },
     "enums": {
       "entity_type": [
@@ -1161,7 +1151,7 @@
     ],
     "params": {
       "gene_symbol": "An HGNC gene symbol (case-insensitive), e.g. BRCA1, TP53, CFTR. A symbol with no ClinVar variants in the local index returns not_found, never an empty success.",
-      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Start compact, widen if needed.",
+      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Citations and submissions appear from compact up; minimal drops submission text. Start compact, widen if needed.",
       "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
     },
     "enums": {
@@ -1188,7 +1178,7 @@
   },
   {
     "name": "clinvar_get_variant",
-    "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, or VariationID. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). Returns the normalized classification, review status, and 0-4 star rating plus a recommended_citation. Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
+    "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, or VariationID; returns its normalized classification, review status and 0-4 star rating plus a recommended_citation. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). Except in minimal mode it also returns the PubMed / PMC / Bookshelf ids its submissions cite: citations lists at most 50, citation_count is the full total; submissions holds OMIM's own SCV text (description, conditions, PMIDs). Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
     "tags": [
       "classification",
       "clinical-significance",
@@ -1197,7 +1187,7 @@
     "params": {
       "identifier": "A single ClinVar variant identifier. Accepts a VCV accession (VCV000007105), a dbSNP rsID (rs334), an HGVS expression (NM_000059.3:c.1234A>G \u2014 the (GENE) qualifier is optional), a ClinVar AlleleID, or a VariationID. Use id_type to force one interpretation; the default 'auto' detects the shape.",
       "id_type": "How to interpret `identifier`. 'auto' (default) detects the shape from the value; the explicit types force one lookup and reject a value of the wrong shape.",
-      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Start compact, widen if needed.",
+      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Citations and submissions appear from compact up; minimal drops submission text. Start compact, widen if needed.",
       "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
     },
     "enums": {
@@ -1228,7 +1218,7 @@
     "params": {
       "identifiers": "A LIST of ClinVar variant identifiers resolved in one call (the batch form of get_variant). Shapes may be mixed (VCV / rsID / HGVS / AlleleID / VariationID). Each WELL-FORMED input yields one result row echoing its identifier and a `found` flag, so an absent record is an explicit miss, never silently dropped; a MALFORMED element fails the whole call with invalid_input naming its position. Capped at 100 per call.",
       "id_type": "How to interpret `identifier`. 'auto' (default) detects the shape from the value; the explicit types force one lookup and reject a value of the wrong shape.",
-      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Start compact, widen if needed.",
+      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Citations and submissions appear from compact up; minimal drops submission text. Start compact, widen if needed.",
       "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
     },
     "enums": {
@@ -1250,7 +1240,7 @@
   },
   {
     "name": "clinvar_get_variants_by_gene",
-    "description": "List the ClinVar variants for a gene as per-variant rows (each with classification and star rating). Use this after get_gene_clinvar_summary to enumerate individual records; narrow with classification / min_stars and paginate with limit / offset (response carries total_count / has_more / next_offset). classification takes the normalized tokens in its enum \u2014 ClinVar's own wording (\"Likely pathogenic\") is accepted and normalized, and any unrecognized value is REJECTED rather than silently returning zero rows. Default sort is stars_desc (highest review confidence first). In minimal/compact mode the citation is hoisted once to _meta.citation_template instead of repeated per row.",
+    "description": "List the ClinVar variants for a gene as per-variant rows (each with classification and star rating), or with submitter=OMIM every OMIM submission on the gene (description text + PMIDs per family report). Use this after get_gene_clinvar_summary to enumerate individual records; narrow with classification / min_stars and paginate with limit / offset (response carries total_count / has_more / next_offset). classification takes the normalized tokens in its enum \u2014 ClinVar's own wording (\"Likely pathogenic\") is accepted and normalized, and any unrecognized value is REJECTED rather than silently returning zero rows. Default sort is stars_desc (highest review confidence first). In minimal/compact mode the citation is hoisted once to _meta.citation_template instead of repeated per row.",
     "tags": [
       "classification",
       "clinical-significance",
@@ -1262,9 +1252,10 @@
       "classification": "Filter by normalized ClinVar classification (accepted tokens are the enum). ClinVar's own wording is accepted and normalized ('Likely pathogenic' -> likely_pathogenic). Any other value is REJECTED with invalid_input \u2014 an unrecognized classification never silently returns zero rows. Omit for all.",
       "min_stars": "Keep only variants with at least this many ClinVar review-status gold stars (0-4): 2 = multiple submitters, no conflicts; 3 = expert panel; 4 = practice guideline.",
       "sort": "Row order. stars_desc (default) puts the highest review confidence first; stars_asc reverses it; name sorts by variant name; variation_id by ClinVar ID.",
+      "submitter": "Return this submitter's submissions on the gene instead of per-variant rows: one row per SCV with its description (OMIM's per-family text, fenced untrusted_text), conditions and cited PMIDs. The gene matches through HGNC previous symbols (TRAF3IP1 finds IFT54 records and vice versa); gene_resolution says what matched. classification / min_stars / sort are rejected with it.",
       "limit": "Maximum rows to return in this page (1-100).",
       "offset": "Rows to skip before this page; use the response's next_offset to paginate. Rows beyond total_count return an empty page, never an error.",
-      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Start compact, widen if needed.",
+      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Citations and submissions appear from compact up; minimal drops submission text. Start compact, widen if needed.",
       "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
     },
     "enums": {
@@ -1293,8 +1284,32 @@
     }
   },
   {
+    "name": "clinvar_get_variants_by_pmid",
+    "description": "List the ClinVar variants whose submissions cite a PubMed paper \u2014 the way to recover the genotypes a (paywalled) paper reported. Rows are per-variant (name with HGVS, gene, classification, stars), highest review confidence first, paginated with total_count / has_more / next_offset. Re-call get_variant on a row for the PMIDs it cites. In minimal/compact mode the citation is hoisted once to _meta.citation_template.",
+    "tags": [
+      "classification",
+      "clinical-significance",
+      "variant"
+    ],
+    "params": {
+      "pmid": "A PubMed id: digits, optionally prefixed 'PMID:' (29058690 or PMID:29058690). Matches the variants whose ClinVar submissions cite that paper; a PMID no submission cites is not_found.",
+      "limit": "Maximum rows to return in this page (1-100).",
+      "offset": "Rows to skip before this page; use the response's next_offset to paginate. Rows beyond total_count return an empty page, never an error.",
+      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Citations and submissions appear from compact up; minimal drops submission text. Start compact, widen if needed.",
+      "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
     "name": "clinvar_search_variants",
-    "description": "Free-text search across ClinVar variant names, genes, and traits. Use this to locate a record when you only have a gene symbol plus a change or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, so results never wander into an unrelated gene, and _meta.search declares what was inferred and whether the match degraded. Returns a paginated results list with total_count / has_more / next_offset; in minimal/compact mode the citation is hoisted once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
+    "description": "Free-text search across ClinVar variant names, genes, and traits; returns matching variants (vcv_accession, gene, classification, star rating) as a paginated list. Use this to locate a record when you only have a gene symbol plus a change or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, so results never wander into an unrelated gene, and _meta.search declares what was inferred and whether the match degraded. Pagination: total_count / has_more / next_offset; in minimal/compact mode the citation is hoisted once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
     "tags": [
       "classification",
       "clinical-significance",
@@ -1310,7 +1325,7 @@
       "count_mode": "exact (default) returns total_count (bounded by an internal scan cap, which sets total_count_capped when hit). none skips the count query for lowest latency.",
       "limit": "Maximum rows to return in this page (1-100).",
       "offset": "Rows to skip before this page; use the response's next_offset to paginate. Rows beyond total_count return an empty page, never an error.",
-      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Start compact, widen if needed.",
+      "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Citations and submissions appear from compact up; minimal drops submission text. Start compact, widen if needed.",
       "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
     },
     "enums": {
@@ -1347,7 +1362,7 @@
   },
   {
     "name": "gencc_find_curations",
-    "description": "Filter aggregated gene-disease assertions by classification(s), submitter(s), mode of inheritance, gene, disease, or conflict status, with limit/offset paging. Example: classification=['Definitive'], moi='Autosomal dominant', submitter=['ClinGen']. With NO filters it browses the whole catalog one page at a time (default 50 rows). classification/submitter/moi match at the submission level (any submitter), not the consensus -- each row's `matched` field names the triggering submission. Filter values are validated (case-insensitive); out-of-vocabulary values return invalid_input with the accepted set (case-insensitive; see get_server_capabilities / list_submitters), and an unresolvable gene or disease returns not_found. A filter passed as a blank string / empty list is rejected -- omit a filter to browse. Pass ids_only=true to return only {gene_curie, disease_curie} pairs for cheap paging. Large sweeps: follow truncated.next_cursor (an opaque, release-bound page token) via _meta.next_commands; a cursor minted under a prior data release is rejected so a weekly refresh can't silently skip or duplicate rows.",
+    "description": "Returns aggregated gene-disease assertions filtered by classification(s), submitter(s), mode of inheritance, gene, disease, or conflict status, with limit/offset paging. Example: classification=['Definitive'], moi='Autosomal dominant', submitter=['ClinGen']. With NO filters it browses the whole catalog one page at a time (default 50 rows). classification/submitter/moi match at the submission level (any submitter), not the consensus -- each row's `matched` field names the triggering submission. Filter values are validated (case-insensitive); out-of-vocabulary values return invalid_input with the accepted set (case-insensitive; see get_server_capabilities / list_submitters), and an unresolvable gene or disease returns not_found. A filter passed as a blank string / empty list is rejected -- omit a filter to browse. Pass ids_only=true to return only {gene_curie, disease_curie} pairs for cheap paging. Large sweeps: follow truncated.next_cursor (an opaque, release-bound page token) via _meta.next_commands; a cursor minted under a prior data release is rejected so a weekly refresh can't silently skip or duplicate rows.",
     "tags": [
       "assertion",
       "curation",
@@ -1389,7 +1404,7 @@
   },
   {
     "name": "gencc_get_disease_curations",
-    "description": "Return all genes asserted for one disease (by MONDO/OMIM id or title), each with a consensus classification across submitters and a conflict flag. Widen response_mode for the per-submitter breakdown. Page via the release-bound truncated.next_cursor (surfaced as _meta.next_commands[0]).",
+    "description": "Single-disease lookup: returns all genes asserted for ONE disease (one MONDO/OMIM id or title), each with a consensus classification across submitters and a conflict flag. For several diseases in one call use get_diseases_curations (plural). Widen response_mode for the per-submitter breakdown. Page via the release-bound truncated.next_cursor (surfaced as _meta.next_commands[0]).",
     "tags": [
       "curation",
       "disease",
@@ -1413,7 +1428,7 @@
   },
   {
     "name": "gencc_get_diseases_curations",
-    "description": "Batch form of get_disease_curations: pass a list of disease ids or titles (max 20) and get each disease's gene assertions in one call. Unresolvable inputs come back in `unresolved` and the call still succeeds. Each result block mirrors get_disease_curations (disease summary + consensus genes). Use limit_per_disease to cap genes per disease and response_mode to widen detail.",
+    "description": "Multi-disease batch: returns the asserted genes (consensus classification + conflict flag) for a LIST of up to 20 disease ids or titles in one call; for a single disease use get_disease_curations (singular). Unresolvable inputs come back in `unresolved` and the call still succeeds. Each result block mirrors get_disease_curations (disease summary + consensus genes). Use limit_per_disease to cap genes per disease and response_mode to widen detail.",
     "tags": [
       "batch",
       "curation",
@@ -1446,7 +1461,7 @@
   },
   {
     "name": "gencc_get_gene_curations",
-    "description": "Return all GenCC gene-disease validity assertions for one gene, grouped by disease, each with a consensus classification across submitters and a conflict flag. Identify the gene with gene_symbol (an approved symbol OR an HGNC CURIE). Widen response_mode for the per-submitter breakdown. Page via the release-bound truncated.next_cursor (surfaced as _meta.next_commands[0]).",
+    "description": "Single-gene lookup: returns all GenCC gene-disease validity assertions for ONE gene, grouped by disease, each with a consensus classification across submitters and a conflict flag. Identify the gene with gene_symbol (an approved symbol OR an HGNC CURIE). For several genes in one call use get_genes_curations (plural). Widen response_mode for the per-submitter breakdown. Page via the release-bound truncated.next_cursor (surfaced as _meta.next_commands[0]).",
     "tags": [
       "curation",
       "gene",
@@ -1492,7 +1507,7 @@
   },
   {
     "name": "gencc_get_genes_curations",
-    "description": "Batch form of get_gene_curations: pass a list of gene symbols or HGNC ids (max 20) and get each gene's disease assertions in one call. Unresolvable inputs come back in `unresolved` and the call still succeeds. Each result block mirrors get_gene_curations (gene summary + consensus diseases). Use limit_per_gene to cap diseases per gene and response_mode to widen detail.",
+    "description": "Multi-gene batch: returns the asserted diseases (consensus classification + conflict flag) for a LIST of up to 20 gene symbols or HGNC ids in one call; for a single gene use get_gene_curations (singular). Unresolvable inputs come back in `unresolved` and the call still succeeds. Each result block mirrors get_gene_curations (gene summary + consensus diseases). Use limit_per_gene to cap diseases per gene and response_mode to widen detail.",
     "tags": [
       "batch",
       "curation",
@@ -1535,7 +1550,7 @@
   },
   {
     "name": "gencc_resolve_identifier",
-    "description": "Resolve free text to a canonical GenCC gene (HGNC) and/or disease (MONDO) identifier by exact symbol/id/title match. Use kind='gene' or kind='disease' to disambiguate; default 'auto' tries both and returns ambiguous_query if the text matches both a gene and a disease.",
+    "description": "Resolve free text to a canonical GenCC gene (HGNC) and/or disease (MONDO) identifier by exact symbol/id/title match. Use kind='gene' or kind='disease' to disambiguate; default 'auto' tries both and returns ambiguous_query if the text matches both a gene and a disease. A disease name GenCC does not carry: resolve it with mondo_resolve_disease and pass the MONDO id back.",
     "tags": [
       "curation",
       "discovery",
@@ -1605,7 +1620,7 @@
   },
   {
     "name": "genereviews_get_abstract",
-    "description": "Live NCBI E-utils abstract wrapper that always calls live NCBI. Adds normalized response shape, structured error envelopes, and corpus-version stamping over a raw efetch call (structured errors and version metadata are part of the value-add). Default responses may carry active _meta.corpus_version context; fresh=true labels the response version as live:<timestamp>.",
+    "description": "Get a PubMed article's abstract by PMID; returns title, abstract, authors, journal and publication_date. The tool always calls live NCBI E-utils. Adds normalized response shape, structured error envelopes, and corpus-version stamping over a raw efetch call (structured errors and version metadata are part of the value-add). Default responses may carry active _meta.corpus_version context; fresh=true labels the response version as live:<timestamp>.",
     "tags": [
       "Abstract",
       "gene",
@@ -1619,7 +1634,7 @@
   },
   {
     "name": "genereviews_get_chapter_metadata",
-    "description": "The chapter outline tool.\n\nReturns chapter title, dates, gene symbols, per-section passage_count, and\nthe full tables[] list with table_id, caption, section, and heading_path.",
+    "description": "The chapter outline tool: returns chapter title, dates, gene symbols,\nper-section passage_count, and the full tables[] list with table_id, caption,\nsection, and heading_path.",
     "tags": [
       "Chapters",
       "gene-disease",
@@ -1659,7 +1674,7 @@
   },
   {
     "name": "genereviews_get_fulltext",
-    "description": "Perform a live Bookshelf scrape when corpus passages are insufficient. Use sections='management,diagnosis' to narrow the scrape; prefer corpus passage tools for indexed retrieval and citations. Returns structured errors/version stamping, with _meta.corpus_version for corpus context; fresh=true labels the response version as live:<timestamp>.",
+    "description": "Get a GeneReviews chapter's full text by NBK ID via a live Bookshelf scrape; returns title, url and text by section. Use it when corpus passages are insufficient. Use sections='management,diagnosis' to narrow the scrape; prefer corpus passage tools for indexed retrieval and citations. Returns structured errors/version stamping, with _meta.corpus_version for corpus context; fresh=true labels the response version as live:<timestamp>.",
     "tags": [
       "Full Text",
       "gene",
@@ -1674,7 +1689,7 @@
   },
   {
     "name": "genereviews_get_genereview_summary",
-    "description": "Convenience orchestration tool. Default response is lean: include_fulltext defaults to False; opt in for full chapter prose. max_chars (default 16000) truncates fulltext to keep responses context-budget friendly; truncated responses set _meta.truncated=true and surface next_commands -> get_chapter_section. Resolves the gene to its DEFINING corpus chapter (the chapter that gene's GeneReview is about); a gene only mentioned in a multi-gene chapter, or absent from the corpus, returns not_found (use search_passages(gene=<symbol>) for mention-level evidence). Pass fresh=true to re-fetch the resolved chapter's content live from NCBI (resolution stays corpus-authoritative). Corpus-backed responses carry _meta.corpus_version; fresh responses stamp live provenance.",
+    "description": "Get a gene's GeneReviews chapter summary; returns pubmed_id, book_url, title, abstract_data and all_links (summary, diagnosis and management sections only with include_fulltext=true). Default response is lean: include_fulltext defaults to False; opt in for full chapter prose. max_chars (default 16000) truncates fulltext to keep responses context-budget friendly; truncated responses set _meta.truncated=true and surface next_commands -> get_chapter_metadata. Resolves the gene to its DEFINING corpus chapter (the chapter that gene's GeneReview is about); a gene only mentioned in a multi-gene chapter, or absent from the corpus, returns not_found (use search_passages(gene=<symbol>) for mention-level evidence). Pass fresh=true to re-fetch the resolved chapter's content live from NCBI (resolution stays corpus-authoritative). Corpus-backed responses carry _meta.corpus_version; fresh responses stamp live provenance.",
     "tags": [
       "GeneReviews",
       "gene",
@@ -1687,7 +1702,7 @@
       "include_links": "Include all available links",
       "include_fulltext": "Default False: response is lean. Opt in for chapter prose. Truncation is governed by max_chars.",
       "fresh": "Bypass index; fetch live from NCBI",
-      "max_chars": "Cap fulltext payload size in characters when include_fulltext=true. Pass 0 to disable the cap. Truncated responses set _meta.truncated=true and surface next_commands -> get_chapter_section."
+      "max_chars": "Cap fulltext payload size in characters when include_fulltext=true. Pass 0 to disable the cap. Truncated responses set _meta.truncated=true and surface next_commands -> get_chapter_metadata (lists the sections to fetch)."
     }
   },
   {
@@ -1758,7 +1773,7 @@
   },
   {
     "name": "genereviews_search_genereviews",
-    "description": "Search GeneReviews by gene symbol using the indexed corpus first when available, then fallback to live NCBI E-utils. If resolver links are unavailable or no PubMed ID is found, use search_passages(gene=<symbol>) for indexed chapter evidence. Pass fresh=true to bypass the corpus and query live NCBI.",
+    "description": "Search GeneReviews by gene symbol; returns the PubMed IDs (ids, count) of matching GeneReviews chapters, from the indexed corpus first when available, then live NCBI E-utils. If resolver links are unavailable or no PubMed ID is found, use search_passages(gene=<symbol>) for indexed chapter evidence. Pass fresh=true to bypass the corpus and query live NCBI.",
     "tags": [
       "Search",
       "gene",
@@ -1773,7 +1788,7 @@
   },
   {
     "name": "genereviews_search_passages",
-    "description": "Search the active GeneReviews corpus. For intervention/treatment queries, pass sections=[\"management\"]; for diagnostic criteria, pass sections=[\"diagnosis\", \"clinical_features\"]. This is the main precision filter.\n\nRerank with `rrf` (default) for hybrid retrieval, `lexical` for exact terms, or `off` for raw repository order when debugging.\n\nUse `brief` (default) for triage snippets, `full` for passage text, or `ids_only` for identifiers and ranks. Filter by `gene`, `nbk_id`, or `sections`. In `brief`/`full`, use `include` and `exclude` for field projection; include/exclude do not apply to `ids_only`, and `ids_only` omits `recommended_citation`.",
+    "description": "Search the active GeneReviews corpus; returns ranked passages with passage_id, nbk_id, chapter_section, snippet or text, and recommended_citation. For intervention/treatment queries, pass sections=[\"management\"]; for diagnostic criteria, pass sections=[\"diagnosis\", \"clinical_features\"]. This is the main precision filter.\n\nRerank with `rrf` (default) for hybrid retrieval, `lexical` for exact terms, or `off` for raw repository order when debugging.\n\nUse `brief` (default) for triage snippets, `full` for passage text, or `ids_only` for identifiers and ranks. Filter by `gene`, `nbk_id`, or `sections`. In `brief`/`full`, use `include` and `exclude` for field projection; include/exclude do not apply to `ids_only`, and `ids_only` omits `recommended_citation`.",
     "tags": [
       "Passages",
       "gene-disease",
@@ -1808,7 +1823,7 @@
   },
   {
     "name": "genereviews_search_passages_batch",
-    "description": "Accepts 1-5 search specs, each with its own ``q``, ``sections``, ``nbk_id``, ``gene``, ``mode``, ``rerank``, etc. (mirrors the query parameters of ``GET /passages/search``). Executes all specs concurrently via ``asyncio.gather`` and returns a flat envelope.\n\n**When to use:** when a clinical-report workflow issues several related but independent queries (e.g. one scoped to ``management``, one to ``genetic_counseling``, one open-section exploratory) \u2014 batching cuts N round-trip latencies to ~1x the slowest query.\n\n**Response shape:** ``results[i].query_index`` matches the zero-based position of the spec in the request. ``results[i].hits`` mirrors the shape of ``GET /passages/search`` results for that spec's ``mode``.\n\n**Deduplication:** when the same ``passage_id`` appears in hits for multiple specs, every occurrence except the one from the lowest ``query_index`` carries ``also_matched_query_indices`` (a list of the other indices). Hits are never removed \u2014 the annotation signals redundancy without discarding evidence.\n\n**Cap:** requests with more than 5 specs are rejected with 422.\n\n**MCP:** registered as the ``search_passages_batch`` MCP tool via the FastMCP OpenAPI proxy.\n\nLatency: p95 <= 1.5x the slowest single-query latency for a 3-spec batch (concurrent execution).",
+    "description": "Search GeneReviews passages with 1-5 independent queries in one call; returns results[i].hits per query, each shaped like search_passages hits. Accepts 1-5 search specs, each with its own ``q``, ``sections``, ``nbk_id``, ``gene``, ``mode``, ``rerank``, etc. (mirrors the query parameters of ``GET /passages/search``). Executes all specs concurrently via ``asyncio.gather`` and returns a flat envelope.\n\n**When to use:** when a clinical-report workflow issues several related but independent queries (e.g. one scoped to ``management``, one to ``genetic_counseling``, one open-section exploratory) \u2014 batching cuts N round-trip latencies to ~1x the slowest query.\n\n**Response shape:** ``results[i].query_index`` matches the zero-based position of the spec in the request. ``results[i].hits`` mirrors the shape of ``GET /passages/search`` results for that spec's ``mode``.\n\n**Deduplication:** when the same ``passage_id`` appears in hits for multiple specs, every occurrence except the one from the lowest ``query_index`` carries ``also_matched_query_indices`` (a list of the other indices). Hits are never removed \u2014 the annotation signals redundancy without discarding evidence.\n\n**Cap:** requests with more than 5 specs are rejected with 422.\n\n**MCP:** registered as the ``search_passages_batch`` MCP tool via the FastMCP OpenAPI proxy.\n\nLatency: p95 <= 1.5x the slowest single-query latency for a 3-spec batch (concurrent execution).",
     "tags": [
       "Passages",
       "gene-disease",
@@ -1820,7 +1835,7 @@
   },
   {
     "name": "gnomad_compare_variant_across_datasets",
-    "description": "Use this when a caller wants to see how one variant's allele frequencies shift across gnomAD releases (r4 vs r3 vs r2_1) and which populations diverge most. Datasets that lack the variant are marked present=false (partial success); the GRCh37 gnomad_r2_1 leg is auto-lifted from the GRCh38 id. Pair with get_clinvar_variant_details for clinical context. Compact (default) drops the per-dataset population arrays (comparison.per_population_af_deltas keeps the per-pop AFs); response_mode='full' returns the raw rows. Returns ~2-4kB compact, ~3-8kB full.",
+    "description": "Use this when a caller wants one variant's allele frequencies across gnomAD releases (r4 vs r3 vs r2_1); returns per-dataset AFs and the most divergent populations. Datasets that lack the variant are marked present=false (partial success); the GRCh37 gnomad_r2_1 leg is auto-lifted from the GRCh38 id. Pair with get_clinvar_variant_details for clinical context. Compact (default) drops the per-dataset population arrays (comparison.per_population_af_deltas keeps the per-pop AFs); response_mode='full' returns the raw rows. Returns ~2-4kB compact, ~3-8kB full.",
     "tags": [
       "frequency",
       "gene",
@@ -1844,7 +1859,7 @@
   },
   {
     "name": "gnomad_compute_carrier_frequency",
-    "description": "Use this when a caller needs an estimated carrier/affected frequency derived from a single gnomAD allele frequency under Hardy-Weinberg assumptions for AR, AD, or X-linked inheritance. Pure local math on top of get_variant_frequencies; returns a one-line `headline`, Wilson 95% CIs, per-population breakdown, and provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Estimates are research-use only, never clinical decision support. Returns ~2-4kB.",
+    "description": "Use this when a caller needs a Hardy-Weinberg carrier/affected frequency estimate from a single gnomAD allele frequency (AR, AD, or X-linked); returns a one-line `headline`, Wilson 95% CIs, per-population breakdown, and provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Pure local math on top of get_variant_frequencies. Estimates are research-use only, never clinical decision support. Returns ~2-4kB.",
     "tags": [
       "frequency",
       "gene",
@@ -1883,7 +1898,7 @@
   },
   {
     "name": "gnomad_compute_gene_carrier_frequency",
-    "description": "Use this when a caller needs gene-level autosomal-recessive carrier frequency across qualifying pathogenic variants, not a single variant. Run this server-side computation once per gene; do not loop over variants. Returns global and per-population carrier frequency, genetic and Bayesian prevalence, a headline, provenance, and contributing variants. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent).",
+    "description": "Use this when a caller needs gene-level autosomal-recessive carrier frequency across qualifying pathogenic variants, not a single variant; returns global and per-population carrier frequency, genetic and Bayesian prevalence, a headline, provenance, and contributing variants. Run this server-side computation once per gene; do not loop over variants. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent).",
     "tags": [
       "frequency",
       "gene",
@@ -1928,7 +1943,7 @@
   },
   {
     "name": "gnomad_compute_variant_liftover",
-    "description": "Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Works BOTH directions (GRCh37<->GRCh38); the converted coordinate is in each result's `target_variant_id` (and `target_reference_genome` names the build). Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Returns <1kB.",
+    "description": "Use this when a caller has a variant id in one reference build; returns the equivalent id in the other. Works BOTH directions (GRCh37<->GRCh38); the converted coordinate is in each result's `target_variant_id` (and `target_reference_genome` names the build). Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Returns <1kB.",
     "tags": [
       "coordinates",
       "frequency",
@@ -1949,7 +1964,7 @@
   },
   {
     "name": "gnomad_get_clinvar_meta",
-    "description": "Use this when a caller only needs the ClinVar release date or revision currently served by gnomAD -- cheaper than full capabilities. Returns <1kB. DEPRECATED: prefer get_server_capabilities.",
+    "description": "Use this when a caller only needs the ClinVar release served by gnomAD; returns its release date, cheaper than full capabilities. Returns <1kB. DEPRECATED: prefer get_server_capabilities.",
     "tags": [
       "clinical",
       "frequency",
@@ -1961,7 +1976,7 @@
   },
   {
     "name": "gnomad_get_clinvar_variant_details",
-    "description": "Use this when a caller needs ClinVar clinical significance, review status, gold stars, or submissions for a single variant id. Complementary to get_variant_frequencies for clinical workflows. compact (default) drops per-submission provenance bookkeeping; response_mode='full' keeps it. Returns ~2-8kB compact, larger with full or a high submissions_limit.",
+    "description": "Use this when a caller has a single variant id; returns its ClinVar clinical significance, review status, gold stars, and submissions. Complementary to get_variant_frequencies for clinical workflows. compact (default) drops per-submission provenance bookkeeping; response_mode='full' keeps it. Returns ~2-8kB compact, larger with full or a high submissions_limit.",
     "tags": [
       "clinical",
       "frequency",
@@ -1988,7 +2003,7 @@
   },
   {
     "name": "gnomad_get_coverage",
-    "description": "Use this when a caller needs gnomAD read-depth coverage for a gene, region, or single variant. Pass ONE target \u2014 a gene symbol, Ensembl gene ID, region (chr-start-stop), or variant (CHROM-POS-REF-ALT) \u2014 and the scope is auto-detected. Gene/region return per-position bins plus a {mean_coverage, fraction_over_20} summary; variant returns scalar coverage. Compact mode trims each bin and caps bin count. Returns ~3-40kB compact (bin-count dependent), larger with response_mode='full'.",
+    "description": "Use this when a caller needs gnomAD read-depth coverage for a gene, region, or single variant; returns per-position bins plus a {mean_coverage, fraction_over_20} summary, or scalar coverage for a variant. Pass ONE target \u2014 a gene symbol, Ensembl gene ID, region (chr-start-stop), or variant (CHROM-POS-REF-ALT) \u2014 and the scope is auto-detected. Compact mode trims each bin and caps bin count. Returns ~3-40kB compact (bin-count dependent), larger with response_mode='full'.",
     "tags": [
       "coordinates",
       "frequency",
@@ -2029,7 +2044,7 @@
   },
   {
     "name": "gnomad_get_gene_details",
-    "description": "Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates. Follow with get_gene_variants if they then need per-variant rows. Returns compact ~2kB, full up to ~30kB.",
+    "description": "Use this when a caller has a gene id or symbol; returns constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates (chrom/start/stop only: gnomAD has no cytogenetic band; that is HGNC `location`, via hgnc_resolve_symbol). Follow with get_gene_variants if they then need per-variant rows. Returns compact ~2kB, full up to ~30kB.",
     "tags": [
       "frequency",
       "gene",
@@ -2086,7 +2101,7 @@
   },
   {
     "name": "gnomad_get_gene_variants",
-    "description": "Use this when a caller wants per-variant rows for an Ensembl gene. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100.",
+    "description": "Use this when a caller wants per-variant rows for an Ensembl gene; returns each variant's id, consequence, HGVS, and AC/AN/AF. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100.",
     "tags": [
       "frequency",
       "gene",
@@ -2153,7 +2168,7 @@
   },
   {
     "name": "gnomad_get_mitochondrial_variant",
-    "description": "Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies. By default zero-count heteroplasmy bins are trimmed and a `truncated.kind=heteroplasmy_zeros` block reports the count; set `include_heteroplasmy_zeros=True` to keep them. Returns ~2-4kB.",
+    "description": "Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT); returns its ploidy and heteroplasmy fields. For autosomal variants use get_variant_frequencies. By default zero-count heteroplasmy bins are trimmed and a `truncated.kind=heteroplasmy_zeros` block reports the count; set `include_heteroplasmy_zeros=True` to keep them. Returns ~2-4kB.",
     "tags": [
       "frequency",
       "gene",
@@ -2174,7 +2189,7 @@
   },
   {
     "name": "gnomad_get_region",
-    "description": "Use this when a caller wants genes and/or ClinVar variants in a small region (<=100kb). Spans larger than 100kb are clamped and a `truncated` block reports it. Per-category caps (`max_clinvar_variants`, `max_genes`) keep payload bounded; surplus rows are summarised in a `truncated_payload` block. For per-variant SNV listings use get_gene_variants instead. Returns ~5-30kB at compact defaults; up to ~50kB with compact_rows=False.",
+    "description": "Use this when a caller has a small region (<=100kb); returns the genes and/or ClinVar variants in it. Spans larger than 100kb are clamped and a `truncated` block reports it. Per-category caps (`max_clinvar_variants`, `max_genes`) keep payload bounded; surplus rows are summarised in a `truncated_payload` block. For per-variant SNV listings use get_gene_variants instead. Returns ~5-30kB at compact defaults; up to ~50kB with compact_rows=False.",
     "tags": [
       "coordinates",
       "frequency",
@@ -2201,7 +2216,7 @@
   },
   {
     "name": "gnomad_get_server_capabilities",
-    "description": "Use this when a client needs supported tools, datasets, population codes, recommended workflows, the live ClinVar release date, or current limitations. Returns ~7kB.",
+    "description": "Use this when a client needs server capabilities: supported tools, datasets, population codes, recommended workflows, the live ClinVar release date, and current limitations. Returns ~7kB.",
     "tags": [
       "frequency",
       "gene",
@@ -2213,7 +2228,7 @@
   },
   {
     "name": "gnomad_get_structural_variant",
-    "description": "Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, translocations/BND, complex/CPX, MCNV). SV ids come from search_structural_variants (search a gene/region first); they are NOT resolvable by resolve_variant_id, which is SNV/indel only. For SNVs/indels use get_variant_frequencies instead. Compact (default) drops heavy histograms + the duplicated flat gene list and emits a `truncated` block; response_mode='full' returns everything. Returns compact ~2-5kB; full ~10-20kB (histograms + populations).",
+    "description": "Use this when a caller has a gnomAD structural variant id (DEL, DUP, INV, BND, CPX, MCNV); returns its type, coordinates, length, AC/AN/AF, and populations. SV ids come from search_structural_variants (search a gene/region first); they are NOT resolvable by resolve_variant_id, which is SNV/indel only. For SNVs/indels use get_variant_frequencies instead. Compact (default) drops heavy histograms + the duplicated flat gene list and emits a `truncated` block; response_mode='full' returns everything. Returns compact ~2-5kB; full ~10-20kB (histograms + populations).",
     "tags": [
       "frequency",
       "gene",
@@ -2238,7 +2253,7 @@
   },
   {
     "name": "gnomad_get_transcript_details",
-    "description": "Use this when a caller has an Ensembl transcript id and needs exon structure and (by default) a compact GTEx tissue-expression summary for that transcript. GTEx is sourced via the gene path; the lookup is best-effort, so exon structure is returned even if expression is unavailable. For gene-level info use get_gene_details. Returns ~3-8kB (set include_expression=False to skip GTEx).",
+    "description": "Use this when a caller has an Ensembl transcript id; returns its exon structure and (by default) a compact GTEx tissue-expression summary. GTEx is sourced via the gene path; the lookup is best-effort, so exon structure is returned even if expression is unavailable. For gene-level info use get_gene_details. Returns ~3-8kB (set include_expression=False to skip GTEx).",
     "tags": [
       "coordinates",
       "frequency",
@@ -2260,7 +2275,7 @@
   },
   {
     "name": "gnomad_get_variant_details",
-    "description": "Use this when a caller needs transcript consequences or in-silico predictors for a single variant id. This tool does NOT return ClinVar clinical significance \u2014 for that call get_clinvar_variant_details. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload. Compact trims the exome/genome population breakdown (drops subcohort, sex-split, and zero-AC rows; toggle the booleans to expand) and emits a `truncated` block per source. Returns compact ~3-6kB, full up to ~50kB.",
+    "description": "Use this when a caller has a single variant id; returns transcript consequences, in-silico predictors, and exome/genome frequencies. This tool does NOT return ClinVar clinical significance \u2014 for that call get_clinvar_variant_details. Prefer get_variant_frequencies if only allele counts are needed. Compact trims the exome/genome population breakdown (drops subcohort, sex-split, and zero-AC rows; toggle the booleans to expand) and emits a `truncated` block per source. Returns compact ~3-6kB, full up to ~50kB.",
     "tags": [
       "frequency",
       "gene",
@@ -2291,7 +2306,7 @@
   },
   {
     "name": "gnomad_get_variant_frequencies",
-    "description": "Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides. Returns ~2-4kB (minimal ~0.6kB).",
+    "description": "Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id; returns a headline, exome/genome AC/AN/AF per population, and a summary (max_pop_af, faf95). Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. summary.max_pop_af is the raw highest-AF ancestry group (may be bottlenecked asj/fin; never 'remaining') and is NOT the filtering AF: use summary.faf95.{exome,genome,joint}.grpmax (gnomAD faf95 at grpmax, continental groups only; kept in minimal mode; a source is omitted when gnomAD computed no faf95 for it, e.g. AC 0 there) as the ClinGen/Whiffin comparator. A `truncated` block reports rows dropped by filters. Returns ~2-4kB (minimal ~0.6kB).",
     "tags": [
       "frequency",
       "gene",
@@ -2322,7 +2337,7 @@
   },
   {
     "name": "gnomad_resolve_variant_id",
-    "description": "Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Returns ~1-5kB (enrichment dependent).",
+    "description": "Use this when the caller only has an rsID, partial coordinates, or text fragment; returns candidate canonical gnomAD variant ids. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent).",
     "tags": [
       "frequency",
       "gene",
@@ -2331,7 +2346,7 @@
       "variant"
     ],
     "params": {
-      "query": "rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'.",
+      "query": "rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
       "dataset": "gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
       "limit": "Max candidate variant ids returned.",
       "enrich": "Second-pass fetch gene_symbol, major_consequence, and AF for the top 5 hits."
@@ -2346,7 +2361,7 @@
   },
   {
     "name": "gnomad_search_genes",
-    "description": "Use this when a caller has a fuzzy gene query (symbol, alias, partial name). Follow with get_gene_details for full constraint metrics. Note: gnomAD's gene autocomplete returns a bounded set and may omit exact members of a large gene family for a SHORT prefix (e.g. 'GRIN' does not return GRIN1/GRIN2B). If an expected gene is missing, query its FULL symbol (e.g. 'GRIN1') or call get_gene_details/get_gene_summary directly. Returns ~1-3kB.",
+    "description": "Use this when a caller has a fuzzy gene query (symbol, alias, partial name); returns ranked matches with symbol, ensembl_id, and match_quality. Follow with get_gene_details for full constraint metrics. Note: gnomAD's gene autocomplete returns a bounded set and may omit exact members of a large gene family for a SHORT prefix (e.g. 'GRIN' does not return GRIN1/GRIN2B). If an expected gene is missing, query its FULL symbol (e.g. 'GRIN1') or call get_gene_details/get_gene_summary directly. Returns ~1-3kB.",
     "tags": [
       "frequency",
       "gene",
@@ -2368,7 +2383,7 @@
   },
   {
     "name": "gnomad_search_structural_variants",
-    "description": "Use this when a caller wants the list of structural variants overlapping a gene or region. Pass ONE target \u2014 a gene symbol, Ensembl gene ID, or region (CHROM-START-STOP) \u2014 and the scope is auto-detected. SV variant_id values are OPAQUE (e.g. DEL_19_1), NOT CHROM-POS-REF-ALT, so no SNV id grammar is applied; fetch a single SV by id with get_structural_variant. sv_dataset is the DISTINCT structural-variant dataset enum (gnomad_sv_r4=GRCh38 default, gnomad_sv_r2_1=GRCh37), not the SNV dataset. Type/length filters are applied client-side. An empty match is a success with returned=0, not an error. Returns ~3-30kB (limit-dependent).",
+    "description": "Use this when a caller wants structural variants overlapping a gene or region; returns SV rows (id, type, position, length, AC/AN/AF). Pass ONE target \u2014 a gene symbol, Ensembl gene ID, or region (CHROM-START-STOP) \u2014 and the scope is auto-detected. SV variant_id values are OPAQUE (e.g. DEL_19_1), NOT CHROM-POS-REF-ALT, so no SNV id grammar is applied; fetch a single SV by id with get_structural_variant. sv_dataset is the DISTINCT structural-variant dataset enum (gnomad_sv_r4=GRCh38 default, gnomad_sv_r2_1=GRCh37), not the SNV dataset. Type/length filters are applied client-side. An empty match is a success with returned=0, not an error. Returns ~3-30kB (limit-dependent).",
     "tags": [
       "frequency",
       "gene",
@@ -2408,7 +2423,7 @@
   },
   {
     "name": "gnomad_search_variants",
-    "description": "Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id. Mirrors the same enrichment behaviour; will be removed in the next release. Returns ~1-5kB (deprecated alias).",
+    "description": "Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id; returns the same candidates. Mirrors the same enrichment behaviour; will be removed in the next release. Returns ~1-5kB (deprecated alias).",
     "tags": [
       "frequency",
       "gene",
@@ -2417,7 +2432,7 @@
       "variant"
     ],
     "params": {
-      "query": "rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'.",
+      "query": "rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
       "dataset": "gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
       "limit": "Max candidate variant ids returned.",
       "enrich": "Second-pass fetch gene_symbol, major_consequence, and AF for the top 5 hits."
@@ -2460,7 +2475,8 @@
       "gencode_version": [
         "v19",
         "v26",
-        "v39"
+        "v39",
+        "v47"
       ],
       "genome_build": [
         "GRCh37",
@@ -2542,7 +2558,8 @@
       ],
       "dataset_id": [
         "gtex_v8",
-        "gtex_v10"
+        "gtex_v10",
+        "gtex_v11"
       ]
     }
   },
@@ -2623,7 +2640,8 @@
       ],
       "dataset_id": [
         "gtex_v8",
-        "gtex_v10"
+        "gtex_v10",
+        "gtex_v11"
       ],
       "sort": [
         "desc",
@@ -2720,7 +2738,8 @@
       ],
       "dataset_id": [
         "gtex_v8",
-        "gtex_v10"
+        "gtex_v10",
+        "gtex_v11"
       ]
     }
   },
@@ -2743,7 +2762,8 @@
       "gencode_version": [
         "v19",
         "v26",
-        "v39"
+        "v39",
+        "v47"
       ],
       "genome_build": [
         "GRCh37",
@@ -2781,7 +2801,7 @@
   },
   {
     "name": "hgnc_get_gene",
-    "description": "Return the full HGNC record for a gene, resolved from an HGNC id, current symbol, previous symbol, or alias. Includes name, status, locus group/type, location, aliases/previous symbols, gene groups, and all cross-references. response_mode controls verbosity (compact drops dates/provenance; minimal keeps identity + anchor ids). Signature: get_gene(query, response_mode=).",
+    "description": "Return the full HGNC record for a gene, resolved from an HGNC id, current symbol, previous symbol, or alias. Includes name, status, locus group/type, location (cytogenetic band), aliases/previous symbols, gene groups, and all cross-references. For a complete alias list read alias_symbol + prev_symbol (HGNC) AND ncbi_gene_synonyms (NCBI Gene's own synonyms, kept separate; may repeat or extend HGNC's). response_mode controls verbosity (compact drops dates/provenance; minimal keeps identity + anchor ids). Signature: get_gene(query, response_mode=).",
     "tags": [
       "gene",
       "nomenclature"
@@ -2912,7 +2932,7 @@
   },
   {
     "name": "hgnc_resolve_gene_by_xref",
-    "description": "Reverse identifier mapping: find the HGNC gene(s) for an external database id. source is the database (entrez_id/ncbi, ensembl_gene_id, uniprot, refseq, mane_select, omim, ucsc, vega, ccds, mgi, rgd) and value is the id (e.g. source='ensembl_gene_id', value='ENSG00000157764'). A version suffix is tolerated (ENSG00000012048.23 resolves like ENSG00000012048), and a MANE Select transcript (ENST\u2026/NM_\u2026) resolves back to its gene. Signature: resolve_gene_by_xref(source, value, response_mode=).",
+    "description": "Find the HGNC gene(s) for an external database id (reverse identifier mapping); returns the matching gene summaries (hgnc_id, symbol, name). source is the database (entrez_id/ncbi, ensembl_gene_id, uniprot, refseq, mane_select, omim, ucsc, vega, ccds, mgi, rgd) and value is the id (e.g. source='ensembl_gene_id', value='ENSG00000157764'). A version suffix is tolerated (ENSG00000012048.23 resolves like ENSG00000012048), and a MANE Select transcript (ENST\u2026/NM_\u2026) resolves back to its gene. Signature: resolve_gene_by_xref(source, value, response_mode=).",
     "tags": [
       "gene",
       "nomenclature",
@@ -2966,7 +2986,7 @@
   },
   {
     "name": "hgnc_resolve_symbol",
-    "description": "Resolve any gene symbol or HGNC id to its canonical record. Accepts a current symbol, a previous (withdrawn) symbol, an alias, or an HGNC id in either form (HGNC:1100 or 1100), case-insensitively. Returns {hgnc_id, approved_symbol, match_type (hgnc_id|current|previous|alias)}. An alias shared by several genes returns an ambiguous_query error with the candidate list (not silently picked); a withdrawn/merged symbol returns a not_found error that redirects to the successor record. Signature: resolve_symbol(query, response_mode=).",
+    "description": "Resolve any gene symbol or HGNC id to its canonical record. Accepts a current symbol, a previous (withdrawn) symbol, an alias, an NCBI Gene synonym HGNC does not list, or an HGNC id in either form (HGNC:1100 or 1100), case-insensitively. Returns {hgnc_id, approved_symbol, name, status, locus_type, location, match_type (hgnc_id|current|previous|alias|ncbi_synonym)}; location is the cytogenetic band (chromosome location, e.g. 3p24.3). ncbi_synonym means only NCBI Gene (not HGNC) knows the symbol, and it ranks below every HGNC match. An alias or synonym shared by several genes returns an ambiguous_query error with the candidate list (not silently picked); a withdrawn/merged symbol returns a not_found error that redirects to the successor record.",
     "tags": [
       "gene",
       "nomenclature",
@@ -2987,7 +3007,7 @@
   },
   {
     "name": "hgnc_resolve_symbols_batch",
-    "description": "Resolve a batch of gene symbols / HGNC ids in one call (max 200). Each entry is resolved with the same current->previous->alias cascade as resolve_symbol; an individual miss or withdrawal never fails the batch (it is marked unresolved / obsolete in that entry). Returns per-query results plus resolved/unresolved counts. Signature: resolve_symbols_batch(queries, response_mode=).",
+    "description": "Resolve a batch of gene symbols / HGNC ids in one call (max 200). Each entry is resolved with the same current->previous->alias->ncbi_synonym cascade as resolve_symbol; an individual miss or withdrawal never fails the batch (it is marked unresolved / obsolete in that entry). Returns per-query results plus resolved/unresolved counts. Signature: resolve_symbols_batch(queries, response_mode=).",
     "tags": [
       "gene",
       "nomenclature",
@@ -3008,7 +3028,7 @@
   },
   {
     "name": "hgnc_search_genes",
-    "description": "Free-text search over gene symbols, names, aliases, and previous symbols (FTS, relevance-ranked). Returns ranked {hgnc_id, symbol, name, locus_type, score} summaries. Nomenclature-only: there is NO disease/phenotype semantics, so a descriptive query (e.g. 'polycystin kidney') only matches words present in a gene's nomenclature. Use resolve_symbol for an exact symbol/id; use this for partial names. Signature: search_genes(query, limit=, response_mode=).",
+    "description": "Search gene symbols, names, aliases, and previous symbols by free text (FTS); returns relevance-ranked {hgnc_id, symbol, name, locus_type, score} gene summaries. Nomenclature-only: there is NO disease/phenotype semantics, so a descriptive query (e.g. 'polycystin kidney') only matches words present in a gene's nomenclature. Use resolve_symbol for an exact symbol/id; use this for partial names. Signature: search_genes(query, limit=, response_mode=).",
     "tags": [
       "gene",
       "nomenclature"
@@ -3371,7 +3391,7 @@
   },
   {
     "name": "hpo_resolve_term",
-    "description": "Resolve a phenotype label, synonym, HP id (HP:0000118), or external cross-reference CURIE (UMLS:C0000737, SNOMEDCT_US:263681008, ...) to the canonical HPO term {hpo_id, name, match_type}. An ambiguous label returns ambiguous_query with candidates (each {hpo_id, name}); an obsolete HP id resolves with success:true, obsolete:true, and its successor in replaced_by. This is the recommended first step \u2014 resolve any query to a canonical HP id before calling get_term. Signature: resolve_term(query, response_mode=).",
+    "description": "Resolve a phenotype label, synonym, HP id (HP:0000118), or external cross-reference CURIE (UMLS:C0000737, SNOMEDCT_US:263681008, ...) to the canonical HPO term {hpo_id, name, match_type}. An ambiguous label returns ambiguous_query with candidates (each {hpo_id, name}); an obsolete HP id resolves with success:true, obsolete:true, and its successor in replaced_by. This is the recommended first step \u2014 resolve any query to a canonical HP id before calling get_term. Returns the single best match; text queries add other_matches_count, and to list every term matching a text use search_terms. Signature: resolve_term(query, response_mode=).",
     "tags": [
       "disease",
       "gene",
@@ -3422,7 +3442,7 @@
   },
   {
     "name": "hpo_search_terms",
-    "description": "Full-text search over HPO phenotype term names, synonyms, and definitions (FTS, relevance-ranked). Returns {hpo_id, name, score} -- compact adds a short definition_snippet; standard/full add the complete definition -- plus a pagination block {total, returned, limit, offset, truncated, next_offset}. When truncated, next_commands carries a forward-page step (offset advanced) and a widen step. Obsolete terms are excluded unless include_obsolete=true. Signature: search_terms(query, limit=, offset=, include_obsolete=, response_mode=).",
+    "description": "Full-text search over HPO phenotype term names, synonyms, and definitions (FTS, relevance-ranked); returns {hpo_id, name, score} -- compact adds a short definition_snippet; standard/full add the complete definition -- plus a pagination block {total, returned, limit, offset, truncated, next_offset}. When truncated, next_commands carries a forward-page step (offset advanced) and a widen step. Obsolete terms are excluded unless include_obsolete=true. Signature: search_terms(query, limit=, offset=, include_obsolete=, response_mode=).",
     "tags": [
       "disease",
       "gene",
@@ -3458,7 +3478,7 @@
   },
   {
     "name": "litvar_get_variant_literature",
-    "description": "Return PMIDs for a variant; each row carries a recommended_citation.\n\nAccepts a canonical LitVar id, an rsID, or HGVS/free text -- non-canonical\ninput is auto-resolved to the LitVar id via autocomplete. An unresolvable\nvariant returns a recoverable \"not found\" message (use\nsearch_genetic_variants), not an internal error.\n\n`_meta.pagination.total_count` is the variant's TRUE publication count;\npage through it with `_meta.pagination.next_cursor`.\n\nResearch use only; not clinical decision support.",
+    "description": "Return PMIDs for a variant; each row carries a recommended_citation.\n\nAccepts a canonical LitVar id, an rsID, or HGVS/free text. Resolves free\ntext to the top LitVar match and reports which variant was used\n(`resolved_variant`, with `other_candidates_count`; when >0,\n`_meta.next_commands` points to search_genetic_variants). An unresolvable\nvariant returns a recoverable \"not found\" message (use\nsearch_genetic_variants), not an internal error.\n\n`_meta.pagination.total_count` is the variant's TRUE publication count;\npage through it with `_meta.pagination.next_cursor`.\n\nResearch use only; not clinical decision support.",
     "tags": [
       "literature",
       "variant"
@@ -3938,7 +3958,7 @@
   },
   {
     "name": "metadome_compare_positions",
-    "description": "Signature: compare_positions(transcript_id, positions, response_mode=).",
+    "description": "Compare several residues of one transcript; returns a side-by-side tolerance, domain and ClinVar table. Needs a built landscape (request_tolerance_landscape). For one residue use get_position_tolerance.",
     "tags": [
       "domain",
       "positions",
@@ -3947,9 +3967,9 @@
       "variant"
     ],
     "params": {
-      "transcript_id": "ENST.",
-      "positions": "Residues.",
-      "response_mode": "Mode."
+      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
+      "positions": "1-based protein residue positions to compare.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
       "response_mode": [
@@ -3962,7 +3982,7 @@
   },
   {
     "name": "metadome_get_diagnostics",
-    "description": "Signature: get_diagnostics(response_mode=).",
+    "description": "Get cache stats, request metrics and data versions of this server. Use to debug failing calls; returns no gene data (server scope: get_server_capabilities).",
     "tags": [
       "discovery",
       "domain",
@@ -3970,21 +3990,11 @@
       "tolerance",
       "variant"
     ],
-    "params": {
-      "response_mode": "Mode."
-    },
-    "enums": {
-      "response_mode": [
-        "minimal",
-        "compact",
-        "standard",
-        "full"
-      ]
-    }
+    "params": {}
   },
   {
     "name": "metadome_get_meta_domain",
-    "description": "Signature: get_meta_domain(transcript_id, position, domains=, limit=, offset=, response_mode=).",
+    "description": "Get variants at the aligned position of homologous Pfam domains (meta-domain) for one residue; these span other genes, not this gene alone. Needs a built landscape (request_tolerance_landscape). Paginated.",
     "tags": [
       "domain",
       "domains",
@@ -3993,12 +4003,12 @@
       "variant"
     ],
     "params": {
-      "transcript_id": "ENST.",
-      "position": "Pos.",
-      "domains": "Pfam selector.",
-      "limit": "Limit.",
-      "offset": "Offset.",
-      "response_mode": "Mode."
+      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
+      "position": "1-based protein residue position.",
+      "domains": "Optional {Pfam id: [consensus positions]} selector; omit to use the residue's own domains.",
+      "limit": "Rows per page.",
+      "offset": "Rows to skip; pass the previous pagination.next_offset.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
       "response_mode": [
@@ -4011,7 +4021,7 @@
   },
   {
     "name": "metadome_get_position_tolerance",
-    "description": "Signature: get_position_tolerance(transcript_id, position, response_mode=).",
+    "description": "Get the tolerance score, Pfam domain and ClinVar variants at one protein residue. Needs a built landscape (request_tolerance_landscape). For several residues use compare_positions.",
     "tags": [
       "domain",
       "positions",
@@ -4020,9 +4030,9 @@
       "variant"
     ],
     "params": {
-      "transcript_id": "ENST.",
-      "position": "Pos.",
-      "response_mode": "Mode."
+      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
+      "position": "1-based protein residue position.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
       "response_mode": [
@@ -4035,7 +4045,7 @@
   },
   {
     "name": "metadome_get_protein_domains",
-    "description": "Signature: get_protein_domains(transcript_id, response_mode=).",
+    "description": "List Pfam domains (id, name, residue range) of a transcript. Needs a built landscape (request_tolerance_landscape). Then get_meta_domain for homolog variants.",
     "tags": [
       "domain",
       "domains",
@@ -4044,8 +4054,8 @@
       "variant"
     ],
     "params": {
-      "transcript_id": "ENST.",
-      "response_mode": "Mode."
+      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
       "response_mode": [
@@ -4058,7 +4068,7 @@
   },
   {
     "name": "metadome_get_server_capabilities",
-    "description": "Signature: get_server_capabilities(detail=, response_mode=).",
+    "description": "Get server version, MetaDome build (GRCh37/GRCh38), tools, limits, error codes and the canonical workflow. Returns no gene data; for a gene start with resolve_transcript.",
     "tags": [
       "discovery",
       "domain",
@@ -4067,25 +4077,18 @@
       "variant"
     ],
     "params": {
-      "detail": "Detail level.",
-      "response_mode": "Mode."
+      "detail": "summary (default) or full capability listing."
     },
     "enums": {
       "detail": [
         "summary",
-        "full"
-      ],
-      "response_mode": [
-        "minimal",
-        "compact",
-        "standard",
         "full"
       ]
     }
   },
   {
     "name": "metadome_get_tolerance_landscape",
-    "description": "Signature: get_tolerance_landscape(transcript_id, position_start=, position_stop=, limit=, offset=, response_mode=).",
+    "description": "Get per-residue missense tolerance (sw_dn_ds, lower = more intolerant) and Pfam domains for a transcript, paginated. Call request_tolerance_landscape first. status processing with poll_after_s is not an error: wait and poll again. not_found = MetaDome has no landscape or build job for the id.",
     "tags": [
       "domain",
       "landscape",
@@ -4094,12 +4097,12 @@
       "variant"
     ],
     "params": {
-      "transcript_id": "ENST.",
-      "position_start": "Pos.",
-      "position_stop": "Pos.",
-      "limit": "Limit.",
-      "offset": "Offset.",
-      "response_mode": "Mode."
+      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
+      "position_start": "1-based protein residue position; range bounds are inclusive.",
+      "position_stop": "1-based protein residue position; range bounds are inclusive.",
+      "limit": "Rows per page.",
+      "offset": "Rows to skip; pass the previous pagination.next_offset.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
       "response_mode": [
@@ -4112,7 +4115,7 @@
   },
   {
     "name": "metadome_get_variant_counts",
-    "description": "Signature: get_variant_counts(transcript_id, position=, position_start=, position_stop=, source=, limit=, offset=, response_mode=).",
+    "description": "Get residue ClinVar variants plus Pfam meta-domain homolog aggregates for one residue or a range. Aggregates can include other genes; MetaDome has no per-residue gnomAD counts. Needs a built landscape (request_tolerance_landscape).",
     "tags": [
       "domain",
       "positions",
@@ -4121,14 +4124,14 @@
       "variant"
     ],
     "params": {
-      "transcript_id": "ENST.",
-      "position": "Pos.",
-      "position_start": "Pos.",
-      "position_stop": "Pos.",
-      "source": "Source.",
-      "limit": "Limit.",
-      "offset": "Offset.",
-      "response_mode": "Mode."
+      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
+      "position": "1-based protein residue position; range bounds are inclusive.",
+      "position_start": "1-based protein residue position; range bounds are inclusive.",
+      "position_stop": "1-based protein residue position; range bounds are inclusive.",
+      "source": "Variant evidence to include: gnomad, clinvar or both.",
+      "limit": "Rows per page.",
+      "offset": "Rows to skip; pass the previous pagination.next_offset.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
       "source": [
@@ -4146,7 +4149,7 @@
   },
   {
     "name": "metadome_request_tolerance_landscape",
-    "description": "Signature: request_tolerance_landscape(transcript_id, response_mode=).",
+    "description": "Start the MetaDome tolerance-landscape build for a transcript (async, idempotent); returns job_id and status ready or processing. Cold builds can take up to ~1 h. Every read tool needs this first; then poll get_tolerance_landscape.",
     "tags": [
       "domain",
       "landscape",
@@ -4155,8 +4158,8 @@
       "variant"
     ],
     "params": {
-      "transcript_id": "ENST.",
-      "response_mode": "Mode."
+      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
       "response_mode": [
@@ -4169,7 +4172,7 @@
   },
   {
     "name": "metadome_resolve_transcript",
-    "description": "Signature: resolve_transcript(query, response_mode=).",
+    "description": "Resolve a gene symbol or versioned ENST id; for a gene returns its MetaDome transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then request_tolerance_landscape.",
     "tags": [
       "domain",
       "protein",
@@ -4178,8 +4181,8 @@
       "variant"
     ],
     "params": {
-      "query": "Query.",
-      "response_mode": "Mode."
+      "query": "HGNC gene symbol (e.g. TP53) or versioned ENST id.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
       "response_mode": [
@@ -4192,7 +4195,7 @@
   },
   {
     "name": "metadome_summarize_intolerant_regions",
-    "description": "Signature: summarize_intolerant_regions(transcript_id, threshold=, min_run=, top_n=, response_mode=).",
+    "description": "Find ranked runs of missense-intolerant residues (sw_dn_ds below threshold) with Pfam overlap and scoped variant evidence. Needs a built landscape (request_tolerance_landscape). For raw per-residue scores use get_tolerance_landscape.",
     "tags": [
       "analysis",
       "domain",
@@ -4201,11 +4204,11 @@
       "variant"
     ],
     "params": {
-      "transcript_id": "ENST.",
-      "threshold": "Cutoff.",
-      "min_run": "Run length.",
-      "top_n": "Region count.",
-      "response_mode": "Mode."
+      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
+      "threshold": "sw_dn_ds cutoff in (0, 2]; residues below it count as intolerant.",
+      "min_run": "Minimum consecutive intolerant residues per region.",
+      "top_n": "Maximum regions returned, most intolerant first.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
       "response_mode": [
@@ -4364,7 +4367,7 @@
   },
   {
     "name": "mgi_get_marker_phenotypes",
-    "description": "Return the Mammalian Phenotype (MP) annotations for a mouse marker. By default (minimal/compact/standard) returns a DEDUPLICATED, support-ordered list of DISTINCT MP terms \u2014 each {mp_id, mp_term, genotype_count} (standard adds systems[]) \u2014 so the most replicated phenotypes come first and none are buried alphabetically. response_mode=full returns the per-genotype rows {mp_id, mp_term, allelic_composition, genetic_background, pubmed_id, genotype_id, ...}. Every response carries a phenotype summary and a truncation contract {total, returned, limit, truncated}; when truncated, next_commands includes a widen step. mp_system optionally restricts to one top-level system (name like 'renal/urinary system' or its MP id). SCOPE: annotations are single-locus, NON-conditional genotypes (MGI_GenePheno); conditional/Cre-driven and multi-genic genotypes are EXCLUDED (see the response 'scope'/'scope_note'), so a zero or empty result does not mean the gene lacks that phenotype in mouse \u2014 confirm on the MGI gene page. Signature: get_marker_phenotypes(query, mp_system=, limit=, response_mode=).",
+    "description": "Return the Mammalian Phenotype (MP) annotations for a mouse marker. Distinct MP terms {mp_id, mp_term, genotype_count}, best-supported first; response_mode=full: per-genotype rows with genetic_background, pubmed_id. Paged: {total, returned, limit, truncated}. Single-locus non-conditional genotypes only (scope_note): empty is not absence. Cite via get_server_capabilities. Signature: get_marker_phenotypes(query, mp_system=, limit=, response_mode=).",
     "tags": [
       "model",
       "mouse",
@@ -4453,7 +4456,7 @@
   },
   {
     "name": "mgi_search_markers",
-    "description": "Free-text search over mouse marker symbols, names, and synonyms (FTS, relevance-ranked). Returns ranked {mgi_id, symbol, name, marker_type, score, match} summaries. Exact symbol/synonym hits are PINNED first (match: exact_symbol|exact_synonym|fts) so an exact gene is never buried under transgenes or lncRNAs. Returns a truncation contract {total, returned, limit, truncated}; when truncated, next_commands includes a widen step. marker_type optionally restricts to a type (e.g. 'Gene'). Nomenclature-only: no phenotype semantics \u2014 use search_phenotype_terms + find_markers_by_phenotype for phenotype-driven discovery, or resolve_marker for an exact symbol/id. Signature: search_markers(query, marker_type=, limit=, response_mode=).",
+    "description": "Free-text search over mouse marker symbols, names, and synonyms (FTS, relevance-ranked); returns ranked {mgi_id, symbol, name, marker_type, score, match} summaries. Exact symbol/synonym hits are PINNED first (match: exact_symbol|exact_synonym|fts) so an exact gene is never buried under transgenes or lncRNAs. Returns a truncation contract {total, returned, limit, truncated}; when truncated, next_commands includes a widen step. marker_type optionally restricts to a type (e.g. 'Gene'). Nomenclature-only: no phenotype semantics \u2014 use search_phenotype_terms + find_markers_by_phenotype for phenotype-driven discovery, or resolve_marker for an exact symbol/id. Signature: search_markers(query, marker_type=, limit=, response_mode=).",
     "tags": [
       "marker",
       "model",
@@ -4489,7 +4492,7 @@
   },
   {
     "name": "mgi_search_phenotype_terms",
-    "description": "Free-text search over Mammalian Phenotype (MP) term names and definitions (FTS, relevance-ranked). Returns {mp_id, name, definition, score} plus a truncation contract {total, returned, limit, truncated} (widen step in next_commands when truncated). Use this to resolve a phenotype description to an MP id, then find_markers_by_phenotype or get_mp_term. Signature: search_phenotype_terms(query, limit=).",
+    "description": "Free-text search over Mammalian Phenotype (MP) term names and definitions (FTS, relevance-ranked); returns {mp_id, name, definition, score} plus a truncation contract {total, returned, limit, truncated} (widen step in next_commands when truncated). Use this to resolve a phenotype description to an MP id, then find_markers_by_phenotype or get_mp_term. Signature: search_phenotype_terms(query, limit=).",
     "tags": [
       "model",
       "mouse",
@@ -4513,7 +4516,7 @@
   },
   {
     "name": "mondo_get_disease",
-    "description": "Return a Mondo disease term: definition, synonyms, grouped cross-references, direct parents and children, top-level groupings, subsets, and obsolescence (replaced_by/consider). The term accepts a MONDO id, a label/synonym, or an external xref CURIE (resolved first). Pass fields=['xrefs.OMIM', ...] for a sparse projection. Signature: get_disease(term, response_mode=, fields=).",
+    "description": "Return a Mondo disease term: definition, synonyms, grouped cross-references, direct parents and children, top-level groupings, subsets, obsolescence (replaced_by/consider), and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. causal_genes: [] means Mondo asserts none; the field is absent only when the loaded data predates the gene table. The term accepts a MONDO id, a label/synonym, or an external xref CURIE (resolved first). Pass fields=['xrefs.OMIM', ...] for a sparse projection. Signature: get_disease(term, response_mode=, fields=).",
     "tags": [
       "disease",
       "ontology"
@@ -4686,7 +4689,7 @@
   },
   {
     "name": "mondo_resolve_disease",
-    "description": "Resolve a disease label, synonym, MONDO id, or external cross-reference CURIE (OMIM/Orphanet/DOID/...) to the canonical Mondo term {mondo_id, name, match_type}. A near-miss or acronym-like label falls back to a conservative fuzzy match (match_type='fuzzy'); an ambiguous label returns ambiguous_query with candidates; an obsolete id returns not_found with its successor. Signature: resolve_disease(query, response_mode=).",
+    "description": "Resolve a disease label, synonym, MONDO id, or external cross-reference CURIE (OMIM/Orphanet/DOID/...) to the canonical Mondo term {mondo_id, name, match_type} and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. causal_genes: [] means Mondo asserts none; the field is absent only when the loaded data predates the gene table. A near-miss or acronym-like label falls back to a conservative fuzzy match (match_type='fuzzy'). The strongest match type wins (primary label > exact synonym > related synonym); only a tie returns ambiguous_query with candidates, each carrying match_type and score; an obsolete id returns not_found with its successor. Signature: resolve_disease(query, response_mode=).",
     "tags": [
       "disease",
       "ontology",
@@ -4753,7 +4756,7 @@
   },
   {
     "name": "mondo_search_diseases",
-    "description": "Full-text search over Mondo disease names, synonyms, and definitions (FTS, relevance-ranked). Returns {mondo_id, name, score} -- compact adds a short definition_snippet; standard/full add the complete definition -- plus a pagination block {total, returned, limit, offset, truncated, next_offset}. When truncated, next_commands carries a forward-page step (offset advanced) and a widen step. Obsolete terms are excluded unless include_obsolete=true. Signature: search_diseases(query, limit=, offset=, include_obsolete=, response_mode=).",
+    "description": "Full-text search over Mondo disease names, synonyms, and definitions (FTS, relevance-ranked); returns {mondo_id, name, score} -- compact adds a short definition_snippet; standard/full add the complete definition -- plus a pagination block {total, returned, limit, offset, truncated, next_offset}. When truncated, next_commands carries a forward-page step (offset advanced) and a widen step. Obsolete terms are excluded unless include_obsolete=true. Signature: search_diseases(query, limit=, offset=, include_obsolete=, response_mode=).",
     "tags": [
       "disease",
       "ontology",
@@ -5006,7 +5009,7 @@
   },
   {
     "name": "orphanet_get_disease_genes",
-    "description": "Return gene-disease associations for an Orphanet disorder: gene symbol, HGNC id, association type, and cross-references (OMIM, Ensembl, etc.). count is the number of leaf gene rows, not grouped associations. Signature: get_disease_genes(term, response_mode=).",
+    "description": "Return gene-disease associations for an Orphanet disorder: gene symbol, HGNC id, association type, and cross-references (OMIM, Ensembl, etc.). count is the number of leaf gene rows, not grouped associations. A group term with no direct genes returns count 0 plus descendant_count; call get_disease_descendants and query the subtypes. Signature: get_disease_genes(term, response_mode=).",
     "tags": [
       "disease",
       "epidemiology",
@@ -5240,7 +5243,7 @@
   },
   {
     "name": "orphanet_search_diseases",
-    "description": "Full-text search over Orphanet disease names, synonyms, and definitions (FTS, relevance-ranked). Returns {orpha_code, name, score} plus a pagination block {total, returned, limit, offset, truncated, next_offset}. When truncated, next_commands carries a forward-page step. Obsolete terms are excluded unless include_obsolete=true. Signature: search_diseases(query, limit=, offset=, include_obsolete=, response_mode=).",
+    "description": "Full-text search over Orphanet disease names, synonyms, and definitions (FTS, relevance-ranked); returns {orpha_code, name, score} plus top-level pagination fields {total, returned, limit, offset, truncated, next_offset}. When truncated, next_commands carries a forward-page step. Obsolete terms are excluded unless include_obsolete=true. Signature: search_diseases(query, limit=, offset=, include_obsolete=, response_mode=).",
     "tags": [
       "disease",
       "epidemiology",
@@ -5521,7 +5524,7 @@
   },
   {
     "name": "pubtator_build_topic_literature_map",
-    "description": "Use this when a user needs a bounded topic-level literature map from a topic query, optionally seeded with PMIDs. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
+    "description": "Use this when a user needs a bounded topic-level literature map from a topic query, optionally seeded with PMIDs: returns candidate PMID lanes with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
@@ -5571,7 +5574,7 @@
   },
   {
     "name": "pubtator_convert_article_ids",
-    "description": "Use this when a user provides article identifiers such as PMIDs, PMCIDs, or DOIs and needs normalized candidate PMIDs for research workflows.",
+    "description": "Use this when a user provides article identifiers such as PMIDs, PMCIDs, or DOIs and needs normalized candidate PMIDs for research workflows; returns the normalized PMID, PMCID and DOI for each input identifier.",
     "tags": [
       "entity",
       "literature"
@@ -5591,7 +5594,7 @@
   },
   {
     "name": "pubtator_diagnostics",
-    "description": "Use this when a client needs PubTator-Link subsystem status and recovery commands.",
+    "description": "Use this when a client needs PubTator-Link subsystem status and recovery commands: returns per-subsystem health and suggested recovery commands.",
     "tags": [
       "entity",
       "literature",
@@ -5601,14 +5604,14 @@
   },
   {
     "name": "pubtator_estimate_publication_context",
-    "description": "Use this when a user needs to estimate passage count and context size before fetching publication passages. Do not use this for text retrieval; use get_publication_passages. Next: get_publication_passages.",
+    "description": "Use this when a user needs to estimate passage count and context size before fetching publication passages; returns estimated passage and character counts plus a recommended passage mode. Do not use this for text retrieval; use get_publication_passages. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
       "pmids": "PubMed IDs to estimate passage count and context size for.",
-      "sections": "Restrict to these BioC section labels (case-insensitive); omit for all sections. An article that lacks a requested section simply contributes no passages for it.",
+      "sections": "Restrict to these BioC section labels (case-insensitive); omit for all. A missing section contributes no passages; a table usually yields a caption and a body passage.",
       "mode": "Passage selection to estimate under: 'compact_passages' (default), 'full_abstract', 'abstracts', or 'section_text'.",
       "full": "Estimate under full-text retrieval where available.",
       "max_passages_per_pmid": "Maximum passages per PMID to assume.",
@@ -5638,7 +5641,7 @@
   },
   {
     "name": "pubtator_find_entity_relations",
-    "description": "Use this when a user has a PubTator entity ID and needs literature-derived related entities to expand a corpus. Do not use this for canonical entity lookup; use search_biomedical_entities. Next: search_literature.",
+    "description": "Use this when a user has a PubTator entity ID and needs literature-derived related entities to expand a corpus; returns related PubTator entity IDs with relation types. Do not use this for canonical entity lookup; use search_biomedical_entities. Next: search_literature.",
     "tags": [
       "entity",
       "literature"
@@ -5685,7 +5688,7 @@
   },
   {
     "name": "pubtator_find_related_articles",
-    "description": "Use this when a user has seed PMIDs and needs similar, cited-by, or reference-linked articles to expand a research corpus.",
+    "description": "Use this when a user has seed PMIDs and needs similar, cited-by, or reference-linked articles to expand a research corpus; returns related PMIDs with title, journal, year and relation.",
     "tags": [
       "entity",
       "literature"
@@ -5705,7 +5708,7 @@
   },
   {
     "name": "pubtator_find_related_evidence_candidates",
-    "description": "Use this when a user has one PMID and needs related full-text-preferred candidates. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
+    "description": "Use this when a user has one PMID and needs related full-text-preferred candidates: returns related candidate PMIDs with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
@@ -5752,7 +5755,7 @@
   },
   {
     "name": "pubtator_get_citation",
-    "description": "Use this when a user provides free-text citations and needs candidate PMIDs for research evidence gathering.",
+    "description": "Use this when a user provides free-text citations and needs candidate PMIDs for research evidence gathering; returns candidate PMID matches per citation.",
     "tags": [
       "entity",
       "literature"
@@ -5763,7 +5766,7 @@
   },
   {
     "name": "pubtator_get_evidence_certainty",
-    "description": "Use this when a user needs one user-supplied evidence certainty judgment.",
+    "description": "Use this when a user needs one user-supplied evidence certainty judgment: returns that judgment with its linked passage IDs.",
     "tags": [
       "entity",
       "literature"
@@ -5775,7 +5778,7 @@
   },
   {
     "name": "pubtator_get_mesh",
-    "description": "Use this when a user needs MeSH descriptors and candidate PubMed search terms for a biomedical research query.",
+    "description": "Use this when a user needs MeSH descriptors and candidate PubMed search terms for a biomedical research query; returns matching MeSH descriptors and suggested PubMed query terms.",
     "tags": [
       "entity",
       "literature"
@@ -5788,7 +5791,7 @@
   },
   {
     "name": "pubtator_get_neighboring_review_passages",
-    "description": "Use this when a user needs prepared review passages near a cited stable passage ID for local context expansion. This only reads the review index and does not call upstream APIs.",
+    "description": "Use this when a user needs prepared review passages near a cited stable passage ID for local context expansion; returns the neighboring passages with stable passage IDs and text. This only reads the review index and does not call upstream APIs.",
     "tags": [
       "entity",
       "literature"
@@ -5805,7 +5808,7 @@
   },
   {
     "name": "pubtator_get_pmc_annotations",
-    "description": "Use this when a user provides PMC IDs and needs raw PubTator full-text BioC annotation export. Do not use this for compact grounded answers; use get_publication_passages. Next: get_publication_passages.",
+    "description": "Use this when a user provides PMC IDs and needs raw PubTator full-text BioC annotation export; returns BioC documents with passages and entity annotations. Do not use this for compact grounded answers; use get_publication_passages. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
@@ -5823,7 +5826,7 @@
   },
   {
     "name": "pubtator_get_publication_annotations",
-    "description": "Use this when a user provides PubMed IDs and needs raw PubTator BioC annotation export. Do not use this for compact grounded answers; use get_publication_passages. Next: get_publication_passages.",
+    "description": "Use this when a user provides PubMed IDs and needs raw PubTator BioC annotation export; returns BioC documents with passages and entity annotations. Do not use this for compact grounded answers; use get_publication_passages. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
@@ -5843,7 +5846,7 @@
   },
   {
     "name": "pubtator_get_publication_citation_graph",
-    "description": "Use this when a user needs reference or cited-by neighbors for one publication. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
+    "description": "Use this when a user needs reference or cited-by neighbors for one publication: returns reference and cited-by PMIDs with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
@@ -5874,7 +5877,7 @@
   },
   {
     "name": "pubtator_get_publication_metadata",
-    "description": "Use this when a user needs citation-grade metadata for known PMIDs. Do not use this for article text or annotations; use get_publication_passages. Next: get_publication_passages.",
+    "description": "Use this when a user needs citation-grade metadata for known PMIDs: returns title, authors, journal, year, DOI and formatted citations per PMID. Do not use this for article text or annotations; use get_publication_passages. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
@@ -5897,22 +5900,22 @@
   },
   {
     "name": "pubtator_get_publication_passages",
-    "description": "Use this when a user needs compact citable publication passages from PMIDs without raw BioC. For article-local answering, use mode='full_abstract' first; it returns all title/abstract passages without truncating structured abstracts. If full=True returns only abstracts, inspect coverage_by_pmid and answer from available evidence. Do not use for prepared review RAG; use get_review_context_batch.",
+    "description": "Use this when a user needs the text of a PubMed/PMC article by PMID: returns citable passages (title, abstract and, for open-access PMC articles, full text incl. figure captions and tables), not raw BioC. For article-local answering use mode='full_abstract' first (untruncated); sections (FIG, TABLE, RESULTS, ...) selects full text; check coverage_by_pmid. Not for prepared review RAG; use get_review_context_batch.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
       "pmids": "PubMed IDs to fetch compact citable passages for.",
-      "sections": "Restrict to these BioC section labels (case-insensitive); omit for all sections. An article that lacks a requested section simply contributes no passages for it.",
+      "sections": "Restrict to these BioC section labels (case-insensitive); omit for all. A missing section contributes no passages; a table usually yields a caption and a body passage.",
       "mode": "Passage selection: 'compact_passages' (default), 'full_abstract' (all title/abstract passages), 'abstracts', or 'section_text'.",
       "full": "Prefer full-text passages where the article is open-access.",
-      "max_passages_per_pmid": "Maximum passages returned per PMID.",
+      "max_passages_per_pmid": "Max passages per PMID (or PMID+section).",
       "max_chars": "Soft total character budget for passages.",
       "include_tables": "Include table passages.",
       "include_references": "Include reference-list passages.",
       "dry_run": "Return a size/coverage estimate without passage text.",
-      "verbosity": "Field verbosity: 'lean', 'standard' (default), or 'full'."
+      "verbosity": "'lean', 'standard' (default), or 'full' (+ each dropped row)."
     },
     "enums": {
       "sections": [
@@ -5942,7 +5945,7 @@
   },
   {
     "name": "pubtator_get_research_session_status",
-    "description": "Use this when a user needs staged candidate, coverage, and preparation status for a research session.",
+    "description": "Use this when a user needs staged candidate, coverage, and preparation status for a research session; returns staged candidate PMIDs, coverage hints and preparation status.",
     "tags": [
       "entity",
       "literature"
@@ -5954,7 +5957,7 @@
   },
   {
     "name": "pubtator_get_review_audit_trail",
-    "description": "Use this when a user needs a copy-ready audit block for selected prepared review passage IDs or the latest recorded audit passages without calling upstream APIs.",
+    "description": "Use this when a user needs a copy-ready audit block for selected prepared review passage IDs or the latest recorded audit passages without calling upstream APIs; returns that audit block.",
     "tags": [
       "entity",
       "literature"
@@ -5968,7 +5971,7 @@
   },
   {
     "name": "pubtator_get_review_context",
-    "description": "Use this when a review needs compact citable context from prepared review passages instead of raw BioC export. Use a short keyword query and PMID filters. If zero passages are returned, simplify the query, inspect the review index, or fall back to get_publication_annotations.",
+    "description": "Use this when a review needs compact citable context from prepared review passages instead of raw BioC export; returns ranked citable passages with stable passage IDs and PMIDs. Use a short keyword query and PMID filters. If zero passages are returned, simplify the query, inspect the review index, or fall back to get_publication_annotations.",
     "tags": [
       "entity",
       "literature"
@@ -6006,7 +6009,7 @@
   },
   {
     "name": "pubtator_get_review_context_batch",
-    "description": "Use this when a user wants multiple short review retrieval query variants in one call. Default compact mode uses query_fair budgeting, merged passages, per-query summaries, and next_steps for zero-result queries. Use response_mode=\"quotes\" for short citable snippets or dry_run for diagnostics without passage text.",
+    "description": "Use this when a user wants multiple short review retrieval query variants in one call; returns merged citable passages and per-query summaries. Compact (default): query_fair budgeting, next_steps for zero-result queries. Use response_mode=\"quotes\" for short citable snippets or dry_run for diagnostics without passage text.",
     "tags": [
       "entity",
       "literature"
@@ -6071,7 +6074,7 @@
   },
   {
     "name": "pubtator_get_review_index_summary",
-    "description": "Use this when a user needs one persisted review index summary without loading passage samples.",
+    "description": "Use this when a user needs one persisted review index summary without loading passage samples; returns its preparation status, source counts and passage counts.",
     "tags": [
       "entity",
       "literature"
@@ -6082,7 +6085,7 @@
   },
   {
     "name": "pubtator_get_review_passages_by_id",
-    "description": "Use this when a user needs exact prepared review passages by stable passage IDs from prior context packs or audit bundles. This only reads the review index and does not call upstream APIs.",
+    "description": "Use this when a user needs exact prepared review passages by stable passage IDs from prior context packs or audit bundles; returns those passages with text and citation metadata. This only reads the review index and does not call upstream APIs.",
     "tags": [
       "entity",
       "literature"
@@ -6096,7 +6099,7 @@
   },
   {
     "name": "pubtator_get_server_capabilities",
-    "description": "Use this when a client needs supported tools, transports, formats, and limitations. Do not use this for task-specific workflow guidance; use workflow_help. Next: workflow_help.",
+    "description": "Use this when a client needs supported tools, transports, formats, and limitations; returns those lists in one capability record. Do not use this for task-specific workflow guidance; use workflow_help. Next: workflow_help.",
     "tags": [
       "entity",
       "literature"
@@ -6120,7 +6123,7 @@
   },
   {
     "name": "pubtator_get_text_annotation_results",
-    "description": "Use this when a user has a PubTator text annotation session ID and needs its results. Do not use this for entity lookup from names; use search_biomedical_entities. Next: search_biomedical_entities.",
+    "description": "Use this when a user has a PubTator text annotation session ID and needs its results; returns the annotated text with entity mentions and IDs once ready. Do not use this for entity lookup from names; use search_biomedical_entities. Next: search_biomedical_entities.",
     "tags": [
       "entity",
       "literature"
@@ -6131,7 +6134,7 @@
   },
   {
     "name": "pubtator_get_variant_evidence",
-    "description": "Use this when a user needs source-attributed variant records and literature evidence for a gene and variant. Does not compute clinical classification.",
+    "description": "Use this when a user needs source-attributed variant records and literature evidence for a gene and variant; returns source-attributed variant records plus PMID literature evidence. Does not compute clinical classification.",
     "tags": [
       "entity",
       "literature"
@@ -6154,7 +6157,7 @@
   },
   {
     "name": "pubtator_inspect_review_index",
-    "description": "Use this when a user needs to inspect indexed PMIDs, sections, passage counts, and failures for a review_id, including source coverage.",
+    "description": "Use this when a user needs to inspect indexed PMIDs, sections, passage counts, and failures for a review_id, including source coverage; returns per-source summaries, totals and failures.",
     "tags": [
       "entity",
       "literature"
@@ -6190,7 +6193,7 @@
   },
   {
     "name": "pubtator_list_evidence_certainty",
-    "description": "Use this when a user needs user-supplied evidence certainty judgments for a review.",
+    "description": "Use this when a user needs user-supplied evidence certainty judgments for a review; returns the stored judgments for that review.",
     "tags": [
       "entity",
       "literature"
@@ -6201,7 +6204,7 @@
   },
   {
     "name": "pubtator_list_research_sessions",
-    "description": "Use this when a user needs staged research sessions for orientation or one review ID.",
+    "description": "Use this when a user needs staged research sessions for orientation or one review ID; returns session IDs with review IDs and status.",
     "tags": [
       "entity",
       "literature"
@@ -6214,7 +6217,7 @@
   },
   {
     "name": "pubtator_list_review_indexes",
-    "description": "Use this when a user needs persisted review indexes with preparation status, source counts, passage counts, and approximate storage size.",
+    "description": "Use this when a user needs persisted review indexes with preparation status, source counts, passage counts, and approximate storage size; returns one row per index with those fields.",
     "tags": [
       "entity",
       "literature"
@@ -6226,7 +6229,7 @@
   },
   {
     "name": "pubtator_preflight_review_sources",
-    "description": "Use this when a user needs PMID source coverage, PMC fallback availability, and likely full-text versus abstract-only retrieval before indexing review evidence.",
+    "description": "Use this when a user needs PMID source coverage, PMC fallback availability, and likely full-text versus abstract-only retrieval before indexing review evidence; returns per-PMID source coverage and fallback availability.",
     "tags": [
       "entity",
       "literature"
@@ -6238,7 +6241,7 @@
   },
   {
     "name": "pubtator_search_biomedical_entities",
-    "description": "Use this when a user needs canonical PubTator biomedical entity IDs for genes, diseases, chemicals, species, variants, or cell lines.",
+    "description": "Use this when a user needs canonical PubTator biomedical entity IDs for genes, diseases, chemicals, species, variants, or cell lines; returns matching entity IDs with names and types.",
     "tags": [
       "entity",
       "literature"
@@ -6262,18 +6265,19 @@
   },
   {
     "name": "pubtator_search_guidelines",
-    "description": "Use this when a user needs guideline, recommendation, consensus, or systematic review papers for a biomedical research question. Wraps search_literature with guideline/systematic-review filters and guideline boosting; not an independent guideline database.",
+    "description": "Use this when a user needs guideline, recommendation, consensus, or systematic review papers for a biomedical research question; returns ranked candidate PMIDs with titles. Wraps search_literature with guideline/systematic-review filters and guideline boosting; not an independent guideline database.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
       "text": "Free-text research question to find guideline, recommendation, consensus, or systematic-review articles for.",
-      "page": "1-based page number for paging beyond `limit`.",
+      "page": "1-based PubTator3 result page (10 hits each). To continue, use `next_page`/`next_offset` from the previous response.",
+      "offset": "0-based start position inside `page`; set it from `next_offset`.",
       "year_min": "Earliest publication year, inclusive.",
       "year_max": "Latest publication year, inclusive.",
       "sections": "Restrict the text match to these article sections (lowercase).",
-      "limit": "Maximum hits to return on this page.",
+      "limit": "Max hits to return, at most the rest of `page`.",
       "entity_ids": "Restrict to articles mentioning these PubTator entity IDs (resolve them first with search_biomedical_entities).",
       "coverage": "'preflight' (default) or 'none' to skip source-coverage hints."
     },
@@ -6294,14 +6298,15 @@
   },
   {
     "name": "pubtator_search_literature",
-    "description": "Use this when a user needs PubMed literature search through PubTator3. Supports flat filters, section filters, and coverage='preflight'. If preflight_error_code is coverage_preflight_internal_error, retryable=false means continue with results or inspect diagnostics.",
+    "description": "Use this when a user needs PubMed biomedical literature search via PubTator3: returns ranked articles (PMID, title, journal, year, citation). Supports flat and section filters and coverage='preflight'. If preflight_error_code is coverage_preflight_internal_error, retryable=false: continue with results or inspect diagnostics.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
       "text": "Free-text PubMed/PubTator3 query: entity names, gene symbols, HGVS, or a natural-language topic. PubTator3 matches across title, abstract, and, for open-access articles, full text.",
-      "page": "1-based page number for paging beyond `limit`.",
+      "page": "1-based PubTator3 result page (10 hits each). To continue, use `next_page`/`next_offset` from the previous response.",
+      "offset": "0-based start position inside `page`; set it from `next_offset`.",
       "sort": "Sort order. Accepts 'date desc' (newest first), 'score desc' (relevance, default), or '_id desc'. Synonyms such as 'date' or 'relevance' are normalized; PubTator3 sorts descending only.",
       "filters": "Advanced PubTator3 filter as a JSON object string, e.g. '{\"journal\":[\"Nature\"]}'. Prefer the flat publication_types / year_min / year_max parameters; do not also set a JSON `type`/`year` key.",
       "publication_types": "Restrict to these PubMed publication types (case-sensitive, Title-Case), AND-combined with the query.",
@@ -6311,11 +6316,11 @@
       "response_mode": "Payload verbosity: 'compact' (default, LLM-friendly), 'standard', or 'full'.",
       "include_citations": "Citation rendering per hit: 'none' (default), 'nlm', 'bibtex', or 'both'.",
       "text_hl_format": "Match-highlight rendering: 'none', 'plain' (default), or 'annotated'.",
-      "limit": "Maximum hits to return on this page.",
+      "limit": "Max hits to return, at most the rest of `page`; `returned` and `has_more` report what was cut.",
       "entity_ids": "Restrict to articles mentioning these PubTator entity IDs (resolve them first with search_biomedical_entities), AND-combined with the query.",
       "guideline_boost": "Boost guideline / systematic-review / consensus articles in ranking.",
       "coverage": "'none' (default) or 'preflight' to attach source-coverage hints.",
-      "metadata": "Metadata enrichment per hit: 'none', 'basic' (default), 'with_abstract', or 'full'.",
+      "metadata": "Metadata enrichment per hit: 'none', 'basic' (default), 'with_abstract' (abstract preview, max 640 chars), or 'full'.",
       "include_meta": "Include the _meta orientation block (next_commands, provenance)."
     },
     "enums": {
@@ -6375,7 +6380,7 @@
   },
   {
     "name": "pubtator_suggest_corpus",
-    "description": "Use this when a user needs a compact, review-feeding PMID corpus for a research question. Returns candidate PMIDs, roles, coverage hints, metadata, and next commands.",
+    "description": "Use this when a user needs a compact, review-feeding PMID corpus for a research question: returns candidate PMIDs, roles, coverage hints, metadata, and next commands.",
     "tags": [
       "entity",
       "literature"
@@ -6391,7 +6396,7 @@
   },
   {
     "name": "pubtator_workflow_help",
-    "description": "Use this when a fresh context needs the canonical PubTator-Link research workflow.",
+    "description": "Use this when a fresh context needs the canonical PubTator-Link research workflow: returns ordered workflow steps with the tool to call at each.",
     "tags": [
       "entity",
       "literature",
@@ -6403,7 +6408,7 @@
   },
   {
     "name": "spliceai_get_server_capabilities",
-    "description": "Use this first in a cold session to learn the tools, parameters, score glossary, recommended workflows, error codes, and limitations. detail='lean' returns a trimmed doc (tool list + verdicts + error codes + capabilities_version) that omits per-parameter prose already in the tool schemas. Full ~4kB, lean ~1-2kB.",
+    "description": "Use this first in a cold session; returns the tools, parameters, score glossary, recommended workflows, error codes, and limitations. detail='lean' returns a trimmed doc (tool list + verdicts + error codes + capabilities_version) that omits per-parameter prose already in the tool schemas. Full ~4kB, lean ~1-2kB.",
     "tags": [
       "metadata",
       "prediction",
@@ -6422,7 +6427,7 @@
   },
   {
     "name": "spliceai_predict_pangolin",
-    "description": "ONE model only (Pangolin); use predict_splicing for BOTH models with an agreement verdict. Use this for the Pangolin splice gain/loss scores of a single variant. Pangolin is an independent splice model; agreement with SpliceAI strengthens a prediction, disagreement warrants caution. Use predict_splicing to get both models in one call. Returns ~1-3kB. Note: cold calls take 10-30s. Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
+    "description": "ONE model only (Pangolin); returns splice gain/loss scores (with positions) for one variant; use predict_splicing for BOTH models with an agreement verdict. Use this for the Pangolin splice gain/loss scores of a single variant. Pangolin is an independent splice model; agreement with SpliceAI strengthens a prediction, disagreement warrants caution. Use predict_splicing to get both models in one call. Returns ~1-3kB. Note: cold calls take 10-30s. Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
     "tags": [
       "pangolin",
       "prediction",
@@ -6469,7 +6474,7 @@
   },
   {
     "name": "spliceai_predict_spliceai",
-    "description": "ONE model only (SpliceAI); use predict_splicing for BOTH models with an agreement verdict. Use this for the SpliceAI delta scores (acceptor/donor gain/loss, each 0-1 with a position) of a single variant, optionally with the SpliceAI-10k consequence prediction (exon skipping / intron retention / frameshift). For a quick raw-vs-masked or single-model question; use predict_splicing to also get Pangolin. \u0394>=0.5 is high-confidence. Returns ~1-4kB (full/all larger). Note: cold calls take 10-30s. Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
+    "description": "ONE model only (SpliceAI); returns acceptor/donor gain/loss delta scores (0-1, with positions) and an optional SpliceAI-10k consequence; use predict_splicing for BOTH models with an agreement verdict. Use this for the SpliceAI delta scores (acceptor/donor gain/loss, each 0-1 with a position) of a single variant, optionally with the SpliceAI-10k consequence prediction (exon skipping / intron retention / frameshift). For a quick raw-vs-masked or single-model question; use predict_splicing to also get Pangolin. \u0394>=0.5 is high-confidence. Returns ~1-4kB (full/all larger). Note: cold calls take 10-30s. Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
     "tags": [
       "prediction",
       "spliceai",
@@ -6517,7 +6522,7 @@
   },
   {
     "name": "spliceai_predict_splicing",
-    "description": "BOTH models (SpliceAI + Pangolin) in one call -- the default \"what does this variant do to splicing?\" answer. Use this as the default one-call answer for \"what does this variant do to splicing?\". It resolves HGVS/rsIDs, runs SpliceAI and Pangolin (two independent models), includes the SpliceAI-10k consequence prediction, and reports whether the models agree. Read the top-level headline first. For a single model use predict_spliceai / predict_pangolin. Returns ~3-6kB. Note: cold calls take 15-40s (two model calls). Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
+    "description": "BOTH models (SpliceAI + Pangolin) in one call; returns a headline, per-model delta scores, the SpliceAI-10k consequence and an agreement verdict -- the default \"what does this variant do to splicing?\" answer. Use this as the default one-call answer for \"what does this variant do to splicing?\". It resolves HGVS/rsIDs, runs SpliceAI and Pangolin (two independent models), includes the SpliceAI-10k consequence prediction, and reports whether the models agree. Read the top-level headline first. For a single model use predict_spliceai / predict_pangolin. Returns ~3-6kB. Note: cold calls take 15-40s (two model calls). Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
     "tags": [
       "prediction",
       "splicing",
@@ -6607,7 +6612,7 @@
   },
   {
     "name": "spliceai_resolve_variant",
-    "description": "Use this when the caller's variant is HGVS, an rsID, or loosely formatted, and you need the canonical CHROM-POS-REF-ALT that the prediction tools require. Coordinate inputs are normalized locally; HGVS/rsIDs are resolved via Ensembl VEP, which also returns the most-severe consequence and gene symbol. Then call predict_splicing. Returns <1kB. Coordinate inputs are normalized; by default the REF base is also checked against the requested build (one Ensembl lookup) and a ref_warning + ref_validated:false is returned on mismatch (set check_ref=false to skip). HGVS/rsIDs are resolved and validated via Ensembl VEP.",
+    "description": "Use this when the caller's variant is HGVS, an rsID, or loosely formatted, and you need the canonical CHROM-POS-REF-ALT that the prediction tools require; returns variant_id plus, for HGVS/rsIDs, the gene_symbol and most-severe consequence. Coordinate inputs are normalized locally; HGVS/rsIDs are resolved via Ensembl VEP, which also returns the most-severe consequence and gene symbol. Then call predict_splicing. Returns <1kB. Coordinate inputs are normalized; by default the REF base is also checked against the requested build (one Ensembl lookup) and a ref_warning + ref_validated:false is returned on mismatch (set check_ref=false to skip). HGVS/rsIDs are resolved and validated via Ensembl VEP.",
     "tags": [
       "prediction",
       "resolve",
@@ -6630,7 +6635,7 @@
   },
   {
     "name": "spliceai_warmup",
-    "description": "Pre-warm the SpliceAI + Pangolin Cloud Run containers before a burst so the first real call does not eat the 10-40s cold start. Warms the (basic gene_set, chosen mask) path per model; pass mask='both' to warm raw and masked together. Cloud Run scales per-instance, so other param combos or concurrent calls may still cold-start and warmth decays after minutes idle. Returns per-(model,mask) elapsed_ms, coverage, and stay_warm_estimate_s. Returns <1kB.",
+    "description": "Pre-warm the SpliceAI + Pangolin Cloud Run containers before a burst so the first real call does not eat the 10-40s cold start; returns per-(model,mask) elapsed_ms, coverage, and stay_warm_estimate_s. Warms the (basic gene_set, chosen mask) path per model; pass mask='both' to warm raw and masked together. Cloud Run scales per-instance, so other param combos or concurrent calls may still cold-start and warmth decays after minutes idle. Returns <1kB.",
     "tags": [
       "ops",
       "prediction",
@@ -6655,7 +6660,7 @@
   },
   {
     "name": "stringdb_compute_functional_enrichment",
-    "description": "Perform functional enrichment analysis.",
+    "description": "Compute functional enrichment of a protein set; returns enriched GO, KEGG, Reactome and other\nSTRING terms (category, term, description, p_value, fdr), most significant first.",
     "tags": [
       "enrichment",
       "network",
@@ -6696,7 +6701,7 @@
   },
   {
     "name": "stringdb_compute_ppi_enrichment",
-    "description": "Perform protein-protein interaction enrichment analysis.",
+    "description": "Compute protein-protein interaction enrichment of a protein set; returns number_of_edges vs\nexpected_number_of_edges and the p_value that the set has more interactions than chance.",
     "tags": [
       "enrichment",
       "network",
@@ -6727,7 +6732,7 @@
   },
   {
     "name": "stringdb_get_interaction_partners",
-    "description": "Get interaction partners for proteins.\n\nRetrieves all interaction partners for the given proteins, not just\ninteractions between the input proteins. Useful for finding all\nproteins that interact with your proteins of interest.\n\nArgs:\n    request: Interaction partners request\n    client: StringDB HTTP client\n    logger: Logger instance\n\nReturns:\n    List of interaction partners\n\nRaises:\n    HTTPException: If the request fails",
+    "description": "Use this to list the top interaction partners (neighbourhood) of each protein, capped at limit per protein; returns preferredName_B, stringId_B and combined score per partner, plus total_count and truncated. Not a pair test: absence from a capped list is not evidence of no interaction; use search_protein_interactions for that.",
     "tags": [
       "network",
       "networks",
@@ -6864,7 +6869,7 @@
   },
   {
     "name": "stringdb_search_protein_interactions",
-    "description": "Get protein-protein interaction network.\n\nRetrieves the protein-protein interaction network for the given proteins.\nIf only one protein is provided and add_nodes is 0, additional nodes will\nbe automatically added to show the interaction neighborhood.\n\nArgs:\n    request: Network interaction request\n    service: StringDB service instance\n    logger: Logger instance\n\nReturns:\n    List of protein-protein interactions\n\nRaises:\n    HTTPException: If the request fails",
+    "description": "Use this when asking whether given proteins interact: returns STRING edges (with combined score) among the listed identifiers, e.g. a pair. Absent edge = no interaction at required_score. add_nodes > 0 also adds neighbour proteins.",
     "tags": [
       "network",
       "networks",
@@ -6999,7 +7004,7 @@
   },
   {
     "name": "uniprot_get_protein_features",
-    "description": "Return sequence features with begin/end coordinates (FALDO) for an entry: domains, regions, transmembrane segments, binding/active sites, PTMs, signal peptides, secondary structure, mutagenesis sites, and more. feature_types=['domain'] returns positional domain extents; each returned `type` round-trips to the filter vocabulary. Filter keys come from capabilities (feature_types); a zero-match filter echoes the accepted keys as a filter_hint. Secondary-structure features (helix/strand/turn) are hidden by default and disclosed under excluded_secondary_structure; set include_secondary_structure=true (or name them in feature_types) to return them. DNA-binding extents are not available from UniProt RDF, so dna_binding is deliberately not a filter. response_mode=compact/minimal drops repeated fenced descriptions; standard (default) preserves existing full records. Signature: get_protein_features(accession, feature_types=, limit=, include_secondary_structure=, response_mode=).",
+    "description": "Return sequence features with begin/end coordinates (FALDO) for an entry: domains, regions, transmembrane segments, binding/active sites, PTMs, signal peptides, secondary structure, mutagenesis sites, and more. feature_types=['domain'] returns curated positional domain extents; signature-database domains/families (InterPro/Pfam) are cross-references, pointed to by signature_domain_hint when no domain feature exists. Each returned `type` round-trips to the filter vocabulary. Filter keys come from capabilities (feature_types); a zero-match filter echoes the accepted keys as a filter_hint. Secondary-structure features (helix/strand/turn) are hidden by default and disclosed under excluded_secondary_structure; set include_secondary_structure=true (or name them in feature_types) to return them. DNA-binding extents are not available from UniProt RDF, so dna_binding is deliberately not a filter. response_mode=compact/minimal drops repeated fenced descriptions; standard (default) preserves existing full records. Signature: get_protein_features(accession, feature_types=, limit=, include_secondary_structure=, response_mode=).",
     "tags": [
       "features",
       "function",
@@ -7191,7 +7196,7 @@
   },
   {
     "name": "uniprot_search_sparql_query",
-    "description": "Execute a bounded SPARQL SELECT/ASK query against the UniProt endpoint (bounded SELECT / ASK only). SERVICE federation and graph-returning CONSTRUCT/DESCRIBE forms are rejected. SELECT results come back as columns+rows JSON; ASK as a boolean. A LIMIT is auto-injected into unbounded SELECTs (see `_meta`/`truncated`). This is the escape hatch for anything the typed tools do not cover -- seed queries from search_example_queries. Use uniprot://prefixes for the standard PREFIX block. Broad, unanchored queries can take 10-60 s; bound lookups (anchored on an accession/gene/taxon) return in <2 s. Signature: search_sparql_query(query, result_format=, limit=, timeout_seconds=).",
+    "description": "Run a bounded SPARQL SELECT/ASK query against the UniProt endpoint; returns SELECT results as columns+rows JSON, ASK as a boolean. SERVICE federation and graph-returning CONSTRUCT/DESCRIBE forms are rejected. A LIMIT is auto-injected into unbounded SELECTs (see `_meta`/`truncated`). This is the escape hatch for anything the typed tools do not cover -- seed queries from search_example_queries. Use uniprot://prefixes for the standard PREFIX block. Broad, unanchored queries can take 10-60 s; bound lookups (anchored on an accession/gene/taxon) return in <2 s. Signature: search_sparql_query(query, result_format=, limit=, timeout_seconds=).",
     "tags": [
       "function",
       "power",
@@ -7249,7 +7254,7 @@
   },
   {
     "name": "vep_annotate_variants_batch",
-    "description": "Use this to annotate many variants (cap 200) in one call instead of looping annotate_variant. Returns a results list (each shaped to response_mode and tagged with its original input), a per-input errors list (parse/not-found failures that did not fail the batch), and a summary count. Identical canonical variants are de-duplicated into a single VEP request. Each result's standard-tier transcript list is filtered by default; per-result truncation is reported in that result's transcripts_summary.",
+    "description": "Use this to annotate many variants (cap 200) in one call instead of looping annotate_variant. Returns a results list (each shaped to response_mode and tagged with its original input; a multi-allelic input such as rs6025 yields one result per ALT allele), a per-input errors list (parse/not-found failures that did not fail the batch), and a summary (requested/annotated/failed count inputs; result_rows counts result rows). Inputs still unresolved at the batch deadline (default 48 s) come back as per-input upstream_timeout errors next to the finished results; retry those alone. Each result's standard-tier transcript list is filtered by default; per-result truncation is reported in that result's transcripts_summary.",
     "tags": [
       "annotate",
       "annotation",
@@ -7258,7 +7263,7 @@
       "variant"
     ],
     "params": {
-      "variants": "Up to 200 variants to annotate in one call. Internally chunked and de-duplicated; one bad variant never fails the batch (its error is collected per-input).",
+      "variants": "Up to 200 variants to annotate in one call. Repeated inputs are annotated once; one bad or slow variant never fails the batch (its error is collected per-input).",
       "assembly": "Reference build for annotation. GRCh38 default.",
       "response_mode": "Verbosity tier applied to every result (default compact).",
       "transcripts": "standard-tier only: 'auto' (default) filters/caps each result's transcripts; 'all' returns every transcript. Each result carries its own transcripts_summary when truncated.",
@@ -7353,7 +7358,7 @@
   },
   {
     "name": "vep_resolve_variant",
-    "description": "Use this when the caller's variant is an rsID, HGVS, SPDI, or loosely formatted, and you need the canonical CHR-POS-REF-ALT plus gene_symbol and most_severe_consequence that the annotation tools build on. Returns a variants[] list (one entry per ALT allele; a multi-allelic input also carries a multiple_alts warning) plus a top-level warnings[]. Coordinates are normalized locally; rsIDs/HGVS are recoded via Ensembl. Cheap (<1kB). Then call annotate_variant for the full VEP annotation.",
+    "description": "Use this when the caller's variant is an rsID, HGVS, SPDI, or loosely formatted: returns a variants[] list (one entry per ALT allele) with the canonical CHR-POS-REF-ALT variant_id, gene_symbol and most_severe_consequence that the annotation tools build on, plus a top-level warnings[] (a multi-allelic input carries a multiple_alts warning). Coordinates are normalized locally; rsIDs/HGVS are recoded via Ensembl. Cheap (<1kB). Then call annotate_variant for the full VEP annotation.",
     "tags": [
       "annotation",
       "consequence",
