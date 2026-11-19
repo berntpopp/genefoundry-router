@@ -132,7 +132,7 @@ def build_server(
         # fleet's self-healing hints resolve through call_tool. Registered innermost so
         # hint rewrites are cached (issue #230). Enabled backends only.
         namespaces = {b.namespace for b in registry if b.enabled}
-        server.add_middleware(NamespaceHintMiddleware(namespaces))
+        server.add_middleware(NamespaceHintMiddleware(namespaces, resolve_entrypoints(registry)))
     for backend in registry:
         if not backend.enabled:
             log.info("backend_skipped", backend=backend.name, reason="disabled")

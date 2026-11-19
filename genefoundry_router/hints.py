@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Collection
 from typing import Any
 
 import structlog
@@ -34,6 +35,14 @@ _SYNTHETIC = {"search_tools", "call_tool"}
 # at free-text fields.
 TOOL_REF_KEYS = {"tool", "fallback_tool", "tool_name", "next_tool"}
 _BARE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+# Prose fields whose text names sibling tools ("Try search_genes.") — issue #299.
+PROSE_KEYS = {"message", "hint"}
+# A bare tool name in prose starts with a Tool-Naming v1.1 verb (mirror of cli.py's tiers).
+# ponytail: verb-shaped, not catalog-checked; a verb_noun word that is no tool gets prefixed too.
+_PROSE_TOOL_RE = re.compile(
+    r"\b(?:get|search|list|resolve|find|compare|compute|map|predict|annotate|recode|liftover"
+    r"|analyze|score|submit|export|generate|download)_[a-z0-9_]+\b"
+)
 
 
 def _is_rewritable(value: str, namespaces: set[str]) -> bool:
@@ -43,10 +52,21 @@ def _is_rewritable(value: str, namespaces: set[str]) -> bool:
     return value.split("_", 1)[0] not in namespaces  # already-namespaced -> leave as-is
 
 
-def rewrite_tool_refs(obj: Any, ns: str, namespaces: set[str]) -> int:
+def _rewrite_prose(text: str, ns: str, pinned: Collection[str]) -> str:
+    """Name each bare sibling tool in prose the way it must be called (#299)."""
+
+    def ref(match: re.Match[str]) -> str:
+        name = f"{ns}_{match.group(0)}"
+        return name if name in pinned else f'call_tool(name="{name}")'
+
+    return _PROSE_TOOL_RE.sub(ref, text)
+
+
+def rewrite_tool_refs(obj: Any, ns: str, namespaces: set[str], pinned: Collection[str] = ()) -> int:
     """Prefix bare tool-reference values with ``<ns>_`` in place; return the rewrite count.
 
-    Idempotent: a value already prefixed with any known namespace is left untouched.
+    Prose fields (``PROSE_KEYS``) name the call form for tools not in ``pinned``. Idempotent:
+    a value already prefixed with any known namespace is left untouched.
     """
     count = 0
     if isinstance(obj, dict):
@@ -60,15 +80,20 @@ def rewrite_tool_refs(obj: Any, ns: str, namespaces: set[str]) -> int:
             ):
                 obj[key] = f"{ns}_{value}"
                 count += 1
+            elif key in PROSE_KEYS and isinstance(value, str):
+                new = _rewrite_prose(value, ns, pinned)
+                if new != value:
+                    obj[key] = new
+                    count += 1
             else:
-                count += rewrite_tool_refs(value, ns, namespaces)
+                count += rewrite_tool_refs(value, ns, namespaces, pinned)
     elif isinstance(obj, list):
         for item in obj:
-            count += rewrite_tool_refs(item, ns, namespaces)
+            count += rewrite_tool_refs(item, ns, namespaces, pinned)
     return count
 
 
-def _rewrite_block(block: Any, ns: str, namespaces: set[str]) -> Any:
+def _rewrite_block(block: Any, ns: str, namespaces: set[str], pinned: Collection[str] = ()) -> Any:
     """Rewrite tool refs inside a JSON text content block (the channel clients display)."""
     text = getattr(block, "text", None)
     if not isinstance(text, str):
@@ -77,16 +102,18 @@ def _rewrite_block(block: Any, ns: str, namespaces: set[str]) -> Any:
         parsed = json.loads(text)
     except ValueError, TypeError:
         return block  # plain prose — never regex-rewrite free text
-    if rewrite_tool_refs(parsed, ns, namespaces):
+    if rewrite_tool_refs(parsed, ns, namespaces, pinned):
         return block.model_copy(update={"text": json.dumps(parsed)})
     return block
 
 
-def _rewrite_result(result: ToolResult, ns: str, namespaces: set[str]) -> ToolResult:
+def _rewrite_result(
+    result: ToolResult, ns: str, namespaces: set[str], pinned: Collection[str]
+) -> ToolResult:
     total = 0
     if isinstance(result.structured_content, dict):
-        total += rewrite_tool_refs(result.structured_content, ns, namespaces)
-    new_content = [_rewrite_block(b, ns, namespaces) for b in result.content]
+        total += rewrite_tool_refs(result.structured_content, ns, namespaces, pinned)
+    new_content = [_rewrite_block(b, ns, namespaces, pinned) for b in result.content]
     if total:
         log.debug("hints_rewritten", namespace=ns, count=total)
     return result.model_copy(update={"content": new_content})
@@ -95,8 +122,9 @@ def _rewrite_result(result: ToolResult, ns: str, namespaces: set[str]) -> ToolRe
 class NamespaceHintMiddleware(Middleware):
     """Rewrite bare tool references in tool results to their namespaced form."""
 
-    def __init__(self, namespaces: set[str]) -> None:
+    def __init__(self, namespaces: set[str], pinned: Collection[str] = ()) -> None:
         self._namespaces = set(namespaces)
+        self._pinned = frozenset(pinned)
 
     async def on_call_tool(
         self,
@@ -113,4 +141,4 @@ class NamespaceHintMiddleware(Middleware):
         ns = name.split("_", 1)[0]
         if ns not in self._namespaces:
             return result
-        return _rewrite_result(result, ns, self._namespaces)
+        return _rewrite_result(result, ns, self._namespaces, self._pinned)

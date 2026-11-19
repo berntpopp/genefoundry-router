@@ -2,6 +2,21 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.12.3] - 2026-11-19
+
+### Fixed
+
+- **Unlisted tools called by name failed client-side (#299):** clients that validate calls
+  against `tools/list` reject a tool name the router does not list. The server instructions
+  no longer claim a namespaced name is "directly callable": unpinned tools are invoked only
+  through `call_tool`; pinned entry points stay directly callable.
+- Each compact `search_tools` hit now carries a ready `call` example —
+  `{"tool": "call_tool", "arguments": {"name": "<ns>_<tool>", "arguments": {}}}`, or the
+  pinned name directly.
+- Backend prose hints (`message`, `hint`) that name a bare sibling tool ("Try search_genes.")
+  are rewritten to `call_tool(name="<ns>_search_genes")`, or to the bare namespaced name when
+  that tool is pinned. Structured tool-reference fields keep the namespaced name.
+
 ## [0.12.2] - 2026-11-18
 
 ### Fixed
