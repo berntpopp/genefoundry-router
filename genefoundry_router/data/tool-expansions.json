@@ -727,6 +727,11 @@
     "curation summary",
     "expert panel curation",
     "MONDO"
+   ],
+   "manual_keywords": [
+    "is this gene really linked to the disease",
+    "Gen-Krankheits-Validität",
+    "validité gène-maladie"
    ]
   },
   "clingen_get_server_capabilities": {
@@ -1136,6 +1141,13 @@
     "dosage map",
     "DECIPHER",
     "ClinGen dosage"
+   ],
+   "manual_keywords": [
+    "one copy missing",
+    "extra copy",
+    "Haploinsuffizienz",
+    "haploinsuffisance",
+    "haploinsuficiencia"
    ]
   },
   "clingen_search_genes": {
@@ -1599,6 +1611,11 @@
     "variant annotation",
     "multilink annotation",
     "summary annotation"
+   ],
+   "manual_keywords": [
+    "dosing guideline",
+    "Dosierungsempfehlung",
+    "recommandation posologique"
    ]
   },
   "clinpgx_get_server_capabilities": {
@@ -1903,6 +1920,18 @@
     "pharmacokinetics",
     "metabolizer phenotype",
     "toxicogenomics"
+   ],
+   "manual_keywords": [
+    "drug response",
+    "which dose",
+    "medication and genes",
+    "Arzneimittel",
+    "Dosierung",
+    "médicament",
+    "posologie",
+    "medicamento",
+    "Pharmakogenetik",
+    "pharmacogénétique"
    ]
   },
   "clinvar_get_gene_clinvar_summary": {
@@ -1957,6 +1986,13 @@
     "associated traits",
     "ClinVar overview",
     "aggregate mutations"
+   ],
+   "manual_keywords": [
+    "review stars",
+    "Übersicht",
+    "synthèse",
+    "étoiles",
+    "resumen"
    ]
   },
   "clinvar_get_server_capabilities": {
@@ -2051,6 +2087,16 @@
     "likely pathogenic",
     "gold stars",
     "clinical interpretation"
+   ],
+   "manual_keywords": [
+    "is this variant harmful",
+    "disease-causing",
+    "pathogen",
+    "krankheitsverursachend",
+    "pathogène",
+    "patógena",
+    "klinische Bedeutung",
+    "signification clinique"
    ]
   },
   "clinvar_get_variants": {
@@ -2155,6 +2201,11 @@
     "OMIM alleles",
     "VUS list",
     "mutation catalog"
+   ],
+   "manual_keywords": [
+    "all reported variants in a gene",
+    "pathogene Varianten im Gen",
+    "variants pathogènes du gène"
    ]
   },
   "clinvar_get_variants_by_pmid": {
@@ -2253,6 +2304,13 @@
     "HGVS query",
     "free-text search",
     "variation name"
+   ],
+   "manual_keywords": [
+    "harmful variants",
+    "disease-causing variants",
+    "pathogene Varianten",
+    "variants pathogènes",
+    "variantes patógenas"
    ]
   },
   "gencc_find_curations": {
@@ -2306,6 +2364,13 @@
     "clingen validity",
     "assertion database",
     "evidence criteria"
+   ],
+   "manual_keywords": [
+    "gene disease link",
+    "Gen-Krankheit",
+    "gène-maladie",
+    "Erbgang",
+    "mode de transmission"
    ]
   },
   "gencc_get_disease_curations": {
@@ -2359,6 +2424,12 @@
     "disputed",
     "conflict flag",
     "curated disease genes"
+   ],
+   "manual_keywords": [
+    "which genes cause this disease",
+    "Krankheitsgene",
+    "gènes de la maladie",
+    "genes de la enfermedad"
    ]
   },
   "gencc_get_diseases_curations": {
@@ -2514,6 +2585,12 @@
     "strong evidence",
     "curation conflict",
     "disease associations"
+   ],
+   "manual_keywords": [
+    "which diseases does this gene cause",
+    "Gen-Krankheit",
+    "gène-maladie",
+    "gen-enfermedad"
    ]
   },
   "gencc_get_gene_disease_assertion": {
@@ -3128,6 +3205,12 @@
     "expert consensus",
     "disease overview",
     "Bookshelf chapter"
+   ],
+   "manual_keywords": [
+    "disease summary",
+    "Zusammenfassung",
+    "résumé",
+    "resumen"
    ]
   },
   "genereviews_get_license": {
@@ -3437,6 +3520,13 @@
     "literature curation",
     "monogenic disorder review",
     "gene disease entry"
+   ],
+   "manual_keywords": [
+    "disease overview",
+    "patient guide",
+    "Krankheitsübersicht",
+    "revue génétique",
+    "fiche maladie"
    ]
   },
   "genereviews_search_passages": {
@@ -3486,6 +3576,18 @@
     "RRF reranking",
     "phenotype correlation",
     "Bookshelf passage search"
+   ],
+   "manual_keywords": [
+    "management",
+    "follow-up",
+    "treatment",
+    "surveillance",
+    "Behandlung",
+    "Therapie",
+    "prise en charge",
+    "traitement",
+    "tratamiento",
+    "diagnostic criteria"
    ]
   },
   "genereviews_search_passages_batch": {
@@ -3642,6 +3744,16 @@
     "heterozygous frequency",
     "unaffected carrier",
     "population prevalence"
+   ],
+   "manual_keywords": [
+    "how many people carry",
+    "carrier chance",
+    "healthy carriers",
+    "Trägerfrequenz",
+    "Überträger",
+    "fréquence des porteurs",
+    "porteurs hétérozygotes",
+    "frecuencia de portadores"
    ]
   },
   "gnomad_compute_gene_carrier_frequency": {
@@ -3695,6 +3807,15 @@
     "recessive burden",
     "popmax carrier",
     "pathogenic variant aggregation"
+   ],
+   "manual_keywords": [
+    "how many people carry",
+    "healthy carriers",
+    "recessive disease carriers",
+    "Trägerfrequenz",
+    "Überträger",
+    "fréquence des porteurs",
+    "frecuencia de portadores"
    ]
   },
   "gnomad_compute_variant_liftover": {
@@ -3892,6 +4013,13 @@
     "coverage bins",
     "low coverage region",
     "sequencing blind spots"
+   ],
+   "manual_keywords": [
+    "sequencing depth",
+    "well covered",
+    "Abdeckung",
+    "Sequenziertiefe",
+    "couverture"
    ]
   },
   "gnomad_get_diagnostics": {
@@ -3992,6 +4120,14 @@
     "mis_z",
     "syn_z",
     "transcript structure"
+   ],
+   "manual_keywords": [
+    "can people live with one broken copy",
+    "loss-of-function intolerance",
+    "Funktionsverlust",
+    "Intoleranz",
+    "contrainte génique",
+    "intolérance"
    ]
   },
   "gnomad_get_gene_summary": {
@@ -4094,6 +4230,13 @@
     "gnomad_r4",
     "exome variants",
     "genome variants"
+   ],
+   "manual_keywords": [
+    "all known variants in a gene",
+    "normal variation",
+    "Varianten im Gen",
+    "variantes du gène",
+    "variantes del gen"
    ]
   },
   "gnomad_get_mitochondrial_variant": {
@@ -4145,6 +4288,12 @@
     "haplogroup",
     "m.3243A>G",
     "mitochondrial genome"
+   ],
+   "manual_keywords": [
+    "mitochondrial DNA",
+    "mtDNA",
+    "Heteroplasmie",
+    "hétéroplasmie"
    ]
   },
   "gnomad_get_region": {
@@ -4307,6 +4456,13 @@
     "inversion length",
     "genotype quality histogram",
     "SV allele frequency"
+   ],
+   "manual_keywords": [
+    "large deletion",
+    "large duplication",
+    "strukturelle Variante",
+    "variant structurel",
+    "variante estructural"
    ]
   },
   "gnomad_get_transcript_details": {
@@ -4410,6 +4566,17 @@
     "genome frequencies",
     "subcohorts",
     "gnomad_r4"
+   ],
+   "manual_keywords": [
+    "what does this variant do",
+    "protein effect",
+    "in silico predictors",
+    "Variante",
+    "Häufigkeit",
+    "Allelfrequenz",
+    "variante",
+    "effet sur la protéine",
+    "efecto en la proteína"
    ]
   },
   "gnomad_get_variant_frequencies": {
@@ -4459,6 +4626,20 @@
     "allele count",
     "Whiffin",
     "ancestry breakdown"
+   ],
+   "manual_keywords": [
+    "how common",
+    "how rare",
+    "healthy people",
+    "general population",
+    "Allelfrequenz",
+    "Häufigkeit",
+    "häufig",
+    "Bevölkerung",
+    "Allgemeinbevölkerung",
+    "fréquence allélique",
+    "population générale",
+    "frecuencia alélica"
    ]
   },
   "gnomad_resolve_variant_id": {
@@ -4614,6 +4795,12 @@
     "SV frequency",
     "genomic rearrangement",
     "microdeletion"
+   ],
+   "manual_keywords": [
+    "large deletions in a region",
+    "strukturelle Varianten",
+    "variants structuraux",
+    "variantes estructurales"
    ]
   },
   "gnomad_search_variants": {
@@ -5187,6 +5374,13 @@
     "gene synonyms",
     "HUGO",
     "gene metadata"
+   ],
+   "manual_keywords": [
+    "official gene name",
+    "gene synonyms",
+    "Gensymbol",
+    "symbole du gène",
+    "synonymes"
    ]
   },
   "hgnc_get_gene_cross_references": {
@@ -5492,6 +5686,15 @@
     "official nomenclature",
     "gene symbol checker",
     "HUGO"
+   ],
+   "manual_keywords": [
+    "official gene name",
+    "old gene name",
+    "Gensymbol",
+    "symbole du gène",
+    "símbolo del gen",
+    "veraltet",
+    "obsolète"
    ]
   },
   "hgnc_resolve_symbols_batch": {
@@ -5546,6 +5749,12 @@
     "bulk standardization",
     "identifier reconciliation",
     "previous symbols"
+   ],
+   "manual_keywords": [
+    "update a gene list",
+    "outdated gene names",
+    "Genliste",
+    "liste de gènes"
    ]
   },
   "hgnc_search_genes": {
@@ -5597,6 +5806,12 @@
     "partial gene name",
     "approved name",
     "nomenclature search"
+   ],
+   "manual_keywords": [
+    "find a gene",
+    "Gen suchen",
+    "rechercher un gène",
+    "buscar gen"
    ]
   },
   "hpo_get_diagnostics": {
@@ -6374,6 +6589,16 @@
     "UMLS CUI",
     "SNOMED CT mapping",
     "phenotype entity recognition"
+   ],
+   "manual_keywords": [
+    "symptom",
+    "clinical feature",
+    "Symptom",
+    "Merkmal",
+    "symptôme",
+    "síntoma",
+    "Phänotyp",
+    "phénotype"
    ]
   },
   "hpo_resolve_xref": {
@@ -6480,6 +6705,15 @@
     "SNOMED cross reference",
     "text query",
     "phenotypic feature"
+   ],
+   "manual_keywords": [
+    "symptom",
+    "clinical sign",
+    "Symptom",
+    "symptôme",
+    "síntoma",
+    "phénotype",
+    "fenotipo"
    ]
   },
   "litvar_get_server_capabilities": {
@@ -6580,6 +6814,15 @@
     "text mining",
     "rsID",
     "HGVS"
+   ],
+   "manual_keywords": [
+    "papers about this variant",
+    "case reports",
+    "Publikationen",
+    "Literatur",
+    "articles scientifiques",
+    "artículos científicos",
+    "publicaciones"
    ]
   },
   "litvar_get_variant_summary": {
@@ -7762,6 +8005,13 @@
     "pathogenicity landscape",
     "Ensembl transcript",
     "intolerance landscape"
+   ],
+   "manual_keywords": [
+    "is this protein position tolerant",
+    "Toleranz",
+    "tolérance",
+    "faux-sens",
+    "Missense"
    ]
   },
   "metadome_get_protein_domains": {
@@ -7917,6 +8167,13 @@
     "gnomAD missense depletion",
     "transcript tolerance profile",
     "amino acid constraint"
+   ],
+   "manual_keywords": [
+    "which parts of the protein tolerate changes",
+    "Toleranz",
+    "tolérance",
+    "tolerancia",
+    "missense tolerance"
    ]
   },
   "metadome_get_variant_counts": {
@@ -8489,6 +8746,15 @@
     "null allele phenotype",
     "mouse KO traits",
     "phenotypic spectrum"
+   ],
+   "manual_keywords": [
+    "mouse model",
+    "knockout mouse",
+    "Mausmodell",
+    "Maus",
+    "souris",
+    "modèle murin",
+    "ratón"
    ]
   },
   "mgi_get_mp_term": {
@@ -8742,6 +9008,12 @@
     "MGI search",
     "gene lookup",
     "lncRNA marker"
+   ],
+   "manual_keywords": [
+    "mouse gene",
+    "Mausgen",
+    "gène de souris",
+    "gen de ratón"
    ]
   },
   "mgi_search_phenotype_terms": {
@@ -8899,6 +9171,13 @@
     "disease card",
     "exact_synonym",
     "germline basis"
+   ],
+   "manual_keywords": [
+    "disease definition",
+    "Krankheit",
+    "maladie",
+    "enfermedad",
+    "synonymes"
    ]
   },
   "mondo_get_disease_ancestors": {
@@ -9321,6 +9600,14 @@
     "disease entity linking",
     "monogenic disease identifier",
     "CURIE resolution"
+   ],
+   "manual_keywords": [
+    "disease name",
+    "condition",
+    "Erkrankung",
+    "Krankheit",
+    "maladie",
+    "enfermedad"
    ]
   },
   "mondo_resolve_disease_batch": {
@@ -9481,6 +9768,13 @@
     "CURIE query",
     "Mondo lookup",
     "disease index"
+   ],
+   "manual_keywords": [
+    "disease name",
+    "Krankheit",
+    "maladie",
+    "enfermedad",
+    "syndrome"
    ]
   },
   "orphanet_find_diseases_by_gene": {
@@ -9999,6 +10293,12 @@
     "germline genetics",
     "ORPHAcode gene mapping",
     "causal locus"
+   ],
+   "manual_keywords": [
+    "genes behind a rare disease",
+    "seltene Erkrankung",
+    "maladie rare",
+    "enfermedad rara"
    ]
   },
   "orphanet_get_disease_natural_history": {
@@ -10467,6 +10767,12 @@
     "canonical name",
     "obsolete diseases",
     "RD-Connect"
+   ],
+   "manual_keywords": [
+    "rare disease",
+    "seltene Erkrankung",
+    "maladie rare",
+    "enfermedad rara"
    ]
   },
   "panelapp_compare_panels": {
@@ -11247,6 +11553,12 @@
     "backward citations",
     "PubMed neighbor",
     "related papers"
+   ],
+   "manual_keywords": [
+    "similar papers",
+    "ähnliche Artikel",
+    "articles similaires",
+    "artículos similares"
    ]
   },
   "pubtator_find_related_evidence_candidates": {
@@ -11456,6 +11768,12 @@
     "literature indexing",
     "PubTator MeSH",
     "MEDLINE headings"
+   ],
+   "manual_keywords": [
+    "MeSH terms",
+    "Schlagwörter",
+    "termes MeSH",
+    "términos MeSH"
    ]
   },
   "pubtator_get_neighboring_review_passages": {
@@ -12680,6 +12998,15 @@
     "bibliographic search",
     "entity-aware search",
     "MeSH text match"
+   ],
+   "manual_keywords": [
+    "papers",
+    "research articles",
+    "Literatur",
+    "Fachartikel",
+    "articles scientifiques",
+    "littérature",
+    "artículos científicos"
    ]
   },
   "pubtator_suggest_corpus": {
@@ -12889,6 +13216,12 @@
     "intron retention",
     "MANE select splicing",
     "tissue-agnostic splicing"
+   ],
+   "manual_keywords": [
+    "splicing effect",
+    "Spleißen",
+    "épissage",
+    "empalme"
    ]
   },
   "spliceai_predict_spliceai": {
@@ -12938,6 +13271,12 @@
     "SpliceAI-10k",
     "cryptic splice",
     "splice disruption"
+   ],
+   "manual_keywords": [
+    "splicing effect",
+    "Spleißen",
+    "épissage",
+    "empalme"
    ]
   },
   "spliceai_predict_splicing": {
@@ -12989,6 +13328,13 @@
     "consensus prediction",
     "deep learning splicing",
     "VUS reclassification"
+   ],
+   "manual_keywords": [
+    "does this variant affect splicing",
+    "Spleißen",
+    "Spleißvorhersage",
+    "épissage",
+    "empalme"
    ]
   },
   "spliceai_predict_splicing_batch": {
@@ -13199,6 +13545,12 @@
     "adjusted p-value",
     "pathway enrichment",
     "functional profiling"
+   ],
+   "manual_keywords": [
+    "what do these genes have in common",
+    "Anreicherung",
+    "enrichissement",
+    "enriquecimiento"
    ]
   },
   "stringdb_compute_ppi_enrichment": {
@@ -13354,6 +13706,13 @@
     "subnetwork",
     "taxon 9606",
     "node degrees"
+   ],
+   "manual_keywords": [
+    "what does this protein work with",
+    "binding partners",
+    "Interaktionspartner",
+    "partenaires d'interaction",
+    "socios de interacción"
    ]
   },
   "stringdb_get_network_image": {
@@ -13665,6 +14024,13 @@
     "taxon 9606",
     "STRING score",
     "neighbor expansion"
+   ],
+   "manual_keywords": [
+    "protein network",
+    "Proteinnetzwerk",
+    "Protein-Interaktion",
+    "réseau protéique",
+    "red de proteínas"
    ]
   },
   "uniprot_find_proteins": {
@@ -14013,6 +14379,12 @@
     "active site",
     "binding site",
     "disulfide bond"
+   ],
+   "manual_keywords": [
+    "protein domains",
+    "Proteindomänen",
+    "domaines protéiques",
+    "dominios proteicos"
    ]
   },
   "uniprot_get_protein_go_terms": {
@@ -14523,6 +14895,13 @@
     "CADD",
     "high-throughput VEP",
     "variant effect predictor batch"
+   ],
+   "manual_keywords": [
+    "many variants at once",
+    "variant list",
+    "Konsequenz",
+    "conséquence",
+    "consecuencia"
    ]
   },
   "vep_check_upstream_health": {
@@ -14782,6 +15161,11 @@
     "CHR-POS-REF-ALT",
     "allele resolution",
     "GRCh38 normalization"
+   ],
+   "manual_keywords": [
+    "which gene is this variant in",
+    "Variante",
+    "variante"
    ]
   }
  }

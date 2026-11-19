@@ -50,7 +50,7 @@ DEFAULT_CACHE = ROOT / ".cache" / "tool-expansions"
 DEFAULT_MODELS = ("qwen/qwen3.7-plus", "google/gemini-3.8-flash")
 # Some reasoning models refuse to run with reasoning disabled.
 REASONING = {"google/gemini-3.8-flash": {"effort": "low"}}
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2"
 
 
 def _first_line(text: str | None) -> str:
@@ -80,7 +80,7 @@ Other tools from the same backend (write queries that fit the TARGET better than
 
 Return ONLY JSON: {{"queries": [...10 strings...], "keywords": [...10-15 strings...]}}
 queries: 10 diverse, realistic requests: 2-3 from a clinician/patient in lay wording, 3 from a bioinformatician using jargon and abbreviations, 3 concrete requests naming example entities (real gene symbols, variants like 17-43045712-G-A or NM_000059.4:c.68_69del, rsIDs, HPO/MONDO IDs, diseases, tissues), 1 in German or French. Vary length and phrasing; do not copy the tool name.
-keywords: synonyms, abbreviations, alternative database/field names and related terms a user might search with that are NOT already obvious from the name (e.g. "AF", "MAF", "allele freq", "popmax")."""
+keywords: synonyms, abbreviations, alternative database/field names and related terms a user might search with that are NOT already obvious from the name (e.g. "AF", "MAF", "allele freq", "popmax"); include 2-3 plain-language (lay) terms and the German, French and Spanish words for the tool's core concept."""
 
 
 def _generate(
