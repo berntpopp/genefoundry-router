@@ -26,16 +26,36 @@ which let a terse canonical tool lose to verbose tools that merely repeat a keyw
 measured in every mode; invalid values fall back to the server default). It filters only the
 listing: search, `call_tool`, authorization and rate limits are unchanged.
 
-| Mode | Listed | Listing (~tokens, strict, fleet baseline) |
+| Mode | Listed | Listing (~tokens, standard / strict schemas, fleet baseline) |
 |---|---|---|
-| `default` | `search_tools`, `call_tool` + every `entrypoints:` tool (30) | ~17.1k |
-| `minimal` | the meta-tools + `GF_PINNED_MINIMAL` (6: gene, variant, ClinVar, ClinGen, disease and phenotype search) | ~3.2k |
-| `none` | `search_tools`, `call_tool` | ~0.8k |
+| `default` | `search_tools`, `call_tool` + every `entrypoints:` tool (29) | ~16.3k / ~17.1k |
+| `minimal` | the meta-tools + `GF_PINNED_MINIMAL` (6: gene, variant, ClinVar, ClinGen, disease and phenotype search) | ~3.2k / ~3.4k |
+| `none` | `search_tools`, `call_tool` | ~0.8k / ~0.8k |
 
 The server `instructions` follow `GF_PINNED_MODE` (the header cannot change the
 `initialize` result). Where a backend has both an exact resolver and a ranked text search,
 the search is pinned: it returns ranked candidates with IDs, so an exact name still comes
 first, and a near miss is a candidate list instead of a `not_found`.
+
+### Schema mode
+
+By default `tools/list` advertises each backend's **standard** `inputSchema` (plain JSON
+Schema, as MCP specifies): only truly required parameters are in `required`, and
+`call_tool.arguments` is an object (`{"name": "…", "arguments": {…}}`). Clients that validate
+a model's arguments against the listed schema (Inspect AI, the python `mcp` client, most
+agent frameworks) need this form.
+
+OpenAI strict mode is **opt-in**: `GF_SCHEMA_MODE=strict` for the deployment, or the
+`X-GF-Schema-Mode: strict` header per request (invalid values fall back to the server
+default). The strict listing marks every property required + nullable, sets
+`additionalProperties: false`, and carries open maps (including `call_tool.arguments`) as
+JSON-encoded strings, because a strict client cannot pass an open map (#293, #294). Each
+compact hit's `call` example follows the request's mode. `search_tools(detail="strict")`
+returns strict schemas in either mode.
+
+Calls are the same in both modes: `call_tool` accepts `arguments` as an object or a
+JSON-encoded object string, and the `null` sentinels a strict client sends for unset
+optional fields are dropped before dispatch.
 
 Everything else is reached ONLY via `search_tools` → `call_tool`: clients that check names
 against `tools/list` reject an unlisted name called directly (#299). Each compact hit carries
