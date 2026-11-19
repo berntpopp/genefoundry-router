@@ -43,7 +43,7 @@ pinned host key. The matching server-side key must be restricted to the root-own
 `scripts/readonly_drift_probe.py` installation as its forced command, reject a nonempty
 `SSH_ORIGINAL_COMMAND`, and have no general shell or sudo rule attached to that key.
 
-The forced command selects only the fixed allowlist of 22 production `GF_*_URL` values and
+The forced command selects only the fixed allowlist of 26 production `GF_*_URL` values and
 the single PubTator service token from the running router container's Docker metadata.
 It validates those URLs against the registry's reviewed public endpoints, then runs
 `genefoundry-router drift` using that container's exact cached release digest. The verifier

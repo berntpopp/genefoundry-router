@@ -58,6 +58,7 @@ vocabulary:
   # Domain tier — the field a reader browses.
   domain:
     - genomics
+    - genome-browser
     - genetics
     - clinical-genetics
     - rare-disease
@@ -65,11 +66,15 @@ vocabulary:
     - variant-annotation
     - variant-effect
     - population-genetics
+    - mitochondrial-dna
+    - mtdna
     - allele-frequency
     - pathogenicity
     - loss-of-function
     - acmg
     - splicing
+    - short-tandem-repeat
+    - repeat-expansion
     - gene-curation
     - gene-disease
     - gene-panel
@@ -102,6 +107,9 @@ vocabulary:
     - pharmacogenomics
     - gene-drug
     - dosing-guideline
+    - polygenic-score
+    - polygenic-risk-score
+    - gwas
   # Source tier — the upstream's proper noun. These are near-empty topic pages
   # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
   source:
@@ -117,6 +125,7 @@ vocabulary:
     - gencc
     - litvar
     - string-db
+    - strchive
     - autopvs1
     - spliceai
     - pangolin
@@ -125,8 +134,11 @@ vocabulary:
     - clinvar
     - vep
     - ensembl
+    - ucsc-genome-browser
+    - encode
     - panelapp
     - mondo
+    - mitomap
     - mavedb
     - hpo
     - human-phenotype-ontology
@@ -135,6 +147,7 @@ vocabulary:
     - clinpgx
     - cpic
     - pharmgkb
+    - pgs-catalog
 
 # Official MCP Registry (registry.modelcontextprotocol.io) — ROUTER ONLY.
 #
@@ -187,6 +200,13 @@ backends:
       gene constraint, coverage, structural and mitochondrial variants, and liftover —
       as typed tools for LLM agents.
     topics: [gnomad, genomics, variant-interpretation, population-genetics, allele-frequency]
+
+  - namespace: ucsc
+    description: >-
+      MCP server for the UCSC Genome Browser: curated hg38/hg19 region tracks (genes,
+      repeats, segmental duplications, problematic regions, conservation, cCREs),
+      reference sequence, and BLAT / in-silico PCR.
+    topics: [ucsc-genome-browser, genome-browser, genomics, variant-annotation, encode]
 
   - namespace: gtex
     description: >-
@@ -243,6 +263,13 @@ backends:
       partners, and functional enrichment analysis — as typed tools for LLM agents.
     topics: [string-db, protein-protein-interaction, network-biology, proteomics, functional-enrichment]
 
+  - namespace: strchive
+    description: >-
+      MCP server for STRchive: curated short-tandem-repeat (STR) disease loci with
+      repeat-count ranges, pathogenic motifs, interruptions and hg19/hg38/T2T coordinates
+      from a pinned snapshot, for LLM agents.
+    topics: [strchive, short-tandem-repeat, repeat-expansion, rare-disease, genetics]
+
   - namespace: autopvs1
     description: >-
       MCP server for AutoPVS1: automated ACMG PVS1 loss-of-function evidence for sequence
@@ -276,6 +303,13 @@ backends:
       classifications, served from a local SQLite index built from the ClinVar weekly bulk
       release — not the eUtils API.
     topics: [clinvar, variant-interpretation, clinical-genetics, pathogenicity, genomics]
+
+  - namespace: mitomap
+    description: >-
+      MCP server for MITOMAP: mitochondrial DNA (mtDNA) disease mutations and polymorphisms
+      with MITOMAP status, plasmy, GenBank frequency and literature from a pinned snapshot,
+      for LLM agents.
+    topics: [mitomap, mitochondrial-dna, mtdna, rare-disease, genetics]
 
   - namespace: vep
     description: >-
@@ -329,3 +363,10 @@ backends:
       gene-drug interactions, clinical guidelines, dosing recommendations, and variant
       annotations for LLM agents.
     topics: [clinpgx, pharmacogenomics, gene-drug, clinical-genetics, cpic]
+
+  - namespace: pgscatalog
+    description: >-
+      MCP server for the PGS Catalog: published polygenic scores, the traits they predict,
+      development and evaluation ancestry, licences, performance metrics and source
+      publications.
+    topics: [pgs-catalog, polygenic-score, polygenic-risk-score, gwas, genomics]

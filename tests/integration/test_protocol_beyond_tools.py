@@ -5,7 +5,7 @@ Verifies:
    cleanly federating backend resources and prompts when exposed.
 2. `build_app` advertises resources and prompts capabilities on discovery and serves clean
    protocol responses.
-3. `tools/list` across all 22 backends (287 tools) in fleet-baseline.json produces deterministic,
+3. `tools/list` across all 26 backends (312 tools) in fleet-baseline.json produces deterministic,
    collision-free qualified names within the 64-character ceiling, both statically and in live
    router composition.
 """
@@ -110,9 +110,9 @@ async def test_build_app_serves_valid_resources_and_prompts_protocol(
 
 
 def test_fleet_baseline_tool_names_are_collision_free_and_within_client_ceiling() -> None:
-    """All 287 tools across 22 backends produce collision-free names <= 64 characters."""
+    """All 312 tools across 26 backends produce collision-free names <= 64 characters."""
     manifest = load_manifest(BASELINE_PATH)
-    assert len(manifest.backends) == 22
+    assert len(manifest.backends) == 26
 
     qualified_names: list[str] = []
     for namespace, backend in manifest.backends.items():
@@ -123,16 +123,16 @@ def test_fleet_baseline_tool_names_are_collision_free_and_within_client_ceiling(
                 f"Tool name {qualified!r} exceeds 64-char ceiling ({len(qualified)} > 64)"
             )
 
-    assert len(qualified_names) == 287
+    assert len(qualified_names) == 312
     # Deterministic and collision-free
-    assert len(set(qualified_names)) == 287
+    assert len(set(qualified_names)) == 312
     # Longest tool name remains well within budget
     max_len_tool = max(qualified_names, key=len)
     assert len(max_len_tool) <= 64
 
 
 async def test_live_router_composition_lists_all_287_baseline_tools_without_collisions() -> None:
-    """Live Client(server) composition across all 22 backends lists 287 tools without collision."""
+    """Live Client(server) composition across all 26 backends lists 312 tools without collision."""
     manifest = load_manifest(BASELINE_PATH)
     settings = RouterSettings(_env_file=None)  # type: ignore[call-arg]
 
@@ -148,8 +148,8 @@ async def test_live_router_composition_lists_all_287_baseline_tools_without_coll
         tools = await client.list_tools()
         names = [t.name for t in tools]
 
-        assert len(names) == 287
-        assert len(set(names)) == 287
+        assert len(names) == 312
+        assert len(set(names)) == 312
         assert all(len(name) <= 64 for name in names)
 
         # Confirm representation across independent backends

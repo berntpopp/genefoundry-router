@@ -8,8 +8,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_real_servers_yaml_parses():
     backends = load_registry(ROOT / "servers.yaml", {})
     by_name = {b.name: b for b in backends}
-    # 22 backends: the deployed fleet plus clinpgx
-    assert len(backends) == 22
+    # 26 backends: the deployed fleet, clinpgx, and strchive/ucsc/mitomap/pgscatalog (v0.13.9)
+    assert len(backends) == 26
     # hgnc deployed 2026-06-16 (hgnc-link.genefoundry.org); now enabled
     assert by_name["hgnc"].enabled is True
     # the 4 newest backends are now deployed (<name>-link.genefoundry.org) and enabled.
@@ -29,8 +29,11 @@ def test_real_servers_yaml_parses():
     # server instructions so each domain's front-door tool is deterministically
     # discoverable regardless of BM25 ranking (discoverability-benchmark follow-up to #3).
     # clinpgx exempt — owner decision 2026-11-19: clinpgx un-pinned (pinned budget); restore when clinpgx-link#56 lands
+    # strchive/ucsc/mitomap/pgscatalog search-only — owner decision 2026-11-19 (pinned budget)
     unpinned = {n for n in by_name if not by_name[n].entrypoints}
-    assert unpinned == {"clinpgx"}, "each other backend needs an entrypoint"
+    assert unpinned == {"clinpgx", "strchive", "ucsc", "mitomap", "pgscatalog"}, (
+        "each other backend needs an entrypoint"
+    )
     assert "resolve_variant_id" in by_name["gnomad"].entrypoints
     # #320: disease/phenotype front doors are the ranked text searches, not exact resolvers.
     assert by_name["mondo"].entrypoints == ["search_diseases", "resolve_disease"]

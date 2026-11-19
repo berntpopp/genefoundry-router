@@ -1,6 +1,6 @@
 """Real-client schema compatibility tests across the fleet baseline catalog (#77 §5).
 
-Verifies that all inputSchema and outputSchema objects across all 22 backends:
+Verifies that all inputSchema and outputSchema objects across all 26 backends:
 1. Are valid JSON Schema Draft 2020-12 objects.
 2. Meet MCP structural expectations (inputSchema is an object).
 3. Contain zero external HTTP/HTTPS $ref pointers and zero dangling local $ref pointers.
@@ -66,13 +66,13 @@ def resolve_local_json_pointer(root: Any, ref: str) -> tuple[bool, Any, str]:
 
 def test_baseline_has_22_backends_and_287_tools() -> None:
     manifest = load_manifest(BASELINE_PATH)
-    assert len(manifest.backends) == 22
+    assert len(manifest.backends) == 26
     total_tools = sum(len(b.tools) for b in manifest.backends.values())
-    assert total_tools == 287
+    assert total_tools == 312
 
 
 def test_baseline_input_schemas_are_valid_draft_2020_12_objects() -> None:
-    """All 287 tools must advertise valid Draft 2020-12 object input schemas."""
+    """All 312 tools must advertise valid Draft 2020-12 object input schemas."""
     manifest = load_manifest(BASELINE_PATH)
     for namespace, backend in manifest.backends.items():
         for tool in backend.tools:

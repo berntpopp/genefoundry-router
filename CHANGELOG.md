@@ -4,6 +4,17 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.9] - 2026-11-19
+
+### Added
+
+- **Four new backends federated (26 total, 312 tools):** `strchive` (STRchive tandem-repeat disease loci, v0.3.0), `ucsc` (UCSC Genome Browser tracks, sequence, BLAT & in-silico PCR, v0.5.1), `mitomap` (MITOMAP mtDNA variants, v0.3.0) and `pgscatalog` (PGS Catalog polygenic scores, v0.3.3). All four are **search-only** — no entrypoints, so the pinned listing budget does not grow; they are reached through `search_tools`. Consolidates draft PRs #281, #282, #283 and #289.
+
+### Changed
+
+- **Drift baseline re-pinned to `fleet-2026-11-19b`** — strict live capture of the 26 verified, immutable backend releases. The 22 existing backends' definitions are byte-identical to the `fleet-2026-11-19` pin; only the four new backends are added. Discovery catalog recaptured and BM25 expansions regenerated for the new tools; proper-name keywords lost to the 40-keyword carry-over cap (e.g. `STRINGdb`, `PubTator3`, `CADD score`, `BioC JSON`, `MeSH headings`) restored as `manual_keywords`.
+- **No-expansion golden discoverability bar 8.9 → 8.7:** the four new search-only backend tasks were added (no-expansion ranks 1/1/2/4); the old 54 tasks are unchanged at 8.90, and the with-expansion bar of 9.0 is still enforced.
+
 ## [0.13.8] - 2026-11-19
 
 ### Fixed

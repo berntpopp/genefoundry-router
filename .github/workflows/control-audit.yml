@@ -60,12 +60,16 @@ jobs:
             mavedb-link
             metadome-link
             mgi-link
+            mitomap-link
             mondo-link
             orphanet-link
             panelapp-link
+            pgscatalog-link
             pubtator-link
             spliceailookup-link
+            strchive-link
             stringdb-link
+            ucsc-link
             uniprot-link
             vep-link
           permission-metadata: read
