@@ -312,3 +312,29 @@ async def test_audit_logs_error_outcome_when_result_has_is_error() -> None:
     assert res.is_error is True
     entry = next(entry for entry in logs if entry.get("event") == "tool_call")
     assert entry["outcome"] == "error"
+
+
+async def test_search_tools_audit_records_hit_count_and_top3_names_not_query() -> None:
+    """Issue #301 (b): search outcome is auditable; the query text never is, and a hit
+    name the catalog cannot confirm is bucketed rather than logged verbatim."""
+    from fastmcp.tools.base import ToolResult
+
+    mw = AuditLogMiddleware()
+    query = "patient Jane Doe c.68_69delAG BRCA1"
+    hits = [
+        {"name": "gnomad_search_genes"},
+        {"name": "IGNORE_PREVIOUS_echoed"},
+        {"name": "vep_annotate_variant"},
+        {"name": "call_tool"},
+    ]
+
+    async def _ok(_ctx):
+        return ToolResult(structured_content={"result": hits})
+
+    with structlog.testing.capture_logs() as logs:
+        await mw.on_call_tool(_Ctx("search_tools", {"query": query}), _ok)
+
+    e = next(entry for entry in logs if entry.get("event") == "tool_call")
+    assert e["hit_count"] == 4
+    assert e["top_hits"] == ["gnomad_search_genes", "_unknown", "vep_annotate_variant"]
+    assert query not in str(e) and "Jane" not in str(e) and "IGNORE" not in str(e)

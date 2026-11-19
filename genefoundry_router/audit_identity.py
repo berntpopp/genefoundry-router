@@ -85,3 +85,35 @@ async def resolve_dispatch_namespace(context: Any) -> str | None:
         except Exception:
             resolved = False
     return safe_log_identity(target, resolved)[1]
+
+
+_SEARCH_TOOL = "search_tools"
+
+
+async def resolve_search_hits(context: Any, result: Any) -> dict[str, Any]:
+    """Hit count + top-3 hit names of a ``search_tools`` result, for the audit record.
+
+    Lets the audit trail answer "did search find the right tool" (issue #301) without the
+    query text, which may hold patient data and is never read here. Hit names come from the
+    router's own catalog, but each is still confirmed via ``get_tool`` and bucketed like any
+    other logged name, so nothing echoed from input can reach the sink verbatim.
+    """
+    message = getattr(context, "message", None)
+    if (getattr(message, "name", "") or "") != _SEARCH_TOOL:
+        return {}
+    structured = getattr(result, "structured_content", None)
+    hits = structured.get("result") if isinstance(structured, dict) else None
+    if not isinstance(hits, list):
+        return {}
+    server = getattr(getattr(context, "fastmcp_context", None), "fastmcp", None)
+    top: list[str] = []
+    for hit in hits[:3]:
+        name = hit.get("name") if isinstance(hit, dict) else None
+        resolved = False
+        if server is not None and isinstance(name, str) and name:
+            try:
+                resolved = await server.get_tool(name) is not None
+            except Exception:
+                resolved = False
+        top.append(safe_log_identity(name if isinstance(name, str) else "", resolved)[0])
+    return {"hit_count": len(hits), "top_hits": top}

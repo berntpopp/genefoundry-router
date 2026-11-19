@@ -25,6 +25,7 @@ from starlette.responses import JSONResponse, Response
 from genefoundry_router.audit_identity import (
     resolve_dispatch_namespace,
     resolve_log_identity,
+    resolve_search_hits,
 )
 from genefoundry_router.notfound_guard import redacted_message
 from genefoundry_router.refresh_observability import (
@@ -514,6 +515,7 @@ class AuditLogMiddleware(Middleware):
             "tool_call",
             **await self._identity_fields(context),
             outcome="error" if getattr(result, "is_error", False) else "ok",
+            **await resolve_search_hits(context, result),
             elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
         )
         return result
