@@ -66,6 +66,7 @@ jobs:
             pubtator-link
             spliceailookup-link
             stringdb-link
+            ucsc-link
             uniprot-link
             vep-link
           permission-metadata: read

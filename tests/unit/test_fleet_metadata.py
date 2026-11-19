@@ -45,7 +45,8 @@ def test_linter_passes_on_the_committed_file() -> None:
 def test_every_enabled_backend_has_metadata(data: dict) -> None:
     """A backend with no entry would ship an empty description — the original sin."""
     declared = {b["namespace"] for b in data["backends"]}
-    assert declared == set(checker.enabled_namespaces())
+    # Superset: a staged (`enabled: false`) backend may carry metadata before it is enabled.
+    assert set(checker.enabled_namespaces()) <= declared
 
 
 def test_universal_topics_carry_the_reach_tokens(data: dict) -> None:

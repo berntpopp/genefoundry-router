@@ -8,8 +8,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_real_servers_yaml_parses():
     backends = load_registry(ROOT / "servers.yaml", {})
     by_name = {b.name: b for b in backends}
-    # 23 backends: the deployed fleet plus clinpgx and ucsc
-    assert len(backends) == 23
+    # No backend count here, so concurrent backend PRs merge in any order: a new backend is
+    # staged `enabled: false` until deployed, and test_ci_fleet_baseline pins the enabled set.
     # hgnc deployed 2026-06-16 (hgnc-link.genefoundry.org); now enabled
     assert by_name["hgnc"].enabled is True
     # the 4 newest backends are now deployed (<name>-link.genefoundry.org) and enabled.
@@ -17,8 +17,6 @@ def test_real_servers_yaml_parses():
     assert all(by_name[n].enabled is True for n in newest)
     latest = {"hpo", "mavedb", "metadome", "orphanet"}
     assert all(by_name[n].enabled is True for n in latest)
-    # every backend is live and enabled
-    assert all(b.enabled for b in backends)
     assert all(b.transform is None for b in backends), (
         "baseline qualification assumes source-standard names; add explicit normalization support"
     )

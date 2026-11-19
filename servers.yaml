@@ -247,8 +247,9 @@ servers:
 
   # ucsc-link: live UCSC Genome Browser JSON API, curated hg38/hg19 track allowlist (incl. MANE,
   # ENCODE blacklist / GRC / GIAB problematic regions) + bounded reference sequence, and BLAT /
-  # in-silico PCR on the deployment's own Kent gfServer (v0.3.0; genefoundry-router#191).
-  # Merge only once ucsc-link.genefoundry.org is live.
+  # in-silico PCR on the deployment's own Kent gfServer (v0.4.0; genefoundry-router#191).
+  # Staged: flip `enabled` to true once ucsc-link.genefoundry.org is live and the baseline
+  # is re-pinned.
   - name: ucsc
     repo: berntpopp/ucsc-link
     url_env: GF_UCSC_URL
@@ -258,3 +259,4 @@ servers:
     source_url: https://genome.ucsc.edu/
     tags: [genomics, region, repeat, conservation, regulatory, sequence, track, blat, pcr]
     entrypoints: [search_genome, get_region_annotations]
+    enabled: false
