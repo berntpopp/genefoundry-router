@@ -9173,7 +9173,8 @@
       "entrypoints": [
         "search_terms",
         "get_phenotypes_for_gene",
-        "get_genes_for_phenotype"
+        "get_genes_for_phenotype",
+        "score_genes_for_phenotypes"
       ],
       "name": "hpo",
       "namespace": "hpo",

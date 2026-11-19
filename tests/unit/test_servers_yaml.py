@@ -42,6 +42,7 @@ def test_real_servers_yaml_parses():
         "search_terms",
         "get_phenotypes_for_gene",
         "get_genes_for_phenotype",
+        "score_genes_for_phenotypes",  # #341
     ]
     assert by_name["mavedb"].entrypoints == ["search_score_sets"]
     assert by_name["metadome"].entrypoints == ["resolve_transcript", "get_tolerance_landscape"]

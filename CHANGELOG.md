@@ -4,11 +4,18 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.12] - 2026-11-20
+
 ### Added
 
 - **Foreign-identifier conformance check** (`docs/conformance/identifiers.py`, `identifiers.json`, `test_identifiers_v1.py`; refs #343): for every gene parameter of a backend, sends one gene as symbol, Ensembl, HGNC and NCBI Gene id and requires each answer to resolve to that gene or be an `invalid_input` with `field`, `allowed_values` and a non-looping `next_commands`. The first form answered with a non-empty success is the positive control, and other forms are compared against its rows. Silent empties, wrong entities, absence claims, `internal`, self-loops and rejections whose only next step is a meta tool fail; a parameter with no working control is UNGATED and fails unless declared out with a reason. Gene parameters are derived from the tool schema; `identifiers.json` seeds per-backend corrections and a strict expected-fail list (a listed key that passes is an error), and a backend's own `identifiers.local.json` replaces its seed. Runs like the behaviour gate (`CONFORMANCE_MCP_URL`, `CONFORMANCE_NAME`); `make identifiers MCP_URL=... NAME=...`.
 - **Batch-pointer lint** (`scripts/check_batch_pointers.py`, `make lint-batch-pointers`, in `ci-local`): a pinned tool must name its batch or set-level sibling in its description (Tool-Schema Documentation Standard rule 8, `D2`). Runs offline on the packaged baseline; 11 known failures are listed as expected-fail.
 - Response-Envelope Standard §2b: an unaccepted identifier form is `invalid_input` with the converter in `next_commands`, never an absence; a bare number states the namespace it was read in; batch results are per item.
+
+### Changed
+
+- **`hpo_score_genes_for_phenotypes` is pinned in the default listing** (#341). Unpinned, the set-based scorer was called in 0 of 75 gene-ranking samples: models looped `hpo_get_genes_for_phenotype` / `hpo_get_phenotypes_for_gene` per term and rarely searched. Default `tools/list`: 31 → 32 tools, ~65.2k → ~67.2k chars (~16.8k tokens, budget 18k). `minimal` and `none` modes are unchanged. Slim listing (`X-GF-Schema-Mode: slim`): ~26.2k → ~27.1k chars, showing `hpo_ids` + `candidate_genes` (`slim_keep`); its CI ceiling moves 6.6k → 6.8k tokens for this deliberate pin.
+- Search vocabulary for the scorer: `manual_keywords` ("causal gene", "causative gene", "prioritise genes", …) so "causal gene from phenotypes" now returns it first (was outside the top 5); three regression queries added to `tests/discoverability/bench_regressions.yaml`.
 
 ## [0.13.11] - 2026-11-19
 

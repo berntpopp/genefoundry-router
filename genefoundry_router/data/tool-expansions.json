@@ -7430,6 +7430,16 @@
     "candidate ranking",
     "phenotype-driven",
     "best-match average"
+   ],
+   "manual_keywords": [
+    "causal gene",
+    "causative gene",
+    "causal gene for patient phenotypes",
+    "which gene causes these phenotypes",
+    "disease-causing gene",
+    "prioritise genes",
+    "Kandidatengen",
+    "gène causal"
    ]
   },
   "hpo_search_terms": {
