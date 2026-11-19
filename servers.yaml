@@ -78,7 +78,7 @@ servers:
     source_name: GenCC
     source_url: https://thegencc.org/
     tags: [gene-disease, curation]
-    entrypoints: [resolve_identifier]
+    entrypoints: [get_gene_curations]
 
   - name: litvar
     repo: berntpopp/litvar-link
@@ -190,7 +190,8 @@ servers:
     source_name: Mondo
     source_url: https://mondo.monarchinitiative.org/
     tags: [disease, ontology]
-    entrypoints: [resolve_disease]
+    # #320: ranked text search first (free-text names); resolver kept for OMIM/Orphanet CURIEs
+    entrypoints: [search_diseases, resolve_disease]
 
   # --- Staged/ready 2026-06-20 (new GeneFoundry fleet backends; URL vars below). ---
   - name: mavedb
@@ -212,7 +213,7 @@ servers:
     source_name: Human Phenotype Ontology
     source_url: https://hpo.jax.org/
     tags: [phenotype, ontology, gene, disease]
-    entrypoints: [resolve_term, get_phenotypes_for_gene, get_genes_for_phenotype]
+    entrypoints: [search_terms, get_phenotypes_for_gene, get_genes_for_phenotype]
 
   - name: metadome
     repo: berntpopp/metadome-link
@@ -232,7 +233,7 @@ servers:
     source_name: Orphadata
     source_url: https://www.orphadata.com/
     tags: [disease, ontology, rare-disease, epidemiology, gene, phenotype]
-    entrypoints: [resolve_disease]
+    entrypoints: [search_diseases]
 
   # deployed (clinpgx-link.genefoundry.org); CPIC/PharmGKB/PharmCAT evidence, 120 curated snapshot datasets
   - name: clinpgx
@@ -243,4 +244,4 @@ servers:
     source_name: ClinPGx
     source_url: https://clinpgx.org/
     tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
-    entrypoints: [search_records, get_record, get_related_records, search_dataset]
+    entrypoints: [search_records]

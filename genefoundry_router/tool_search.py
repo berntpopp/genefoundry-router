@@ -32,6 +32,7 @@ from fastmcp.tools.base import Tool
 from pydantic import Field
 
 from genefoundry_router.config import RouterSettings
+from genefoundry_router.pinned_mode import PinPolicy
 from genefoundry_router.registry import BackendDef, qualified_name
 from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_strict_schema
 from genefoundry_router.search_expansion import expansion_texts
@@ -246,7 +247,9 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         expansions: Mapping[str, str] | None = None,
         reranker: Reranker | None = None,
         rerank_pool: int = 20,
+        policy: PinPolicy | None = None,
     ) -> None:
+        self.policy = policy or PinPolicy(tuple(always_visible or ()))
         depth = max(rerank_pool, max_results) if reranker is not None else max_results
         super().__init__(max_results=depth, always_visible=always_visible)
         self._strict_cache: dict[str, tuple[Tool, Tool]] = {}
@@ -320,7 +323,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             elif detail == "strict":
                 hits = serialize_tools_strict(results)
             else:
-                hits = serialize_tools_compact(results, relevance, transform._always_visible)
+                hits = serialize_tools_compact(results, relevance, transform.policy.listed())
             for hit in hits if low else ():
                 hit["low_confidence"] = True
             return hits
@@ -345,7 +348,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         :class:`StrictNullMiddleware` strips the ``null`` sentinels strict clients send.
         """
         listed = await super().transform_tools(tools)
-        return [self._strict_listing(tool) for tool in listed]
+        keep, pins = self.policy.listed(), self._always_visible  # #320: per-request pin mode
+        return [self._strict_listing(t) for t in listed if t.name not in pins or t.name in keep]
 
     def _strict_listing(self, tool: Tool) -> Tool:
         """Strict projection, cached per source object so a relist does not rebuild (#232)."""
@@ -424,27 +428,42 @@ def resolve_entrypoints(registry: list[BackendDef]) -> list[str]:
     return pins or list(DEFAULT_ALWAYS_VISIBLE)
 
 
+def listed_pins(registry: list[BackendDef], settings: RouterSettings) -> frozenset[str]:
+    """Pinned names the server-default ``GF_PINNED_MODE`` lists (instructions, hint form)."""
+    policy = PinPolicy(
+        tuple(resolve_entrypoints(registry)),
+        tuple(settings.GF_PINNED_MINIMAL),
+        settings.GF_PINNED_MODE,
+    )
+    return policy.listed(settings.GF_PINNED_MODE)
+
+
 def apply_tool_search(
     server: FastMCP,
     settings: RouterSettings,
     always_visible: list[str] | None = None,
 ) -> CompactBM25SearchTransform:
-    """Replace the full tool listing with search_tools + call_tool + pinned tools."""
+    """Replace the full tool listing with search_tools + call_tool + pinned tools.
+
+    Which pins are listed follows ``GF_PINNED_MODE`` or the request's header (#320)."""
     pinned = always_visible if always_visible is not None else DEFAULT_ALWAYS_VISIBLE
+    policy = PinPolicy(tuple(pinned), tuple(settings.GF_PINNED_MINIMAL), settings.GF_PINNED_MODE)
     expansions = expansion_texts(settings.GF_SEARCH_EXPANSIONS)
     reranker = build_reranker(settings)
     transform = CompactBM25SearchTransform(
         max_results=settings.GF_SEARCH_MAX_RESULTS,
-        always_visible=pinned,
+        always_visible=policy.all(),
         expansions=expansions,
         reranker=reranker,
         rerank_pool=settings.GF_SEARCH_RERANK_POOL,
+        policy=policy,
     )
     server.add_transform(transform)
     log.info(
         "tool_search_enabled",
         max_results=settings.GF_SEARCH_MAX_RESULTS,
         pinned=pinned,
+        pinned_mode=settings.GF_PINNED_MODE,
         expanded_tools=len(expansions),
         rerank=settings.GF_SEARCH_RERANK,
         rerank_host=urlsplit(reranker.config.url).hostname if reranker else None,

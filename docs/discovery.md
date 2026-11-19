@@ -19,6 +19,24 @@ Pinning makes each domain's canonical tool discoverable **deterministically** ra
 relevance luck — the fix for FastMCP's flat BM25 index (no field weighting, no stemming),
 which let a terse canonical tool lose to verbose tools that merely repeat a keyword.
 
+### Pinned mode (#320)
+
+`GF_PINNED_MODE` chooses which pins `tools/list` shows; the request header
+`X-GF-Pinned-Mode: default|minimal|none` overrides it per request (so one deployment can be
+measured in every mode; invalid values fall back to the server default). It filters only the
+listing: search, `call_tool`, authorization and rate limits are unchanged.
+
+| Mode | Listed | Listing (~tokens, strict, fleet baseline) |
+|---|---|---|
+| `default` | `search_tools`, `call_tool` + every `entrypoints:` tool (30) | ~17.1k |
+| `minimal` | the meta-tools + `GF_PINNED_MINIMAL` (6: gene, variant, ClinVar, ClinGen, disease and phenotype search) | ~3.2k |
+| `none` | `search_tools`, `call_tool` | ~0.8k |
+
+The server `instructions` follow `GF_PINNED_MODE` (the header cannot change the
+`initialize` result). Where a backend has both an exact resolver and a ranked text search,
+the search is pinned: it returns ranked candidates with IDs, so an exact name still comes
+first, and a near miss is a candidate list instead of a `not_found`.
+
 Everything else is reached ONLY via `search_tools` → `call_tool`: clients that check names
 against `tools/list` reject an unlisted name called directly (#299). Each compact hit carries
 a ready `call` example. A typical flow:

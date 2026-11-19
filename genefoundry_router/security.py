@@ -143,6 +143,7 @@ MCP_CORS_ALLOW_HEADERS: tuple[str, ...] = (
     "mcp-name",
     "mcp-protocol-version",
     "mcp-session-id",
+    "x-gf-pinned-mode",  # per-request pinned-listing override (#320); listing only
 )
 
 # Response headers script must be able to READ. Only the CORS-safelisted response headers

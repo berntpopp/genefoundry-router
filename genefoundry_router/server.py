@@ -60,7 +60,7 @@ from genefoundry_router.runtime_drift import (
 from genefoundry_router.schema_strict import StrictNullMiddleware
 from genefoundry_router.search_rerank import SystemOneReranker
 from genefoundry_router.security import add_host_origin_validation, wrap_mcp_cors
-from genefoundry_router.tool_search import apply_tool_search, resolve_entrypoints
+from genefoundry_router.tool_search import apply_tool_search, listed_pins, resolve_entrypoints
 
 log = structlog.get_logger(__name__)
 
@@ -117,7 +117,10 @@ def build_server(
     # instructions: orient the host's model on the two-layer search surface so a
     # capability absent from the top-level listing isn't read as missing (issue #3).
     server: FastMCP = FastMCP(
-        "genefoundry", version=__version__, auth=auth, instructions=build_instructions(registry)
+        "genefoundry",
+        version=__version__,
+        auth=auth,
+        instructions=build_instructions(registry, listed_pins(registry, settings)),
     )
     server.add_middleware(WriteAuthorizationMiddleware())
     server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
@@ -138,7 +141,9 @@ def build_server(
         # fleet's self-healing hints resolve through call_tool. Registered innermost so
         # hint rewrites are cached (issue #230). Enabled backends only.
         namespaces = {b.namespace for b in registry if b.enabled}
-        server.add_middleware(NamespaceHintMiddleware(namespaces, resolve_entrypoints(registry)))
+        # ponytail: call form follows GF_PINNED_MODE, not X-GF-Pinned-Mode (rewrites are cached,
+        # #230); a header-overridden session may see a bare pinned name. call_tool still works.
+        server.add_middleware(NamespaceHintMiddleware(namespaces, listed_pins(registry, settings)))
     for backend in registry:
         if not backend.enabled:
             log.info("backend_skipped", backend=backend.name, reason="disabled")
@@ -209,9 +214,8 @@ def build_app(
         unreachable = _seed_reachability(registry, tools)
         # Advertise only what the live catalog serves (issue #256): instructions/pins named
         # every configured backend even when it harvested 0 tools, so agents called dead pins.
-        server.instructions = build_instructions(
-            [b for b in registry if b.namespace not in unreachable]
-        )
+        live = [b for b in registry if b.namespace not in unreachable]
+        server.instructions = build_instructions(live, listed_pins(registry, settings))
         if (notfound := getattr(server, "notfound_guard", None)) is not None:
             notfound.unavailable = frozenset(unreachable)
         guard.evaluate(
