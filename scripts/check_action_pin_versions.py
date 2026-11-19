@@ -67,33 +67,14 @@ def _api_lines(path: str, jq: str) -> list[str] | None:
     return [line for line in proc.stdout.splitlines() if line.strip()]
 
 
-def _tags_at(repo: str, sha: str) -> set[str] | None:
-    """Every tag name pointing at *sha*, dereferencing annotated tags."""
-    rows = _api_lines(
-        f"repos/{repo}/git/matching-refs/tags",
-        '.[] | "\\(.ref)\\t\\(.object.sha)\\t\\(.object.type)"',
-    )
-    if rows is None:
-        return None
-    names: set[str] = set()
-    annotated: list[str] = []
-    for row in rows:
-        parts = row.split("\t")
-        if len(parts) != 3:
-            continue
-        ref, obj_sha, obj_type = parts
-        if obj_sha == sha:
-            names.add(ref.removeprefix("refs/tags/"))
-        elif obj_type == "tag":
-            annotated.append(row)
-    # Only deref annotated tags when nothing matched directly — each costs a request.
-    if not names:
-        for row in annotated:
-            ref, obj_sha, _ = row.split("\t")
-            deref = _api_lines(f"repos/{repo}/git/tags/{obj_sha}", ".object.sha")
-            if deref and deref[0].strip() == sha:
-                names.add(ref.removeprefix("refs/tags/"))
-    return names
+def _tag_commit(repo: str, tag: str) -> str | None:
+    """The commit *tag* points at (the commits API peels annotated tags): one request.
+
+    Scanning every tag and dereferencing each annotated one cost hundreds of requests for
+    github/codeql-action, and a single throttled deref turned a correct pin into a "LIE".
+    """
+    rows = _api_lines(f"repos/{repo}/commits/{tag}", ".sha")
+    return rows[0].strip() if rows else None
 
 
 def main() -> int:
@@ -119,24 +100,25 @@ def main() -> int:
 
     lies: list[str] = []
     for (repo, sha), comments in sorted(pins.items()):
-        tags = _tags_at(repo, sha)
-        if tags is None:
-            print(f"  ?    {repo}@{sha[:12]} — could not resolve, skipped", file=sys.stderr)
-            continue
         for comment, sites in sorted(comments.items()):
-            if comment in tags:
+            if not EXACT_TAG.match(comment):
+                verdict, actual = "MOVING", "-"  # bare-major label; the tag legitimately moves
+            elif (actual := _tag_commit(repo, comment) or "") == sha:
                 verdict = "OK"
-            elif not EXACT_TAG.match(comment):
-                verdict = "MOVING"  # bare-major label; the tag legitimately moves on
+            elif not actual:
+                print(
+                    f"  ?    {repo}@{sha[:12]} {comment} — could not resolve, skipped",
+                    file=sys.stderr,
+                )
+                continue
             else:
                 verdict = "LIE"
                 lies.append(
-                    f"{repo}@{sha[:12]} is documented as {comment} but that SHA is "
-                    f"{', '.join(sorted(tags)) or '<no tag>'} — {len(sites)} site(s), "
-                    f"e.g. {sites[0]}"
+                    f"{repo}@{sha[:12]} is documented as {comment} but {comment} is "
+                    f"{actual[:12]} — {len(sites)} site(s), e.g. {sites[0]}"
                 )
             if args.list or verdict == "LIE":
-                print(f"  {verdict:6} {repo:38} {comment:10} {sorted(tags)}")
+                print(f"  {verdict:6} {repo:38} {comment:10} {actual[:12]}")
 
     if lies:
         print("\nA SHA pin's version comment names a tag it is not:", file=sys.stderr)
