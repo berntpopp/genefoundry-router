@@ -10,7 +10,7 @@ All notable changes to genefoundry-router are documented here.
   2026-11-19 regeneration of `tool-expansions.json` dropped the cross-lingual terms that put
   e.g. a German variant-frequency question into the BM25 shortlist. 52 core tools now carry
   general lay + German/French/Spanish vocabulary in `manual_keywords` (survives
-  regeneration). Held-out pure-search hit@5 0.933 → 0.949 (crosslingual 0.64 → 0.82, lay
+  regeneration). Held-out pure-search hit@5 0.933 → 0.944 (crosslingual 0.64 → 0.73, lay
   0.83 → 0.94). The generator prompt (v2) now asks for lay and de/fr/es keywords explicitly.
 - Tests: `bench_regressions.yaml` is now checked in pure search (a pinned tool never enters
   the BM25 shortlist, so pins no longer satisfy a regression); adds German and Spanish
