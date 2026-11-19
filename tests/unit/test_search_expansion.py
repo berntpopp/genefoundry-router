@@ -134,7 +134,9 @@ def _regenerate(tmp_path: Path, monkeypatch, *flags: str) -> dict[str, object]: 
     return json.loads(out.read_text(encoding="utf-8"))["tools"]["x_tool"]  # type: ignore[no-any-return]
 
 
-def test_regeneration_keeps_old_keywords_and_the_manual_overlay(tmp_path: Path, monkeypatch) -> None:
+def test_regeneration_keeps_old_keywords_and_the_manual_overlay(
+    tmp_path: Path, monkeypatch
+) -> None:
     # Generation is stochastic: a description tweak must not delete (e.g. German) vocabulary.
     entry = _regenerate(tmp_path, monkeypatch)
     assert entry["keywords"] == ["new", "K", "Häufigkeit"]  # new first, case-insensitive dedupe

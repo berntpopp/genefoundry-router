@@ -19,6 +19,9 @@ All notable changes to genefoundry-router are documented here.
   - Prompt v2 asks for one German **and** one French query (was "German or French").
   - 52 core tools get hand-curated lay + German/French/Spanish terms in `manual_keywords`.
   - Held-out pure search: hit@5 0.933 → 0.944, MRR 0.832 → 0.858, crosslingual 0.64 → 0.73.
+- Discovery catalog: re-captured clinpgx-link v0.1.17 (search_records lead says gene–drug,
+  not drug–drug) and metadome-link v0.5.2 (resolve_transcript lead names the GRCh37/38
+  tolerance-landscape transcript); their 2 expansion entries are stale until `make expansions`.
 - Tests: `bench_regressions.yaml` is checked in pure search (a pin never enters the BM25
   pool, so pins no longer satisfy a regression); adds German and Spanish variant-frequency
   tasks and an out-of-scope drug–drug interaction negative in the held-out set.
