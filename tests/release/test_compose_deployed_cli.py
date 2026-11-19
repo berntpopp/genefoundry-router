@@ -21,21 +21,27 @@ from genefoundry_router.release.vulnerabilities import ReleaseExitCode
 
 runner = CliRunner()
 DIGEST = "sha256:" + "a" * 64
-TEMPLATE = "${EXAMPLE_LINK_IMAGE:?Set EXAMPLE_LINK_IMAGE to ghcr.io/x/y@sha256:<digest>}"
+TEMPLATE = "${GF_IMAGE:-${EXAMPLE_LINK_IMAGE:?Set GF_IMAGE to ghcr.io/x/y@sha256:<digest>}}"
 OVERLAY = "docker/docker-compose.npm.yml"
 
 
 def _config(tmp_path: Path, **service: Any) -> Path:
     document = {
         "schema_version": 1,
-        "service": {"name": "example-link", "compose_files": ["docker/docker-compose.yml"]}
+        "service": {
+            "name": "example-link",
+            "compose_files": ["docker/docker-compose.yml"],
+            "deployed_compose_files": [OVERLAY],
+        }
         | service,
         "definitions": {"contract": "data-independent"},
     }
     path = tmp_path / "container-release.json"
     path.write_text(json.dumps(document), encoding="utf-8")
     (tmp_path / "docker").mkdir(exist_ok=True)
-    (tmp_path / OVERLAY).write_text("services:\n  app:\n    expose: ['8000']\n", encoding="utf-8")
+    (tmp_path / OVERLAY).write_text(
+        "name: example-link\nservices:\n  app:\n    expose: ['8000']\n", encoding="utf-8"
+    )
     return path
 
 
@@ -125,20 +131,20 @@ def test_unrenderable_overlay_exits_invalid_evidence(
     assert json.loads(result.stdout)["verdict"] == "invalid_evidence"
 
 
-def test_declared_deployed_compose_files_are_used_and_reported(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    "service",
+    [{"deployed_compose_files": ["docker/docker-compose.yml", OVERLAY]}, {}],
+    ids=["two-files", "key-absent"],
+)
+def test_deployed_compose_files_must_name_exactly_one_explicit_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, service: dict[str, Any]
 ) -> None:
-    seen: dict[str, Sequence[str]] = {}
-
-    def render(project_dir: Path, compose_files: Sequence[str]) -> Any:
-        seen["files"] = compose_files
-        return _compliant()
-
-    monkeypatch.setattr(cli_deployed, "render_deployed_overlay", render)
-    config = _config(
-        tmp_path,
-        deployed_compose_files=["docker/docker-compose.yml", OVERLAY],
-    )
+    monkeypatch.setattr(cli_deployed, "render_deployed_overlay", _stub_render(_compliant()))
+    config = _config(tmp_path)
+    document = json.loads(config.read_text(encoding="utf-8"))
+    del document["service"]["deployed_compose_files"]
+    document["service"] |= service
+    config.write_text(json.dumps(document), encoding="utf-8")
     (tmp_path / "docker/docker-compose.yml").write_text("services:\n  app: {}\n", encoding="utf-8")
 
     result = runner.invoke(
@@ -146,9 +152,8 @@ def test_declared_deployed_compose_files_are_used_and_reported(
         ["validate-deployed-overlay", "--config", str(config), "--project-dir", str(tmp_path)],
     )
 
-    assert result.exit_code == ReleaseExitCode.SUCCESS
-    assert list(seen["files"]) == ["docker/docker-compose.yml", OVERLAY]
-    assert json.loads(result.stdout)["compose_files"] == ["docker/docker-compose.yml", OVERLAY]
+    assert result.exit_code == ReleaseExitCode.POLICY_VIOLATION
+    assert "single-deployed-file" in json.loads(result.stdout)["violations"][0]
 
 
 def test_compose_file_option_overrides_the_declared_deployed_file_set(

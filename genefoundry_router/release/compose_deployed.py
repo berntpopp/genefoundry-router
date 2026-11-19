@@ -12,9 +12,12 @@ Each violation is one line: ``<service>: <rule> — <what to change>``.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import TypeGuard
+
+import yaml
 
 __all__ = [
     "DEPLOYED_OVERLAY_RULES",
@@ -25,7 +28,8 @@ __all__ = [
 ]
 
 _NUMERIC_USER = re.compile(r"^[1-9][0-9]*:[1-9][0-9]*$")
-_IMAGE_TEMPLATE = re.compile(r"^\$\{([A-Z][A-Z0-9_]*):\?[^}]+\}$")
+# `${GF_IMAGE:?...}`, or `${GF_IMAGE:-${<OLD>_IMAGE:?...}}` while the old name is a fallback.
+_IMAGE_TEMPLATE = re.compile(r"^\$\{GF_IMAGE(?::-\$\{[A-Z][A-Z0-9_]*:\?[^}]+\}|:\?[^}]+)\}$")
 _CONTAINER_PORT = re.compile(r"^([1-9][0-9]{0,4})(?:/(?:tcp|udp))?$")
 _DOCUMENT_SCOPE = "compose"
 
@@ -55,7 +59,8 @@ DEPLOYED_OVERLAY_RULES: Mapping[str, str] = {
     ),
     "application-image": (
         "A tag or a literal image lets the deploy run code no one pinned; the required "
-        "variable makes a missing or wrong digest a hard error."
+        "variable makes a missing or wrong digest a hard error, and one fleet-wide name "
+        "(GF_IMAGE) stops the deploy tool guessing each repository's variable."
     ),
     "sidecar-image": (
         "An undeclared third-party image in the stack means the controller cannot tell "
@@ -87,8 +92,24 @@ DEPLOYED_OVERLAY_RULES: Mapping[str, str] = {
         "declaration no longer describes what is deployed."
     ),
     "deployed-file-set": (
-        "Validating an overlay alone when the controller layers it on a base file set gates "
-        "a stack nobody deploys, and silently passes what is actually deployed."
+        "A merge directive means the file is layered on others, so gating it alone gates a "
+        "stack nobody deploys and silently passes what is actually deployed."
+    ),
+    "single-deployed-file": (
+        "A stack layered from several files is deployed differently by every tool that "
+        "forgets one of them; one explicit file is the whole stack."
+    ),
+    "project-name": (
+        "Without a top-level name Compose names the project after the file's directory, so "
+        "every repository with docker/ collides in one `docker` project."
+    ),
+    "volume-name": (
+        "An unnamed volume is prefixed with the project name, so renaming the project "
+        "silently starts the service on an empty volume."
+    ),
+    "internal-network": (
+        "Every Compose network takes a /16 or /20 from Docker's default address pools, which "
+        "a fleet of single-service networks exhausts; a shared network needs a registry subnet."
     ),
 }
 
@@ -234,8 +255,8 @@ def _check_image(
                 name,
                 "application-image",
                 "reference the release image as "
-                "${<PROJECT>_IMAGE:?Set <PROJECT>_IMAGE to ghcr.io/<owner>/<repo>@sha256:"
-                "<digest>} so deploy must supply a pinned digest — or, if this service "
+                "${GF_IMAGE:-${<PROJECT>_IMAGE:?Set GF_IMAGE to ghcr.io/<owner>/<repo>@sha256:"
+                "<digest>}} so deploy must supply a pinned digest — or, if this service "
                 "runs a third-party image, declare it in service.deployed_sidecars",
             )
         )
@@ -371,30 +392,97 @@ def _check_extension_keys(
         )
 
 
+def _check_networks(rendered: Mapping[str, object], violations: list[str]) -> None:
+    networks = rendered.get("networks")
+    services = rendered.get("services")
+    if not _is_mapping(networks) or not _is_mapping(services):
+        return
+    attached: Counter[str] = Counter()
+    for service in services.values():
+        joined = service.get("networks") if _is_mapping(service) else None
+        attached.update(joined.keys() if _is_mapping(joined) else ())
+    for name in sorted(networks):
+        network = networks[name]
+        if _is_mapping(network) and network.get("external"):
+            continue
+        ipam = network.get("ipam") if _is_mapping(network) else None
+        configs = ipam.get("config") if _is_mapping(ipam) else None
+        has_subnet = _is_sequence(configs) and any(
+            _is_mapping(entry) and entry.get("subnet") for entry in configs
+        )
+        if attached[name] < 2 or not has_subnet:
+            violations.append(
+                _violation(
+                    name,
+                    "internal-network",
+                    "attach a single service only to the external proxy network (no project "
+                    "network); a network two services share must declare ipam.config subnet "
+                    "${GF_INTERNAL_SUBNET:-10.251.<n>.0/28} from the fleet subnet registry",
+                )
+            )
+
+
+def _check_source(name: str, source: str) -> tuple[str, ...]:
+    try:
+        document = yaml.safe_load(source)
+    except yaml.YAMLError:
+        return ()  # the render reports an unparseable file
+    if not _is_mapping(document):
+        return ()
+    violations: list[str] = []
+    project = document.get("name")
+    if not isinstance(project, str) or not project or "$" in project:
+        violations.append(
+            _violation(
+                _DOCUMENT_SCOPE,
+                "project-name",
+                f"declare a literal top-level name: <repository> in {name}",
+            )
+        )
+    volumes = document.get("volumes")
+    for volume, spec in sorted((volumes if _is_mapping(volumes) else {}).items()):
+        if not _is_mapping(spec) or not (spec.get("name") or spec.get("external") is True):
+            violations.append(
+                _violation(
+                    volume,
+                    "volume-name",
+                    "declare an explicit name: — pin the exact name the volume already has in "
+                    "production (often <project>_<volume>), or for data "
+                    "${GF_DATA_VOLUME:-<logical>-${GF_DATA_RELEASE_TAG}}",
+                )
+            )
+    return tuple(violations)
+
+
 def validate_deployed_file_set(
     sources: Mapping[str, str], declared: Sequence[str]
 ) -> tuple[str, ...]:
-    """Refuse to gate a single overlay that only makes sense layered on a base file set.
+    """Gate the deployed file set itself: exactly one self-contained, named file.
 
     `!reset` and `!override` exist solely to replace a value some *other* Compose file
-    already set. An overlay that uses one is deployed layered, so validating it alone
-    would gate a stack nobody runs.
+    already set, so a file that uses one is not the whole stack. The project and volume
+    names are read from the source because the render fills in defaults for both.
     """
-    if len(declared) > 1:
-        return ()
+    if len(declared) != 1:
+        return (
+            _violation(
+                _DOCUMENT_SCOPE,
+                "single-deployed-file",
+                "merge the deployed stack into one standalone Compose file and list exactly "
+                "that file in container-release.json service.deployed_compose_files",
+            ),
+        )
     for name in sorted(sources):
         if _MERGE_DIRECTIVE.search(sources[name]):
             return (
                 _violation(
                     _DOCUMENT_SCOPE,
                     "deployed-file-set",
-                    f"{name} uses a !reset/!override merge directive, so it is deployed "
-                    "layered on other Compose files; list every file the fleet controller "
-                    "deploys, in order, in container-release.json "
-                    "service.deployed_compose_files",
+                    f"{name} uses a !reset/!override merge directive, so it is layered on "
+                    "other Compose files; inline the base files so it deploys standalone",
                 ),
             )
-    return ()
+    return tuple(v for name in sorted(sources) for v in _check_source(name, sources[name]))
 
 
 def validate_deployed_overlay(
@@ -421,6 +509,7 @@ def validate_deployed_overlay(
             ),
         )
     _check_extension_keys(rendered, raw, violations)
+    _check_networks(rendered, violations)
     sidecar_images = {sidecar.name: sidecar.image for sidecar in policy.sidecars}
     for missing in sorted(set(sidecar_images) - set(services)):
         violations.append(

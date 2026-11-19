@@ -172,7 +172,7 @@ docker-prod-config: ## Render production Compose configuration
 
 docker-npm-config: ## Render NPM Compose configuration
 	GENEFOUNDRY_IMAGE=$${GENEFOUNDRY_IMAGE:-ghcr.io/berntpopp/genefoundry-router@sha256:0000000000000000000000000000000000000000000000000000000000000000} \
-		$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
+		$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.npm.yml config
 
 container-validate: ## Validate container release configuration (CONFIG=path)
 	uv run python scripts/container_release.py validate-config --config "$(or $(CONFIG),container-release.json)"

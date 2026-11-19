@@ -81,15 +81,20 @@ def test_npm_overlay_joins_external_network():
     assert data["networks"]["npm-network"]["external"] is True
 
 
-def test_npm_overlay_resets_host_ports():
-    # Behind nginx-proxy-manager the gateway must be expose-only. The overlay uses
-    # `ports: !reset []` (not plain `[]`) because Compose MERGES list fields across
-    # overlays — plain `[]` would leave the base host-port mapping published, exposing
-    # the auth=none gateway on the public IP. After reset the mapping must be empty.
+def test_npm_file_is_a_standalone_hardened_expose_only_stack():
+    # Deploy Contract v1: the deployed file is the whole stack, never layered on the base
+    # files, so it must carry the prod security boundary itself and publish no host port
+    # (a published port would expose the auth=none gateway on the public IP).
     data = _load("docker-compose.npm.yml")
+    prod = _load("docker-compose.prod.yml")["services"]["genefoundry-router"]
     svc = data["services"]["genefoundry-router"]
-    assert svc["ports"] == []
+    assert data["name"] == "genefoundry-router"
+    assert "ports" not in svc
     assert svc["expose"] == ["8000"]
+    for key in ("read_only", "security_opt", "cap_drop", "tmpfs", "deploy", "restart"):
+        assert svc[key] == prod[key], key
+    assert prod["environment"].items() <= svc["environment"].items()
+    assert data["volumes"]["fastmcp_data"]["name"] == "genefoundry-router_fastmcp_data"
 
 
 def test_npm_overlay_declares_numeric_deploy_user():

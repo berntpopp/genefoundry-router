@@ -4,6 +4,24 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Deploy Contract Standard v1 (`docs/DEPLOY-CONTRACT-STANDARD-v1.md`).** One deployed
+  Compose file per repository, a literal project `name:`, the fleet-wide `GF_IMAGE` variable,
+  explicitly named volumes, and registry subnets for shared networks — the fixes for the
+  2026-11-19 thin-deploy failures. `validate-deployed-overlay` gains the rules
+  `single-deployed-file`, `project-name`, `volume-name` and `internal-network`;
+  `application-image` now requires `${GF_IMAGE:-${<OLD>_IMAGE:?…}}` (or `${GF_IMAGE:?…}`),
+  and `service.deployed_compose_files` must be declared explicitly. A repository gets the new
+  rules when it bumps its shared-workflow revision.
+
+### Changed
+
+- **The router deploys one standalone file.** `docker/docker-compose.npm.yml` is now the whole
+  production stack (no longer layered on the base and prod files), reads `GF_IMAGE` with
+  `GENEFOUNDRY_IMAGE` as a one-release fallback, and pins its OAuth state volume to the
+  existing name `genefoundry-router_fastmcp_data`, so no state moves.
+
 ## [0.13.6] - 2026-11-19
 
 ### Changed

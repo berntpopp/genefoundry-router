@@ -360,11 +360,7 @@ def test_effective_production_and_proxy_compose_are_digest_only() -> None:
     }
     for files in (
         ("docker/docker-compose.yml", "docker/docker-compose.prod.yml"),
-        (
-            "docker/docker-compose.yml",
-            "docker/docker-compose.prod.yml",
-            "docker/docker-compose.npm.yml",
-        ),
+        ("docker/docker-compose.npm.yml",),
     ):
         arguments = [str(DOCKER), "compose"]
         for path in files:

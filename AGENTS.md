@@ -53,7 +53,7 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
 
 ## Fleet deploy contract
 
-- `docker/docker-compose.npm.yml` is the file the fleet controller
+- `docker/docker-compose.npm.yml` is the one standalone file the fleet controller
   (`strato_v6_docker_npm`, `scripts/utils/deployment_preflight.py`) deploys and validates.
   Every service there declares `user: "<uid>:<gid>"` numerically — this image's own value
   from `docker/Dockerfile` (`10001:10001`), never copied from a sibling `-link` repo.
@@ -84,6 +84,8 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
 - Tool-Surface Budget — `docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md` (`make lint-surface`)
 - Tool-Schema Documentation — `docs/TOOL-SCHEMA-DOCUMENTATION-STANDARD-v1.md` (`make lint-surface`)
 - Container & Deployment Hardening — `docs/CONTAINER-HARDENING-STANDARD-v1.md`
+- Deploy Contract (one deployed file, `GF_IMAGE`, named volumes, subnet registry) —
+  `docs/DEPLOY-CONTRACT-STANDARD-v1.md`
 - Versioning (single-source) — `docs/VERSIONING-STANDARD-v1.md`
 - Logging & CLI Standard v1 (sibling; canonical text tracked per-repo)
 
