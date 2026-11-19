@@ -16,10 +16,16 @@ File format (``genefoundry_router/data/tool-expansions.json``)::
     {"version": 1,
      "generator": {...provenance...},
      "tools": {"<namespace>_<tool>": {"source_sha256": "<catalog_entry_sha256>",
-                                     "queries": [...], "keywords": [...]}}}
+                                     "queries": [...], "keywords": [...],
+                                     "manual_keywords": [...]}}}  # optional
 
 ``source_sha256`` fingerprints the catalog entry the expansion was generated from, so a
 guard test can flag entries that went stale after a backend rewrote its tool.
+
+``manual_keywords`` is the hand-curated overlay: the generator never writes it but carries it
+over when it regenerates a stale entry, and the loader puts it ahead of the generated keywords
+(so the per-field cap never drops it). Use it for general domain vocabulary only — never for
+benchmark question wording.
 """
 
 from __future__ import annotations
@@ -41,6 +47,7 @@ FORMAT_VERSION = 1
 MAX_ITEMS_PER_FIELD = 40
 MAX_ITEM_CHARS = 200
 _FIELDS = ("queries", "keywords")
+MANUAL_FIELD = "manual_keywords"
 _SPACE_RE = re.compile(r"\s+")
 
 
@@ -72,11 +79,12 @@ def _validate(raw: Any, origin: str) -> dict[str, dict[str, list[str]]]:
         if not isinstance(name, str) or not isinstance(entry, dict):
             raise ValueError(f"{origin}: entry {name!r} must be an object")
         fields: dict[str, list[str]] = {}
-        for field in _FIELDS:
+        for field in (*_FIELDS, MANUAL_FIELD):
             items = entry.get(field, [])
             if not isinstance(items, list) or not all(isinstance(i, str) for i in items):
                 raise ValueError(f"{origin}: {name}.{field} must be a list of strings")
             fields[field] = items
+        fields["keywords"] = fields.pop(MANUAL_FIELD) + fields["keywords"]
         out[name] = fields
     return out
 

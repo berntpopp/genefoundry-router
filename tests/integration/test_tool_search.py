@@ -143,10 +143,12 @@ async def test_search_hits_carry_a_working_call_example(gnomad_fake):
     )
     apply_tool_search(server, settings, always_visible=["gnomad_search_genes"])
     async with Client(server) as client:
-        hits = (await client.call_tool("search_tools", {"query": "gene", "limit": 20})).data
+        # The namespace token matches both fake tools, so neither depends on expansion ranking.
+        hits = (await client.call_tool("search_tools", {"query": "gnomad", "limit": 20})).data
         calls = {h["name"]: h["call"] for h in hits}
-        assert calls["gnomad_search_genes"] == {"tool": "gnomad_search_genes", "arguments": {}}
-        name, call = next((n, c) for n, c in calls.items() if n != "gnomad_search_genes")
+        assert set(calls) == {"gnomad_search_genes", "gnomad_get_variant_details"}
+        assert calls.pop("gnomad_search_genes") == {"tool": "gnomad_search_genes", "arguments": {}}
+        [(name, call)] = calls.items()
         assert call["tool"] == "call_tool" and call["arguments"]["name"] == name
         # strict tools/list advertises call_tool.arguments as a JSON string: show that form
         advertised = {t.name: t for t in await client.list_tools()}["call_tool"]

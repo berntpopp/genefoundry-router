@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 
@@ -95,3 +96,30 @@ def test_catalog_entry_hash_is_order_insensitive_and_content_sensitive() -> None
     assert a != catalog_entry_sha256("x_t", "desc changed", {"p": "one", "q": "two"})
     assert a != catalog_entry_sha256("x_t", "desc", {"p": "one"})
     assert len(a) == 64
+
+
+def test_manual_keywords_lead_the_keywords_and_survive_the_cap(tmp_path: Path) -> None:
+    generated = [f"g{i}" for i in range(MAX_ITEMS_PER_FIELD)]
+    entry = {"queries": [], "keywords": generated, "manual_keywords": ["PMC"]}
+    text = expansion_texts(str(_write(tmp_path, _doc({"x_tool": entry}))), only=("keywords",))
+    assert text["x_tool"].startswith("PMC g0 ") and f"g{MAX_ITEMS_PER_FIELD - 1}" not in text
+
+
+def test_regeneration_keeps_the_manual_overlay(tmp_path: Path, monkeypatch) -> None:
+    root = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location(
+        "gen_exp", root / "scripts/gen_tool_expansions.py"
+    )
+    assert spec and spec.loader
+    gen = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gen)
+    monkeypatch.setattr(gen, "_generate", lambda *a: {"queries": ["new q"], "keywords": ["new"]})
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test")
+    catalog = _write(tmp_path, [{"name": "x_tool", "description": "changed", "params": {}}])
+    out = tmp_path / "out.json"
+    stale = {"source_sha256": "old", "queries": [], "keywords": ["k"], "manual_keywords": ["PMC"]}
+    out.write_text(json.dumps(_doc({"x_tool": stale})), encoding="utf-8")
+    argv = ["--catalog", str(catalog), "--out", str(out), "--cache-dir", str(tmp_path / "c")]
+    assert gen.main(argv) == 0
+    entry = json.loads(out.read_text(encoding="utf-8"))["tools"]["x_tool"]
+    assert entry["keywords"] == ["new"] and entry["manual_keywords"] == ["PMC"]
