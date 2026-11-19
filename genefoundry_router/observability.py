@@ -546,11 +546,14 @@ class MetricsMiddleware(Middleware):
         if is_search:
             SEARCH_HITS.inc()
         start = time.perf_counter()
-        label: str | None = "error"
+        label: str | None = None
         try:
             result = await call_next(context)
             label = search_result_label(result)
             return result
+        except Exception:  # not BaseException: a cancelled search is not a failed one
+            label = "error"
+            raise
         finally:
             if is_search and label is not None:
                 SEARCH_RESULTS.labels(result=label).inc()

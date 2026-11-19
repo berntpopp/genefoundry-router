@@ -143,3 +143,18 @@ async def test_metrics_middleware_labels_search_results() -> None:
     with pytest.raises(RuntimeError):
         await mw.on_call_tool(ctx, AsyncMock(side_effect=RuntimeError("x")))
     assert value("error") == before + 1
+
+
+@pytest.mark.asyncio
+async def test_metrics_middleware_does_not_count_a_cancelled_search_as_error() -> None:
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock
+
+    from genefoundry_router.observability import SEARCH_RESULTS, MetricsMiddleware
+
+    ctx = MagicMock()
+    ctx.message.name = "search_tools"
+    before = SEARCH_RESULTS.labels(result="error")._value.get()
+    with pytest.raises(asyncio.CancelledError):
+        await MetricsMiddleware().on_call_tool(ctx, AsyncMock(side_effect=asyncio.CancelledError()))
+    assert SEARCH_RESULTS.labels(result="error")._value.get() == before

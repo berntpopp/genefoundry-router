@@ -115,12 +115,11 @@ async def resolve_search_hits(context: Any, result: Any) -> dict[str, Any]:
             except Exception:
                 resolved = False
         top.append(safe_log_identity(name if isinstance(name, str) else "", resolved)[0])
-    low = any(isinstance(hit, dict) and hit.get("low_confidence") is True for hit in hits)
     return {
         "hit_count": len(hits),
         "zero_results": not hits,  # zero-result rate = the discovery-gap metric
         "top_hits": top,
-        "low_confidence": low,
+        "low_confidence": search_result_label(result) == "low_confidence",
     }
 
 
