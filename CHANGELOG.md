@@ -2,6 +2,21 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.13.2] - 2026-11-19
+
+### Fixed
+
+- **Unexpected arguments return a structured `invalid_input` envelope (#158).** FastMCP
+  answered an unknown argument with a raw pydantic dump (no `error_code`, caller input
+  reflected). The new `ArgumentGuard` middleware rejects keys outside a closed
+  `inputSchema` (`additionalProperties: false`) for `search_tools`, `call_tool`, the
+  `call_tool` target and every federated tool. The envelope lists only the accepted
+  parameters in `allowed_values`. Re-verified on current backend releases: no backend's
+  diagnostics tool advertises `response_mode`, and all reject unknown keys with
+  `invalid_input`.
+- Tests: the structlog isolation fixture moves to `tests/conftest.py`, so `capture_logs`
+  works in integration tests regardless of collection order.
+
 ## [0.13.1] - 2026-11-19
 
 ### Added
