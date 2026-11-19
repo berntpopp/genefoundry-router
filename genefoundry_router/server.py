@@ -16,6 +16,7 @@ from fastmcp.tools import Tool
 from starlette.responses import JSONResponse
 
 from genefoundry_router import __version__
+from genefoundry_router.argument_guard import ArgumentGuard
 from genefoundry_router.auth import build_auth, resolve_refresh_observability_hmac_key
 from genefoundry_router.authorization import WriteAuthorizationMiddleware
 from genefoundry_router.cache import ToolResponseCache, ToolResponseCacheMiddleware
@@ -128,6 +129,7 @@ def build_server(
     server.add_middleware(StrictNullMiddleware())  # #293: before guard + cache (stable keys)
     server.add_middleware(notfound_guard)
     server.notfound_guard = notfound_guard  # type: ignore[attr-defined]
+    server.add_middleware(ArgumentGuard())  # #158: after the name guard (unknown -> not_found)
     tool_cache = ToolResponseCache(registry)
     server.add_middleware(ToolResponseCacheMiddleware(tool_cache))
     server.tool_cache = tool_cache  # type: ignore[attr-defined]
