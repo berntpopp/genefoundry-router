@@ -12,6 +12,7 @@ from pydantic import (
     AnyHttpUrl,
     Field,
     SecretStr,
+    StrictInt,
     ValidationError,
     field_validator,
     model_validator,
@@ -92,7 +93,13 @@ class RouterSettings(BaseSettings):
 
     # Inbound request limits (DoS/abuse guard). <=0 disables that limit.
     GF_MAX_BODY_BYTES: int = 4_000_000  # 4 MB cap on request bodies (413 over)
-    GF_RATE_LIMIT_RPM: int = 0  # per-client requests/min (429 over); 0 = off, enable in prod
+    GF_RATE_LIMIT_RPM: int = 0  # default per-key requests/min (429 over); 0 = off, enable in prod
+    # Pre-auth per-IP DoS floor; unset = GF_RATE_LIMIT_RPM (the pre-0.13 behaviour). With
+    # auth on, raise it above the per-account limits so NAT-shared callers are not starved.
+    GF_RATE_LIMIT_IP_RPM: int | None = None
+    # Per-account overrides (JSON object): verified token subject or client id -> positive
+    # requests/min or "unlimited". Example: {"gfbench": 600, "<owner-sub>": "unlimited"}.
+    GF_RATE_LIMIT_OVERRIDES: dict[str, StrictInt | Literal["unlimited"]] = {}
     GF_TRUSTED_PROXY_HOPS: int = 1  # trusted hops at the tail of X-Forwarded-For
     GF_METRICS_TOKEN: str | None = None  # optional bearer token for GET /metrics
     # Durable, privacy-bounded OAuth refresh-rotation measurements. Production Compose
@@ -242,6 +249,33 @@ class RouterSettings(BaseSettings):
             rerank_config(self)
         except ValidationError as exc:
             raise ValueError(f"invalid GF_SEARCH_RERANK_* settings: {exc}") from exc
+        return self
+
+    @field_validator("GF_RATE_LIMIT_OVERRIDES")
+    @classmethod
+    def _valid_rate_overrides(
+        cls, v: dict[str, int | Literal["unlimited"]]
+    ) -> dict[str, int | Literal["unlimited"]]:
+        """Keys are exact account ids; values a positive limit or ``"unlimited"``.
+
+        ``0`` is rejected rather than guessed at (block? unlimited?).
+        """
+        for key, value in v.items():
+            if not key or key != key.strip() or len(key) > 255:
+                raise ValueError("GF_RATE_LIMIT_OVERRIDES keys must be non-empty account ids")
+            if isinstance(value, int) and value < 1:
+                raise ValueError('GF_RATE_LIMIT_OVERRIDES values must be >= 1 or "unlimited"')
+        return v
+
+    @model_validator(mode="after")
+    def _override_does_not_name_the_shared_oauth_client(self) -> RouterSettings:
+        """Every interactive OAuth user's upstream token carries the router's own client id
+        as ``azp``; an override keyed on it would silently apply to all of them."""
+        if self.GF_OAUTH_CLIENT_ID and self.GF_OAUTH_CLIENT_ID in self.GF_RATE_LIMIT_OVERRIDES:
+            raise ValueError(
+                "GF_RATE_LIMIT_OVERRIDES must not name GF_OAUTH_CLIENT_ID (shared by every "
+                "OAuth user); key on the account subject instead"
+            )
         return self
 
     @field_validator("GF_TRUSTED_PROXY_HOPS")

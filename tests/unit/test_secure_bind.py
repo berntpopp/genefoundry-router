@@ -73,6 +73,12 @@ def test_no_refuse_when_public_auth_bind_is_rate_limited(mode: str) -> None:
     assert refuses_no_rate_limit(mode, rate_limit_rpm=120, deployment_mode="production") is False
 
 
+@pytest.mark.parametrize(("ip_rpm", "refused"), [(None, False), (600, False), (0, True)])
+def test_explicit_zero_ip_floor_is_refused_in_production(ip_rpm: int | None, refused: bool) -> None:
+    # The pre-auth per-IP DoS floor can be raised for per-account limits, never switched off.
+    assert refuses_no_rate_limit("jwt", 120, "production", ip_rpm) is refused
+
+
 @pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1"])
 def test_no_refuse_rate_limit_on_loopback(host: str) -> None:
     assert refuses_no_rate_limit("jwt", rate_limit_rpm=0, deployment_mode="development") is False

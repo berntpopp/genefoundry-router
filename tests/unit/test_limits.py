@@ -64,13 +64,18 @@ def test_body_cap_allows_small() -> None:
     assert c.post("/x", content=b"hi").status_code == 200
 
 
-def test_rate_limit_returns_429_after_limit() -> None:
+def test_rate_limit_returns_429_after_limit(monkeypatch) -> None:
+    monkeypatch.setattr(limits_mod.time, "monotonic", lambda: 1215.0)  # 15 s into a window
     c = _client(max_body_bytes=0, rate_limit_rpm=2)
-    assert c.get("/x").status_code == 200
-    assert c.get("/x").status_code == 200
+    ok = c.get("/x")
+    assert ok.status_code == 200
+    assert ok.headers["ratelimit-policy"] == '"ip";q=2;w=60'
+    assert ok.headers["ratelimit"] == '"ip";r=1;t=45'
+    assert c.get("/x").headers["ratelimit"] == '"ip";r=0;t=45'
     resp = c.get("/x")
     assert resp.status_code == 429
-    assert resp.headers["retry-after"] == "60"
+    assert resp.headers["retry-after"] == "45"  # seconds to the window boundary
+    assert resp.headers["ratelimit"] == '"ip";r=0;t=45'
     # #294: the MCP client parses a non-2xx body as JSON-RPC; anything else becomes the
     # opaque "Server returned an error response".
     from mcp.types import JSONRPCError, jsonrpc_message_adapter
@@ -78,7 +83,7 @@ def test_rate_limit_returns_429_after_limit() -> None:
     parsed = jsonrpc_message_adapter.validate_json(resp.content, by_name=False)
     assert isinstance(parsed, JSONRPCError)
     assert "rate limit exceeded" in parsed.error.message
-    assert parsed.error.data == {"retry_after": 60}
+    assert parsed.error.data == {"retry_after": 45}
 
 
 def test_spoofed_leftmost_xff_values_share_bucket() -> None:
