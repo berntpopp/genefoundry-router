@@ -4,6 +4,15 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **`X-GF-Pinned-Mode` also selects the instructions and the hint call form (#320).** The
+  header filtered `tools/list` only, so a `none`-mode client was still told about pinned tools
+  it could not see, and got bare pinned names in rewritten hints. `initialize` and
+  `server/discover` now return that mode's instructions, hint rewriting uses that mode's pinned
+  set (bare name vs `call_tool(name=…)`), and the tool-response cache keys on an overriding
+  header. Auth, routing and rate limits still never read it.
+
 ### Fixed
 
 - **A backend that answers 403/5xx now reads as unavailable, not as an unknown tool (#325).**
