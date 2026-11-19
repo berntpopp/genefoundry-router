@@ -26,7 +26,7 @@ from __future__ import annotations
 import asyncio
 import math
 import time
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, Protocol
 from urllib.parse import urlsplit
 
@@ -34,6 +34,8 @@ import httpx
 import structlog
 from fastmcp.tools.base import Tool
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
+
+from genefoundry_router.search_expansion import expansion_texts
 
 if TYPE_CHECKING:
     from genefoundry_router.config import RouterSettings
@@ -50,6 +52,12 @@ MAX_CHOICE_OPTIONS = 255  # System One hard limit per Choice question
 # Longer queries are cut before leaving the router: bounds upstream cost per search and stops
 # one caller's oversized input from turning into an upstream 4xx.
 MAX_QUERY_CHARS = 2000
+# Candidate text = description lead + parameter summary + expansion keywords (#306): the
+# lead alone often never says what a tool returns. Caps bound each candidate (and so the
+# request: pool x cap) whatever a backend's schema or an expansion file holds.
+MAX_PARAMS_CHARS = 200
+MAX_KEYWORDS_CHARS = 240
+MAX_CANDIDATE_CHARS = 800
 # Failures that mean "the endpoint is unhealthy" (open the cooldown for everyone). Any other
 # 4xx or a malformed answer is a per-request fault: fall back for that search only, so one
 # caller cannot switch reranking off for all users.
@@ -106,6 +114,40 @@ def _describe(tool: Tool, limit: int) -> str:
     return " ".join((tool.description or "").split())[:limit]
 
 
+def _enum(schema: Any) -> list[Any]:
+    """Enum values of a property, also behind ``anyOf`` (Optional) or array ``items``."""
+    if not isinstance(schema, dict):
+        return []
+    any_of = schema.get("anyOf")
+    for sub in (schema, *(any_of if isinstance(any_of, list) else ()), schema.get("items")):
+        if isinstance(sub, dict) and isinstance(sub.get("enum"), list):
+            return [v for v in sub["enum"] if v is not None]
+    return []
+
+
+def _param_summary(tool: Tool) -> str:
+    props = (tool.parameters or {}).get("properties")
+    if not isinstance(props, dict):
+        return ""
+    parts = [
+        f"{name} ({'|'.join(map(str, values))})" if (values := _enum(schema)) else str(name)
+        for name, schema in props.items()
+    ]
+    return ", ".join(parts)[:MAX_PARAMS_CHARS]
+
+
+def candidate_text(tool: Tool, lead_chars: int, keywords: str = "") -> str:
+    """What the reranker reads about a tool besides its name: description lead, a compact
+    parameter summary (names, enum values) and its expansion keywords — catalog-only,
+    deterministic, and capped at ``MAX_CANDIDATE_CHARS``."""
+    parts = [_describe(tool, lead_chars)]
+    if params := _param_summary(tool):
+        parts.append(f"Parameters: {params}")
+    if keywords:
+        parts.append(f"Keywords: {keywords[:MAX_KEYWORDS_CHARS]}")
+    return " ".join(" | ".join(parts).split())[:MAX_CANDIDATE_CHARS]
+
+
 def _probability(value: Any) -> float:
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise ValueError("score is not a number")
@@ -118,8 +160,14 @@ def _probability(value: Any) -> float:
 class SystemOneReranker:
     """Rerank BM25 candidates with a System One model; ``None`` means "use BM25 order"."""
 
-    def __init__(self, config: RerankConfig, transport: httpx.AsyncBaseTransport | None = None):
+    def __init__(
+        self,
+        config: RerankConfig,
+        transport: httpx.AsyncBaseTransport | None = None,
+        keywords: Mapping[str, str] | None = None,
+    ):
         self.config = config
+        self.keywords = dict(keywords or {})  # tool name -> expansion keywords
         headers = {"Content-Type": "application/json"}
         if config.api_key is not None:
             headers["Authorization"] = f"Bearer {config.api_key.get_secret_value()}"
@@ -134,9 +182,10 @@ class SystemOneReranker:
         self.min_score = config.min_score
 
     def _request(self, query: str, tools: Sequence[Tool]) -> dict[str, Any]:
-        limit = self.config.max_description_chars
+        lead = self.config.max_description_chars
+        texts = [candidate_text(t, lead, self.keywords.get(t.name, "")) for t in tools]
         if self.config.question == "choice":
-            options = {t.name: _describe(t, limit) for t in tools}
+            options = {t.name: text for t, text in zip(tools, texts, strict=True)}
             questions: dict[str, Any] = {
                 "tool": {"type": "choice", "instructions": CHOICE_INSTRUCTION, "criteria": options}
             }
@@ -145,7 +194,7 @@ class SystemOneReranker:
                 f"t{i}": {
                     "type": "noul",
                     "instructions": {
-                        "tool": {"name": t.name, "description": _describe(t, limit)},
+                        "tool": {"name": t.name, "description": texts[i]},
                         "question": NOUL_INSTRUCTION,
                     },
                     "criteria": NOUL_CRITERIA,
@@ -231,4 +280,5 @@ def build_reranker(settings: RouterSettings) -> SystemOneReranker | None:
     """The configured reranker, or ``None`` when ``GF_SEARCH_RERANK=off``."""
     if settings.GF_SEARCH_RERANK == "off":
         return None
-    return SystemOneReranker(rerank_config(settings))
+    keywords = expansion_texts(settings.GF_SEARCH_EXPANSIONS, only=("keywords",), sep=", ")
+    return SystemOneReranker(rerank_config(settings), keywords=keywords)

@@ -53,6 +53,8 @@ def test_hosted_jev_via_openrouter(monkeypatch: pytest.MonkeyPatch) -> None:
     assert rr.config.min_score == 0.3
     assert rr.config.api_key is not None
     assert rr.config.api_key.get_secret_value() == "sk-or-secret"
+    kw = rr.keywords["pubtator_get_publication_passages"]  # builtin expansion keywords only
+    assert kw.startswith("abstract extraction, full text retrieval") and "pmid 1" not in kw
 
 
 def test_self_hosted_onejev_without_key() -> None:

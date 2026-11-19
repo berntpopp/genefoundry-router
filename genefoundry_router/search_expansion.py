@@ -97,11 +97,12 @@ def _load_builtin() -> dict[str, dict[str, list[str]]]:
     return _validate(json.loads(resource.read_text(encoding="utf-8")), BUILTIN_RESOURCE)
 
 
-def expansion_texts(source: str) -> dict[str, str]:
+def expansion_texts(source: str, only: tuple[str, ...] = _FIELDS, sep: str = " ") -> dict[str, str]:
     """Tool name -> flattened expansion text for ``source``.
 
     ``source`` is ``"builtin"`` (the packaged file), ``"off"``/blank (no expansion), or a
     path to a file in the same format (e.g. one regenerated for a private fleet).
+    ``only``/``sep`` select and join the items (the reranker reads keywords only).
     """
     choice = source.strip()
     if not choice or choice.lower() == "off":
@@ -111,10 +112,10 @@ def expansion_texts(source: str) -> dict[str, str]:
     for name, fields in entries.items():
         parts = [
             cleaned
-            for field in _FIELDS
+            for field in only
             for item in fields[field][:MAX_ITEMS_PER_FIELD]
             if (cleaned := _clean(item))
         ]
         if parts:
-            texts[name] = " ".join(parts)
+            texts[name] = sep.join(parts)
     return texts

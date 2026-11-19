@@ -59,7 +59,9 @@ Gemini Remote MCP (snake_case, `[a-z0-9_]`, ≤ 64 chars).
 3. **Optional reranker** (`GF_SEARCH_RERANK=systemone`, off by default). The top
    `GF_SEARCH_RERANK_POOL` BM25 hits go to a [System One](https://docs.typesafe.ai) decision
    model, which answers "can this tool directly fulfil the request?" per candidate with a
-   calibrated probability. Hits are reordered, carry a `relevance` field, and with
+   calibrated probability. Each candidate is its name plus its description lead, a compact
+   parameter summary (names and enum values) and its expansion keywords, capped at 800
+   characters (#306): the lead alone often does not say what a tool returns. Hits are reordered, carry a `relevance` field, and with
    `GF_SEARCH_RERANK_MIN_SCORE` anything below the floor is dropped. If the floor drops every
    candidate, the top 2 BM25 hits are served with `"low_confidence": true` (and their
    `relevance`) instead of five wrong tools or a bare `[]`, which agents read as "the fleet
@@ -80,6 +82,9 @@ Measured on the held-out set (219 tasks, 24 out-of-scope; pins excluded, top-5 s
 "Abstained" counts no confident hit (`[]` or `low_confidence`). The curated set
 under-represents agent phrasing: on genefoundry-bench agent traces the 0.3 floor emptied 24%
 of searches, many in scope (literature full text, figures, tables; #303).
+`tests/discoverability/agent_queries.yaml` holds those 858 agent queries (synthetic, no gold
+tool) for offline measurement only: `uv run python scripts/search_rerank_report.py --tasks
+tests/discoverability/agent_queries.yaml` reports the share each pipeline empties.
 
 ### Choosing a reranker deployment
 
