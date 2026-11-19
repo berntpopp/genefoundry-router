@@ -4,12 +4,10 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
-### Documentation
+## [0.13.3] - 2026-11-19
 
-- **Response-Envelope §2b: accept the identifier the user has** (#319). Entry-point tools accept
-  every identifier form they can already convert, echo `resolved_from: {input, form,
-  resolved_to}`, return candidates instead of guessing on ambiguity, and keep `invalid_input` +
-  the converter in `next_commands` where conversion needs another backend. DoD item added.
+Deploy candidate. Summarises everything since v0.13.2, including three changes that shipped
+in the v0.13.2 tag without a changelog line (#312, #314, the Dependabot pins).
 
 ### Fixed
 
@@ -37,10 +35,39 @@ All notable changes to genefoundry-router are documented here.
   - Held-out pure search: hit@5 0.933 → 0.944, MRR 0.832 → 0.858, crosslingual 0.64 → 0.73.
 - Discovery catalog: re-captured clinpgx-link v0.1.17 (search_records lead says gene–drug,
   not drug–drug) and metadome-link v0.5.2 (resolve_transcript lead names the GRCh37/38
-  tolerance-landscape transcript); their 2 expansion entries are stale until `make expansions`.
+  tolerance-landscape transcript); their 2 expansion entries are regenerated (#318).
 - Tests: `bench_regressions.yaml` is checked in pure search (a pin never enters the BM25
   pool, so pins no longer satisfy a regression); adds German and Spanish variant-frequency
   tasks and an out-of-scope drug–drug interaction negative in the held-out set.
+- **Hand-curated `manual_keywords` overlay survives expansion regeneration (#316).**
+  Regenerating `pubtator_get_publication_passages` had dropped the v0.12.5 full-text terms
+  (article-full-text fell to rank 9). The generator carries the overlay over and the loader
+  puts it ahead of the generated keywords, so the 40-item cap never drops it.
+- CI: `check_action_pin_versions` resolves each pinned tag with one commits-API call; a
+  throttled annotated-tag lookup had flagged the correct codeql-action v4.39.3 pin as a lie
+  (#316).
+
+### Added
+
+- Discovery catalog and fleet manifest re-captured from every backend's current release tag
+  (22 backends run locally, no fallbacks), with snapshot-capture fixes (#315).
+- `docs/RESPONSE-ENVELOPE-STANDARD-v1.md` §2a: a `resolve_*` miss is an honest `not_found`
+  with scored candidates and `next_commands`; `docs/conformance/behaviour.py` gains a
+  WARN-level probe for it (#314, #301).
+- Tests: CI fails on a catalog tool without a packaged expansion; second STRING
+  pair-question regression task (#312, #292, #297).
+
+### Changed
+
+- CI: Dependabot action pins — setup-python 7.1.0, setup-uv 10.3.3, docker/login-action
+  4.8.0, codeql-action 4.39.3 (d4f898a, #287).
+
+### Documentation
+
+- **Response-Envelope §2b: accept the identifier the user has** (#319). Entry-point tools accept
+  every identifier form they can already convert, echo `resolved_from: {input, form,
+  resolved_to}`, return candidates instead of guessing on ambiguity, and keep `invalid_input` +
+  the converter in `next_commands` where conversion needs another backend. DoD item added.
 
 ## [0.13.2] - 2026-11-19
 
