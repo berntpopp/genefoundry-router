@@ -65,12 +65,6 @@
       "observed_identity_sha256": "bcc03b90eea4b61b4c42eaf7c602d8f85dc1e8d0e88f68b6a824356888286376",
       "status": "runtime-v1",
       "verified_commit": "8f5b2528110cce68d886fe6b18a5aacb57fd1b99"
-    },
-    "pubtator-link": {
-      "evidence": null,
-      "observed_identity_sha256": null,
-      "status": "unadopted",
-      "verified_commit": null
     }
   },
   "schema_version": 1

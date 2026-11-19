@@ -69,15 +69,15 @@ bite MCP clients.
 ### Federated backends
 
 <!-- BEGIN GENERATED: fleet-inventory -->
-**22 backends, 285 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
+**22 backends, 287 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
 
 | Namespace | Domain | Data source | Tools | Repo |
 |-----------|--------|-------------|------:|------|
 | `pubtator` | Literature & entity annotation | [PubTator3](https://www.ncbi.nlm.nih.gov/research/pubtator3/) | 35 | [pubtator-link](https://github.com/berntpopp/pubtator-link) |
 | `gnomad` | Variant / gene / population frequency | [gnomAD](https://gnomad.broadinstitute.org/) | 22 | [gnomad-link](https://github.com/berntpopp/gnomad-link) |
 | `orphanet` | Rare disease ontology & associations | [Orphadata](https://www.orphadata.com/) | 19 | [orphanet-link](https://github.com/berntpopp/orphanet-link) |
+| `hpo` | Phenotype ontology & associations | [Human Phenotype Ontology](https://hpo.jax.org/) | 18 | [hpo-link](https://github.com/berntpopp/hpo-link) |
 | `clingen` | Gene–disease curation | [ClinGen](https://clinicalgenome.org/) | 17 | [clingen-link](https://github.com/berntpopp/clingen-link) |
-| `hpo` | Phenotype ontology & associations | [Human Phenotype Ontology](https://hpo.jax.org/) | 17 | [hpo-link](https://github.com/berntpopp/hpo-link) |
 | `mavedb` | Variant-effect assay scores | [MaveDB](https://www.mavedb.org/) | 15 | [mavedb-link](https://github.com/berntpopp/mavedb-link) |
 | `uniprot` | Protein function | [UniProt](https://www.uniprot.org/) | 15 | [uniprot-link](https://github.com/berntpopp/uniprot-link) |
 | `clinpgx` | Pharmacogenomics / gene-drug guidelines | [ClinPGx](https://clinpgx.org/) | 13 | [clinpgx-link](https://github.com/berntpopp/clinpgx-link) |
@@ -91,9 +91,9 @@ bite MCP clients.
 | `hgnc` | Gene nomenclature | [HGNC](https://www.genenames.org/) | 9 | [hgnc-link](https://github.com/berntpopp/hgnc-link) |
 | `panelapp` | Diagnostic gene panels & curation | [PanelApp](https://panelapp.genomicsengland.co.uk/) | 9 | [panelapp-link](https://github.com/berntpopp/panelapp-link) |
 | `autopvs1` | Variant ACMG PVS1 | [AutoPVS1](https://autopvs1.bgi.com/) | 7 | [autopvs1-link](https://github.com/berntpopp/autopvs1-link) |
+| `clinvar` | Variant clinical significance | [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/) | 7 | [clinvar-link](https://github.com/berntpopp/clinvar-link) |
 | `spliceai` | Splicing prediction | [SpliceAI Lookup](https://spliceailookup.broadinstitute.org/) | 7 | [spliceailookup-link](https://github.com/berntpopp/spliceailookup-link) |
 | `vep` | Variant annotation / consequence | [Ensembl VEP](https://rest.ensembl.org/) | 7 | [vep-link](https://github.com/berntpopp/vep-link) |
-| `clinvar` | Variant clinical significance | [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/) | 6 | [clinvar-link](https://github.com/berntpopp/clinvar-link) |
 | `litvar` | Variant literature | [LitVar2](https://www.ncbi.nlm.nih.gov/research/litvar2/) | 6 | [litvar-link](https://github.com/berntpopp/litvar-link) |
 <!-- END GENERATED: fleet-inventory -->
 
