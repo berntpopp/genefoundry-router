@@ -26,6 +26,7 @@ from genefoundry_router.audit_identity import (
     resolve_dispatch_namespace,
     resolve_log_identity,
     resolve_search_hits,
+    search_result_label,
 )
 from genefoundry_router.notfound_guard import redacted_message
 from genefoundry_router.refresh_observability import (
@@ -70,6 +71,12 @@ TOOL_CALLS = Counter(
 SEARCH_HITS = Counter(
     "genefoundry_search_hits_total",
     "search_tools invocations",
+    registry=METRICS_REGISTRY,
+)
+SEARCH_RESULTS = Counter(
+    "genefoundry_search_tools_results_total",
+    "search_tools outcomes; zero / total is the zero-result rate",
+    ["result"],  # hits | zero | low_confidence | error
     registry=METRICS_REGISTRY,
 )
 TOOL_LATENCY = Histogram(
@@ -511,11 +518,16 @@ class AuditLogMiddleware(Middleware):
                 elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
             )
             raise
+        # OTel ``error.type``: an in-band isError result is "tool_error"; no hit fields
+        outcome: dict[str, Any] = (
+            {"outcome": "error", "error_type": "tool_error"}
+            if getattr(result, "is_error", False)
+            else {"outcome": "ok", **await resolve_search_hits(context, result)}
+        )
         audit_log.info(
             "tool_call",
             **await self._identity_fields(context),
-            outcome="error" if getattr(result, "is_error", False) else "ok",
-            **await resolve_search_hits(context, result),
+            **outcome,
             elapsed_ms=round((time.perf_counter() - start) * 1000, 2),
         )
         return result
@@ -530,12 +542,18 @@ class MetricsMiddleware(Middleware):
 
     async def on_call_tool(self, context: MiddlewareContext, call_next):  # type: ignore[no-untyped-def]
         raw = getattr(context.message, "name", "") or ""
-        if raw == "search_tools":
+        is_search = raw == "search_tools"
+        if is_search:
             SEARCH_HITS.inc()
         start = time.perf_counter()
+        label: str | None = "error"
         try:
-            return await call_next(context)
+            result = await call_next(context)
+            label = search_result_label(result)
+            return result
         finally:
+            if is_search and label is not None:
+                SEARCH_RESULTS.labels(result=label).inc()
             # Resolve AFTER dispatch: an unresolved/hostile name buckets to "_unknown" so
             # it can neither inflate label cardinality nor carry prose/code points into a
             # Prometheus label; a verified registered tool keeps its real namespace.

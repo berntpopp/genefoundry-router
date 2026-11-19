@@ -2,6 +2,17 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.12.6] - 2026-11-19
+
+### Added
+
+- **Search analytics (#301):** every successful `search_tools` audit record carries
+  `zero_results` (the zero-result rate is the discovery-gap metric to watch) next to
+  `hit_count` and `low_confidence`. An `isError` result of any tool now logs
+  `error_type: "tool_error"` (OTel `error.type`); a failed search has no hit fields. New
+  counter `genefoundry_search_tools_results_total{result=hits|zero|low_confidence|error}`.
+  Query text is still never logged. See `docs/discovery.md`.
+
 ## [0.12.5] - 2026-11-19
 
 ### Fixed

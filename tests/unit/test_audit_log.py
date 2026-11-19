@@ -363,3 +363,50 @@ async def _ok_plain(_ctx):  # type: ignore[no-untyped-def]
     from fastmcp.tools.base import ToolResult
 
     return ToolResult(structured_content={"result": [{"name": "vep_annotate_variant"}]})
+
+
+async def test_search_tools_audit_flags_zero_results() -> None:
+    """The zero-result rate is THE discovery-gap metric; make it a plain boolean."""
+    from fastmcp.tools.base import ToolResult
+
+    mw = AuditLogMiddleware()
+
+    async def _empty(_ctx):
+        return ToolResult(structured_content={"result": []})
+
+    with structlog.testing.capture_logs() as logs:
+        await mw.on_call_tool(_Ctx("search_tools", {"query": "x"}), _empty)
+        await mw.on_call_tool(_Ctx("search_tools", {"query": "x"}), _ok_plain)
+
+    zero, hit = [entry for entry in logs if entry.get("event") == "tool_call"]
+    assert zero["zero_results"] is True and zero["hit_count"] == 0
+    assert hit["zero_results"] is False
+
+
+async def test_failed_search_tools_audit_has_error_type_and_no_hit_fields() -> None:
+    """OTel ``error.type``: an isError result is ``tool_error``; hit fields are absent."""
+    from fastmcp.tools.base import ToolResult
+
+    mw = AuditLogMiddleware()
+    query = "patient Jane Doe c.68_69delAG BRCA1"
+
+    async def _is_error(_ctx):
+        res = ToolResult(structured_content={"result": []})
+        res.is_error = True  # type: ignore[attr-defined]
+        return res
+
+    async def _raise(_ctx):
+        raise ToolError(f"search failed for {query}")
+
+    with structlog.testing.capture_logs() as logs:
+        await mw.on_call_tool(_Ctx("search_tools", {"query": query}), _is_error)
+        with contextlib.suppress(ToolError):
+            await mw.on_call_tool(_Ctx("search_tools", {"query": query}), _raise)
+
+    in_band, raised = [entry for entry in logs if entry.get("event") == "tool_call"]
+    assert in_band["error_type"] == "tool_error"
+    assert raised["error_type"] == "ToolError"
+    for entry in (in_band, raised):
+        assert entry["outcome"] == "error"
+        assert not {"hit_count", "top_hits", "zero_results", "low_confidence"} & entry.keys()
+        assert "Jane" not in str(entry)

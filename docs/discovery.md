@@ -129,6 +129,23 @@ exact surface: ~50 golden tasks plus a 219-task held-out set written blind to th
 (`tests/discoverability/heldout_tasks.yaml`: lay, jargon, paraphrase, crosslingual, …). The bar is enforced in CI (`tests/discoverability/`), so tuning pins,
 search, or descriptions stays evidence-driven rather than vibes-driven.
 
+## Search analytics in production
+
+The metric to watch is the **zero-result rate** (zero-result searches / all searches, the
+"no results rate" of Algolia, Kendra and Meilisearch): each zero-result search is a request
+the catalog could not place. Every `search_tools` audit record (`event: tool_call`) carries:
+
+| Field | Present when | Meaning |
+|---|---|---|
+| `hit_count`, `top_hits` | `outcome: ok` | Hits served; top-3 names (catalog-verified, else `_unknown`) |
+| `zero_results` | `outcome: ok` | `true` iff `hit_count == 0` |
+| `low_confidence` | `outcome: ok` | `true` when the rerank floor dropped every hit and the BM25 fallback was served |
+| `error_type` | `outcome: error` | `tool_error` for an `isError` result, else the exception class name (OTel `error.type`) |
+
+The query text is never logged (it can carry patient data). `/metrics` exposes the same split
+as `genefoundry_search_tools_results_total{result="hits|zero|low_confidence|error"}`, so the
+zero-result rate is `rate(…{result="zero"}[1h]) / sum(rate(…[1h]))`.
+
 ## Two traps to avoid
 
 See [issue #3](https://github.com/berntpopp/genefoundry-router/issues/3).
