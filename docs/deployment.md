@@ -21,6 +21,17 @@ which may use a different uid. `user` must NOT appear in `docker/docker-compose.
 validate-compose`) forbids `user` there. `tests/unit/docker/test_compose.py` guards both
 halves of this split.
 
+## Rate limits at deploy
+
+Set the rate limits in the deploy `.env`; Compose passes it through `env_file`. Since
+v0.13.0, `GF_RATE_LIMIT_RPM` is a per-account limit when auth is on. The pre-auth per-IP
+floor is `GF_RATE_LIMIT_IP_RPM`, which defaults to the same value. Raise the floor first, or
+every account behind one IP still shares the old per-IP cap. Recommended starting values
+and the `GF_RATE_LIMIT_OVERRIDES` format are in
+[configuration.md § Rate limits](configuration.md#rate-limits). After a change, check one
+authenticated response: it should carry `RateLimit-Policy` lines for both `"ip"` and
+`"account"`.
+
 ## Private scheduled drift probe
 
 The scheduled drift check reaches private fleet services from the controller's existing

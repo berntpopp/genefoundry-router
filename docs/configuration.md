@@ -34,7 +34,9 @@ starts.
 | `GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL` | `2026-09-06T00:00:00Z` | Absolute end of the 30-day legacy-issuer transition; it does not slide with process restarts |
 | `GF_OAUTH_ACCESS_TOKEN_EXPIRY_SECONDS` | `43200` | oauth: router-issued reference-token lifetime in seconds (5 min–24 h); it does not lengthen the upstream IdP bearer token |
 | `GF_REFRESH_OBSERVABILITY_DB` | _(unset)_ | oauth: durable refresh-rotation SQLite ledger. Production Compose sets `/data/genefoundry/refresh-observability.sqlite3` on the existing data volume |
-| `GF_RATE_LIMIT_RPM` | `0` | Per-client requests/min (429 over). An authenticated `GF_DEPLOYMENT_MODE=production` router **refuses to start** with `0`, even on loopback behind a proxy |
+| `GF_RATE_LIMIT_RPM` | `0` | Default requests/min per key (429 over): per verified account when auth is on, per client IP when `GF_AUTH_MODE=none`. An authenticated `GF_DEPLOYMENT_MODE=production` router **refuses to start** with `0`, even on loopback behind a proxy. See [Rate limits](#rate-limits) |
+| `GF_RATE_LIMIT_IP_RPM` | _(unset = `GF_RATE_LIMIT_RPM`)_ | Pre-auth per-IP DoS floor. Raise it above your per-account limits when auth is on; an authenticated production router refuses an explicit `<=0` |
+| `GF_RATE_LIMIT_OVERRIDES` | `{}` | JSON object: verified token subject or client id → positive requests/min or `"unlimited"`, e.g. `{"gfbench": 600, "<owner-sub>": "unlimited"}` |
 | `GF_METRICS_TOKEN` | _(unset)_ | Bearer token for `GET /metrics`. An authenticated production router **refuses to start** without it, even on loopback behind a proxy |
 | `GF_SEARCH_MAX_RESULTS` | `5` | Default hits `search_tools` returns; a caller's `limit` may ask for 1 to max(this, `GF_SEARCH_RERANK_POOL`) |
 | `GF_SEARCH_EXPANSIONS` | `builtin` | Offline BM25 document expansion: `builtin` (packaged `data/tool-expansions.json`), `off`, or a path to a file in the same format. Index-only; see [discovery](discovery.md#search-ranking-stages) |
@@ -49,6 +51,68 @@ starts.
 | `GF_DRIFT_MODE` | `warn` | Runtime catalog policy: `off` \| `warn` \| `enforce` |
 | `GF_DRIFT_BASELINE` | _(packaged)_ | Optional path override for the reviewed packaged baseline |
 | `GF_<NAME>_URL` | _(unset)_ | Per-backend `/mcp` URL (e.g. `GF_GNOMAD_URL`) |
+
+## Rate limits
+
+Two fixed-window (60 s) limits run at two layers:
+
+1. **Per client IP, before auth** (`GF_RATE_LIMIT_IP_RPM`, default `GF_RATE_LIMIT_RPM`). The
+   IP comes from the trusted tail of `X-Forwarded-For` (`GF_TRUSTED_PROXY_HOPS`). This floor
+   counts every request, including ones with no token or a forged token, so it stays the
+   DoS guard. With `GF_AUTH_MODE=none` it is the only limit.
+2. **Per account, after auth** (`GF_RATE_LIMIT_RPM`, `GF_RATE_LIMIT_OVERRIDES`). This runs
+   inside FastMCP's authentication middleware and reads only the token the verifier
+   accepted. A header never chooses the account. The bucket is the token's `sub`, or its
+   client id if it has no `sub`. One account shares one bucket across all its IPs. An
+   override is matched on `sub` first, then on the client id (`client_id`, else `azp`).
+   That lets a Keycloak service account be named by its client id (`gfbench`); its `sub`
+   is a UUID. `"unlimited"` turns off only the per-account limit. The per-IP floor still
+   applies, so raise it if the owner needs more.
+
+Do not key an override on `GF_OAUTH_CLIENT_ID`; startup rejects it. Every interactive
+OAuth user's upstream token has that client id as `azp`, so the override would apply to
+all of them. Key humans on their `sub`. Overrides are validated at startup: keys must be
+non-empty and trimmed, and values must be an integer `>= 1` or `"unlimited"`. `0` is
+rejected because it is ambiguous. Logs never contain an account or IP. A 429 logs only
+`policy` (`ip`/`account`) and `limit`, and startup logs only the override count.
+
+**Response headers.** The router sends `RateLimit-Policy` and `RateLimit` in the
+Structured-Field form of IETF
+[draft-ietf-httpapi-ratelimit-headers-11](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/).
+It does not use the older `X-RateLimit-*` or `RateLimit-Limit/Remaining/Reset` triplet. Each
+layer adds its own field line, which RFC 9651 allows. An authenticated response therefore
+carries both:
+
+```
+RateLimit-Policy: "ip";q=600;w=60
+RateLimit-Policy: "account";q=60;w=60
+RateLimit: "ip";r=597;t=41
+RateLimit: "account";r=57;t=41
+```
+
+`q` is the quota, `w` the window, `r` what remains and `t` the seconds until the window
+resets. No `pk` partition key is sent, because it would echo an IP or account id. An
+unlimited account gets no `account` item. A 429 keeps the JSON-RPC error body
+(`error.data.retry_after`) and sets `Retry-After` to the same seconds-to-reset.
+
+**Recommended production values.** The owner sets the real values at deploy.
+
+```bash
+GF_RATE_LIMIT_RPM=60          # per account: 1 req/s average, ample for an agent session
+GF_RATE_LIMIT_IP_RPM=600      # pre-auth floor: room for NAT-shared users + the bench
+GF_RATE_LIMIT_OVERRIDES='{"gfbench": 600, "<owner-sub>": "unlimited"}'
+```
+
+Single-quote the JSON in `.env`. Compose `env_file` and pydantic's dotenv reader then pass it
+through literally.
+
+Why 60: every MCP request counts, including `initialize`, `tools/list` and `search_tools`,
+and a typical agent turn uses a few of them. The real ceiling is upstream. gnomAD already
+throttles the fleet's single egress IP, and gnomad-link allows only 5 concurrent upstream
+calls. A higher per-account default just moves the 429s to gnomAD, where every user hits
+them at once. 600 for `gfbench` lets benchmark runs finish. Expect gnomAD-heavy suites to
+be paced by gnomad-link anyway. Find the owner's `sub` in Keycloak under Users → the user
+→ ID, or in the `sub` claim of an access token.
 
 ## Authentication
 

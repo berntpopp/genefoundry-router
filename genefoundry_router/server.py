@@ -24,7 +24,11 @@ from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
 from genefoundry_router.hints import NamespaceHintMiddleware
 from genefoundry_router.instructions import build_instructions
-from genefoundry_router.limits import add_request_limits
+from genefoundry_router.limits import (
+    account_rate_limit_middleware,
+    add_request_limits,
+    ip_rate_limit_rpm,
+)
 from genefoundry_router.normalization import apply_normalizations
 from genefoundry_router.notfound_guard import (
     NotFoundGuard,
@@ -194,6 +198,8 @@ def build_app(
         stateless_http=True,
         json_response=True,
         host_origin_protection=False,
+        # Appended AFTER FastMCP's auth middleware, so it sees the verified token only.
+        middleware=account_rate_limit_middleware(settings),
     )
 
     async def _refresh_catalog(phase: Literal["startup", "poll"]) -> None:
@@ -387,7 +393,7 @@ def build_app(
     add_request_limits(
         app,
         settings.GF_MAX_BODY_BYTES,
-        settings.GF_RATE_LIMIT_RPM,
+        ip_rate_limit_rpm(settings),  # pre-auth per-IP DoS floor
         trusted_proxy_hops=settings.GF_TRUSTED_PROXY_HOPS,
     )  # DoS guard
     add_host_origin_validation(

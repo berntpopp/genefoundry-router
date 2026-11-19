@@ -94,16 +94,21 @@ def should_warn_no_metrics_token(auth_mode: str, host: str, metrics_token: str |
     return not metrics_token
 
 
-def refuses_no_rate_limit(auth_mode: str, rate_limit_rpm: int, deployment_mode: str) -> bool:
+def refuses_no_rate_limit(
+    auth_mode: str,
+    rate_limit_rpm: int,
+    deployment_mode: str,
+    ip_rate_limit_rpm: int | None = None,
+) -> bool:
     """True when authenticated production lacks a positive per-client rate limit.
 
     Deployment mode is explicit because a loopback listener may be published by a
     reverse proxy. Neither the bind address nor the unauthenticated-bind escape hatch
-    participates in this production decision.
+    participates in this production decision. An explicit per-IP floor ``<=0`` is refused too.
     """
     if not requires_observability_controls(auth_mode, deployment_mode):
         return False
-    return rate_limit_rpm <= 0
+    return rate_limit_rpm <= 0 or (ip_rate_limit_rpm is not None and ip_rate_limit_rpm <= 0)
 
 
 def refuses_public_metrics_without_token(
@@ -235,10 +240,11 @@ def run(
         settings.GF_AUTH_MODE,
         settings.GF_RATE_LIMIT_RPM,
         settings.GF_DEPLOYMENT_MODE,
+        settings.GF_RATE_LIMIT_IP_RPM,
     ):
         console.print(
             "[red]Refusing to start: authenticated production deployment with "
-            "GF_RATE_LIMIT_RPM=0 (no per-client rate limit) lets one caller drive the fleet's "
+            "GF_RATE_LIMIT_RPM=0 or GF_RATE_LIMIT_IP_RPM<=0 lets one caller drive the fleet's "
             "egress IPs into upstream throttling/bans. Set GF_RATE_LIMIT_RPM (e.g. 120).[/red]"
         )
         raise typer.Exit(1)
