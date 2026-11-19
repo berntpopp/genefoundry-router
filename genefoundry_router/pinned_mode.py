@@ -7,6 +7,9 @@ the catalog that ``search_tools``/``call_tool`` read, which must keep every tool
 mode picks the ``initialize``/``server/discover`` instructions and the hint call form. None of
 it reaches authorization, call routing or rate limits, and every tool stays callable via
 ``call_tool``.
+
+``GF_SCHEMA_MODE`` / ``X-GF-Schema-Mode`` pick the listed schema form the same way: the
+backends' standard schemas, or the OpenAI-strict projection (#293) for clients that need it.
 """
 
 from __future__ import annotations
@@ -19,16 +22,27 @@ from fastmcp.server.dependencies import get_http_request
 PinnedMode = Literal["default", "minimal", "none"]
 PINNED_MODE_HEADER = "x-gf-pinned-mode"
 _MODES: tuple[str, ...] = get_args(PinnedMode)
+SchemaMode = Literal["standard", "strict"]
+SCHEMA_MODE_HEADER = "x-gf-schema-mode"
+
+
+def _header_mode[M: str](header: str, modes: tuple[str, ...], default: M) -> M:
+    try:
+        raw = get_http_request().headers.get(header, "")
+    except RuntimeError:  # in-memory / stdio: no HTTP request
+        return default
+    value = raw.strip().lower()
+    return value if value in modes else default  # type: ignore[return-value]
 
 
 def request_mode(default: PinnedMode) -> PinnedMode:
     """The caller's valid ``X-GF-Pinned-Mode``, else ``default`` (also off-HTTP)."""
-    try:
-        raw = get_http_request().headers.get(PINNED_MODE_HEADER, "")
-    except RuntimeError:  # in-memory / stdio: no HTTP request
-        return default
-    value = raw.strip().lower()
-    return value if value in _MODES else default  # type: ignore[return-value]
+    return _header_mode(PINNED_MODE_HEADER, _MODES, default)
+
+
+def request_schema_mode(default: SchemaMode) -> SchemaMode:
+    """The caller's valid ``X-GF-Schema-Mode``, else ``default`` (also off-HTTP)."""
+    return _header_mode(SCHEMA_MODE_HEADER, get_args(SchemaMode), default)
 
 
 @dataclass(frozen=True)

@@ -150,10 +150,10 @@ async def test_search_hits_carry_a_working_call_example(gnomad_fake):
         assert calls.pop("gnomad_search_genes") == {"tool": "gnomad_search_genes", "arguments": {}}
         [(name, call)] = calls.items()
         assert call["tool"] == "call_tool" and call["arguments"]["name"] == name
-        # strict tools/list advertises call_tool.arguments as a JSON string: show that form
+        # the standard listing advertises call_tool.arguments as an object: show that form
         advertised = {t.name: t for t in await client.list_tools()}["call_tool"]
         arg_schema = advertised.input_schema["properties"]["arguments"]
-        assert "string" in [alt.get("type") for alt in arg_schema["anyOf"]]
-        assert call["arguments"]["arguments"] == "{}"
+        assert "object" in [alt.get("type") for alt in arg_schema["anyOf"]]
+        assert call["arguments"]["arguments"] == {}
         result = await client.call_tool(call["tool"], call["arguments"], raise_on_error=False)
     assert not result.is_error, result.content

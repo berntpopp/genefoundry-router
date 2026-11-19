@@ -5,6 +5,7 @@ Only the listing changes: every tool stays searchable and callable through call_
 
 import json
 
+import pytest
 from fastapi.testclient import TestClient
 from fastmcp import Client
 
@@ -21,16 +22,18 @@ def _tokens(tools) -> int:  # same ~4 chars/token estimator as the budget test
     return len(json.dumps([t.model_dump(mode="json", exclude_none=True) for t in tools])) // 4
 
 
-async def _listing(mode: str):
-    server, pins = _pinned_server(RouterSettings(_env_file=None, GF_PINNED_MODE=mode))
+async def _listing(mode: str, schema: str = "standard"):
+    settings = RouterSettings(_env_file=None, GF_PINNED_MODE=mode, GF_SCHEMA_MODE=schema)
+    server, pins = _pinned_server(settings)
     async with Client(server) as client:
         return await client.list_tools(), pins
 
 
-async def test_each_mode_lists_its_pins_strictly_and_shrinks() -> None:
+@pytest.mark.parametrize("schema", ["standard", "strict"])
+async def test_each_mode_lists_its_pins_and_shrinks(schema: str) -> None:
     sizes = {}
     for mode in ("default", "minimal", "none"):
-        listed, pins = await _listing(mode)
+        listed, pins = await _listing(mode, schema)
         names = {t.name for t in listed}
         expected = {
             "default": set(pins),
@@ -38,7 +41,7 @@ async def test_each_mode_lists_its_pins_strictly_and_shrinks() -> None:
             "none": set(),
         }[mode]
         assert names == META | expected, mode
-        for tool in listed:
+        for tool in listed if schema == "strict" else ():
             assert_strict_invariants(tool.input_schema, tool.name)
         sizes[mode] = _tokens(listed)
     assert sizes["none"] < sizes["minimal"] < sizes["default"] <= PINNED_LISTING_TOKEN_BUDGET

@@ -124,6 +124,10 @@ class RouterSettings(BaseSettings):
         "mondo_search_diseases",
         "hpo_search_terms",
     ]
+    # Listed inputSchema form: standard = the backends' own schemas; strict = the OpenAI
+    # strict projection (#293: every field required + nullable, call_tool.arguments a JSON
+    # string). A request may override it with the X-GF-Schema-Mode header.
+    GF_SCHEMA_MODE: Literal["standard", "strict"] = "standard"
 
     # Discovery
     GF_POLL_INTERVAL: float = 0  # seconds; 0 disables the polling re-list

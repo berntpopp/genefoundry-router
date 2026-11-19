@@ -4,6 +4,17 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.10] - 2026-11-19
+
+### Fixed
+
+- **`tools/list` serves standard schemas again; OpenAI strict mode is opt-in.** Since v0.12.0 (#293) every listed `inputSchema` was projected to OpenAI strict mode for all clients: every optional parameter required + nullable, and `call_tool.arguments` a required JSON string. Clients that validate a model's arguments against the listed schema (Inspect AI, the python `mcp` client, most frameworks) rejected ordinary calls (`call_tool` with an object `arguments`, `'offset' is a required property`), and the bench tool-error rate rose from 8–15 % to 35–61 %. The default listing is now the backends' own schemas, with `call_tool` requiring only `name` and `arguments` an optional object, as MCP specifies (`inputSchema` is plain JSON Schema).
+- Compact `search_tools` hits' `call` example passes `arguments` as an object in standard mode.
+
+### Added
+
+- **`GF_SCHEMA_MODE=standard|strict`** (default `standard`) and the per-request **`X-GF-Schema-Mode: strict`** header, mirroring `X-GF-Pinned-Mode`. Strict mode keeps the v0.13.9 listing exactly, including `call_tool.arguments` as a JSON string. `call_tool` accepts an object or a JSON-encoded string in both modes, strict `null` sentinels are still stripped, and `search_tools(detail="strict")` is unchanged.
+
 ## [0.13.9] - 2026-11-19
 
 ### Added

@@ -198,7 +198,7 @@ async def test_call_tool_strips_strict_null_sentinels_for_optional_args() -> Non
 @pytest.mark.asyncio
 async def test_synthetic_tools_are_cached_per_transform() -> None:
     """#232: search_tools and call_tool are cached per CompactBM25SearchTransform instance."""
-    t1 = CompactBM25SearchTransform(always_visible=["pinned_tool"])
+    t1 = CompactBM25SearchTransform(always_visible=["pinned_tool"], schema_mode="strict")
 
     s1 = t1._make_search_tool()
     s2 = t1._make_search_tool()

@@ -1,4 +1,5 @@
-"""#293: the advertised tools/list is OpenAI-strict and budgeted; strict nulls still call.
+"""#293: the opt-in strict tools/list (GF_SCHEMA_MODE=strict) is OpenAI-strict and budgeted;
+strict nulls still call. The default standard listing is gated by the same budget.
 
 Built from the real pinned set (servers.yaml entrypoints) over the committed fleet-baseline
 schemas, so a backend adding a long enum or an optional parameter is caught here.
@@ -21,6 +22,11 @@ BASELINE = ROOT / "genefoundry_router" / "data" / "fleet-baseline.json"
 # ~4 chars/token, same estimator as scripts/surface.py. Ceiling for the advertised listing;
 # lower it as pinned schemas are trimmed (#293), never raise it to admit growth.
 PINNED_LISTING_TOKEN_BUDGET = 18_000  # measured ~17.1k on 2026-11-19 (#320; was ~18.1k)
+STRICT = RouterSettings(_env_file=None, GF_SCHEMA_MODE="strict")
+
+
+def _tokens(tools) -> int:
+    return len(json.dumps([t.model_dump(mode="json", exclude_none=True) for t in tools])) // 4
 
 
 def _pinned_server(settings: RouterSettings | None = None):
@@ -40,7 +46,7 @@ def _pinned_server(settings: RouterSettings | None = None):
 
 
 async def test_advertised_tools_are_openai_strict_and_budgeted() -> None:
-    server, pins = _pinned_server()
+    server, pins = _pinned_server(STRICT)
     async with Client(server) as client:
         listed = await client.list_tools()
     names = {t.name for t in listed}
@@ -48,8 +54,12 @@ async def test_advertised_tools_are_openai_strict_and_budgeted() -> None:
     assert set(pins) & names, "pinned entry points must be listed"
     for tool in listed:
         assert_strict_invariants(tool.input_schema, tool.name)
-    size = len(json.dumps([t.model_dump(mode="json", exclude_none=True) for t in listed])) // 4
-    assert size <= PINNED_LISTING_TOKEN_BUDGET, f"pinned listing ~{size} tokens"
+    standard, _ = _pinned_server()
+    async with Client(standard) as client:
+        default_size = _tokens(await client.list_tools())
+    # Both modes are gated; strict (every field required + nullable) is the larger one.
+    size = _tokens(listed)
+    assert default_size <= size <= PINNED_LISTING_TOKEN_BUDGET, (default_size, size)
 
 
 async def test_strict_null_sentinels_are_stripped_before_dispatch() -> None:
@@ -97,7 +107,7 @@ def _closed_empty_maps(node: object, path: str = "root") -> list[str]:
 
 async def test_open_maps_stay_expressible_in_strict_listing() -> None:
     """Regression (bench audit after #295): open maps closed to {} made call_tool unusable."""
-    server, _ = _pinned_server()
+    server, _ = _pinned_server(STRICT)
     async with Client(server) as client:
         listed = {t.name: t.input_schema for t in await client.list_tools()}
     for name, schema in listed.items():

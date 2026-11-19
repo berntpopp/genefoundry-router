@@ -32,7 +32,7 @@ from fastmcp.tools.base import Tool
 from pydantic import Field
 
 from genefoundry_router.config import RouterSettings
-from genefoundry_router.pinned_mode import PinPolicy
+from genefoundry_router.pinned_mode import PinPolicy, SchemaMode, request_schema_mode
 from genefoundry_router.registry import BackendDef, qualified_name
 from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_strict_schema
 from genefoundry_router.search_expansion import expansion_texts
@@ -173,20 +173,20 @@ def summarize_returns(schema: dict[str, Any] | None) -> str:
     return _type_label(schema)
 
 
-def call_example(name: str, pinned: bool) -> dict[str, Any]:
+def call_example(name: str, pinned: bool, strict: bool = False) -> dict[str, Any]:
     """Ready call for a hit (#299): unlisted tools go through ``call_tool``, pinned ones direct.
 
-    ``call_tool.arguments`` is advertised as a JSON string (strict listing, #293), so the
+    The strict listing (#293) advertises ``call_tool.arguments`` as a JSON string, so a strict
     example shows that form; the call path decodes it back into an object."""
     if pinned:
         return {"tool": name, "arguments": {}}
-    return {"tool": "call_tool", "arguments": {"name": name, "arguments": "{}"}}
+    return {"tool": "call_tool", "arguments": {"name": name, "arguments": "{}" if strict else {}}}
 
 
 def _compact_entry(
-    tool: Tool, relevance: float | None = None, pinned: bool = False
+    tool: Tool, relevance: float | None = None, pinned: bool = False, strict: bool = False
 ) -> dict[str, Any]:
-    entry: dict[str, Any] = {"name": tool.name, "call": call_example(tool.name, pinned)}
+    entry: dict[str, Any] = {"name": tool.name, "call": call_example(tool.name, pinned, strict)}
     if relevance is not None:
         entry["relevance"] = round(relevance, 3)
     if tool.description:
@@ -204,12 +204,13 @@ def serialize_tools_compact(
     tools: list[Tool],
     relevance: Mapping[str, float] | None = None,
     pinned: frozenset[str] | set[str] = frozenset(),
+    strict: bool = False,
 ) -> list[dict[str, Any]]:
     """Lean discovery payload: full inputSchema, one-line returns, no outputSchema/_meta.
     ``relevance`` (reranker P(yes) per tool name) is added only when a reranker scored the hits.
     """
     scores = relevance or {}
-    return [_compact_entry(t, scores.get(t.name), t.name in pinned) for t in tools]
+    return [_compact_entry(t, scores.get(t.name), t.name in pinned, strict) for t in tools]
 
 
 def serialize_tools_strict(tools: Sequence[Tool]) -> list[dict[str, Any]]:
@@ -248,8 +249,10 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         reranker: Reranker | None = None,
         rerank_pool: int = 20,
         policy: PinPolicy | None = None,
+        schema_mode: SchemaMode = "standard",
     ) -> None:
         self.policy = policy or PinPolicy(tuple(always_visible or ()))
+        self.schema_mode = schema_mode
         depth = max(rerank_pool, max_results) if reranker is not None else max_results
         super().__init__(max_results=depth, always_visible=always_visible)
         self._strict_cache: dict[str, tuple[Tool, Tool]] = {}
@@ -323,7 +326,10 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             elif detail == "strict":
                 hits = serialize_tools_strict(results)
             else:
-                hits = serialize_tools_compact(results, relevance, transform.policy.listed())
+                strict = request_schema_mode(transform.schema_mode) == "strict"
+                hits = serialize_tools_compact(
+                    results, relevance, transform.policy.listed(), strict
+                )
             for hit in hits if low else ():
                 hit["low_confidence"] = True
             return hits
@@ -342,14 +348,18 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         return self._search_tool
 
     async def transform_tools(self, tools: Sequence[Tool]) -> Sequence[Tool]:
-        """Advertise every listed tool with an OpenAI-strict input schema (issue #293).
+        """Advertise the listed tools' standard schemas, or OpenAI-strict ones (#293) when the
+        schema mode (``GF_SCHEMA_MODE`` / ``X-GF-Schema-Mode``) is ``strict``.
 
         Only the listing changes: calls resolve the original tool, and
         :class:`StrictNullMiddleware` strips the ``null`` sentinels strict clients send.
         """
         listed = await super().transform_tools(tools)
         keep, pins = self.policy.listed(), self._always_visible  # #320: per-request pin mode
-        return [self._strict_listing(t) for t in listed if t.name not in pins or t.name in keep]
+        shown = [t for t in listed if t.name not in pins or t.name in keep]
+        if request_schema_mode(self.schema_mode) != "strict":
+            return shown
+        return [self._strict_listing(t) for t in shown]
 
     def _strict_listing(self, tool: Tool) -> Tool:
         """Strict projection, cached per source object so a relist does not rebuild (#232)."""
@@ -461,6 +471,7 @@ def apply_tool_search(
         reranker=reranker,
         rerank_pool=settings.GF_SEARCH_RERANK_POOL,
         policy=policy,
+        schema_mode=settings.GF_SCHEMA_MODE,
     )
     server.add_transform(transform)
     log.info(
@@ -468,6 +479,7 @@ def apply_tool_search(
         max_results=settings.GF_SEARCH_MAX_RESULTS,
         pinned=pinned,
         pinned_mode=settings.GF_PINNED_MODE,
+        schema_mode=settings.GF_SCHEMA_MODE,
         expanded_tools=len(expansions),
         rerank=settings.GF_SEARCH_RERANK,
         rerank_host=urlsplit(reranker.config.url).hostname if reranker else None,
