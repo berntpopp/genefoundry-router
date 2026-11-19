@@ -245,7 +245,9 @@ servers:
     tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
     entrypoints: [search_records, get_record, get_related_records, search_dataset]
 
-  # MITOMAP mtDNA variants; pinned CC BY 3.0 data release of the daily dump (issue #189)
+  # MITOMAP mtDNA variants; external-reference CC BY 3.0 data release of the daily dump (v0.3.0;
+  # issue #189). Staged: flip `enabled` to true once mitomap-link.genefoundry.org is live and
+  # the baseline is re-pinned.
   - name: mitomap
     repo: berntpopp/mitomap-link
     url_env: GF_MITOMAP_URL
@@ -255,3 +257,4 @@ servers:
     source_url: https://www.mitomap.org/
     tags: [mitochondrial, mtdna, variant, disease, heteroplasmy, rcrs]
     entrypoints: [get_variant, search_variants]
+    enabled: false

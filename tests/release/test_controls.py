@@ -416,7 +416,7 @@ def test_complete_fleet_control_ledger_passes() -> None:
 
     require_compliant_controls(ledger, repositories)
 
-    assert len(ledger.repositories) == 23
+    assert len(ledger.repositories) == len(repositories)  # derived: backend PRs merge in any order
     assert "berntpopp/genefoundry-router" in ledger.repositories
 
 
@@ -600,7 +600,7 @@ def test_validate_controls_cli_accepts_an_exact_compliant_fleet(tmp_path: Path) 
     completed = _run_validator(ledger)
 
     assert completed.returncode == 0, completed.stderr
-    assert "validated 23 compliant repository controls" in completed.stdout
+    assert f"validated {len(repositories)} compliant repository controls" in completed.stdout
     assert "day(s) old" in completed.stdout  # evidence age is reported on success, not silent
 
 
