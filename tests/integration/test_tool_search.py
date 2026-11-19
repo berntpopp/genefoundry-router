@@ -132,3 +132,19 @@ async def test_call_tool_description_is_self_healing(gnomad_fake):
     # reframes host eviction ("Unknown tool") as recoverable, not router flakiness
     assert "unknown tool" in desc.lower()
     assert "search_tools" in desc
+
+
+async def test_search_hits_carry_a_working_call_example(gnomad_fake):
+    # Issue #299: an unpinned hit must say "go through call_tool"; a pinned one is direct.
+    settings = RouterSettings(_env_file=None)
+    registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
+    server = build_server(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+    apply_tool_search(server, settings, always_visible=["gnomad_search_genes"])
+    async with Client(server) as client:
+        hits = (await client.call_tool("search_tools", {"query": "gene", "limit": 20})).data
+        calls = {h["name"]: h["call"] for h in hits}
+        assert calls["gnomad_search_genes"] == {"tool": "gnomad_search_genes", "arguments": {}}
+        name, call = next((n, c) for n, c in calls.items() if n != "gnomad_search_genes")
+        assert call["tool"] == "call_tool" and call["arguments"]["name"] == name
+        result = await client.call_tool(call["tool"], call["arguments"], raise_on_error=False)
+    assert "not found" not in str(result.content).lower()

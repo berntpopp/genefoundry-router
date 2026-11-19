@@ -58,7 +58,7 @@ def test_leaves_already_namespaced_values_alone():
 
 def test_ignores_prose_and_non_identifier_values():
     payload = {
-        "message": "try search_genes instead",  # not a reference key
+        "note": "try search_genes instead",  # neither a reference nor a prose key
         "fallback_tool": "switch to another tool",  # not a bare identifier
     }
     assert rewrite_tool_refs(payload, "clingen", _NS) == 0

@@ -96,3 +96,10 @@ def test_instructions_ask_for_one_intent_per_search() -> None:
 
     text = build_instructions([BackendDef(name="hgnc", url_env="X", namespace="hgnc")])
     assert "ONE intent per call" in text
+
+
+def test_unpinned_tools_are_called_only_through_call_tool() -> None:
+    # Issue #299: clients that validate against tools/list reject an unlisted name locally.
+    text = build_instructions(_registry())
+    assert "directly callable" not in text
+    assert "ONLY through `call_tool" in text

@@ -172,8 +172,17 @@ def summarize_returns(schema: dict[str, Any] | None) -> str:
     return _type_label(schema)
 
 
-def _compact_entry(tool: Tool, relevance: float | None = None) -> dict[str, Any]:
-    entry: dict[str, Any] = {"name": tool.name}
+def call_example(name: str, pinned: bool) -> dict[str, Any]:
+    """Ready call for a hit (#299): unlisted tools go through ``call_tool``, pinned ones direct."""
+    if pinned:
+        return {"tool": name, "arguments": {}}
+    return {"tool": "call_tool", "arguments": {"name": name, "arguments": {}}}
+
+
+def _compact_entry(
+    tool: Tool, relevance: float | None = None, pinned: bool = False
+) -> dict[str, Any]:
+    entry: dict[str, Any] = {"name": tool.name, "call": call_example(tool.name, pinned)}
     if relevance is not None:
         entry["relevance"] = round(relevance, 3)
     if tool.description:
@@ -188,13 +197,15 @@ def _compact_entry(tool: Tool, relevance: float | None = None) -> dict[str, Any]
 
 
 def serialize_tools_compact(
-    tools: list[Tool], relevance: Mapping[str, float] | None = None
+    tools: list[Tool],
+    relevance: Mapping[str, float] | None = None,
+    pinned: frozenset[str] | set[str] = frozenset(),
 ) -> list[dict[str, Any]]:
     """Lean discovery payload: full inputSchema, one-line returns, no outputSchema/_meta.
     ``relevance`` (reranker P(yes) per tool name) is added only when a reranker scored the hits.
     """
     scores = relevance or {}
-    return [_compact_entry(t, scores.get(t.name)) for t in tools]
+    return [_compact_entry(t, scores.get(t.name), t.name in pinned) for t in tools]
 
 
 def serialize_tools_strict(tools: Sequence[Tool]) -> list[dict[str, Any]]:
@@ -297,7 +308,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
                 return serialize_tools_for_output_json(results)
             if detail == "strict":
                 return serialize_tools_strict(results)
-            return serialize_tools_compact(results, relevance)
+            return serialize_tools_compact(results, relevance, transform._always_visible)
 
         # Bounds depend on this instance, and `from __future__ import annotations` defers
         # signature annotations to module scope — so attach the bounded type here.

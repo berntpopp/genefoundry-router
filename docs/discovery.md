@@ -19,8 +19,9 @@ Pinning makes each domain's canonical tool discoverable **deterministically** ra
 relevance luck — the fix for FastMCP's flat BM25 index (no field weighting, no stemming),
 which let a terse canonical tool lose to verbose tools that merely repeat a keyword.
 
-Everything else is reached via `search_tools` → `call_tool` (and is also directly callable
-by full name once known). A typical flow:
+Everything else is reached ONLY via `search_tools` → `call_tool`: clients that check names
+against `tools/list` reject an unlisted name called directly (#299). Each compact hit carries
+a ready `call` example. A typical flow:
 
 ```text
 search_tools(query="splicing prediction")        # → hit: name="spliceai_predict_splicing", inputSchema, returns

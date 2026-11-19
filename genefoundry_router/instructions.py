@@ -76,8 +76,10 @@ Search ONE intent per call: a multi-part question (e.g. a disease's genes AND wh
 genes sit on the chromosome) needs one search per part, chained on the first result.
   2. Read a hit's `name`; it is always `<namespace>_<tool>` \
 (e.g. `spliceai_predict_splicing`, `vep_annotate_variant`).
-  3. `call_tool(name="<namespace>_<tool>", arguments={{…}})` to invoke it. A tool's \
-full namespaced name is also directly callable if you already know it.
+  3. `call_tool(name="<namespace>_<tool>", arguments={{…}})` to invoke it — each hit's \
+`call` field is that call, ready to fill. A tool that is NOT in your client's tool list \
+is invoked ONLY through `call_tool`: calling its name directly fails in clients that \
+check names against the listed tools. Only the pinned entry points may be called directly.
 
 DO NOT DEFEAT YOURSELF. `search_tools` returns data; it does not load anything into \
 your client, and you do NOT need to re-run any client/host-side tool search to \
