@@ -2,6 +2,15 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.12.4] - 2026-11-19
+
+### Added
+
+- **Search outcome in the audit log (#301, part b):** a `search_tools` audit record now
+  carries `hit_count` and `top_hits` (the first three hit names, each confirmed against the
+  catalog and bucketed to `_unknown` otherwise), so "did search find the right tool" is
+  answerable from production logs. The query text is never logged.
+
 ## [0.12.3] - 2026-11-19
 
 ### Fixed
