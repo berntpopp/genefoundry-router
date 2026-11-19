@@ -59,21 +59,19 @@ async def test_strict_null_sentinels_are_stripped_before_dispatch() -> None:
             "search_tools", {"query": "variant frequency", "limit": None, "detail": None}
         )
         assert "gnomad" in str(hits.data)
-        pinned = next(
-            t for t in await client.list_tools() if t.name == "gnomad_get_variant_frequencies"
-        )
-        nulls = {k: None for k in pinned.input_schema["properties"] if k != "variant_id"}
+        pinned = next(t for t in await client.list_tools() if t.name == "gnomad_get_gene_variants")
+        nulls = {k: None for k in pinned.input_schema["properties"] if k != "gene_id"}
         result = await client.call_tool(
-            "gnomad_get_variant_frequencies",
-            {"variant_id": "1-55051215-G-GA", **nulls},
+            "gnomad_get_gene_variants",
+            {"gene_id": "ENSG00000169174", **nulls},
             raise_on_error=False,
         )
     assert result.is_error is False, result.content
     # The fake echoes what reached the backend: the issue's `dataset` null is gone; a null
     # survives only where the backend's OWN schema declares the property nullable.
     reached = json.loads(result.content[0].text)["args"]
-    assert reached["variant_id"] == "1-55051215-G-GA" and "dataset" not in reached
-    source = (await server.get_tool("gnomad_get_variant_frequencies")).parameters["properties"]
+    assert reached["gene_id"] == "ENSG00000169174" and "dataset" not in reached
+    source = (await server.get_tool("gnomad_get_gene_variants")).parameters["properties"]
     for key, value in reached.items():
         assert value is not None or _is_nullable(source[key]), key
 

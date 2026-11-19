@@ -64,15 +64,15 @@ def resolve_local_json_pointer(root: Any, ref: str) -> tuple[bool, Any, str]:
     return True, current, ""
 
 
-def test_baseline_has_22_backends_and_285_tools() -> None:
+def test_baseline_has_22_backends_and_287_tools() -> None:
     manifest = load_manifest(BASELINE_PATH)
     assert len(manifest.backends) == 22
     total_tools = sum(len(b.tools) for b in manifest.backends.values())
-    assert total_tools == 285
+    assert total_tools == 287
 
 
 def test_baseline_input_schemas_are_valid_draft_2020_12_objects() -> None:
-    """All 285 tools must advertise valid Draft 2020-12 object input schemas."""
+    """All 287 tools must advertise valid Draft 2020-12 object input schemas."""
     manifest = load_manifest(BASELINE_PATH)
     for namespace, backend in manifest.backends.items():
         for tool in backend.tools:
@@ -101,8 +101,8 @@ def test_baseline_output_schemas_are_valid_draft_2020_12_when_declared() -> None
                 )
                 Draft202012Validator.check_schema(schema)
 
-    # In baseline, 12 tools explicitly advertise an outputSchema (e.g. gtex, panelapp, etc.)
-    assert output_schema_count == 12
+    # In baseline, 1 tool explicitly advertises an outputSchema (metadome dropped its 11 in 0.5.x)
+    assert output_schema_count == 1
 
 
 def test_baseline_schemas_contain_no_dangling_or_external_refs() -> None:

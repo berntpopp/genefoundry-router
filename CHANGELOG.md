@@ -4,6 +4,13 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.6] - 2026-11-19
+
+### Changed
+
+- Re-pin the drift baseline to the live fleet `fleet-2026-11-19`.
+- Un-pin `gnomad_get_variant_frequencies` (still reached via `search_tools`) to keep the pinned listing within its 18k-token budget after the re-pin; clinpgx's `search_records` grew to ~1.46k tokens.
+
 ## [0.13.5] - 2026-11-19
 
 ### Changed
