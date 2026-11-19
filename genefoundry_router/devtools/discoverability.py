@@ -114,14 +114,18 @@ class Report:
 
 def load_catalog(path: Path = DEFAULT_CATALOG) -> list[Tool]:
     """Rebuild Tool objects from the lean snapshot, reconstructing exactly the fields
-    FastMCP's BM25 index reads (``parameters.properties[name].description``)."""
+    FastMCP's BM25 index reads (``parameters.properties[name].description``) and the
+    parameter enum values the reranker's summary reads."""
     raw = json.loads(path.read_text(encoding="utf-8"))
     tools: list[Tool] = []
     for entry in raw:
-        props = {
+        enums = entry.get("enums") or {}
+        props: dict[str, dict[str, Any]] = {
             pname: ({"description": pdesc} if pdesc else {})
             for pname, pdesc in entry["params"].items()
         }
+        for pname, values in enums.items():
+            props[pname]["enum"] = values
         tools.append(
             Tool(
                 name=entry["name"],

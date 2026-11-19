@@ -58,7 +58,7 @@ def test_leaves_already_namespaced_values_alone():
 
 def test_ignores_prose_and_non_identifier_values():
     payload = {
-        "note": "try search_genes instead",  # neither a reference nor a prose key
+        "query": "try search_genes instead",  # a data field: neither a reference nor prose
         "fallback_tool": "switch to another tool",  # not a bare identifier
     }
     assert rewrite_tool_refs(payload, "clingen", _NS) == 0
@@ -87,3 +87,28 @@ def test_untrusted_text_is_opaque_to_tool_reference_rewriting():
     assert payload["next_commands"][0]["tool"] == "clingen_search_genes"
     assert payload["evidence"]["tool"] == "delete_everything"
     assert payload["evidence"]["nested"]["fallback_tool"] == "search_genes"
+
+
+def test_rewrites_tool_names_in_every_prose_field_but_not_data_or_enums():
+    # gnomad's recovery/build_note (and notes/warnings lists) named bare tools (#v0.12.8)
+    payload = {
+        "recovery": "Call get_server_capabilities for accepted codes.",
+        "build_note": "Confirm the id with resolve_variant_id.",
+        "warnings": ["Prefer search_genes for symbols.", {"tool": "search_genes"}],
+        "recovery_action": "search_genes",  # an enum, not prose
+        "reason": "search_failed",  # an enum-like code
+        "results": [{"label": "get_x is data"}],  # backend data is never touched
+    }
+    n = rewrite_tool_refs(payload, "gnomad", {"gnomad"}, pinned={"gnomad_resolve_variant_id"})
+    assert n == 4
+    assert payload["recovery"] == (
+        'Call call_tool(name="gnomad_get_server_capabilities") for accepted codes.'
+    )
+    assert payload["build_note"] == "Confirm the id with gnomad_resolve_variant_id."
+    assert payload["warnings"] == [
+        'Prefer call_tool(name="gnomad_search_genes") for symbols.',
+        {"tool": "gnomad_search_genes"},
+    ]
+    assert payload["recovery_action"] == "search_genes"
+    assert payload["reason"] == "search_failed"
+    assert payload["results"] == [{"label": "get_x is data"}]

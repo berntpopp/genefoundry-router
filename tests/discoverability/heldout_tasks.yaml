@@ -1718,3 +1718,245 @@ tasks:
   query: Bitte eine Exomsequenzierung für meinen Patienten bestellen
   expected: []
   confidence: high
+# --- Added 2026-11-19 (v0.12.8): 40 more out-of-scope negatives (owner-written, not
+# tuned against any search) so a rerank-floor change rests on more than 24 tasks. ---
+- id: h-neg-stock
+  category: negative
+  style: negative
+  query: what is the current share price of Illumina
+  expected: []
+  confidence: high
+- id: h-neg-drug-price
+  category: negative
+  style: negative
+  query: how much does a month of ivacaftor cost in Germany
+  expected: []
+  confidence: high
+- id: h-neg-python-bug
+  category: negative
+  style: negative
+  query: fix the KeyError in my pandas groupby script
+  expected: []
+  confidence: high
+- id: h-neg-sql
+  category: negative
+  style: negative
+  query: write a SQL query that joins patients and visits tables by admission date
+  expected: []
+  confidence: high
+- id: h-neg-regex
+  category: negative
+  style: negative
+  query: give me a regex that matches email addresses
+  expected: []
+  confidence: high
+- id: h-neg-mri-read
+  category: negative
+  style: negative
+  query: read this brain MRI and tell me if there is a tumour
+  expected: []
+  confidence: high
+- id: h-neg-xray
+  category: negative
+  style: negative
+  query: interpret the attached chest X-ray for pneumonia
+  expected: []
+  confidence: high
+- id: h-neg-ecg
+  category: negative
+  style: negative
+  query: analyse this 12-lead ECG for atrial fibrillation
+  expected: []
+  confidence: high
+- id: h-neg-histology
+  category: negative
+  style: negative
+  query: grade the tumour on this H&E whole-slide image
+  expected: []
+  confidence: high
+- id: h-neg-recipe
+  category: negative
+  style: negative
+  query: suggest a vegetarian dinner recipe with lentils
+  expected: []
+  confidence: high
+- id: h-neg-flight
+  category: negative
+  style: negative
+  query: find a cheap flight from Frankfurt to Boston in March
+  expected: []
+  confidence: high
+- id: h-neg-translate-text
+  category: negative
+  style: negative
+  query: translate this consent form from English into Turkish
+  expected: []
+  confidence: high
+- id: h-neg-email
+  category: negative
+  style: negative
+  query: draft an email to my lab asking who used the last pipette tips
+  expected: []
+  confidence: high
+- id: h-neg-grant-budget
+  category: negative
+  style: negative
+  query: build a budget spreadsheet for my ERC grant application
+  expected: []
+  confidence: high
+- id: h-neg-statistics
+  category: negative
+  style: negative
+  query: run a two-sample t-test on these blood pressure measurements
+  expected: []
+  confidence: high
+- id: h-neg-power
+  category: negative
+  style: negative
+  query: how many patients do I need for 80% power to detect a hazard ratio of 0.7
+  expected: []
+  confidence: high
+- id: h-neg-plot
+  category: negative
+  style: negative
+  query: make a volcano plot from my DESeq2 results table
+  expected: []
+  confidence: high
+- id: h-neg-chemistry
+  category: negative
+  style: negative
+  query: balance the chemical equation for the combustion of glucose
+  expected: []
+  confidence: high
+- id: h-neg-astronomy
+  category: negative
+  style: negative
+  query: when is the next total solar eclipse visible from Europe
+  expected: []
+  confidence: high
+- id: h-neg-physics
+  category: negative
+  style: negative
+  query: calculate the escape velocity from Mars
+  expected: []
+  confidence: high
+- id: h-neg-ecology
+  category: negative
+  style: negative
+  query: estimate the population size of red deer in the Black Forest
+  expected: []
+  confidence: high
+- id: h-neg-plant-genome
+  category: negative
+  style: negative
+  query: assemble the genome of my tomato cultivar from PacBio HiFi reads
+  expected: []
+  confidence: high
+- id: h-neg-microbiome
+  category: negative
+  style: negative
+  query: profile the gut microbiome composition from my 16S amplicon data
+  expected: []
+  confidence: high
+- id: h-neg-virus-phylo
+  category: negative
+  style: negative
+  query: build a phylogenetic tree of SARS-CoV-2 lineages from these genomes
+  expected: []
+  confidence: high
+- id: h-neg-docking
+  category: negative
+  style: negative
+  query: dock this small molecule into the ATP pocket of EGFR
+  expected: []
+  confidence: high
+- id: h-neg-dosage
+  category: negative
+  style: negative
+  query: what is the paediatric dose of amoxicillin for a 15 kg child
+  expected: []
+  confidence: high
+- id: h-neg-billing
+  category: negative
+  style: negative
+  query: which billing code do I use for a genetic counselling session
+  expected: []
+  confidence: high
+- id: h-neg-insurance
+  category: negative
+  style: negative
+  query: will my health insurance cover whole-genome sequencing
+  expected: []
+  confidence: high
+- id: h-neg-lab-order
+  category: negative
+  style: negative
+  query: order a karyotype for my patient from the cytogenetics lab
+  expected: []
+  confidence: high
+- id: h-neg-schedule
+  category: negative
+  style: negative
+  query: schedule the weekly tumour board meeting for Thursday at 4pm
+  expected: []
+  confidence: high
+- id: h-neg-hr
+  category: negative
+  style: negative
+  query: how many vacation days do I have left this year
+  expected: []
+  confidence: high
+- id: h-neg-news
+  category: negative
+  style: negative
+  query: summarise today's top headlines in science news
+  expected: []
+  confidence: high
+- id: h-neg-sports
+  category: negative
+  style: negative
+  query: who won the Champions League final last season
+  expected: []
+  confidence: high
+- id: h-neg-math
+  category: negative
+  style: negative
+  query: solve the integral of x squared times e to the x
+  expected: []
+  confidence: high
+- id: h-neg-thesis-summary
+  category: negative
+  style: negative
+  query: summarise this PDF of my colleague's thesis chapter
+  expected: []
+  confidence: high
+- id: h-neg-git
+  category: negative
+  style: negative
+  query: how do I undo my last git commit without losing the changes
+  expected: []
+  confidence: high
+- id: h-neg-docker
+  category: negative
+  style: negative
+  query: why does my docker container exit with code 137
+  expected: []
+  confidence: high
+- id: h-neg-fr-meteo
+  category: negative
+  style: crosslingual
+  query: quel temps fera-t-il à Paris ce week-end
+  expected: []
+  confidence: high
+- id: h-neg-de-arzt
+  category: negative
+  style: crosslingual
+  query: Wie lange ist die Wartezeit beim Hausarzt in Mainz
+  expected: []
+  confidence: high
+- id: h-neg-es-code
+  category: negative
+  style: crosslingual
+  query: escribe una función en JavaScript que ordene una lista de números
+  expected: []
+  confidence: high

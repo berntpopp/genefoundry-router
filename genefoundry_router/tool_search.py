@@ -177,10 +177,13 @@ def summarize_returns(schema: dict[str, Any] | None) -> str:
 
 
 def call_example(name: str, pinned: bool) -> dict[str, Any]:
-    """Ready call for a hit (#299): unlisted tools go through ``call_tool``, pinned ones direct."""
+    """Ready call for a hit (#299): unlisted tools go through ``call_tool``, pinned ones direct.
+
+    ``call_tool.arguments`` is advertised as a JSON string (strict listing, #293), so the
+    example shows that form; the call path decodes it back into an object."""
     if pinned:
         return {"tool": name, "arguments": {}}
-    return {"tool": "call_tool", "arguments": {"name": name, "arguments": {}}}
+    return {"tool": "call_tool", "arguments": {"name": name, "arguments": "{}"}}
 
 
 def _compact_entry(

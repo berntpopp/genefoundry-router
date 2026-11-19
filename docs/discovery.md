@@ -69,7 +69,8 @@ Gemini Remote MCP (snake_case, `[a-z0-9_]`, ≤ 64 chars).
    candidate at all. Any error or timeout serves the BM25 order (fail-open) and pauses the
    stage for 30 s.
 
-Measured on the held-out set (219 tasks, 24 out-of-scope; pins excluded, top-5 served):
+Measured on the held-out set before v0.12.8 (219 tasks, 24 out-of-scope; pins excluded,
+top-5 served; v0.12.8 added 40 more out-of-scope tasks, so re-measure before comparing):
 
 | Stage | hit@1 | hit@5 | Out-of-scope abstained | Added latency |
 |---|---|---|---|---|
@@ -85,6 +86,29 @@ of searches, many in scope (literature full text, figures, tables; #303).
 `tests/discoverability/agent_queries.yaml` holds those 858 agent queries (synthetic, no gold
 tool) for offline measurement only: `uv run python scripts/search_rerank_report.py --tasks
 tests/discoverability/agent_queries.yaml` reports the share each pipeline empties.
+
+### The floor is model-specific
+
+`GF_SEARCH_RERANK_MIN_SCORE` is a probability cut-off, and each decision model calibrates its
+probabilities differently, so a floor tuned for one model does not carry over to another.
+genefoundry-bench measured the v0.12.7 candidate text (#306) on the 24-task out-of-scope set:
+
+| Model | Highest out-of-scope score | Floor that still rejects 100% of out-of-scope |
+|---|---|---|
+| `typesafe/jev-1.13` | 0.17 | ~0.2 |
+| `google/gemini-decision-1` | – | ~0.1 |
+| `microsoft/microsoft-decision-1` | – | weaker separation than either |
+
+0.3 stays the documented setting for Jev (the code default is `0.0`, floor off). Before
+changing the floor or the model, re-measure on both eval sets:
+
+```bash
+uv run python scripts/search_rerank_report.py                      # held-out set, 64 out-of-scope
+uv run python scripts/search_rerank_report.py --tasks tests/discoverability/agent_queries.yaml
+```
+
+The first reports out-of-scope abstention and in-scope hits; the second reports how many
+real agent searches the floor empties.
 
 ### Choosing a reranker deployment
 
