@@ -18,16 +18,16 @@ def test_load_fleet_provenance_structure() -> None:
     data = load_fleet_provenance()
     assert data["schema_version"] == 1
     fleet = data["fleet"]
-    assert fleet["total_backends"] == 22
-    assert fleet["total_repositories"] == 23
-    assert fleet["total_tools"] == 287
+    assert fleet["total_backends"] == 26
+    assert fleet["total_repositories"] == 27
+    assert fleet["total_tools"] == 312
 
     router = data["router"]
     assert router["repository"] == "berntpopp/genefoundry-router"
     assert "https://genefoundry.org/provenance" in router["provenance_endpoint"]
 
     backends = {b["namespace"]: b for b in data["backends"]}
-    assert len(backends) == 22
+    assert len(backends) == 26
 
     # Check clinpgx entry
     assert "clinpgx" in backends
@@ -64,8 +64,8 @@ def test_provenance_immutability() -> None:
     data1["backends"].clear()
 
     data2 = load_fleet_provenance()
-    assert data2["fleet"]["total_backends"] == 22
-    assert len(data2["backends"]) == 22
+    assert data2["fleet"]["total_backends"] == 26
+    assert len(data2["backends"]) == 26
 
 
 def test_provenance_http_endpoints() -> None:
@@ -77,15 +77,15 @@ def test_provenance_http_endpoints() -> None:
         resp = client.get(path)
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "application/json"
-        assert resp.headers["x-genefoundry-fleet-backends"] == "22"
-        assert resp.headers["x-genefoundry-fleet-tools"] == "287"
+        assert resp.headers["x-genefoundry-fleet-backends"] == "26"
+        assert resp.headers["x-genefoundry-fleet-tools"] == "312"
         assert resp.headers["access-control-allow-origin"] == "*"
         assert "ETag" in resp.headers
         etag = resp.headers["etag"]
 
         body = resp.json()
-        assert body["fleet"]["total_backends"] == 22
-        assert body["fleet"]["total_tools"] == 287
+        assert body["fleet"]["total_backends"] == 26
+        assert body["fleet"]["total_tools"] == 312
 
         # Test HEAD request
         head_resp = client.head(path)

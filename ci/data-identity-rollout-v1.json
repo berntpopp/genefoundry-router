@@ -54,6 +54,12 @@
       "status": "runtime-v1",
       "verified_commit": "73a1350296986f0f9b2daf25758e830fa0f571e8"
     },
+    "mitomap-link": {
+      "evidence": "https://github.com/berntpopp/mitomap-link/releases/download/v0.3.0/mcp-capture-context.json",
+      "observed_identity_sha256": "dcdee52601028757837acd09ea54de8e3d6ad98947bb1b0b799093bfb13d49f6",
+      "status": "runtime-v1",
+      "verified_commit": "068f83646b8b56f5ba8f4ec033e078bd6c397d1e"
+    },
     "mondo-link": {
       "evidence": "https://github.com/berntpopp/mondo-link/releases/download/v0.6.0/mcp-capture-context.json",
       "observed_identity_sha256": "27089594fd2ddd179af9b8b92087ebf5afcf4b7018352815e84f8831dc313359",

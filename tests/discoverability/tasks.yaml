@@ -256,6 +256,24 @@ tasks:
     query: search ClinPGx snapshot datasets for pharmacogenomics evidence
     expected: [clinpgx_search_dataset, clinpgx_list_datasets]
 
+  # --- v0.13.9 search-only backends (no entrypoints): STRchive, MITOMAP, UCSC, PGS Catalog ---
+  - id: strchive-repeat-ranges
+    category: annotation
+    query: pathogenic repeat expansion size thresholds for a short tandem repeat disease locus
+    expected: [strchive_get_locus, strchive_search_loci, strchive_compare_repeat_length]
+  - id: mitomap-mtdna-variant
+    category: clinical_significance
+    query: mitochondrial DNA variant disease association and heteroplasmy
+    expected: [mitomap_get_variant, mitomap_search_variants]
+  - id: ucsc-region-tracks
+    category: annotation
+    query: genome browser tracks overlapping a region such as repeats or segmental duplications
+    expected: [ucsc_get_region_annotations]
+  - id: pgscatalog-trait-scores
+    category: gene_disease
+    query: published polygenic risk scores for a trait
+    expected: [pgscatalog_search_scores, pgscatalog_resolve_trait]
+
   # --- cross-cutting first-step resolvers ---
   - id: resolve-gene-generic
     category: nomenclature

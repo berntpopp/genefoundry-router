@@ -3140,6 +3140,10 @@
     "identifier standardization",
     "gene symbol validation",
     "disease title match"
+   ],
+   "manual_keywords": [
+    "HGNC mapping",
+    "OMIM conversion"
    ]
   },
   "gencc_search_diseases": {
@@ -5148,7 +5152,11 @@
     "Allelfrequenz",
     "variante",
     "effet sur la protéine",
-    "efecto en la proteína"
+    "efecto en la proteína",
+    "CADD score",
+    "REVEL score",
+    "LoFTEE",
+    "MANE Select"
    ]
   },
   "gnomad_get_variant_frequencies": {
@@ -5227,7 +5235,8 @@
     "Bevölkerung",
     "fréquence allélique",
     "population générale",
-    "frecuencia alélica"
+    "frecuencia alélica",
+    "gnomad_r4"
    ]
   },
   "gnomad_resolve_variant_id": {
@@ -13416,6 +13425,11 @@
     "evidence discovery",
     "passage extraction feed",
     "PubTator3"
+   ],
+   "manual_keywords": [
+    "PubMed Central",
+    "PMC open access",
+    "PMC OA"
    ]
   },
   "pubtator_get_citation": {
@@ -13817,6 +13831,10 @@
     "PMID export",
     "PubTator Central",
     "text mining results"
+   ],
+   "manual_keywords": [
+    "BioC JSON",
+    "BioC XML"
    ]
   },
   "pubtator_get_publication_citation_graph": {
@@ -13951,6 +13969,10 @@
     "abstract",
     "issn",
     "citation format"
+   ],
+   "manual_keywords": [
+    "MeSH headings",
+    "MEDLINE record"
    ]
   },
   "pubtator_get_publication_passages": {
@@ -14031,7 +14053,10 @@
     "table captions",
     "supplementary material",
     "paper sections",
-    "read a paper"
+    "read a paper",
+    "pmid content",
+    "bioC passages",
+    "PubTator3"
    ]
   },
   "pubtator_get_research_session_status": {
@@ -16296,7 +16321,8 @@
     "binding partners",
     "Interaktionspartner",
     "partenaires d'interaction",
-    "socios de interacción"
+    "socios de interacción",
+    "STRINGdb"
    ]
   },
   "stringdb_get_network_image": {
@@ -16631,7 +16657,9 @@
     "Proteinnetzwerk",
     "Protein-Interaktion",
     "réseau protéique",
-    "red de proteínas"
+    "red de proteínas",
+    "STRING-db",
+    "9606"
    ]
   },
   "ucsc_find_blat_alignments": {
