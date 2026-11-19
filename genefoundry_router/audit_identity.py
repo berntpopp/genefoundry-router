@@ -101,9 +101,8 @@ async def resolve_search_hits(context: Any, result: Any) -> dict[str, Any]:
     message = getattr(context, "message", None)
     if (getattr(message, "name", "") or "") != _SEARCH_TOOL:
         return {}
-    structured = getattr(result, "structured_content", None)
-    hits = structured.get("result") if isinstance(structured, dict) else None
-    if not isinstance(hits, list):
+    hits = _search_hits(result)
+    if hits is None:
         return {}
     server = getattr(getattr(context, "fastmcp_context", None), "fastmcp", None)
     top: list[str] = []
@@ -116,5 +115,29 @@ async def resolve_search_hits(context: Any, result: Any) -> dict[str, Any]:
             except Exception:
                 resolved = False
         top.append(safe_log_identity(name if isinstance(name, str) else "", resolved)[0])
-    low = any(isinstance(hit, dict) and hit.get("low_confidence") is True for hit in hits)
-    return {"hit_count": len(hits), "top_hits": top, "low_confidence": low}
+    return {
+        "hit_count": len(hits),
+        "zero_results": not hits,  # zero-result rate = the discovery-gap metric
+        "top_hits": top,
+        "low_confidence": search_result_label(result) == "low_confidence",
+    }
+
+
+def _search_hits(result: Any) -> list[Any] | None:
+    structured = getattr(result, "structured_content", None)
+    hits = structured.get("result") if isinstance(structured, dict) else None
+    return hits if isinstance(hits, list) else None
+
+
+def search_result_label(result: Any) -> str | None:
+    """Bounded ``hits``/``zero``/``low_confidence``/``error`` label of a search result."""
+    if getattr(result, "is_error", False):
+        return "error"
+    hits = _search_hits(result)
+    if hits is None:
+        return None
+    if not hits:
+        return "zero"
+    if any(isinstance(hit, dict) and hit.get("low_confidence") is True for hit in hits):
+        return "low_confidence"
+    return "hits"
