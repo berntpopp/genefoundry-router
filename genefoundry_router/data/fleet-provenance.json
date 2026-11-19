@@ -13183,6 +13183,319 @@
     },
     {
       "database_provenance": {
+        "asset_sha256": "sha256:c76206df08fc62fe9c0fea7e60e4f527e5285eadb95ebb9edd36248668d85084",
+        "data_identity_contract": "runtime-v1",
+        "mode": "external-reference",
+        "release_tag": "data-mitomap-a6646827e6157779",
+        "schema_compatibility": [
+          "1"
+        ],
+        "status": "attested-reference",
+        "updated_at": "2026-11-19T07:06:49.809946Z"
+      },
+      "domain": "Mitochondrial DNA (mtDNA) variants & disease associations",
+      "entrypoints": [],
+      "name": "mitomap",
+      "namespace": "mitomap",
+      "release": {
+        "commit": "068f83646b8b56f5ba8f4ec033e078bd6c397d1e",
+        "definitions_sha256": "7e34cc3274e5079612e56a9e12852eab55dac23db9b25dcbb1bd0ca5bc3f987f",
+        "image": "ghcr.io/berntpopp/mitomap-link@sha256:4302ae56d10d763a036a69c836fa8f48feb98e935b9dc11d233da96054cca305",
+        "tag": "v0.3.0",
+        "version": "0.3.0"
+      },
+      "repository": "berntpopp/mitomap-link",
+      "repository_url": "https://github.com/berntpopp/mitomap-link",
+      "source_name": "MITOMAP",
+      "source_url": "https://www.mitomap.org/",
+      "tags": [
+        "mitochondrial",
+        "mtdna",
+        "variant",
+        "disease",
+        "heteroplasmy",
+        "rcrs"
+      ],
+      "tools": [
+        {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Return the mitomap-link discovery surface: tools with call signatures, argument aliases, response modes, accepted variant notations, status/plasmy/GenBank semantics, error codes, limits, data pin, license and citation. detail='full' adds the usage notes. Signature: get_server_capabilities(detail=).",
+          "federated_name": "mitomap_get_server_capabilities",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "detail": {
+                "default": "summary",
+                "description": "summary (default) or full (adds usage notes).",
+                "enum": [
+                  "summary",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "name": "get_server_capabilities",
+          "outputSchema": null,
+          "tags": [
+            "discovery",
+            "disease",
+            "heteroplasmy",
+            "meta",
+            "mitochondrial",
+            "mtdna",
+            "rcrs",
+            "variant"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Report whether the pinned MITOMAP data release is materialized and verified: expected vs observed release tag and digest, upstream dump Last-Modified and SHA-256, MITOMAP edit dates and record counts. Use it to confirm the data version or diagnose an upstream_unavailable error. Signature: get_diagnostics().",
+          "federated_name": "mitomap_get_diagnostics",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {},
+            "type": "object"
+          },
+          "name": "get_diagnostics",
+          "outputSchema": null,
+          "tags": [
+            "discovery",
+            "disease",
+            "heteroplasmy",
+            "meta",
+            "mitochondrial",
+            "mtdna",
+            "rcrs",
+            "variant"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Look up one mtDNA allele in MITOMAP on the rCRS reference (NC_012920.1): every MITOMAP record for it (coding/control-region or rRNA/tRNA disease mutation, polymorphism) with locus, disease, MITOMAP status verbatim ('Reported', 'Cfrm' = confirmed; a bracketed ClinGen VCEP rating is split out), homoplasmy/heteroplasmy as reported, GenBank count/frequency and reference count (PMIDs at response_mode=standard|full). Accepts m.3243A>G, NC_012920.1:m.3243A>G, MT-3243-A-G, chrM:3243 A>G, A3243G, and HGVS indels (m.5133_5134del, exact MITOMAP allele match). Other mito references (Yoruba NC_001807, RSRS) and rCRS reference-base mismatches are rejected. An allele MITOMAP does not list returns found=false, not an error. Signature: get_variant(variant, response_mode=).",
+          "federated_name": "mitomap_get_variant",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "response_mode": {
+                "default": "compact",
+                "description": "Verbosity: minimal (ids, locus, disease, status) | compact (default; + alleles, plasmy, GenBank counts, reference_count) | standard (get_variant: + up to 10 references with fenced titles; search_variants: + up to 10 PMIDs) | full (get_variant: + up to 50 references and every PMID; search_variants: + every PMID).",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "variant": {
+                "description": "mtDNA variant on rCRS, e.g. m.3243A>G, MT-3243-A-G, chrM:8344 A>G or m.5133_5134del.",
+                "examples": [
+                  "m.3243A>G",
+                  "MT-8344-A-G",
+                  "m.11778G>A"
+                ],
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "variant"
+            ],
+            "type": "object"
+          },
+          "name": "get_variant",
+          "outputSchema": null,
+          "tags": [
+            "disease",
+            "heteroplasmy",
+            "mitochondrial",
+            "mtdna",
+            "rcrs",
+            "variant"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Search MITOMAP mtDNA variants by locus (MT-TL1, MT-ATP6, MT-CR...), disease text, MITOMAP status category and/or an rCRS position range. record_type defaults to disease_mutation (MITOMAP's coding/control and rRNA/tRNA mutation lists); use polymorphism or any for population polymorphisms. Unknown loci are rejected. Ordered by position, or by MITOMAP reference count with sort_by='reference_count' (most-published first); returns results with total/truncated/next_offset. Signature: search_variants(locus=, disease_query=, status=, record_type=, position_start=, position_end=, sort_by=, limit=, offset=, response_mode=).",
+          "federated_name": "mitomap_search_variants",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "disease_query": {
+                "anyOf": [
+                  {
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Case-insensitive substring of MITOMAP's disease text, e.g. 'Leigh', 'LHON', 'MELAS'. Up to 5 alternatives (any matches) separated by '|', ' / ' or ' OR ': Leigh|NARP|MILS.",
+                "examples": [
+                  "Leigh"
+                ]
+              },
+              "limit": {
+                "default": 20,
+                "description": "Page size (1-100, default 20).",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "locus": {
+                "anyOf": [
+                  {
+                    "maxLength": 40,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "MITOMAP locus / MT- gene symbol (case-insensitive).",
+                "examples": [
+                  "MT-ATP6",
+                  "MT-TL1"
+                ]
+              },
+              "offset": {
+                "default": 0,
+                "description": "Rows to skip (default 0).",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "position_end": {
+                "anyOf": [
+                  {
+                    "maximum": 16569,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "rCRS position (1-16569), inclusive.",
+                "examples": [
+                  3243
+                ]
+              },
+              "position_start": {
+                "anyOf": [
+                  {
+                    "maximum": 16569,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "rCRS position (1-16569), inclusive.",
+                "examples": [
+                  3243
+                ]
+              },
+              "record_type": {
+                "default": "disease_mutation",
+                "description": "disease_mutation (default), polymorphism, or any.",
+                "enum": [
+                  "disease_mutation",
+                  "polymorphism",
+                  "any"
+                ],
+                "type": "string"
+              },
+              "response_mode": {
+                "default": "compact",
+                "description": "Verbosity: minimal (ids, locus, disease, status) | compact (default; + alleles, plasmy, GenBank counts, reference_count) | standard (get_variant: + up to 10 references with fenced titles; search_variants: + up to 10 PMIDs) | full (get_variant: + up to 50 references and every PMID; search_variants: + every PMID).",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "sort_by": {
+                "default": "position",
+                "description": "position (default, rCRS order) or reference_count (most MITOMAP-cited first; ties by position).",
+                "enum": [
+                  "position",
+                  "reference_count"
+                ],
+                "type": "string"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "reported",
+                      "confirmed",
+                      "conflicting_reports",
+                      "unclear"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "MITOMAP status category: reported, confirmed (Cfrm), conflicting_reports, unclear."
+              }
+            },
+            "type": "object"
+          },
+          "name": "search_variants",
+          "outputSchema": null,
+          "tags": [
+            "disease",
+            "heteroplasmy",
+            "mitochondrial",
+            "mtdna",
+            "rcrs",
+            "search",
+            "variant"
+          ]
+        }
+      ],
+      "tools_count": 4
+    },
+    {
+      "database_provenance": {
         "asset_sha256": "sha256:a991f79737869b6162ecf6e4905becbf9f2afd1a2127bf98836c1a84f7880cce",
         "data_identity_contract": "runtime-v1",
         "mode": "external-reference",
@@ -16124,6 +16437,473 @@
         }
       ],
       "tools_count": 9
+    },
+    {
+      "database_provenance": {
+        "asset_sha256": null,
+        "mode": "none",
+        "release_tag": null,
+        "schema_compatibility": [],
+        "status": "unhosted",
+        "updated_at": null
+      },
+      "domain": "Polygenic scores, traits, ancestry & performance metrics",
+      "entrypoints": [],
+      "name": "pgscatalog",
+      "namespace": "pgscatalog",
+      "release": {
+        "commit": "1a58b2aec27ff2c981ac80bd00e26315446871fe",
+        "definitions_sha256": "9fbadb38ae587ab99f46ea86ab92e82bce634155a6b815377a2a8dc266734c43",
+        "image": "ghcr.io/berntpopp/pgscatalog-link@sha256:fc6aa18acc37648df82fa84b8180f98ebaa5a094bc98ca76a41abdbabff45473",
+        "tag": "v0.3.3",
+        "version": "0.3.3"
+      },
+      "repository": "berntpopp/pgscatalog-link",
+      "repository_url": "https://github.com/berntpopp/pgscatalog-link",
+      "source_name": "PGS Catalog",
+      "source_url": "https://www.pgscatalog.org/",
+      "tags": [
+        "polygenic-score",
+        "prs",
+        "trait",
+        "gwas",
+        "ancestry",
+        "performance",
+        "publication"
+      ],
+      "tools": [
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Describe this server: PGS Catalog identifiers, limits, data release, terms and licence handling, rate-limit policy and error codes. Signature: get_server_capabilities().",
+          "federated_name": "pgscatalog_get_server_capabilities",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {},
+            "type": "object"
+          },
+          "name": "get_server_capabilities",
+          "outputSchema": null,
+          "tags": [
+            "ancestry",
+            "discovery",
+            "gwas",
+            "performance",
+            "polygenic-score",
+            "prs",
+            "publication",
+            "trait"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Report runtime state without calling the PGS Catalog: build, upstream request budget (today's usage vs the daily cap), cache hits and tool latency metrics. Signature: get_diagnostics().",
+          "federated_name": "pgscatalog_get_diagnostics",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {},
+            "type": "object"
+          },
+          "name": "get_diagnostics",
+          "outputSchema": null,
+          "tags": [
+            "ancestry",
+            "discovery",
+            "gwas",
+            "performance",
+            "polygenic-score",
+            "prs",
+            "publication",
+            "trait"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Find PGS Catalog traits by name, synonym or current ontology ID (EFO/MONDO/HP) and return each trait's id (the trait_id other tools take) with its categories, match (label, synonym or partial; a hint flags several exact matches), score_count (scores mapped directly) and score_count_with_descendants (direct + descendant traits; what search_scores(include_children=true) returns). Start here: other tools need the catalog's trait_id. Retired IDs are not mapped: search by name. No label or synonym match is not_found, with partial hits as candidates (match: weak). Signature: resolve_trait(query, limit=, offset=).",
+          "federated_name": "pgscatalog_resolve_trait",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "description": "Max rows (default 10, max 50).",
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "query": {
+                "description": "Trait name, synonym or ontology ID, e.g. 'type 2 diabetes'.",
+                "examples": [
+                  "breast carcinoma"
+                ],
+                "maxLength": 200,
+                "minLength": 2,
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "type": "object"
+          },
+          "name": "resolve_trait",
+          "outputSchema": null,
+          "tags": [
+            "ancestry",
+            "gwas",
+            "performance",
+            "polygenic-score",
+            "prs",
+            "publication",
+            "trait",
+            "traits"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Return one trait: label, synonyms, categories, description, score counts and the first 50 PGS IDs mapped to it (pgs_ids_truncated says if there are more: page them with search_scores(trait_id)); include_children adds descendant traits and their score IDs. An unknown or retired ID is not_found. Signature: get_trait(trait_id, include_children=).",
+          "federated_name": "pgscatalog_get_trait",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "include_children": {
+                "description": "Also list descendant traits and their scores.",
+                "type": "boolean"
+              },
+              "trait_id": {
+                "description": "Trait ontology ID as the catalog writes it (MONDO_0004989, EFO_0001645, HP_0000822). Get it from resolve_trait; old EFO IDs migrated to MONDO are not_found.",
+                "examples": [
+                  "MONDO_0004989"
+                ],
+                "pattern": "^[A-Za-z][A-Za-z0-9]{0,15}_[A-Za-z0-9]{1,20}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "trait_id"
+            ],
+            "type": "object"
+          },
+          "name": "get_trait",
+          "outputSchema": null,
+          "tags": [
+            "ancestry",
+            "gwas",
+            "performance",
+            "polygenic-score",
+            "prs",
+            "publication",
+            "trait",
+            "traits"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "List polygenic scores matching ALL given selectors: trait_id (+include_children), publication_id or pmid, pgs_ids; none lists the whole catalog. Rows are in PGS ID order (pgs_ids alone keeps your order). Each row: trait, method, variant count, genome build, ancestry % per stage (gwas/dev/eval; codes in get_server_capabilities.ancestry_legend; no `dev` = no separate development sample reported) and source publication. Rows under the catalog's standard terms omit `license` (stated once as license_default); any other licence is shown on its row verbatim. `total` is exact; page with offset. Signature: search_scores(trait_id=, include_children=, publication_id=, pmid=, pgs_ids=, response_mode=, limit=, offset=).",
+          "federated_name": "pgscatalog_search_scores",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "include_children": {
+                "description": "With trait_id: also scores of descendant traits.",
+                "type": "boolean"
+              },
+              "limit": {
+                "description": "Max rows (default 10, max 50).",
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "pgs_ids": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "description": "PGS Catalog score ID: PGS + 6 digits.",
+                      "pattern": "^[Pp][Gg][Ss]\\d{6}$",
+                      "type": "string"
+                    },
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Explicit PGS IDs to summarise (1-50).",
+                "examples": [
+                  [
+                    "PGS000001",
+                    "PGS000002"
+                  ]
+                ]
+              },
+              "pmid": {
+                "anyOf": [
+                  {
+                    "description": "PubMed ID of the publication.",
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Scores developed or evaluated in this PubMed paper."
+              },
+              "publication_id": {
+                "anyOf": [
+                  {
+                    "description": "PGS Catalog publication ID: PGP + 6 digits.",
+                    "pattern": "^[Pp][Gg][Pp]\\d{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Scores developed or evaluated in this PGP publication."
+              },
+              "response_mode": {
+                "description": "minimal: id and name | compact (default): + trait_reported, method, variant count, build, ancestry %, publication | standard/full: + mapped traits, weight type, release date, URL and ancestry sample counts.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              },
+              "trait_id": {
+                "anyOf": [
+                  {
+                    "description": "Trait ontology ID as the catalog writes it (MONDO_0004989, EFO_0001645, HP_0000822). Get it from resolve_trait; old EFO IDs migrated to MONDO are not_found.",
+                    "pattern": "^[A-Za-z][A-Za-z0-9]{0,15}_[A-Za-z0-9]{1,20}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Scores mapped to this trait (from resolve_trait)."
+              }
+            },
+            "type": "object"
+          },
+          "name": "search_scores",
+          "outputSchema": null,
+          "tags": [
+            "ancestry",
+            "gwas",
+            "performance",
+            "polygenic-score",
+            "prs",
+            "publication",
+            "scores",
+            "trait"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Return full metadata of one polygenic score: traits, method and parameters, variant count and genome build, GWAS/training samples with ancestry, the author-set licence, source publication, and download links for the original and harmonized (GRCh37/GRCh38) scoring files. variants_number counts the original file; harmonized files may map fewer. Weights are not inlined, and this server does not compute scores (use the files with the catalog's pgsc_calc). Signature: get_score(pgs_id).",
+          "federated_name": "pgscatalog_get_score",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "pgs_id": {
+                "description": "PGS Catalog score ID: PGS + 6 digits.",
+                "examples": [
+                  "PGS000001"
+                ],
+                "pattern": "^[Pp][Gg][Ss]\\d{6}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "pgs_id"
+            ],
+            "type": "object"
+          },
+          "name": "get_score",
+          "outputSchema": null,
+          "tags": [
+            "ancestry",
+            "gwas",
+            "performance",
+            "polygenic-score",
+            "prs",
+            "publication",
+            "scores",
+            "trait"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Return the published performance metrics of one score: effect sizes (OR/HR/beta), classification accuracy (AUROC, C-index) and other metrics, each with its evaluation sample set (size, cases/controls, ancestry, cohorts) and covariates, in PPM ID order. publication_id keeps only the records from one paper (e.g. the score's source publication from get_score). The default response_mode=compact gives metrics with short names and lists each evaluation sample set once (samplesets, keyed by the row's sampleset ID); standard/full add the samples inline and the fenced prose. limit=1 just reads `total`. A score with no published metrics returns total 0; an unknown score or publication is not_found. Signature: get_score_performance(pgs_id, publication_id=, response_mode=, limit=, offset=).",
+          "federated_name": "pgscatalog_get_score_performance",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "description": "Max rows (default 10, max 50).",
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "pgs_id": {
+                "description": "PGS Catalog score ID: PGS + 6 digits.",
+                "examples": [
+                  "PGS000001"
+                ],
+                "pattern": "^[Pp][Gg][Ss]\\d{6}$",
+                "type": "string"
+              },
+              "publication_id": {
+                "anyOf": [
+                  {
+                    "description": "PGS Catalog publication ID: PGP + 6 digits.",
+                    "pattern": "^[Pp][Gg][Pp]\\d{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only records from this PGP publication."
+              },
+              "response_mode": {
+                "description": "minimal: record and sampleset IDs with metrics | compact (default): + publication and a page-level samplesets table | standard/full: samples inline (with country) and the fenced phenotype/covariates/comments.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              }
+            },
+            "required": [
+              "pgs_id"
+            ],
+            "type": "object"
+          },
+          "name": "get_score_performance",
+          "outputSchema": null,
+          "tags": [
+            "ancestry",
+            "gwas",
+            "performance",
+            "polygenic-score",
+            "prs",
+            "publication",
+            "scores",
+            "trait"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Return one PGS Catalog publication by PGP ID or PubMed ID: citation, title, and the PGS IDs it developed and evaluated. A paper the catalog does not index is not_found. Signature: get_publication(publication).",
+          "federated_name": "pgscatalog_get_publication",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "publication": {
+                "anyOf": [
+                  {
+                    "pattern": "^([Pp][Gg][Pp]\\d{6}|[1-9]\\d{0,8})$",
+                    "type": "string"
+                  },
+                  {
+                    "maximum": 999999999,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                ],
+                "description": "PGP publication ID (PGP000001) or a PubMed ID, as a number or a string (25855707).",
+                "examples": [
+                  "PGP000001"
+                ]
+              }
+            },
+            "required": [
+              "publication"
+            ],
+            "type": "object"
+          },
+          "name": "get_publication",
+          "outputSchema": null,
+          "tags": [
+            "ancestry",
+            "gwas",
+            "performance",
+            "polygenic-score",
+            "prs",
+            "publication",
+            "publications",
+            "trait"
+          ]
+        }
+      ],
+      "tools_count": 8
     },
     {
       "database_provenance": {
@@ -19568,6 +20348,282 @@
     },
     {
       "database_provenance": {
+        "asset_sha256": "sha256:16301ecb00239f0e3c684913aefc2f48c6f5a7c2a481958aab4db55d282bca86",
+        "mode": "upstream-live",
+        "release_tag": "strchive-e964fa88df3b2189ee478cbd6eaad15bb28e3a0a",
+        "schema_compatibility": [],
+        "status": "live-upstream",
+        "updated_at": "2026-11-19T07:06:49.809946Z"
+      },
+      "domain": "Tandem-repeat (STR) disease loci & repeat ranges",
+      "entrypoints": [],
+      "name": "strchive",
+      "namespace": "strchive",
+      "release": {
+        "commit": "69398f986fa95dc6f0d8c9f92e3b77cfe699a69c",
+        "definitions_sha256": "0276853fce5f114b826cf645e1aa281369d31b4af29036b05cc0805c787962e0",
+        "image": "ghcr.io/berntpopp/strchive-link@sha256:511e06a44a7168c1e7d992c8093e332cfe41607fb6f2f14a4e64e457e67c9147",
+        "tag": "v0.3.0",
+        "version": "0.3.0"
+      },
+      "repository": "berntpopp/strchive-link",
+      "repository_url": "https://github.com/berntpopp/strchive-link",
+      "source_name": "STRchive",
+      "source_url": "https://strchive.org/",
+      "tags": [
+        "short-tandem-repeat",
+        "str",
+        "repeat-expansion",
+        "pathogenic-range",
+        "locus",
+        "motif"
+      ],
+      "tools": [
+        {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Return the strchive-link discovery surface: tools with call signatures, argument aliases, response modes, range/coordinate semantics, error codes, limits, data pin, license and citation. detail='full' adds the usage notes. Signature: get_server_capabilities(detail=).",
+          "federated_name": "strchive_get_server_capabilities",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "detail": {
+                "default": "summary",
+                "description": "summary (default) or full (adds usage notes).",
+                "enum": [
+                  "summary",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "name": "get_server_capabilities",
+          "outputSchema": null,
+          "tags": [
+            "discovery",
+            "locus",
+            "meta",
+            "motif",
+            "pathogenic-range",
+            "repeat-expansion",
+            "short-tandem-repeat",
+            "str"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Report whether the pinned STRchive snapshot is loaded and verified: upstream commit, expected vs actual SHA-256, and locus count. Use it to confirm the data version or diagnose an upstream_unavailable error. Signature: get_diagnostics().",
+          "federated_name": "strchive_get_diagnostics",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {},
+            "type": "object"
+          },
+          "name": "get_diagnostics",
+          "outputSchema": null,
+          "tags": [
+            "discovery",
+            "locus",
+            "meta",
+            "motif",
+            "pathogenic-range",
+            "repeat-expansion",
+            "short-tandem-repeat",
+            "str"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Search the STRchive catalog of tandem-repeat (STR) disease loci; returns ranked loci (locus_id, gene, disease, inheritance, evidence level, pathogenic motifs, pathogenic_min) with total/truncated/next_offset. query matches, in rank order: an exact locus id / gene symbol / disease abbreviation; an abbreviation followed by a type number (FRA -> FRA2A, FRA7A, ...); a MONDO:/OMIM:/ORPHA: id; a repeat motif in either orientation (e.g. CAG, AAGGG); words in the disease name, then in source tags (e.g. 'ataxia'), then in the locus HPO phenotype labels. Each row's matched_on says which. Omit query to list every locus. Signature: search_loci(query=, limit=, offset=, response_mode=).",
+          "federated_name": "strchive_search_loci",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "default": 20,
+                "description": "Page size (1-100, default 20).",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "default": 0,
+                "description": "Rows to skip (default 0).",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "query": {
+                "anyOf": [
+                  {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Gene, locus id, MONDO/OMIM/Orphanet id, motif, or disease words. Omit to list all loci.",
+                "examples": [
+                  "ataxia",
+                  "CAG",
+                  "MONDO:0007739"
+                ]
+              },
+              "response_mode": {
+                "default": "compact",
+                "description": "Row verbosity: minimal (locus_id, gene, matched_on) | compact (default; + disease, inheritance, evidence, pathogenic motifs, pathogenic_min) | standard (+ all repeat ranges, MONDO/OMIM ids) | full (+ coordinates, tags). No source prose at any mode; use get_locus for notes.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "name": "search_loci",
+          "outputSchema": null,
+          "tags": [
+            "locus",
+            "motif",
+            "pathogenic-range",
+            "repeat-expansion",
+            "search",
+            "short-tandem-repeat",
+            "str"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Get one STRchive tandem-repeat disease locus: benign/intermediate/pathogenic repeat-count ranges exactly as the source states them (closed [min,max] in repeat units; a range the source does not state is null with status not_stated_by_source), pathogenic/benign/unknown motifs and interruptions in gene and reference orientation (all alternative pathogenic motifs, e.g. RFC1), inheritance, evidence level, hg38/hg19/T2T coordinates (BED 0-based half-open; never lifted over), MONDO/OMIM ids and PMIDs. Signature: get_locus(locus, response_mode=).",
+          "federated_name": "strchive_get_locus",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "locus": {
+                "description": "STRchive locus id (e.g. HD_HTT), gene symbol (e.g. HTT), or the source's disease abbreviation (e.g. SCA3). Case-insensitive. A gene with several loci (ARX, HOXA13), or an abbreviation shared by numbered types (FRA -> FRA2A, FRA7A, ...), returns ambiguous_query with the locus ids to choose from.",
+                "examples": [
+                  "HTT",
+                  "HD_HTT",
+                  "RFC1"
+                ],
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              "response_mode": {
+                "default": "compact",
+                "description": "Verbosity: minimal (ids + ranges) | compact (default; + motifs, coordinates, ids, references) | standard (+ fenced source prose, HPO ids) | full (+ cross-references, additional literature).",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "locus"
+            ],
+            "type": "object"
+          },
+          "name": "get_locus",
+          "outputSchema": null,
+          "tags": [
+            "locus",
+            "motif",
+            "pathogenic-range",
+            "repeat-expansion",
+            "short-tandem-repeat",
+            "str"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Compare an observed repeat count (repeat units, i.e. motif copies) with the ranges STRchive states for one locus and list every range that contains it (overlapping ranges can both match; none may match). Descriptive only, NOT a diagnosis. motif_dependent=true flags loci (e.g. RFC1) where motif identity, not length alone, decides the category. Signature: compare_repeat_length(locus, repeat_count).",
+          "federated_name": "strchive_compare_repeat_length",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "locus": {
+                "description": "STRchive locus id (e.g. HD_HTT), gene symbol (e.g. HTT), or the source's disease abbreviation (e.g. SCA3). Case-insensitive. A gene with several loci (ARX, HOXA13), or an abbreviation shared by numbered types (FRA -> FRA2A, FRA7A, ...), returns ambiguous_query with the locus ids to choose from.",
+                "examples": [
+                  "HTT",
+                  "HD_HTT",
+                  "RFC1"
+                ],
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              "repeat_count": {
+                "description": "Observed allele size in repeat units (copies of the motif), not base pairs.",
+                "examples": [
+                  38,
+                  45
+                ],
+                "maximum": 1000000,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "locus",
+              "repeat_count"
+            ],
+            "type": "object"
+          },
+          "name": "compare_repeat_length",
+          "outputSchema": null,
+          "tags": [
+            "locus",
+            "motif",
+            "pathogenic-range",
+            "repeat-expansion",
+            "short-tandem-repeat",
+            "str"
+          ]
+        }
+      ],
+      "tools_count": 5
+    },
+    {
+      "database_provenance": {
         "asset_sha256": null,
         "mode": "none",
         "release_tag": null,
@@ -20553,6 +21609,542 @@
         }
       ],
       "tools_count": 10
+    },
+    {
+      "database_provenance": {
+        "asset_sha256": null,
+        "mode": "none",
+        "release_tag": null,
+        "schema_compatibility": [],
+        "status": "unhosted",
+        "updated_at": null
+      },
+      "domain": "Genome Browser region tracks, reference sequence, BLAT & in-silico PCR",
+      "entrypoints": [],
+      "name": "ucsc",
+      "namespace": "ucsc",
+      "release": {
+        "commit": "2e09139c69dbfd074c06b2c81d4404b64488ee88",
+        "definitions_sha256": "9f5ef426852e70e25c4e159770ed2f0ac11e3648587bd3c4a42ab67e172326e7",
+        "image": "ghcr.io/berntpopp/ucsc-link@sha256:b0b44466d186d0e9eb86b957e2167accb7958384f43e707b29168e3e9951a3c0",
+        "tag": "v0.5.1",
+        "version": "0.5.1"
+      },
+      "repository": "berntpopp/ucsc-link",
+      "repository_url": "https://github.com/berntpopp/ucsc-link",
+      "source_name": "UCSC Genome Browser",
+      "source_url": "https://genome.ucsc.edu/",
+      "tags": [
+        "genomics",
+        "region",
+        "repeat",
+        "conservation",
+        "regulatory",
+        "sequence",
+        "track",
+        "blat",
+        "pcr"
+      ],
+      "tools": [
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Describe this server: allowlisted UCSC tracks per assembly with attribution and terms, coordinate convention, limits, rate-limit policy and error codes. Signature: get_server_capabilities().",
+          "federated_name": "ucsc_get_server_capabilities",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {},
+            "type": "object"
+          },
+          "name": "get_server_capabilities",
+          "outputSchema": null,
+          "tags": [
+            "blat",
+            "conservation",
+            "discovery",
+            "genomics",
+            "pcr",
+            "region",
+            "regulatory",
+            "repeat",
+            "sequence",
+            "track"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Report runtime state without calling UCSC: build, upstream request budget (today's usage vs the daily cap), cache hits, tool latency metrics and live BLAT/isPcr availability per assembly (local gfServer status). Signature: get_diagnostics().",
+          "federated_name": "ucsc_get_diagnostics",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {},
+            "type": "object"
+          },
+          "name": "get_diagnostics",
+          "outputSchema": null,
+          "tags": [
+            "blat",
+            "conservation",
+            "discovery",
+            "genomics",
+            "pcr",
+            "region",
+            "regulatory",
+            "repeat",
+            "sequence",
+            "track"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "List the curated UCSC tracks this server can query, with the assemblies each exists on, window limits, provider attribution and terms of use (non_commercial flags SpliceVarDB and Varaico). Signature: list_tracks(assembly=).",
+          "federated_name": "ucsc_list_tracks",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "assembly": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "hg38",
+                      "hg19",
+                      "GRCh38",
+                      "GRCh37"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only tracks available on this assembly (default: all)."
+              }
+            },
+            "type": "object"
+          },
+          "name": "list_tracks",
+          "outputSchema": null,
+          "tags": [
+            "blat",
+            "conservation",
+            "genomics",
+            "pcr",
+            "region",
+            "regulatory",
+            "repeat",
+            "sequence",
+            "track",
+            "tracks"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Find where a gene or transcript lies on an assembly (UCSC position search over MANE, HGNC, GENCODE and RefSeq). Returns 0-based half-open start/end plus a 1-based display string, ready for get_region_annotations. Exact symbol/accession hits come first (`exact_matches` counts them, each hit has `exact`), then UCSC's looser text matches on gene descriptions, which are weak: a disease name is not a gene lookup (resolve it with mondo_resolve_disease). UCSC search gives no strand: get_region_annotations(track='ncbiRefSeqSelect') does. Signature: search_genome(assembly, query, limit=).",
+          "federated_name": "ucsc_search_genome",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "assembly": {
+                "description": "Genome assembly: hg38 (=GRCh38) or hg19 (=GRCh37). Never lifted over.",
+                "enum": [
+                  "hg38",
+                  "hg19",
+                  "GRCh38",
+                  "GRCh37"
+                ],
+                "examples": [
+                  "hg38"
+                ]
+              },
+              "limit": {
+                "description": "Max matches to return (default 5).",
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "query": {
+                "description": "Gene symbol, transcript accession or term, e.g. BRCA1, SHH, NM_007294.4, ENST00000357654.9.",
+                "examples": [
+                  "BRCA1"
+                ],
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f\\u200b-\\u200d\\u2060\\u202a-\\u202e\\u2066-\\u2069\\ufeff]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "assembly",
+              "query"
+            ],
+            "type": "object"
+          },
+          "name": "search_genome",
+          "outputSchema": null,
+          "tags": [
+            "blat",
+            "conservation",
+            "genomics",
+            "pcr",
+            "region",
+            "regulatory",
+            "repeat",
+            "search",
+            "sequence",
+            "track"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Return records of one allowlisted UCSC track overlapping a window [start, end) on an explicit assembly: repeats (rmsk, simpleRepeat), segmental duplications (genomicSuperDups), problematic regions (encBlacklist, grcExclusions, GIAB difficult/low-mappability), phyloP, ENCODE cCREs, CpG islands, MANE/GENCODE/RefSeq transcripts, SpliceVarDB/Varaico variants. An empty problematic-region result means the window is not flagged. Native UCSC fields are kept and each record gains a normalized `position`; transcripts also gain `exons` numbered in transcript order (strand-aware), segmental duplications an `other_position` for the partner copy. `total` is exact (null only past the upstream item cap); `truncated` is honest. Windows: <= 2,000,000 bp, signal tracks <= 5,000 bp. Signature: get_region_annotations(assembly, chrom, start, end, track, limit=).",
+          "federated_name": "ucsc_get_region_annotations",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "assembly": {
+                "description": "Genome assembly: hg38 (=GRCh38) or hg19 (=GRCh37). Never lifted over.",
+                "enum": [
+                  "hg38",
+                  "hg19",
+                  "GRCh38",
+                  "GRCh37"
+                ],
+                "examples": [
+                  "hg38"
+                ]
+              },
+              "chrom": {
+                "description": "Chromosome, UCSC style (chr17, chrX, chrM); '17'/'X'/'MT' are accepted.",
+                "examples": [
+                  "chr4"
+                ],
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.]+$",
+                "type": "string"
+              },
+              "end": {
+                "description": "0-based exclusive end (= the 1-based last base). Must be > start.",
+                "examples": [
+                  3075000
+                ],
+                "minimum": 1,
+                "type": "integer"
+              },
+              "limit": {
+                "description": "Max records to return (default 100).",
+                "maximum": 1000,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "start": {
+                "description": "0-based start (first base minus one). 1-based position P is start=P-1.",
+                "examples": [
+                  3074800
+                ],
+                "minimum": 0,
+                "type": "integer"
+              },
+              "track": {
+                "description": "UCSC track name from list_tracks. phyloP is phyloP100way on hg38 and phyloP100wayAll on hg19 (either name works on both); cCREregistry/encodeCcreCombined/spliceVarDb are hg38-only.",
+                "enum": [
+                  "knownGene",
+                  "ncbiRefSeqSelect",
+                  "rmsk",
+                  "genomicSuperDups",
+                  "phyloP100way",
+                  "phyloP100wayAll",
+                  "cCREregistry",
+                  "encodeCcreCombined",
+                  "spliceVarDb",
+                  "varaico",
+                  "mane",
+                  "encBlacklist",
+                  "grcExclusions",
+                  "alldifficultregions",
+                  "alllowmapandsegdupregions",
+                  "simpleRepeat",
+                  "cpgIslandExt"
+                ],
+                "examples": [
+                  "rmsk"
+                ]
+              }
+            },
+            "required": [
+              "assembly",
+              "chrom",
+              "end",
+              "start",
+              "track"
+            ],
+            "type": "object"
+          },
+          "name": "get_region_annotations",
+          "outputSchema": null,
+          "tags": [
+            "blat",
+            "conservation",
+            "genomics",
+            "pcr",
+            "region",
+            "regulatory",
+            "repeat",
+            "sequence",
+            "track"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Return reference DNA for [start, end) (<= 10,000 bp) on an explicit assembly. Soft-masked: lowercase bases are repeat-masked. strand '-' returns the reverse complement. Signature: get_reference_sequence(assembly, chrom, start, end, strand=).",
+          "federated_name": "ucsc_get_reference_sequence",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "assembly": {
+                "description": "Genome assembly: hg38 (=GRCh38) or hg19 (=GRCh37). Never lifted over.",
+                "enum": [
+                  "hg38",
+                  "hg19",
+                  "GRCh38",
+                  "GRCh37"
+                ],
+                "examples": [
+                  "hg38"
+                ]
+              },
+              "chrom": {
+                "description": "Chromosome, UCSC style (chr17, chrX, chrM); '17'/'X'/'MT' are accepted.",
+                "examples": [
+                  "chr4"
+                ],
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.]+$",
+                "type": "string"
+              },
+              "end": {
+                "description": "0-based exclusive end (= the 1-based last base). Must be > start.",
+                "examples": [
+                  3075000
+                ],
+                "minimum": 1,
+                "type": "integer"
+              },
+              "start": {
+                "description": "0-based start (first base minus one). 1-based position P is start=P-1.",
+                "examples": [
+                  3074800
+                ],
+                "minimum": 0,
+                "type": "integer"
+              },
+              "strand": {
+                "description": "'+' for the reference strand (default), '-' for reverse complement.",
+                "enum": [
+                  "+",
+                  "-"
+                ]
+              }
+            },
+            "required": [
+              "assembly",
+              "chrom",
+              "end",
+              "start"
+            ],
+            "type": "object"
+          },
+          "name": "get_reference_sequence",
+          "outputSchema": null,
+          "tags": [
+            "blat",
+            "conservation",
+            "genomics",
+            "pcr",
+            "region",
+            "regulatory",
+            "repeat",
+            "sequence",
+            "track"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Return the genomic alignments of one DNA sequence (BLAT, as UCSC web BLAT), i.e. where the sequence comes from. Hits sorted primary assembly first, then by UCSC score, each with 0-based half-open start/end + 1-based display, strand, identity %, query_coverage %, blocks (several blocks = spliced, e.g. cDNA across exons), alt_or_patch for hg38 alt/fix contigs (primary_total excludes them). `total`/`truncated` are honest. Runs on this deployment's own UCSC gfServer; an assembly that is not deployed answers upstream_unavailable (get_diagnostics -> blat shows what is live). Signature: find_blat_alignments(sequence, assembly=, min_identity=, limit=).",
+          "federated_name": "ucsc_find_blat_alignments",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "assembly": {
+                "description": "Genome assembly (default hg38). Never lifted over.",
+                "enum": [
+                  "hg38",
+                  "hg19",
+                  "GRCh38",
+                  "GRCh37"
+                ]
+              },
+              "limit": {
+                "description": "Max hits (default 10).",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "min_identity": {
+                "description": "Drop hits below this identity % (default 90, gfClient's default).",
+                "maximum": 100,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "sequence": {
+                "description": "DNA, 20-25,000 bases of A/C/G/T/N (other IUPAC codes refused). Whitespace and one optional FASTA header line are ignored; exactly one sequence per call.",
+                "examples": [
+                  "AAAACAGCAGAACTTTCCTTAATGTCATTTTCAGCAAAACTAGTATCTTCCTTTATTTCACCATCATCTAACAGGTCATCAGGTGTCTCAGAACAAACCT"
+                ],
+                "maxLength": 30000,
+                "minLength": 20,
+                "pattern": "^(>[^\\n]*\\n)?[ACGTNacgtn\\s]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "sequence"
+            ],
+            "type": "object"
+          },
+          "name": "find_blat_alignments",
+          "outputSchema": null,
+          "tags": [
+            "blat",
+            "conservation",
+            "genomics",
+            "pcr",
+            "region",
+            "regulatory",
+            "repeat",
+            "sequence",
+            "track"
+          ]
+        },
+        {
+          "annotations": {
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true,
+            "readOnlyHint": true,
+            "title": null
+          },
+          "description": "Predict every genomic product a primer pair amplifies up to max_product_size (in-silico PCR, as UCSC In-Silico PCR). Each product: location (0-based half-open + 1-based display), size, strand, per-primer mismatch counts and the product sequence (first 1,000 bp; primers uppercase). primary_total counts products off alt/fix contigs (alt_or_patch=true repeats a primary locus): primary_total == 1 is a single genomic product, 0 none. Primers need >= 15 perfect 3' bases. Runs on this deployment's own UCSC gfServer; an assembly that is not deployed answers upstream_unavailable (get_diagnostics -> blat shows what is live). Signature: predict_pcr_products(forward_primer, reverse_primer, assembly=, max_product_size=, limit=).",
+          "federated_name": "ucsc_predict_pcr_products",
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {
+              "assembly": {
+                "description": "Genome assembly (default hg38). Never lifted over.",
+                "enum": [
+                  "hg38",
+                  "hg19",
+                  "GRCh38",
+                  "GRCh37"
+                ]
+              },
+              "forward_primer": {
+                "description": "15-50 nt, A/C/G/T only, written 5'->3'.",
+                "examples": [
+                  "ATGAAGGCCTTCGAGTCCCTCAAGTCCTTC"
+                ],
+                "maxLength": 50,
+                "minLength": 15,
+                "pattern": "^[ACGTacgt]{15,50}$",
+                "type": "string"
+              },
+              "limit": {
+                "description": "Max products (default 10).",
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "max_product_size": {
+                "description": "Largest product in bp (default 4,000).",
+                "maximum": 10000,
+                "minimum": 50,
+                "type": "integer"
+              },
+              "reverse_primer": {
+                "description": "15-50 nt, A/C/G/T only, written 5'->3'.",
+                "examples": [
+                  "CTCACGGTCGGTGCAGCGGC"
+                ],
+                "maxLength": 50,
+                "minLength": 15,
+                "pattern": "^[ACGTacgt]{15,50}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "forward_primer",
+              "reverse_primer"
+            ],
+            "type": "object"
+          },
+          "name": "predict_pcr_products",
+          "outputSchema": null,
+          "tags": [
+            "blat",
+            "conservation",
+            "genomics",
+            "pcr",
+            "region",
+            "regulatory",
+            "repeat",
+            "sequence",
+            "track"
+          ]
+        }
+      ],
+      "tools_count": 8
     },
     {
       "database_provenance": {
@@ -22024,9 +23616,9 @@
   ],
   "fleet": {
     "homepage": "https://genefoundry.org",
-    "total_backends": 22,
-    "total_repositories": 23,
-    "total_tools": 287,
+    "total_backends": 26,
+    "total_repositories": 27,
+    "total_tools": 312,
     "universal_topics": []
   },
   "router": {

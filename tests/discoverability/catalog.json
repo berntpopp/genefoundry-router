@@ -1550,7 +1550,7 @@
   },
   {
     "name": "gencc_resolve_identifier",
-    "description": "Resolve free text to a canonical GenCC gene (HGNC) and/or disease (MONDO) identifier by exact symbol/id/title match. Use kind='gene' or kind='disease' to disambiguate; default 'auto' tries both and returns ambiguous_query if the text matches both a gene and a disease. A disease name GenCC does not carry: resolve it with mondo_resolve_disease and pass the MONDO id back.",
+    "description": "Resolve free text to a canonical GenCC gene (HGNC) and/or disease (MONDO) identifier by exact symbol/id/title match (a previous gene symbol resolves and is echoed in resolved_from). A miss returns not_found with typed near-match candidates. Use kind='gene' or kind='disease' to disambiguate; default 'auto' tries both and returns ambiguous_query if the text matches both a gene and a disease. A disease name GenCC does not carry: resolve it with mondo_resolve_disease and pass the MONDO id back.",
     "tags": [
       "curation",
       "discovery",
@@ -2283,7 +2283,7 @@
       "variant"
     ],
     "params": {
-      "variant_id": "CHROM-POS-REF-ALT id (e.g. 1-55051215-G-GA). Use get_mitochondrial_variant for M-POS-REF-ALT.",
+      "variant_id": "CHROM-POS-REF-ALT id (e.g. 1-55051215-G-GA) or an rsID. Use get_mitochondrial_variant for M-POS-REF-ALT.",
       "dataset": "gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
       "response_mode": "compact strips raw GraphQL extras and trims the population breakdown (see the toggles below); full passes through everything.",
       "max_transcripts": "Cap on transcript_consequences in compact mode.",
@@ -2306,7 +2306,7 @@
   },
   {
     "name": "gnomad_get_variant_frequencies",
-    "description": "Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id; returns a headline, exome/genome AC/AN/AF per population, and a summary (max_pop_af, faf95). Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. summary.max_pop_af is the raw highest-AF ancestry group (may be bottlenecked asj/fin; never 'remaining') and is NOT the filtering AF: use summary.faf95.{exome,genome,joint}.grpmax (gnomAD faf95 at grpmax, continental groups only; kept in minimal mode; a source is omitted when gnomAD computed no faf95 for it, e.g. AC 0 there) as the ClinGen/Whiffin comparator. A `truncated` block reports rows dropped by filters. Returns ~2-4kB (minimal ~0.6kB).",
+    "description": "Use this when a caller has a CHROM-POS-REF-ALT id or rsID; returns a headline, exome/genome AC/AN/AF per population, and a summary (max_pop_af, faf95). Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. summary.max_pop_af is the raw highest-AF ancestry group (may be bottlenecked asj/fin; never 'remaining') and is NOT the filtering AF: use summary.faf95.{exome,genome,joint}.grpmax (gnomAD faf95 at grpmax, continental groups only; kept in minimal mode; a source is omitted when gnomAD computed no faf95 for it, e.g. AC 0 there) as the ClinGen/Whiffin comparator. A `truncated` block reports rows dropped by filters. Returns ~2-4kB (minimal ~0.6kB).",
     "tags": [
       "frequency",
       "gene",
@@ -2314,7 +2314,7 @@
       "variant"
     ],
     "params": {
-      "variant_id": "CHROM-POS-REF-ALT (e.g. 1-55051215-G-GA). Use M-POS-REF-ALT only with get_mitochondrial_variant.",
+      "variant_id": "CHROM-POS-REF-ALT (e.g. 1-55051215-G-GA) or an rsID. Use M-POS-REF-ALT only with get_mitochondrial_variant.",
       "dataset": "gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
       "populations": "Restrict to these population codes (e.g. ['afr','nfe']). None returns all kept rows.",
       "include_subcohorts": "Include non_topmed_*, non_ukb_*, 1kg_*, hgdp_*, controls_* rows.",
@@ -3441,6 +3441,35 @@
     }
   },
   {
+    "name": "hpo_score_genes_for_phenotypes",
+    "description": "Rank genes for a set of HPO phenotype terms (Resnik similarity to annotated diseases); returns ranked candidate genes for a patient's phenotypes, each with score, best disease and matched term pairs (shared ancestor + IC); excluded terms are reported as conflicts, never scored. Signature: score_genes_for_phenotypes(hpo_ids, excluded_hpo_ids=, candidate_genes=, limit=, offset=, response_mode=).",
+    "tags": [
+      "annotation",
+      "disease",
+      "gene",
+      "hpo",
+      "ontology",
+      "phenotype",
+      "ranking"
+    ],
+    "params": {
+      "hpo_ids": "Present patient phenotypes as HP ids (e.g. HP:0001250).",
+      "excluded_hpo_ids": "Phenotypes observed ABSENT. Reported as conflicts on each gene's best disease; they never lower a score.",
+      "candidate_genes": "Restrict ranking to these gene symbols (e.g. genes with exome variants); symbols that are unknown or have no HPO-annotated disease are listed in unranked_candidate_genes.",
+      "limit": "Max genes to return (default 20).",
+      "offset": "Rows to skip for forward paging (default 0).",
+      "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
     "name": "hpo_search_terms",
     "description": "Full-text search over HPO phenotype term names, synonyms, and definitions (FTS, relevance-ranked); returns {hpo_id, name, score} -- compact adds a short definition_snippet; standard/full add the complete definition -- plus a pagination block {total, returned, limit, offset, truncated, next_offset}. When truncated, next_commands carries a forward-page step (offset advanced) and a widen step. Obsolete terms are excluded unless include_obsolete=true. Signature: search_terms(query, limit=, offset=, include_obsolete=, response_mode=).",
     "tags": [
@@ -3590,7 +3619,7 @@
   },
   {
     "name": "mavedb_get_classified_variants",
-    "description": "Return a score set's variants grouped into a calibrated functional class \u2014 e.g. every 'abnormal' (PS3) or 'normal' (BS3) variant \u2014 without paging the whole table. Resolves the primary calibration (or a given calibration_urn); filter with classification=abnormal|normal|not_specified (omit for all). Each variant carries its score, HGVS, class label, and ACMG criterion. Paged via offset/limit. Signature: get_classified_variants(urn, classification=, calibration_urn=, limit=, offset=, response_mode=).",
+    "description": "Return a score set's variants grouped into a calibrated functional class \u2014 e.g. every 'abnormal' (PS3) or 'normal' (BS3) variant \u2014 without paging the whole table. Resolves the primary calibration (or a given calibration_urn); filter with classification=abnormal|normal|not_specified (omit for all). Each variant carries its score, HGVS, class label, and ACMG criterion. Paged via offset/limit. response_mode='full' adds the calibration threshold ladder (calibration). Signature: get_classified_variants(urn, classification=, calibration_urn=, limit=, offset=, response_mode=).",
     "tags": [
       "acmg",
       "calibration",
@@ -3863,7 +3892,7 @@
   },
   {
     "name": "mavedb_get_variant_scores",
-    "description": "Return the quantitative variant-by-variant score table for a score set (urn:mavedb:...-a-1) as parsed rows: each row carries accession, variant_index (numeric join key for get_mapped_variants), HGVS (hgvs_nt/hgvs_splice/hgvs_pro), the numeric score (+ derived classification when calibrated), and score-set specific columns. Paged via offset/limit; NA values become null. Page forward with offset=next_offset. For large pulls use response_mode='minimal' to drop the HGVS columns to {accession, variant_index, score, classification} (token-safe); a full ~1000-row page at standard can exceed the MCP token cap and be auto-saved to a tool-results file \u2014 page via offset or use get_score_distribution for summary statistics instead. The top-level calibrations threshold ladder is record-level data shipped once (the first page, start=0) or at full \u2014 not re-sent on every forward page; the per-row classification rides on every page. Signature: get_variant_scores(urn, offset=, limit=, drop_na_columns=, response_mode=).",
+    "description": "Return the quantitative variant-by-variant score table for a score set (urn:mavedb:...-a-1) as parsed rows: each row carries accession, variant_index (numeric join key for get_mapped_variants), HGVS (hgvs_nt/hgvs_splice/hgvs_pro), the numeric score (+ derived classification when calibrated), and score-set specific columns. Paged via offset/limit; NA values become null. Page forward with offset=next_offset. For large pulls use response_mode='minimal' to drop the HGVS columns to {accession, variant_index, score, classification} (token-safe); a full ~1000-row page at standard can exceed the MCP token cap and be auto-saved to a tool-results file \u2014 page via offset or use get_score_distribution for summary statistics instead. The top-level calibrations threshold ladder is record-level data shipped once (the first page, start=0) or at full \u2014 not re-sent on every forward page; the per-row classification rides on every page. full also adds dataset_columns (which CSV columns are scores vs counts). Signature: get_variant_scores(urn, offset=, limit=, drop_na_columns=, response_mode=).",
     "tags": [
       "functional-assay",
       "mave",
@@ -4502,6 +4531,116 @@
     "params": {
       "query": "Free-text phenotype query (e.g. 'small kidney').",
       "limit": "Max hits (default 25)."
+    }
+  },
+  {
+    "name": "mitomap_get_diagnostics",
+    "description": "Report whether the pinned MITOMAP data release is materialized and verified: expected vs observed release tag and digest, upstream dump Last-Modified and SHA-256, MITOMAP edit dates and record counts. Use it to confirm the data version or diagnose an upstream_unavailable error. Signature: get_diagnostics().",
+    "tags": [
+      "discovery",
+      "disease",
+      "heteroplasmy",
+      "meta",
+      "mitochondrial",
+      "mtdna",
+      "rcrs",
+      "variant"
+    ],
+    "params": {}
+  },
+  {
+    "name": "mitomap_get_server_capabilities",
+    "description": "Return the mitomap-link discovery surface: tools with call signatures, argument aliases, response modes, accepted variant notations, status/plasmy/GenBank semantics, error codes, limits, data pin, license and citation. detail='full' adds the usage notes. Signature: get_server_capabilities(detail=).",
+    "tags": [
+      "discovery",
+      "disease",
+      "heteroplasmy",
+      "meta",
+      "mitochondrial",
+      "mtdna",
+      "rcrs",
+      "variant"
+    ],
+    "params": {
+      "detail": "summary (default) or full (adds usage notes)."
+    },
+    "enums": {
+      "detail": [
+        "summary",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "mitomap_get_variant",
+    "description": "Look up one mtDNA allele in MITOMAP on the rCRS reference (NC_012920.1): every MITOMAP record for it (coding/control-region or rRNA/tRNA disease mutation, polymorphism) with locus, disease, MITOMAP status verbatim ('Reported', 'Cfrm' = confirmed; a bracketed ClinGen VCEP rating is split out), homoplasmy/heteroplasmy as reported, GenBank count/frequency and reference count (PMIDs at response_mode=standard|full). Accepts m.3243A>G, NC_012920.1:m.3243A>G, MT-3243-A-G, chrM:3243 A>G, A3243G, and HGVS indels (m.5133_5134del, exact MITOMAP allele match). Other mito references (Yoruba NC_001807, RSRS) and rCRS reference-base mismatches are rejected. An allele MITOMAP does not list returns found=false, not an error. Signature: get_variant(variant, response_mode=).",
+    "tags": [
+      "disease",
+      "heteroplasmy",
+      "mitochondrial",
+      "mtdna",
+      "rcrs",
+      "variant"
+    ],
+    "params": {
+      "variant": "mtDNA variant on rCRS, e.g. m.3243A>G, MT-3243-A-G, chrM:8344 A>G or m.5133_5134del.",
+      "response_mode": "Verbosity: minimal (ids, locus, disease, status) | compact (default; + alleles, plasmy, GenBank counts, reference_count) | standard (get_variant: + up to 10 references with fenced titles; search_variants: + up to 10 PMIDs) | full (get_variant: + up to 50 references and every PMID; search_variants: + every PMID)."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "mitomap_search_variants",
+    "description": "Search MITOMAP mtDNA variants by locus (MT-TL1, MT-ATP6, MT-CR...), disease text, MITOMAP status category and/or an rCRS position range. record_type defaults to disease_mutation (MITOMAP's coding/control and rRNA/tRNA mutation lists); use polymorphism or any for population polymorphisms. Unknown loci are rejected. Ordered by position, or by MITOMAP reference count with sort_by='reference_count' (most-published first); returns results with total/truncated/next_offset. Signature: search_variants(locus=, disease_query=, status=, record_type=, position_start=, position_end=, sort_by=, limit=, offset=, response_mode=).",
+    "tags": [
+      "disease",
+      "heteroplasmy",
+      "mitochondrial",
+      "mtdna",
+      "rcrs",
+      "search",
+      "variant"
+    ],
+    "params": {
+      "locus": "MITOMAP locus / MT- gene symbol (case-insensitive).",
+      "disease_query": "Case-insensitive substring of MITOMAP's disease text, e.g. 'Leigh', 'LHON', 'MELAS'. Up to 5 alternatives (any matches) separated by '|', ' / ' or ' OR ': Leigh|NARP|MILS.",
+      "status": "MITOMAP status category: reported, confirmed (Cfrm), conflicting_reports, unclear.",
+      "record_type": "disease_mutation (default), polymorphism, or any.",
+      "position_start": "rCRS position (1-16569), inclusive.",
+      "position_end": "rCRS position (1-16569), inclusive.",
+      "sort_by": "position (default, rCRS order) or reference_count (most MITOMAP-cited first; ties by position).",
+      "limit": "Page size (1-100, default 20).",
+      "offset": "Rows to skip (default 0).",
+      "response_mode": "Verbosity: minimal (ids, locus, disease, status) | compact (default; + alleles, plasmy, GenBank counts, reference_count) | standard (get_variant: + up to 10 references with fenced titles; search_variants: + up to 10 PMIDs) | full (get_variant: + up to 50 references and every PMID; search_variants: + every PMID)."
+    },
+    "enums": {
+      "status": [
+        "reported",
+        "confirmed",
+        "conflicting_reports",
+        "unclear"
+      ],
+      "record_type": [
+        "disease_mutation",
+        "polymorphism",
+        "any"
+      ],
+      "sort_by": [
+        "position",
+        "reference_count"
+      ],
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
     }
   },
   {
@@ -5523,6 +5662,168 @@
     }
   },
   {
+    "name": "pgscatalog_get_diagnostics",
+    "description": "Report runtime state without calling the PGS Catalog: build, upstream request budget (today's usage vs the daily cap), cache hits and tool latency metrics. Signature: get_diagnostics().",
+    "tags": [
+      "ancestry",
+      "discovery",
+      "gwas",
+      "performance",
+      "polygenic-score",
+      "prs",
+      "publication",
+      "trait"
+    ],
+    "params": {}
+  },
+  {
+    "name": "pgscatalog_get_publication",
+    "description": "Return one PGS Catalog publication by PGP ID or PubMed ID: citation, title, and the PGS IDs it developed and evaluated. A paper the catalog does not index is not_found. Signature: get_publication(publication).",
+    "tags": [
+      "ancestry",
+      "gwas",
+      "performance",
+      "polygenic-score",
+      "prs",
+      "publication",
+      "publications",
+      "trait"
+    ],
+    "params": {
+      "publication": "PGP publication ID (PGP000001) or a PubMed ID, as a number or a string (25855707)."
+    }
+  },
+  {
+    "name": "pgscatalog_get_score",
+    "description": "Return full metadata of one polygenic score: traits, method and parameters, variant count and genome build, GWAS/training samples with ancestry, the author-set licence, source publication, and download links for the original and harmonized (GRCh37/GRCh38) scoring files. variants_number counts the original file; harmonized files may map fewer. Weights are not inlined, and this server does not compute scores (use the files with the catalog's pgsc_calc). Signature: get_score(pgs_id).",
+    "tags": [
+      "ancestry",
+      "gwas",
+      "performance",
+      "polygenic-score",
+      "prs",
+      "publication",
+      "scores",
+      "trait"
+    ],
+    "params": {
+      "pgs_id": "PGS Catalog score ID: PGS + 6 digits."
+    }
+  },
+  {
+    "name": "pgscatalog_get_score_performance",
+    "description": "Return the published performance metrics of one score: effect sizes (OR/HR/beta), classification accuracy (AUROC, C-index) and other metrics, each with its evaluation sample set (size, cases/controls, ancestry, cohorts) and covariates, in PPM ID order. publication_id keeps only the records from one paper (e.g. the score's source publication from get_score). The default response_mode=compact gives metrics with short names and lists each evaluation sample set once (samplesets, keyed by the row's sampleset ID); standard/full add the samples inline and the fenced prose. limit=1 just reads `total`. A score with no published metrics returns total 0; an unknown score or publication is not_found. Signature: get_score_performance(pgs_id, publication_id=, response_mode=, limit=, offset=).",
+    "tags": [
+      "ancestry",
+      "gwas",
+      "performance",
+      "polygenic-score",
+      "prs",
+      "publication",
+      "scores",
+      "trait"
+    ],
+    "params": {
+      "pgs_id": "PGS Catalog score ID: PGS + 6 digits.",
+      "publication_id": "Only records from this PGP publication.",
+      "response_mode": "minimal: record and sampleset IDs with metrics | compact (default): + publication and a page-level samplesets table | standard/full: samples inline (with country) and the fenced phenotype/covariates/comments.",
+      "limit": "Max rows (default 10, max 50).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "pgscatalog_get_server_capabilities",
+    "description": "Describe this server: PGS Catalog identifiers, limits, data release, terms and licence handling, rate-limit policy and error codes. Signature: get_server_capabilities().",
+    "tags": [
+      "ancestry",
+      "discovery",
+      "gwas",
+      "performance",
+      "polygenic-score",
+      "prs",
+      "publication",
+      "trait"
+    ],
+    "params": {}
+  },
+  {
+    "name": "pgscatalog_get_trait",
+    "description": "Return one trait: label, synonyms, categories, description, score counts and the first 50 PGS IDs mapped to it (pgs_ids_truncated says if there are more: page them with search_scores(trait_id)); include_children adds descendant traits and their score IDs. An unknown or retired ID is not_found. Signature: get_trait(trait_id, include_children=).",
+    "tags": [
+      "ancestry",
+      "gwas",
+      "performance",
+      "polygenic-score",
+      "prs",
+      "publication",
+      "trait",
+      "traits"
+    ],
+    "params": {
+      "trait_id": "Trait ontology ID as the catalog writes it (MONDO_0004989, EFO_0001645, HP_0000822). Get it from resolve_trait; old EFO IDs migrated to MONDO are not_found.",
+      "include_children": "Also list descendant traits and their scores."
+    }
+  },
+  {
+    "name": "pgscatalog_resolve_trait",
+    "description": "Find PGS Catalog traits by name, synonym or current ontology ID (EFO/MONDO/HP) and return each trait's id (the trait_id other tools take) with its categories, match (label, synonym or partial; a hint flags several exact matches), score_count (scores mapped directly) and score_count_with_descendants (direct + descendant traits; what search_scores(include_children=true) returns). Start here: other tools need the catalog's trait_id. Retired IDs are not mapped: search by name. No label or synonym match is not_found, with partial hits as candidates (match: weak). Signature: resolve_trait(query, limit=, offset=).",
+    "tags": [
+      "ancestry",
+      "gwas",
+      "performance",
+      "polygenic-score",
+      "prs",
+      "publication",
+      "trait",
+      "traits"
+    ],
+    "params": {
+      "query": "Trait name, synonym or ontology ID, e.g. 'type 2 diabetes'.",
+      "limit": "Max rows (default 10, max 50).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    }
+  },
+  {
+    "name": "pgscatalog_search_scores",
+    "description": "List polygenic scores matching ALL given selectors: trait_id (+include_children), publication_id or pmid, pgs_ids; none lists the whole catalog. Rows are in PGS ID order (pgs_ids alone keeps your order). Each row: trait, method, variant count, genome build, ancestry % per stage (gwas/dev/eval; codes in get_server_capabilities.ancestry_legend; no `dev` = no separate development sample reported) and source publication. Rows under the catalog's standard terms omit `license` (stated once as license_default); any other licence is shown on its row verbatim. `total` is exact; page with offset. Signature: search_scores(trait_id=, include_children=, publication_id=, pmid=, pgs_ids=, response_mode=, limit=, offset=).",
+    "tags": [
+      "ancestry",
+      "gwas",
+      "performance",
+      "polygenic-score",
+      "prs",
+      "publication",
+      "scores",
+      "trait"
+    ],
+    "params": {
+      "trait_id": "Scores mapped to this trait (from resolve_trait).",
+      "include_children": "With trait_id: also scores of descendant traits.",
+      "publication_id": "Scores developed or evaluated in this PGP publication.",
+      "pmid": "Scores developed or evaluated in this PubMed paper.",
+      "pgs_ids": "Explicit PGS IDs to summarise (1-50).",
+      "response_mode": "minimal: id and name | compact (default): + trait_reported, method, variant count, build, ancestry %, publication | standard/full: + mapped traits, weight type, release date, URL and ancestry sample counts.",
+      "limit": "Max rows (default 10, max 50).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
     "name": "pubtator_build_topic_literature_map",
     "description": "Use this when a user needs a bounded topic-level literature map from a topic query, optionally seeded with PMIDs: returns candidate PMID lanes with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
     "tags": [
@@ -5531,7 +5832,7 @@
     ],
     "params": {
       "query": "Topic or research question to build the literature map around.",
-      "pmids": "Optional seed PMIDs to anchor the map on.",
+      "pmids": "Optional seed PMIDs (or PMCIDs/DOIs, converted) to anchor the map on.",
       "max_seed_papers": "Maximum seed papers to expand.",
       "max_neighbors_per_paper": "Maximum neighbors per seed paper.",
       "response_mode": "Payload shape: 'compact' (default), 'nodes_edges', or 'full'.",
@@ -5610,7 +5911,7 @@
       "literature"
     ],
     "params": {
-      "pmids": "PubMed IDs to estimate passage count and context size for.",
+      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to estimate passage count and context size for.",
       "sections": "Restrict to these BioC section labels (case-insensitive); omit for all. A missing section contributes no passages; a table usually yields a caption and a body passage.",
       "mode": "Passage selection to estimate under: 'compact_passages' (default), 'full_abstract', 'abstracts', or 'section_text'.",
       "full": "Estimate under full-text retrieval where available.",
@@ -5694,7 +5995,7 @@
       "literature"
     ],
     "params": {
-      "pmids": "Seed PMIDs to expand from.",
+      "pmids": "Seed PMIDs (or PMCIDs/DOIs, converted) to expand from.",
       "mode": "Relation to follow: 'similar' (default), 'cited_by', or 'references'.",
       "limit": "Maximum related articles to return."
     },
@@ -5714,7 +6015,7 @@
       "literature"
     ],
     "params": {
-      "pmid": "Seed PubMed ID to find related evidence candidates for.",
+      "pmid": "Seed PMID (or PMCID/DOI, converted) to find related evidence candidates for.",
       "max_results": "Maximum candidate publications to return.",
       "response_mode": "Payload shape: 'compact' (default), 'nodes_edges', or 'full'.",
       "prefer_full_text": "Prefer open-access full-text candidates.",
@@ -5832,7 +6133,7 @@
       "literature"
     ],
     "params": {
-      "pmids": "PubMed IDs to export raw PubTator BioC annotations for.",
+      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to export raw PubTator BioC annotations for.",
       "format": "Export serialization: 'biocjson' (default), 'biocxml', or 'pubtator'.",
       "full": "Request full-text annotations where available (else abstract)."
     },
@@ -5852,7 +6153,7 @@
       "literature"
     ],
     "params": {
-      "pmid": "PubMed ID of the publication whose citation neighbors are wanted.",
+      "pmid": "PMID (or PMCID/DOI, converted) of the publication whose citation neighbors are wanted.",
       "direction": "Which neighbors: 'references', 'cited_by', or 'both' (default).",
       "response_mode": "Payload shape: 'compact' (default), 'nodes_edges', or 'full'.",
       "resolve_metadata": "Resolve title/author metadata for neighbor PMIDs.",
@@ -5883,7 +6184,7 @@
       "literature"
     ],
     "params": {
-      "pmids": "PubMed IDs to fetch citation-grade metadata for.",
+      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to fetch citation-grade metadata for.",
       "include_mesh": "Include MeSH descriptors.",
       "include_publication_types": "Include PubMed publication types.",
       "include_citations": "Citation rendering: 'none', 'nlm', 'bibtex', or 'both' (default).",
@@ -5906,7 +6207,7 @@
       "literature"
     ],
     "params": {
-      "pmids": "PubMed IDs to fetch compact citable passages for.",
+      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to fetch compact citable passages for.",
       "sections": "Restrict to these BioC section labels (case-insensitive); omit for all. A missing section contributes no passages; a table usually yields a caption and a body passage.",
       "mode": "Passage selection: 'compact_passages' (default), 'full_abstract' (all title/abstract passages), 'abstracts', or 'section_text'.",
       "full": "Prefer full-text passages where the article is open-access.",
@@ -6427,7 +6728,7 @@
   },
   {
     "name": "spliceai_predict_pangolin",
-    "description": "ONE model only (Pangolin); returns splice gain/loss scores (with positions) for one variant; use predict_splicing for BOTH models with an agreement verdict. Use this for the Pangolin splice gain/loss scores of a single variant. Pangolin is an independent splice model; agreement with SpliceAI strengthens a prediction, disagreement warrants caution. Use predict_splicing to get both models in one call. Returns ~1-3kB. Note: cold calls take 10-30s. Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
+    "description": "ONE model only (Pangolin); returns splice gain/loss scores (with positions) for one variant; use predict_splicing for BOTH models with an agreement verdict. Use this for the Pangolin splice gain/loss scores of a single variant. Pangolin is an independent splice model; agreement with SpliceAI strengthens a prediction, disagreement warrants caution. Use predict_splicing to get both models in one call. Returns ~1-3kB. Note: cold calls take 10-30s.",
     "tags": [
       "pangolin",
       "prediction",
@@ -6474,7 +6775,7 @@
   },
   {
     "name": "spliceai_predict_spliceai",
-    "description": "ONE model only (SpliceAI); returns acceptor/donor gain/loss delta scores (0-1, with positions) and an optional SpliceAI-10k consequence; use predict_splicing for BOTH models with an agreement verdict. Use this for the SpliceAI delta scores (acceptor/donor gain/loss, each 0-1 with a position) of a single variant, optionally with the SpliceAI-10k consequence prediction (exon skipping / intron retention / frameshift). For a quick raw-vs-masked or single-model question; use predict_splicing to also get Pangolin. \u0394>=0.5 is high-confidence. Returns ~1-4kB (full/all larger). Note: cold calls take 10-30s. Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
+    "description": "ONE model only (SpliceAI); returns acceptor/donor gain/loss delta scores (0-1, with positions) and an optional SpliceAI-10k consequence; use predict_splicing for BOTH models with an agreement verdict. Use this for the SpliceAI delta scores (acceptor/donor gain/loss, each 0-1 with a position) of a single variant, optionally with the SpliceAI-10k consequence prediction (exon skipping / intron retention / frameshift). For a quick raw-vs-masked or single-model question; use predict_splicing to also get Pangolin. \u0394>=0.5 is high-confidence. Returns ~1-4kB (full/all larger). Note: cold calls take 10-30s.",
     "tags": [
       "prediction",
       "spliceai",
@@ -6522,7 +6823,7 @@
   },
   {
     "name": "spliceai_predict_splicing",
-    "description": "BOTH models (SpliceAI + Pangolin) in one call; returns a headline, per-model delta scores, the SpliceAI-10k consequence and an agreement verdict -- the default \"what does this variant do to splicing?\" answer. Use this as the default one-call answer for \"what does this variant do to splicing?\". It resolves HGVS/rsIDs, runs SpliceAI and Pangolin (two independent models), includes the SpliceAI-10k consequence prediction, and reports whether the models agree. Read the top-level headline first. For a single model use predict_spliceai / predict_pangolin. Returns ~3-6kB. Note: cold calls take 15-40s (two model calls). Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
+    "description": "BOTH models (SpliceAI + Pangolin) in one call; returns a headline, per-model delta scores, the SpliceAI-10k consequence and an agreement verdict -- the default \"what does this variant do to splicing?\" answer. Use this as the default one-call answer for \"what does this variant do to splicing?\". It resolves HGVS/rsIDs, runs SpliceAI and Pangolin (two independent models), includes the SpliceAI-10k consequence prediction, and reports whether the models agree. Read the top-level headline first. For a single model use predict_spliceai / predict_pangolin. Returns ~3-6kB. Note: cold calls take 15-40s (two model calls).",
     "tags": [
       "prediction",
       "splicing",
@@ -6568,7 +6869,7 @@
   },
   {
     "name": "spliceai_predict_splicing_batch",
-    "description": "Score a list of variants in ONE call. The server fans out under its concurrency cap and returns a single envelope with per-variant results (+ per-item errors that do not fail the batch) and a summary. Use this for gene panels instead of N predict_splicing calls. Accepts 1-25 variants (more than max_items=25 returns invalid_input, not a truncated result); each item returns about one compact predict_splicing result, so a full batch is ~25x a single compact response, and _meta echoes items_submitted and max_items. Supports MCP background tasks (execution.taskSupport=optional): augment the call with a task to fire-and-continue instead of blocking 15-40s.",
+    "description": "Score a list of variants in ONE call. The server fans out under its concurrency cap and returns a single envelope with per-variant results (+ per-item errors that do not fail the batch) and a summary. Use this for gene panels instead of N predict_splicing calls. Accepts 1-25 variants (more than max_items=25 returns invalid_input, not a truncated result); each item returns about one compact predict_splicing result, so a full batch is ~25x a single compact response, and _meta echoes items_submitted and max_items.",
     "tags": [
       "prediction",
       "splicing",
@@ -6659,6 +6960,111 @@
     }
   },
   {
+    "name": "strchive_compare_repeat_length",
+    "description": "Compare an observed repeat count (repeat units, i.e. motif copies) with the ranges STRchive states for one locus and list every range that contains it (overlapping ranges can both match; none may match). Descriptive only, NOT a diagnosis. motif_dependent=true flags loci (e.g. RFC1) where motif identity, not length alone, decides the category. Signature: compare_repeat_length(locus, repeat_count).",
+    "tags": [
+      "locus",
+      "motif",
+      "pathogenic-range",
+      "repeat-expansion",
+      "short-tandem-repeat",
+      "str"
+    ],
+    "params": {
+      "locus": "STRchive locus id (e.g. HD_HTT), gene symbol (e.g. HTT), or the source's disease abbreviation (e.g. SCA3). Case-insensitive. A gene with several loci (ARX, HOXA13), or an abbreviation shared by numbered types (FRA -> FRA2A, FRA7A, ...), returns ambiguous_query with the locus ids to choose from.",
+      "repeat_count": "Observed allele size in repeat units (copies of the motif), not base pairs."
+    }
+  },
+  {
+    "name": "strchive_get_diagnostics",
+    "description": "Report whether the pinned STRchive snapshot is loaded and verified: upstream commit, expected vs actual SHA-256, and locus count. Use it to confirm the data version or diagnose an upstream_unavailable error. Signature: get_diagnostics().",
+    "tags": [
+      "discovery",
+      "locus",
+      "meta",
+      "motif",
+      "pathogenic-range",
+      "repeat-expansion",
+      "short-tandem-repeat",
+      "str"
+    ],
+    "params": {}
+  },
+  {
+    "name": "strchive_get_locus",
+    "description": "Get one STRchive tandem-repeat disease locus: benign/intermediate/pathogenic repeat-count ranges exactly as the source states them (closed [min,max] in repeat units; a range the source does not state is null with status not_stated_by_source), pathogenic/benign/unknown motifs and interruptions in gene and reference orientation (all alternative pathogenic motifs, e.g. RFC1), inheritance, evidence level, hg38/hg19/T2T coordinates (BED 0-based half-open; never lifted over), MONDO/OMIM ids and PMIDs. Signature: get_locus(locus, response_mode=).",
+    "tags": [
+      "locus",
+      "motif",
+      "pathogenic-range",
+      "repeat-expansion",
+      "short-tandem-repeat",
+      "str"
+    ],
+    "params": {
+      "locus": "STRchive locus id (e.g. HD_HTT), gene symbol (e.g. HTT), or the source's disease abbreviation (e.g. SCA3). Case-insensitive. A gene with several loci (ARX, HOXA13), or an abbreviation shared by numbered types (FRA -> FRA2A, FRA7A, ...), returns ambiguous_query with the locus ids to choose from.",
+      "response_mode": "Verbosity: minimal (ids + ranges) | compact (default; + motifs, coordinates, ids, references) | standard (+ fenced source prose, HPO ids) | full (+ cross-references, additional literature)."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "strchive_get_server_capabilities",
+    "description": "Return the strchive-link discovery surface: tools with call signatures, argument aliases, response modes, range/coordinate semantics, error codes, limits, data pin, license and citation. detail='full' adds the usage notes. Signature: get_server_capabilities(detail=).",
+    "tags": [
+      "discovery",
+      "locus",
+      "meta",
+      "motif",
+      "pathogenic-range",
+      "repeat-expansion",
+      "short-tandem-repeat",
+      "str"
+    ],
+    "params": {
+      "detail": "summary (default) or full (adds usage notes)."
+    },
+    "enums": {
+      "detail": [
+        "summary",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "strchive_search_loci",
+    "description": "Search the STRchive catalog of tandem-repeat (STR) disease loci; returns ranked loci (locus_id, gene, disease, inheritance, evidence level, pathogenic motifs, pathogenic_min) with total/truncated/next_offset. query matches, in rank order: an exact locus id / gene symbol / disease abbreviation; an abbreviation followed by a type number (FRA -> FRA2A, FRA7A, ...); a MONDO:/OMIM:/ORPHA: id; a repeat motif in either orientation (e.g. CAG, AAGGG); words in the disease name, then in source tags (e.g. 'ataxia'), then in the locus HPO phenotype labels. Each row's matched_on says which. Omit query to list every locus. Signature: search_loci(query=, limit=, offset=, response_mode=).",
+    "tags": [
+      "locus",
+      "motif",
+      "pathogenic-range",
+      "repeat-expansion",
+      "search",
+      "short-tandem-repeat",
+      "str"
+    ],
+    "params": {
+      "query": "Gene, locus id, MONDO/OMIM/Orphanet id, motif, or disease words. Omit to list all loci.",
+      "limit": "Page size (1-100, default 20).",
+      "offset": "Rows to skip (default 0).",
+      "response_mode": "Row verbosity: minimal (locus_id, gene, matched_on) | compact (default; + disease, inheritance, evidence, pathogenic motifs, pathogenic_min) | standard (+ all repeat ranges, MONDO/OMIM ids) | full (+ coordinates, tags). No source prose at any mode; use get_locus for notes."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
     "name": "stringdb_compute_functional_enrichment",
     "description": "Compute functional enrichment of a protein set; returns enriched GO, KEGG, Reactome and other\nSTRING terms (category, term, description, p_value, fdr), most significant first.",
     "tags": [
@@ -6739,9 +7145,9 @@
       "ppi"
     ],
     "params": {
-      "identifiers": "List of protein identifiers",
+      "identifiers": "Gene symbols (e.g. MAP3K1), UniProt accessions or STRING ids; STRING maps them natively, so no prior identifier conversion is needed",
       "species": "NCBI taxon identifier",
-      "limit": "Maximum number of interaction partners per protein",
+      "limit": "Max partners per protein; values above 500 are clamped (limit_clamped_to)",
       "required_score": "Minimum confidence score (0.0-1.0)",
       "network_type": "Network type: functional or physical"
     },
@@ -6876,7 +7282,7 @@
       "ppi"
     ],
     "params": {
-      "identifiers": "List of protein identifiers",
+      "identifiers": "Gene symbols (e.g. MAP3K1), UniProt accessions or STRING ids; STRING maps them natively, so no prior identifier conversion is needed",
       "species": "NCBI taxon identifier",
       "required_score": "Minimum confidence score (0.0-1.0)",
       "network_type": "Network type: functional or physical",
@@ -6887,6 +7293,239 @@
       "network_type": [
         "functional",
         "physical"
+      ]
+    }
+  },
+  {
+    "name": "ucsc_find_blat_alignments",
+    "description": "Return the genomic alignments of one DNA sequence (BLAT, as UCSC web BLAT), i.e. where the sequence comes from. Hits sorted primary assembly first, then by UCSC score, each with 0-based half-open start/end + 1-based display, strand, identity %, query_coverage %, blocks (several blocks = spliced, e.g. cDNA across exons), alt_or_patch for hg38 alt/fix contigs (primary_total excludes them). `total`/`truncated` are honest. Runs on this deployment's own UCSC gfServer; an assembly that is not deployed answers upstream_unavailable (get_diagnostics -> blat shows what is live). Signature: find_blat_alignments(sequence, assembly=, min_identity=, limit=).",
+    "tags": [
+      "blat",
+      "conservation",
+      "genomics",
+      "pcr",
+      "region",
+      "regulatory",
+      "repeat",
+      "sequence",
+      "track"
+    ],
+    "params": {
+      "sequence": "DNA, 20-25,000 bases of A/C/G/T/N (other IUPAC codes refused). Whitespace and one optional FASTA header line are ignored; exactly one sequence per call.",
+      "assembly": "Genome assembly (default hg38). Never lifted over.",
+      "min_identity": "Drop hits below this identity % (default 90, gfClient's default).",
+      "limit": "Max hits (default 10)."
+    },
+    "enums": {
+      "assembly": [
+        "hg38",
+        "hg19",
+        "GRCh38",
+        "GRCh37"
+      ]
+    }
+  },
+  {
+    "name": "ucsc_get_diagnostics",
+    "description": "Report runtime state without calling UCSC: build, upstream request budget (today's usage vs the daily cap), cache hits, tool latency metrics and live BLAT/isPcr availability per assembly (local gfServer status). Signature: get_diagnostics().",
+    "tags": [
+      "blat",
+      "conservation",
+      "discovery",
+      "genomics",
+      "pcr",
+      "region",
+      "regulatory",
+      "repeat",
+      "sequence",
+      "track"
+    ],
+    "params": {}
+  },
+  {
+    "name": "ucsc_get_reference_sequence",
+    "description": "Return reference DNA for [start, end) (<= 10,000 bp) on an explicit assembly. Soft-masked: lowercase bases are repeat-masked. strand '-' returns the reverse complement. Signature: get_reference_sequence(assembly, chrom, start, end, strand=).",
+    "tags": [
+      "blat",
+      "conservation",
+      "genomics",
+      "pcr",
+      "region",
+      "regulatory",
+      "repeat",
+      "sequence",
+      "track"
+    ],
+    "params": {
+      "assembly": "Genome assembly: hg38 (=GRCh38) or hg19 (=GRCh37). Never lifted over.",
+      "chrom": "Chromosome, UCSC style (chr17, chrX, chrM); '17'/'X'/'MT' are accepted.",
+      "start": "0-based start (first base minus one). 1-based position P is start=P-1.",
+      "end": "0-based exclusive end (= the 1-based last base). Must be > start.",
+      "strand": "'+' for the reference strand (default), '-' for reverse complement."
+    },
+    "enums": {
+      "assembly": [
+        "hg38",
+        "hg19",
+        "GRCh38",
+        "GRCh37"
+      ],
+      "strand": [
+        "+",
+        "-"
+      ]
+    }
+  },
+  {
+    "name": "ucsc_get_region_annotations",
+    "description": "Return records of one allowlisted UCSC track overlapping a window [start, end) on an explicit assembly: repeats (rmsk, simpleRepeat), segmental duplications (genomicSuperDups), problematic regions (encBlacklist, grcExclusions, GIAB difficult/low-mappability), phyloP, ENCODE cCREs, CpG islands, MANE/GENCODE/RefSeq transcripts, SpliceVarDB/Varaico variants. An empty problematic-region result means the window is not flagged. Native UCSC fields are kept and each record gains a normalized `position`; transcripts also gain `exons` numbered in transcript order (strand-aware), segmental duplications an `other_position` for the partner copy. `total` is exact (null only past the upstream item cap); `truncated` is honest. Windows: <= 2,000,000 bp, signal tracks <= 5,000 bp. Signature: get_region_annotations(assembly, chrom, start, end, track, limit=).",
+    "tags": [
+      "blat",
+      "conservation",
+      "genomics",
+      "pcr",
+      "region",
+      "regulatory",
+      "repeat",
+      "sequence",
+      "track"
+    ],
+    "params": {
+      "assembly": "Genome assembly: hg38 (=GRCh38) or hg19 (=GRCh37). Never lifted over.",
+      "chrom": "Chromosome, UCSC style (chr17, chrX, chrM); '17'/'X'/'MT' are accepted.",
+      "start": "0-based start (first base minus one). 1-based position P is start=P-1.",
+      "end": "0-based exclusive end (= the 1-based last base). Must be > start.",
+      "track": "UCSC track name from list_tracks. phyloP is phyloP100way on hg38 and phyloP100wayAll on hg19 (either name works on both); cCREregistry/encodeCcreCombined/spliceVarDb are hg38-only.",
+      "limit": "Max records to return (default 100)."
+    },
+    "enums": {
+      "assembly": [
+        "hg38",
+        "hg19",
+        "GRCh38",
+        "GRCh37"
+      ],
+      "track": [
+        "knownGene",
+        "ncbiRefSeqSelect",
+        "rmsk",
+        "genomicSuperDups",
+        "phyloP100way",
+        "phyloP100wayAll",
+        "cCREregistry",
+        "encodeCcreCombined",
+        "spliceVarDb",
+        "varaico",
+        "mane",
+        "encBlacklist",
+        "grcExclusions",
+        "alldifficultregions",
+        "alllowmapandsegdupregions",
+        "simpleRepeat",
+        "cpgIslandExt"
+      ]
+    }
+  },
+  {
+    "name": "ucsc_get_server_capabilities",
+    "description": "Describe this server: allowlisted UCSC tracks per assembly with attribution and terms, coordinate convention, limits, rate-limit policy and error codes. Signature: get_server_capabilities().",
+    "tags": [
+      "blat",
+      "conservation",
+      "discovery",
+      "genomics",
+      "pcr",
+      "region",
+      "regulatory",
+      "repeat",
+      "sequence",
+      "track"
+    ],
+    "params": {}
+  },
+  {
+    "name": "ucsc_list_tracks",
+    "description": "List the curated UCSC tracks this server can query, with the assemblies each exists on, window limits, provider attribution and terms of use (non_commercial flags SpliceVarDB and Varaico). Signature: list_tracks(assembly=).",
+    "tags": [
+      "blat",
+      "conservation",
+      "genomics",
+      "pcr",
+      "region",
+      "regulatory",
+      "repeat",
+      "sequence",
+      "track",
+      "tracks"
+    ],
+    "params": {
+      "assembly": "Only tracks available on this assembly (default: all)."
+    },
+    "enums": {
+      "assembly": [
+        "hg38",
+        "hg19",
+        "GRCh38",
+        "GRCh37"
+      ]
+    }
+  },
+  {
+    "name": "ucsc_predict_pcr_products",
+    "description": "Predict every genomic product a primer pair amplifies up to max_product_size (in-silico PCR, as UCSC In-Silico PCR). Each product: location (0-based half-open + 1-based display), size, strand, per-primer mismatch counts and the product sequence (first 1,000 bp; primers uppercase). primary_total counts products off alt/fix contigs (alt_or_patch=true repeats a primary locus): primary_total == 1 is a single genomic product, 0 none. Primers need >= 15 perfect 3' bases. Runs on this deployment's own UCSC gfServer; an assembly that is not deployed answers upstream_unavailable (get_diagnostics -> blat shows what is live). Signature: predict_pcr_products(forward_primer, reverse_primer, assembly=, max_product_size=, limit=).",
+    "tags": [
+      "blat",
+      "conservation",
+      "genomics",
+      "pcr",
+      "region",
+      "regulatory",
+      "repeat",
+      "sequence",
+      "track"
+    ],
+    "params": {
+      "forward_primer": "15-50 nt, A/C/G/T only, written 5'->3'.",
+      "reverse_primer": "15-50 nt, A/C/G/T only, written 5'->3'.",
+      "assembly": "Genome assembly (default hg38). Never lifted over.",
+      "max_product_size": "Largest product in bp (default 4,000).",
+      "limit": "Max products (default 10)."
+    },
+    "enums": {
+      "assembly": [
+        "hg38",
+        "hg19",
+        "GRCh38",
+        "GRCh37"
+      ]
+    }
+  },
+  {
+    "name": "ucsc_search_genome",
+    "description": "Find where a gene or transcript lies on an assembly (UCSC position search over MANE, HGNC, GENCODE and RefSeq). Returns 0-based half-open start/end plus a 1-based display string, ready for get_region_annotations. Exact symbol/accession hits come first (`exact_matches` counts them, each hit has `exact`), then UCSC's looser text matches on gene descriptions, which are weak: a disease name is not a gene lookup (resolve it with mondo_resolve_disease). UCSC search gives no strand: get_region_annotations(track='ncbiRefSeqSelect') does. Signature: search_genome(assembly, query, limit=).",
+    "tags": [
+      "blat",
+      "conservation",
+      "genomics",
+      "pcr",
+      "region",
+      "regulatory",
+      "repeat",
+      "search",
+      "sequence",
+      "track"
+    ],
+    "params": {
+      "assembly": "Genome assembly: hg38 (=GRCh38) or hg19 (=GRCh37). Never lifted over.",
+      "query": "Gene symbol, transcript accession or term, e.g. BRCA1, SHH, NM_007294.4, ENST00000357654.9.",
+      "limit": "Max matches to return (default 5)."
+    },
+    "enums": {
+      "assembly": [
+        "hg38",
+        "hg19",
+        "GRCh38",
+        "GRCh37"
       ]
     }
   },
@@ -6947,7 +7586,7 @@
       "protein"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
       "response_mode": "Verbosity: minimal | compact | standard | full."
     },
     "enums": {
@@ -6968,7 +7607,7 @@
       "xref"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
       "databases": "Database short names to keep (case-sensitive; omit for all). A malformed name is rejected (invalid_input); a well-formed name that matched nothing is echoed under unmatched_databases.",
       "response_mode": "Verbosity: minimal | compact | standard | full."
     },
@@ -6990,7 +7629,7 @@
       "protein"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
       "response_mode": "Verbosity: minimal | compact | standard | full."
     },
     "enums": {
@@ -7011,7 +7650,7 @@
       "protein"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
       "feature_types": "Feature-type keys to keep (omit for all). Closed vocabulary: an unrecognised key is rejected (invalid_input), never matched to nothing. See feature_types in get_server_capabilities.",
       "limit": "Max features to return (default 200).",
       "include_secondary_structure": "Include helix/strand/turn features (hidden by default).",
@@ -7067,7 +7706,7 @@
       "protein"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
       "aspect": "Restrict to one GO aspect (omit for all).",
       "limit": "Max terms to return (0 = all)."
     },
@@ -7088,7 +7727,7 @@
       "sequence"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
       "response_mode": "Verbosity: minimal | compact | standard | full.",
       "canonical_only": "Return only the canonical isoform (omit the additional-isoform list)."
     },
@@ -7110,7 +7749,7 @@
       "variants"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
       "limit": "Max variants to return.",
       "disease_associated_only": "Return only variants linked to a disease.",
       "response_mode": "Verbosity: minimal | compact | standard | full.",
@@ -7167,7 +7806,7 @@
       "xref"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
       "databases": "Target database short names (case-sensitive; omit for the primary set).",
       "response_mode": "Verbosity: minimal | compact | standard | full."
     },
