@@ -20,6 +20,19 @@ servers:
     tags: [variant, gene, frequency, population]
     entrypoints: [resolve_variant_id, search_genes, get_variant_frequencies, get_gene_variants]
 
+  # ucsc-link: live UCSC Genome Browser JSON API, curated hg38/hg19 track allowlist (incl. MANE,
+  # ENCODE blacklist / GRC / GIAB problematic regions) + bounded reference sequence, and BLAT /
+  # in-silico PCR on the deployment's own Kent gfServer (v0.5.1; genefoundry-router#191).
+  # Search-only (no entrypoints): the pinned listing budget stays flat.
+  - name: ucsc
+    repo: berntpopp/ucsc-link
+    url_env: GF_UCSC_URL
+    namespace: ucsc
+    description: Genome Browser region tracks, reference sequence, BLAT & in-silico PCR
+    source_name: UCSC Genome Browser
+    source_url: https://genome.ucsc.edu/
+    tags: [genomics, region, repeat, conservation, regulatory, sequence, track, blat, pcr]
+
   - name: gtex
     repo: berntpopp/gtex-link
     url_env: GF_GTEX_URL
@@ -100,6 +113,17 @@ servers:
     tags: [ppi, network]
     entrypoints: [get_interaction_partners]
 
+  # STRchive tandem-repeat disease loci; upstream-live, digest-pinned CC BY 4.0 file (v0.3.0;
+  # issue #190); search-only (no entrypoints).
+  - name: strchive
+    repo: berntpopp/strchive-link
+    url_env: GF_STRCHIVE_URL
+    namespace: strchive
+    description: Tandem-repeat (STR) disease loci & repeat ranges
+    source_name: STRchive
+    source_url: https://strchive.org/
+    tags: [short-tandem-repeat, str, repeat-expansion, pathogenic-range, locus, motif]
+
   - name: autopvs1
     repo: berntpopp/autopvs1-link
     url_env: GF_AUTOPVS1_URL
@@ -159,6 +183,17 @@ servers:
     tags: [variant, clinical-significance, classification]
     entrypoints: [get_variant]
     tool_cache_ttl: 86400
+
+  # MITOMAP mtDNA variants; external-reference CC BY 3.0 data release of the daily dump (v0.3.0;
+  # issue #189); search-only (no entrypoints).
+  - name: mitomap
+    repo: berntpopp/mitomap-link
+    url_env: GF_MITOMAP_URL
+    namespace: mitomap
+    description: Mitochondrial DNA (mtDNA) variants & disease associations
+    source_name: MITOMAP
+    source_url: https://www.mitomap.org/
+    tags: [mitochondrial, mtdna, variant, disease, heteroplasmy, rcrs]
 
   # action server: annotate/recode/liftover verbs (Standard v1.1-pending), still unprefixed
   - name: vep
@@ -244,3 +279,15 @@ servers:
     source_name: ClinPGx
     source_url: https://clinpgx.org/
     tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
+
+  # pgscatalog-link: live PGS Catalog REST API (no snapshot): polygenic scores, traits,
+  # ancestry, licences, performance metrics, publications (v0.3.3; genefoundry-router#288).
+  # Search-only (no entrypoints): the pinned listing budget stays flat.
+  - name: pgscatalog
+    repo: berntpopp/pgscatalog-link
+    url_env: GF_PGSCATALOG_URL
+    namespace: pgscatalog
+    description: Polygenic scores, traits, ancestry & performance metrics
+    source_name: PGS Catalog
+    source_url: https://www.pgscatalog.org/
+    tags: [polygenic-score, prs, trait, gwas, ancestry, performance, publication]

@@ -264,6 +264,34 @@ backends:
       both views)
     existing_sanitization: v1.1 fence (fence_untrusted_text) released 0.4.0
 
+  - backend: mitomap
+    tool: get_variant
+    json_pointers:
+      - /records/*/disease
+      - /records/*/status_note
+      - /records/*/references/*/title
+    surfaces:
+      - {tool: get_variant, pointer: /records/*/disease}
+      - {tool: get_variant, pointer: /records/*/status_note}
+      - {tool: get_variant, pointer: /records/*/references/*/title}
+      - {tool: search_variants, pointer: /results/*/disease}
+      - {tool: search_variants, pointer: /results/*/status_note}
+    max_text_bytes: 2097152
+    max_objects: 128
+    measured_exceptions:
+      - {tool: search_variants, max_objects: 200, reason: "limit<=100 rows x (disease + status_note); search rows carry PMIDs, never fenced titles"}
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      mitomap_link/mcp/shaping.py + mitomap_link/mcp/untrusted_content.py (disease and
+      status_note fenced at every response_mode; get_variant reference titles at
+      standard/full capped at 50 per record, an allele has at most 2 records so <=104 objects;
+      source "mitomap", record_id "<record>", "<record>#status_note", "<record>#reference<n>",
+      raw_sha256); tests/unit/test_tools.py::test_disease_text_is_fenced_at_every_mode,
+      test_full_mode_caps_fenced_reference_objects
+    existing_sanitization: reference titles fenced from v0.1.0; disease/status_note from v0.1.1
+
   - backend: gencc
     tool: get_gene_disease_assertion
     json_pointers: [/assertion/submissions/*/notes]
@@ -349,6 +377,26 @@ backends:
       tests/unit/mcp/test_untrusted_content_fencing.py (real-MCP facade, both views)
     existing_sanitization: v1.1 fence (fence_untrusted_text) released 8.0.0
 
+  - backend: ucsc
+    tool: get_region_annotations
+    json_pointers: [/results/*/author, /results/*/title, /results/*/journal]
+    surfaces:
+      - {tool: get_region_annotations, pointer: /results/*/author}
+      - {tool: get_region_annotations, pointer: /results/*/title}
+      - {tool: get_region_annotations, pointer: /results/*/journal}
+      - {tool: search_genome, pointer: /results/*/label}
+      - {tool: search_genome, pointer: /results/*/description}
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      ucsc_link/service.py (_shape_record fences TrackSpec.prose_fields -- Varaico
+      author/title/journal, records capped so fenced objects stay <=128; _search_hit fences
+      UCSC search posName/description, <=50 hits x 2) + ucsc_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
+
   - backend: stringdb
     tool: get_functional_annotations
     json_pointers: [/annotations/*/description]
@@ -371,6 +419,30 @@ backends:
       tests/unit/mcp/test_untrusted_content_fencing.py (incl.
       test_list_tools_declares_untrusted_text_object_at_fenced_pointers)
     existing_sanitization: v1.1 fence (fence_untrusted_text) released 4.0.0
+
+  - backend: strchive
+    tool: get_locus
+    json_pointers:
+      - /result/details
+      - /result/disease_description
+      - /result/detection
+      - /result/mechanism_detail
+      - /result/age_onset
+      - /result/location_in_gene
+      - /result/prevalence_details
+      - /result/year
+      - /result/source_range_notes
+    max_text_bytes: 2097152
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      strchive_link/mcp/untrusted_content.py + strchive_link/mcp/shaping.py (every STRchive
+      prose field fenced; source "strchive", record_id "<locus_id>#<field>", raw_sha256);
+      compare_repeat_length /result/source_range_notes uses the same fence; hostile vector
+      tests/unit/mcp/test_untrusted_content.py::test_hostile_source_prose_is_fenced_on_the_wire
+    existing_sanitization: v1.1 fence shipped from the first release (v0.1.1)
 
   - backend: mgi
     tool: get_mp_term
@@ -515,3 +587,24 @@ backends:
       clinpgx_link/mcp/untrusted_content.py (v1.1 structural fence; UntrustedText TypedDict;
       forbidden codepoint filter, raw_sha256, source + record_id provenance)
     existing_sanitization: v1.1 fence (fence_text) shipped, released v0.1.0
+
+  - backend: pgscatalog
+    tool: get_score_performance
+    json_pointers: [/performance/*/reported]
+    surfaces:
+      - {tool: get_score_performance, pointer: /performance/*/reported}
+      - {tool: get_trait, pointer: /trait/description}
+      - {tool: get_score, pointer: /score/trait_additional}
+      - {tool: get_score, pointer: /score/method_params}
+      - {tool: get_publication, pointer: /publication/title}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      pgscatalog_link/shaping.py (fence(): trait description, score trait_additional and
+      method_params, publication title, and one `reported` block per performance row --
+      phenotype, covariates, comments -- with performance pages capped at 50 rows so fenced
+      objects stay <=128) + pgscatalog_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
