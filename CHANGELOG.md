@@ -4,6 +4,8 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.5] - 2026-11-19
+
 ### Changed
 
 - **`X-GF-Pinned-Mode` also selects the instructions and the hint call form (#320).** The
