@@ -143,6 +143,27 @@ mondo-link 0.8.0/0.9.0 (`match_type`/`score`, weak-candidate message), strchive-
 probes every `resolve_*` tool with a value nothing can match and **warns** (does not fail) when
 the miss is not a `not_found` carrying `_meta.next_commands`.
 
+#### 2b. Accept the identifier the user has (added 2026-11-19, router #319)
+
+A model loses a turn, and sometimes the answer, when an entry-point tool rejects the identifier the
+question contains (a PMCID where the tool wants a PMID, a gene symbol where it wants an accession).
+
+- **Accept every form the backend can already convert.** An entry-point tool accepts each
+  identifier form naming the same object that it can convert with data or APIs the backend
+  **already** has (e.g. PMID/PMCID/DOI for an article via the NCBI ID converter it already calls;
+  a gene symbol via the backend's own search). Each form is still validated by shape before any
+  upstream call.
+- **Echo the conversion.** A converted input is echoed as
+  `resolved_from: {input, form, resolved_to}` (`form` is a closed per-backend enum such as
+  `pmcid`/`doi`/`symbol`/`rsid`/`hgvs`; a list when the tool takes several ids). The field is
+  omitted when no conversion happened. Adding it is a MINOR version bump.
+- **Ambiguity is not a guess.** If the form names several objects (a symbol matching two reviewed
+  entries, a multi-allelic rsID), answer per §2a: an error with typed `candidates`, not a pick.
+- **No new cross-backend runtime calls.** Where conversion needs another backend, keep the honest
+  `invalid_input` / `not_found` naming the field, with the converter (e.g. `hgnc_resolve_symbol`,
+  `mondo_resolve_disease`) in `_meta.next_commands`.
+- Each adopting backend carries one regression test that passes the "wrong but obvious" form.
+
 ### 3. Lean by default — token economy is a contract, not a lever
 
 The reports' core token finding was *"the levers exist; the defaults don't respect them."*
@@ -273,6 +294,8 @@ For tools with material cold latency (e.g. `spliceailookup-link`'s ~60s `predict
       actionable message; protocol errors use standard JSON-RPC codes.
 - [ ] A `resolve_*` miss follows §2a: `not_found` + typed `candidates` + `next_commands` to the
       backend's search tool and the sibling front door.
+- [ ] Entry-point tools accept every identifier form they can already convert (§2b), echoing
+      `resolved_from`; unconvertible forms get `invalid_input` + the converter in `next_commands`.
 - [ ] `response_mode` defaults to `compact`; null/empty blocks omitted; nested objects collapse
       to strings except at `full`.
 - [ ] Envelope `_meta` carries `request_id` + `elapsed_ms` (min), plus the applicable provenance,
