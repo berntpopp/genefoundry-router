@@ -114,6 +114,35 @@ not `results` (array), and `recommended_citation` may sit at the top level.
 > The nested `error: {code, message, retriable, details}` shape from the pre-ratification
 > draft is **not** the v1 contract. It is recorded in the non-normative v2 appendix.
 
+#### 2a. Resolver misses — one turn, not five (added 2026-11-19, router #301)
+
+Resolver misses were the router's top production error class (112 of 193 errors in one 30-minute
+window): a free-text disease name tried against each strict resolver in turn. A `resolve_*` tool
+(Tool-Naming verb canon) that finds no exact match MUST answer so the next call can succeed:
+
+- **Honest `not_found`.** A miss is an execution error (`isError: true`, `error_code: "not_found"`),
+  never `success: true` with an empty or null record. Batch resolvers report misses per item.
+- **Candidates, typed.** When a fuzzy search over labels **and** synonyms finds near matches,
+  return them as `candidates`: validated ids plus a label, each with `match_type` (a closed,
+  per-backend enum such as Mondo's `primary`/`exact_synonym`/`related_synonym`/`xref`/`fuzzy`)
+  and `score` where the backend ranks. A candidate that is only a search guess (e.g. it shares one
+  word with the query) carries `"match": "weak"`, so a model does not take it for a resolution.
+- **`_meta.next_commands`** on the miss: first `get_*` on the top candidates, then the backend's
+  own `search_*` tool, then the **sibling front door** for the entity type, by its namespaced
+  name (the router passes prefixed names through). Disease names: **`mondo_resolve_disease` is
+  the fleet's disease front door** (it carries OMIM/Orphanet/DOID xrefs); gene symbols:
+  `hgnc_resolve_symbol`. A resolver never points at itself with the same input.
+- The `message` stays fixed and server-authored; the query is never echoed into it
+  (untrusted-content rules). Domain absence notes (`absence_note`) are typed fields, not prose
+  in `message`.
+
+Reference implementations: gencc-link 0.10.2 (disease miss → `mondo_resolve_disease`),
+mondo-link 0.8.0/0.9.0 (`match_type`/`score`, weak-candidate message), strchive-link 0.3.0
+(`"match": "weak"` candidates, `search_loci` chained), pgscatalog-link 0.3.2 (trait miss →
+`mondo_resolve_disease`), mitomap-link 0.3.0 (`absence_note`). `docs/conformance/behaviour.py`
+probes every `resolve_*` tool with a value nothing can match and **warns** (does not fail) when
+the miss is not a `not_found` carrying `_meta.next_commands`.
+
 ### 3. Lean by default — token economy is a contract, not a lever
 
 The reports' core token finding was *"the levers exist; the defaults don't respect them."*
@@ -242,6 +271,8 @@ For tools with material cold latency (e.g. `spliceailookup-link`'s ~60s `predict
 - [ ] Execution errors use `isError: true` + the §2 flat error frame (`error_code`,
       `message`, `retryable`, `recovery_action`) with the closed enum code and an
       actionable message; protocol errors use standard JSON-RPC codes.
+- [ ] A `resolve_*` miss follows §2a: `not_found` + typed `candidates` + `next_commands` to the
+      backend's search tool and the sibling front door.
 - [ ] `response_mode` defaults to `compact`; null/empty blocks omitted; nested objects collapse
       to strings except at `full`.
 - [ ] Envelope `_meta` carries `request_id` + `elapsed_ms` (min), plus the applicable provenance,
