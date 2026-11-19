@@ -57,7 +57,11 @@ _CIRCUIT_STATUSES = frozenset({401, 403, 408, 429})
 
 
 class Reranker(Protocol):
-    """Second-stage ranker: ``None`` = keep BM25 order, ``[]`` = nothing fits."""
+    """Second-stage ranker: scores every candidate; ``None`` = keep BM25 order.
+
+    ``min_score`` is the "nothing fits" floor the search stage applies (#303)."""
+
+    min_score: float
 
     async def rerank(
         self, query: str, tools: Sequence[Tool]
@@ -127,6 +131,7 @@ class SystemOneReranker:
             limits=httpx.Limits(max_keepalive_connections=10, max_connections=30),
         )
         self._open_until = 0.0
+        self.min_score = config.min_score
 
     def _request(self, query: str, tools: Sequence[Tool]) -> dict[str, Any]:
         limit = self.config.max_description_chars
@@ -177,9 +182,9 @@ class SystemOneReranker:
         await self._client.aclose()
 
     async def rerank(self, query: str, tools: Sequence[Tool]) -> list[tuple[Tool, float]] | None:
-        """Candidates sorted by model score (ties keep BM25 order), filtered by
-        ``min_score``. ``[]`` means "nothing fits"; ``None`` means the stage was skipped or
-        failed and the caller should fall back to the BM25 ranking."""
+        """Every candidate sorted by model score (ties keep BM25 order); the caller applies
+        ``min_score``. ``None`` means the stage was skipped or failed and the caller should
+        fall back to the BM25 ranking."""
         if not tools:
             return []
         if not query.strip() or len(tools) > MAX_CHOICE_OPTIONS:
@@ -207,7 +212,7 @@ class SystemOneReranker:
             )
             return None
         order = sorted(range(len(tools)), key=lambda i: -scores[i])  # stable: BM25 tie-break
-        return [(tools[i], scores[i]) for i in order if scores[i] >= self.config.min_score]
+        return [(tools[i], scores[i]) for i in order]
 
 
 def rerank_config(settings: RouterSettings) -> RerankConfig:

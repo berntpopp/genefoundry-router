@@ -2,6 +2,25 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.12.5] - 2026-11-19
+
+### Fixed
+
+- **Reranker floor emptied in-scope searches (#303):** with `GF_SEARCH_RERANK_MIN_SCORE`
+  set, a query whose every candidate scored under the floor returned a bare `[]` (24% of
+  searches in genefoundry-bench agent traces, e.g. full-text / figure / table requests the
+  passages tool answers). Now the top 2 BM25 candidates are served with
+  `"low_confidence": true` and their `relevance`; `[]` only means BM25 found no candidate.
+  The reranker returns every scored candidate and the search stage applies the floor. The
+  `search_tools` audit record gains `low_confidence`, and `scripts/search_rerank_report.py`
+  counts a low-confidence result as an abstention.
+- Server instructions and the `search_tools` description no longer call search "BM25" and
+  tell the model what a `low_confidence` or empty result means.
+- `pubtator_get_publication_passages` expansion keywords gain general full-text vocabulary
+  (PubMed Central, figure captions/legends, tables, supplementary material). Hand-edited:
+  the generator needs an OpenRouter key that was not available. Three general phrasings
+  joined the discovery regression set.
+
 ## [0.12.4] - 2026-11-19
 
 ### Added

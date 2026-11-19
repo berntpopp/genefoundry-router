@@ -60,19 +60,26 @@ Gemini Remote MCP (snake_case, `[a-z0-9_]`, ≤ 64 chars).
    `GF_SEARCH_RERANK_POOL` BM25 hits go to a [System One](https://docs.typesafe.ai) decision
    model, which answers "can this tool directly fulfil the request?" per candidate with a
    calibrated probability. Hits are reordered, carry a `relevance` field, and with
-   `GF_SEARCH_RERANK_MIN_SCORE` anything below the floor is dropped, so an out-of-scope
-   request returns `[]` instead of five wrong tools. Any error or timeout serves the BM25
-   order (fail-open) and pauses the stage for 30 s.
+   `GF_SEARCH_RERANK_MIN_SCORE` anything below the floor is dropped. If the floor drops every
+   candidate, the top 2 BM25 hits are served with `"low_confidence": true` (and their
+   `relevance`) instead of five wrong tools or a bare `[]`, which agents read as "the fleet
+   cannot do this" (#303). The flag is the abstention signal; `[]` now means BM25 found no
+   candidate at all. Any error or timeout serves the BM25 order (fail-open) and pauses the
+   stage for 30 s.
 
 Measured on the held-out set (219 tasks, 24 out-of-scope; pins excluded, top-5 served):
 
-| Stage | hit@1 | hit@5 | Out-of-scope → `[]` | Added latency |
+| Stage | hit@1 | hit@5 | Out-of-scope abstained | Added latency |
 |---|---|---|---|---|
 | BM25 only (`GF_SEARCH_EXPANSIONS=off`) | 0.45 | 0.68 | 0% | – |
 | + expansion (default) | 0.72 | 0.94 | 0% | none |
 | + hosted Jev 1.13, `noul`, min 0.3 | 0.89 | 0.97 | 100% (0.5% of in-scope emptied) | ~330 ms p50 |
 | + self-hosted OneJev-4B, `noul`, min 0.3 | 0.87 | 0.97 | 71% (none emptied) | GPU-dependent |
 | + self-hosted OneJev-4B, `choice` | 0.92 | 0.97 | – | GPU-dependent |
+
+"Abstained" counts no confident hit (`[]` or `low_confidence`). The curated set
+under-represents agent phrasing: on genefoundry-bench agent traces the 0.3 floor emptied 24%
+of searches, many in scope (literature full text, figures, tables; #303).
 
 ### Choosing a reranker deployment
 

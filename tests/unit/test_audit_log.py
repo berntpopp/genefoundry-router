@@ -338,3 +338,28 @@ async def test_search_tools_audit_records_hit_count_and_top3_names_not_query() -
     assert e["hit_count"] == 4
     assert e["top_hits"] == ["gnomad_search_genes", "_unknown", "vep_annotate_variant"]
     assert query not in str(e) and "Jane" not in str(e) and "IGNORE" not in str(e)
+
+
+async def test_search_tools_audit_flags_a_low_confidence_fallback() -> None:
+    """#303: a sub-floor fallback is not a confident hit; the audit line keeps that visible."""
+    from fastmcp.tools.base import ToolResult
+
+    mw = AuditLogMiddleware()
+    hits = [{"name": "vep_annotate_variant", "low_confidence": True}]
+
+    async def _ok(_ctx):
+        return ToolResult(structured_content={"result": hits})
+
+    with structlog.testing.capture_logs() as logs:
+        await mw.on_call_tool(_Ctx("search_tools", {"query": "x"}), _ok)
+        await mw.on_call_tool(_Ctx("search_tools", {"query": "x"}), _ok_plain)
+
+    low, plain = [entry for entry in logs if entry.get("event") == "tool_call"]
+    assert low["low_confidence"] is True
+    assert plain["low_confidence"] is False
+
+
+async def _ok_plain(_ctx):  # type: ignore[no-untyped-def]
+    from fastmcp.tools.base import ToolResult
+
+    return ToolResult(structured_content={"result": [{"name": "vep_annotate_variant"}]})

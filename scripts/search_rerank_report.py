@@ -41,26 +41,31 @@ from genefoundry_router.search_rerank import build_reranker  # noqa: E402
 from genefoundry_router.tool_search import CompactBM25SearchTransform  # noqa: E402
 
 
+# task, hit names, reranked, latency (s), abstained (no confident hit; #303 low-confidence)
+Row = tuple[Task, list[str], bool, float, bool]
+
+
 async def _run(
     transform: CompactBM25SearchTransform, tasks: list[Task], concurrency: int
-) -> list[tuple[Task, list[str], bool, float]]:
+) -> list[Row]:
     catalog = load_catalog()
     gate = asyncio.Semaphore(concurrency)
 
-    async def one(task: Task) -> tuple[Task, list[str], bool, float]:
+    async def one(task: Task) -> Row:
         async with gate:
             start = time.perf_counter()
-            hits, scores = await transform._ranked(catalog, task.query)
-            return task, [t.name for t in hits], scores is not None, time.perf_counter() - start
+            hits, scores, low = await transform._ranked(catalog, task.query)
+            names = [t.name for t in hits]
+            return task, names, scores is not None, time.perf_counter() - start, low or not names
 
     return list(await asyncio.gather(*(one(t) for t in tasks)))
 
 
-def _report(label: str, rows: list[tuple[Task, list[str], bool, float]], k: int) -> None:
+def _report(label: str, rows: list[Row], k: int) -> None:
     pos = [r for r in rows if r[0].expected]
     neg = [r for r in rows if not r[0].expected]
 
-    def hit(r: tuple[Task, list[str], bool, float], n: int) -> bool:
+    def hit(r: Row, n: int) -> bool:
         return any(name in r[0].expected for name in r[1][:n])
 
     lat = sorted(r[3] * 1000 for r in rows)
@@ -68,8 +73,8 @@ def _report(label: str, rows: list[tuple[Task, list[str], bool, float]], k: int)
     print(
         f"{label:<10} hit@1 {sum(hit(r, 1) for r in pos) / len(pos):.3f}  "
         f"hit@{k} {sum(hit(r, k) for r in pos) / len(pos):.3f}  "
-        f"abstain(neg) {sum(not r[1] for r in neg) / max(len(neg), 1):.3f}  "
-        f"false-abstain(pos) {sum(not r[1] for r in pos) / len(pos):.3f}  "
+        f"abstain(neg) {sum(r[4] for r in neg) / max(len(neg), 1):.3f}  "
+        f"false-abstain(pos) {sum(r[4] for r in pos) / len(pos):.3f}  "
         f"reranked {reranked}/{len(rows)}  "
         f"p50 {statistics.median(lat):.0f} ms  p95 {lat[int(0.95 * (len(lat) - 1))]:.0f} ms"
     )

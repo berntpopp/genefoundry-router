@@ -43,16 +43,16 @@ EXPANSIONS = {"g_get_variant_frequencies": "how common is my DNA change in healt
 class FakeReranker:
     """Records what the router sends and returns a scripted ranking."""
 
-    def __init__(self, result: str | None, scores: dict[str, float] | None = None):
-        self.result, self.scores = result, scores or {}
+    def __init__(
+        self, result: str | None, scores: dict[str, float] | None = None, min_score: float = 0.0
+    ):
+        self.result, self.scores, self.min_score = result, scores or {}, min_score
         self.calls: list[tuple[str, list[str]]] = []
 
     async def rerank(self, query: str, tools: Sequence[Tool]) -> list[tuple[Tool, float]] | None:
         self.calls.append((query, [t.name for t in tools]))
         if self.result == "fail":
             return None
-        if self.result == "abstain":
-            return []
         ranked = sorted(tools, key=lambda t: -self.scores.get(t.name, 0.0))
         return [(t, self.scores.get(t.name, 0.0)) for t in ranked]
 
@@ -110,9 +110,30 @@ async def test_reranker_failure_falls_back_to_bm25_order() -> None:
     assert fake.calls
 
 
-async def test_reranker_abstention_returns_no_hits() -> None:
-    transform = CompactBM25SearchTransform(max_results=3, reranker=FakeReranker("abstain"))
-    assert await _search(_server(transform), "book a flight to Berlin variant") == []
+async def test_floor_dropping_everything_serves_two_low_confidence_bm25_hits() -> None:
+    """#303: a sub-floor shortlist is never a bare []; the top 2 BM25 hits come back flagged."""
+    query = "variant splice frequencies"
+    bm25 = await _search(_server(CompactBM25SearchTransform(max_results=2)), query)
+    scores = {"s_predict_splicing": 0.2, "g_get_variant_frequencies": 0.1}
+    fake = FakeReranker("rank", scores, min_score=0.3)
+    hits = await _search(_server(CompactBM25SearchTransform(max_results=5, reranker=fake)), query)
+    assert [h["name"] for h in hits] == [h["name"] for h in bm25]
+    assert all(h["low_confidence"] is True for h in hits)
+    assert {h["name"]: h["relevance"] for h in hits} == {h["name"]: scores[h["name"]] for h in bm25}
+    assert hits[0]["call"]["tool"] == "call_tool"
+
+
+async def test_floor_keeps_confident_hits_without_the_flag() -> None:
+    fake = FakeReranker("rank", {"s_predict_splicing": 0.9, "g_get_coverage": 0.1}, min_score=0.3)
+    transform = CompactBM25SearchTransform(max_results=5, reranker=fake)
+    hits = await _search(_server(transform), "variant splice coverage")
+    assert [h["name"] for h in hits] == ["s_predict_splicing"]
+    assert "low_confidence" not in hits[0]
+
+
+async def test_no_bm25_candidate_still_returns_no_hits() -> None:
+    transform = CompactBM25SearchTransform(max_results=3, reranker=FakeReranker("rank"))
+    assert await _search(_server(transform), "book flight Berlin") == []
 
 
 async def test_full_detail_still_works_with_a_reranker() -> None:

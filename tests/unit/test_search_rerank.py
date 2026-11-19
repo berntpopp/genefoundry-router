@@ -79,12 +79,16 @@ async def test_ties_keep_first_stage_order() -> None:
     assert [t.name for t, _ in ranked] == ["c_z", "a_x", "b_y", "d_w"]
 
 
-async def test_min_score_filters_and_can_abstain() -> None:
+async def test_scores_every_candidate_and_leaves_the_floor_to_the_caller() -> None:
+    """#303: the search stage applies ``min_score`` so it can fall back to low-confidence hits."""
     rr = _reranker(_noul_handler({"a_x": 0.1, "b_y": 0.45, "c_z": 0.2}, []), min_score=0.3)
     ranked = await rr.rerank(QUERY, _tools("a_x", "b_y", "c_z"))
-    assert ranked is not None and [t.name for t, _ in ranked] == ["b_y"]
-    abstain = _reranker(_noul_handler({"a_x": 0.1, "b_y": 0.2}, []), min_score=0.3)
-    assert await abstain.rerank(QUERY, _tools("a_x", "b_y")) == []
+    assert ranked is not None and [(t.name, s) for t, s in ranked] == [
+        ("b_y", 0.45),
+        ("c_z", 0.2),
+        ("a_x", 0.1),
+    ]
+    assert rr.min_score == 0.3
 
 
 async def test_choice_request_contract() -> None:
