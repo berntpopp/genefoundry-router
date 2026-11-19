@@ -91,16 +91,34 @@ tests/discoverability/agent_queries.yaml` reports the share each pipeline emptie
 
 `GF_SEARCH_RERANK_MIN_SCORE` is a probability cut-off, and each decision model calibrates its
 probabilities differently, so a floor tuned for one model does not carry over to another.
-genefoundry-bench measured the v0.12.7 candidate text (#306) on the 24-task out-of-scope set:
+genefoundry-bench re-measured on v0.12.8 (enum-aware snapshot; 64 out-of-scope negatives,
+195 in-scope tasks, 858 agent queries; no fallbacks):
 
-| Model | Highest out-of-scope score | Floor that still rejects 100% of out-of-scope |
-|---|---|---|
-| `typesafe/jev-1.13` | 0.17 | ~0.2 |
-| `google/gemini-decision-1` | – | ~0.1 |
-| `microsoft/microsoft-decision-1` | – | weaker separation than either |
+`typesafe/jev-1.13` — hit@1 0.913, p50/p95 216/274 ms. The highest out-of-scope scores were
+0.19, 0.17 and 0.15.
 
-0.3 stays the documented setting for Jev (the code default is `0.0`, floor off). Before
-changing the floor or the model, re-measure on both eval sets:
+| Floor | Out-of-scope rejected | In-scope emptied | Agent queries emptied |
+|---|---|---|---|
+| 0.10 | 93.8% | 0% | 0.4% |
+| 0.15 | 95.3% | 0% | 2.7% |
+| 0.20 | 100% | 0% | 4.9% |
+| 0.25 | 100% | 0% | 7.8% |
+| 0.30 | 100% | 0% | 11.3% |
+
+`google/gemini-decision-1` — hit@1 0.897, p50/p95 356/673 ms.
+
+| Floor | Out-of-scope rejected | In-scope emptied | Agent queries emptied |
+|---|---|---|---|
+| 0.10 | 96.9% | 0% | 0.8% |
+| 0.20 | 100% | 0.5% | 2.6% |
+| 0.30 | 100% | 1.0% | 4.1% |
+
+The earlier "about 0.1 for Gemini" came from only 24 negatives and was wrong: 0.20 is the
+lowest floor that rejects all 64 negatives for both models. For Jev 1.13 with the v0.12.8+
+candidate text, use `GF_SEARCH_RERANK_MIN_SCORE=0.20`, with the `low_confidence` fallback as
+the safety net. The margin over the highest negative (0.19) is thin, so 0.20–0.25 is the
+defensible range. The code default stays `0.0` (floor off); the production value is a deploy
+decision. Re-measure whenever the model or the candidate text changes, on both eval sets:
 
 ```bash
 uv run python scripts/search_rerank_report.py                      # held-out set, 64 out-of-scope
@@ -129,12 +147,12 @@ GF_SEARCH_RERANK=systemone
 GF_SEARCH_RERANK_URL=https://openrouter.ai/api/v1/systemone
 GF_SEARCH_RERANK_MODEL=typesafe/jev-1.13
 GF_SEARCH_RERANK_API_KEY=sk-or-...
-GF_SEARCH_RERANK_MIN_SCORE=0.3
+GF_SEARCH_RERANK_MIN_SCORE=0.20
 
 # self-hosted OneJev on a VPS (github.com/OmniJev/OneJev: `qev serve --model OmniJev/OneJev-4B`)
 GF_SEARCH_RERANK=systemone
 GF_SEARCH_RERANK_URL=http://onejev.internal:8000/v1/systemone
-GF_SEARCH_RERANK_MIN_SCORE=0.3
+GF_SEARCH_RERANK_MIN_SCORE=0.3  # OneJev not re-measured on v0.12.8; re-run the report first
 ```
 
 With the reranker on, every `search_tools` call is an upstream request (paid, when hosted):

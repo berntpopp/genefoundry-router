@@ -2,6 +2,8 @@
 
     python scripts/check_tool_surface.py            # every backend in the pinned baseline
     python scripts/check_tool_surface.py --json      # machine-readable
+    python scripts/check_tool_surface.py --rule D1   # description-lead report (warn only)
+    python scripts/check_tool_surface.py --rule D1 --strict-lead   # ... and fail on it
 
 Enforces, against `genefoundry_router/data/fleet-baseline.json` (the digest-attested snapshot
 of every backend's real tool definitions — no network, fully deterministic):
@@ -14,6 +16,8 @@ of every backend's real tool definitions — no network, fully deterministic):
     S1  every input property MUST carry a non-empty `description`
     S2  every REQUIRED property MUST carry at least one `examples` value
     S3  every ARRAY-typed property MUST carry at least one `examples` value
+    D1  (v1.1, advisory) a tool description's first sentence MUST say what the tool returns;
+        reported as a warning, a failure only under --strict-lead
 
 The baseline is derived, never hardcoded: every backend present in it is checked, so a new
 backend is gated the day it is snapshotted. A hardcoded server list would be the same bug one
@@ -40,10 +44,13 @@ from surface import (
     MAX_TOOL_TOKENS,
     MIN_DOCUMENTED_PCT,
     is_array,
+    lead_states_return,
     properties,
     surface_metrics,
     tokens,
 )
+
+ADVISORY = {"D1"}  # warn-only until a repo opts in with --strict-lead
 
 
 class Violation(NamedTuple):
@@ -66,6 +73,9 @@ def lint_tool_schema(tool: dict[str, Any], server: str = "server") -> list[Viola
                 f"{round(100 * out / cost)}% outputSchema)",
             )
         )
+
+    if not lead_states_return(tool.get("description")):
+        bad.append(Violation(server, "D1", f"{name}: first sentence does not say what it returns"))
 
     if (
         name == "get_diagnostics"
@@ -127,6 +137,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Enforce the fleet's tool-surface standards")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--baseline", default=BASELINE)
+    parser.add_argument(
+        "--rule",
+        choices=["B1", "B2", "S1", "S2", "S3", "S5", "D1"],  # a typo must not report "conformant"
+        help="report only this rule, listing every finding",
+    )
+    parser.add_argument("--strict-lead", action="store_true", help="fail on D1 instead of warning")
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parent.parent
@@ -135,27 +151,31 @@ def main() -> int:
     violations: list[Violation] = []
     rows: list[dict[str, Any]] = []
     for namespace, entry in sorted(backends.items()):
-        found = check_backend(namespace, entry)
+        found = [v for v in check_backend(namespace, entry) if v.rule == (args.rule or v.rule)]
         violations.extend(found)
         metrics = surface_metrics(entry.get("tools", []))
-        rows.append({"server": f"{namespace}-link", "violations": len(found), **metrics})
+        lead = sum(v.rule == "D1" for v in found)
+        rows.append(
+            {"server": f"{namespace}-link", "violations": len(found), "lead": lead, **metrics}
+        )
+    blocking = [v for v in violations if args.strict_lead or v.rule not in ADVISORY]
 
     if args.json:
         print(
             json.dumps(
                 {
-                    "conformant": not violations,
+                    "conformant": not blocking,
                     "servers": rows,
                     "violations": [v._asdict() for v in violations],
                 },
                 indent=2,
             )
         )
-        return 1 if violations else 0
+        return 1 if blocking else 0
 
     header = (
         f"{'server':<22}{'tools':>6}{'surface':>9}{'out%':>6}"
-        f"{'doc%':>6}{'enum':>6}{'ex':>5}{'fails':>7}"
+        f"{'doc%':>6}{'enum':>6}{'ex':>5}{'D1':>5}{'fails':>7}"
     )
     print(header)
     print("-" * len(header))
@@ -163,7 +183,7 @@ def main() -> int:
         flag = "" if not r["violations"] else f"{r['violations']:>7}"
         print(
             f"{r['server']:<22}{r['tools']:>6}{r['surface']:>8,}t{r['out_pct']:>5}%"
-            f"{r['doc_pct']:>5}%{r['enums']:>6}{r['examples']:>5}{flag or '      -':>7}"
+            f"{r['doc_pct']:>5}%{r['enums']:>6}{r['examples']:>5}{r['lead']:>5}{flag or '      -':>7}"
         )
     print("-" * len(header))
     print(f"{'TOTAL':<22}{sum(r['tools'] for r in rows):>6}{sum(r['surface'] for r in rows):>8,}t")
@@ -175,7 +195,8 @@ def main() -> int:
         )
         return 0
 
-    print(f"\n{len(violations)} VIOLATIONS\n")
+    advisory = len(violations) - len(blocking)
+    print(f"\n{len(blocking)} VIOLATIONS, {advisory} WARNINGS (D1 is advisory)\n")
     by_rule: dict[str, list[Violation]] = {}
     for v in violations:
         by_rule.setdefault(v.rule, []).append(v)
@@ -186,16 +207,18 @@ def main() -> int:
         "S2": "required property with no examples",
         "S3": "array property with no examples",
         "S5": "diagnostics tool advertises response_mode",
+        "D1": "description lead does not say what the tool returns",
     }
     for rule in sorted(by_rule):
         found = by_rule[rule]
         print(f"{rule}  {titles[rule]}  [{len(found)}]")
-        for v in found[:6]:
+        shown = found if args.rule else found[:6]
+        for v in shown:
             print(f"      {v.server:<18} {v.detail}")
-        if len(found) > 6:
-            print(f"      ... and {len(found) - 6} more")
+        if len(found) > len(shown):
+            print(f"      ... and {len(found) - len(shown)} more")
         print()
-    return 1
+    return 1 if blocking else 0
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme readme-inventory provenance lint-provenance lint-actions lint-action-versions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog bench-rerank expansions ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme lint-description-lead readme-inventory provenance lint-provenance lint-actions lint-action-versions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog bench-rerank expansions ci-full
 
 .DEFAULT_GOAL := help
 
@@ -54,6 +54,9 @@ metadata-apply: ## Push fleet-metadata.yaml to the fleet's GitHub About boxes (n
 
 server-json: ## Regenerate the MCP Registry manifest from fleet-metadata.yaml + pyproject
 	uv run python scripts/gen_server_json.py
+
+lint-description-lead: ## Report tool descriptions whose first sentence does not say what they return (D1, warn-only)
+	uv run python scripts/check_tool_surface.py --rule D1
 
 lint-server-json: ## Fail if server.json is stale
 	uv run python scripts/gen_server_json.py --check
@@ -111,7 +114,7 @@ http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption 
 
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-readme lint-metadata lint-server-json lint-provenance lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-readme lint-description-lead lint-metadata lint-server-json lint-provenance lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
 # NB: `lint-surface` is deliberately NOT in ci-local yet. It currently reports 595 real
 # violations across 20 of the 21 backends — that is the point of it, and it is the failing test
 # the fleet sweep exists to turn green. It joins ci-local in the same change that drives it to

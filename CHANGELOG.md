@@ -2,6 +2,24 @@
 
 All notable changes to genefoundry-router are documented here.
 
+## [0.13.1] - 2026-11-19
+
+### Added
+
+- **Tool-Schema Documentation Standard v1.1, rule `D1` (description lead):** a tool
+  description's first sentence must say what the tool returns, before usage advice.
+  `scripts/surface.py` gains `lead_states_return` (vendored to backends), and
+  `scripts/check_tool_surface.py` reports `D1` as a warning (`--strict-lead` fails on it;
+  `--rule` lists every finding). `make lint-description-lead` reports it over the fleet
+  baseline in `ci-local`: 96 of 285 tools fail today. The standard has fleet examples,
+  sources, and the per-backend rollout and measurement steps.
+
+### Changed
+
+- `docs/discovery.md`, `docs/configuration.md`: the rerank-floor note now uses the v0.12.8
+  bench re-measurement (64 out-of-scope negatives). The recommended floor for Jev 1.13 is
+  `0.20` (0.20–0.25 defensible), not 0.3. The code default is unchanged.
+
 ## [0.13.0] - 2026-11-19
 
 ### Added

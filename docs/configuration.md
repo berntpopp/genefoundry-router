@@ -46,7 +46,7 @@ starts.
 | `GF_SEARCH_RERANK_API_KEY` | _(unset)_ | The router's own endpoint key (never the caller's token); blank for a keyless self-hosted server |
 | `GF_SEARCH_RERANK_QUESTION` | `noul` | `noul` (independent P(yes) per candidate; supports abstention) \| `choice` (one relative choice; best top-1 on OneJev-4B, no threshold) |
 | `GF_SEARCH_RERANK_POOL` | `20` | BM25 candidates scored per search (`GF_SEARCH_MAX_RESULTS`–255) |
-| `GF_SEARCH_RERANK_MIN_SCORE` | `0.0` | `noul` only: drop hits below this P(yes); an all-dropped search serves the top 2 BM25 hits flagged `low_confidence` ("nothing clearly fits"). `0.3` is the measured sweet spot |
+| `GF_SEARCH_RERANK_MIN_SCORE` | `0.0` | `noul` only: drop hits below this P(yes); an all-dropped search serves the top 2 BM25 hits flagged `low_confidence` ("nothing clearly fits"). `0.20` for Jev 1.13 with v0.12.8+ candidate text (0.20–0.25 defensible; floors are model-specific, see `docs/discovery.md`) |
 | `GF_SEARCH_RERANK_TIMEOUT` | `3.0` | Seconds for the whole rerank round-trip; on timeout/error the BM25 order is served and the stage cools down for 30 s |
 | `GF_DRIFT_MODE` | `warn` | Runtime catalog policy: `off` \| `warn` \| `enforce` |
 | `GF_DRIFT_BASELINE` | _(packaged)_ | Optional path override for the reviewed packaged baseline |
