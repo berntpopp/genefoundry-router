@@ -61,9 +61,9 @@ from genefoundry_router.refresh_observability import (
     RefreshLedgerCapacityError,
 )
 from genefoundry_router.register_guard import RejectNonJsonBody
+from genefoundry_router.resource_alias import resolve_resource_alias
 
 log = structlog.get_logger(__name__)
-_REFRESH_INFLIGHT_TTL_SECONDS = REFRESH_ATTEMPT_STALE_SECONDS
 _SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 
@@ -228,7 +228,7 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         stale = [
             token_hash
             for token_hash, entry in self._refresh_inflight.items()
-            if now - entry.started_at >= _REFRESH_INFLIGHT_TTL_SECONDS
+            if now - entry.started_at >= REFRESH_ATTEMPT_STALE_SECONDS
         ]
         for token_hash in stale:
             del self._refresh_inflight[token_hash]
@@ -456,6 +456,7 @@ class GeneFoundryOAuthProxy(OAuthProxy):
             finally:
                 self._finish_refresh_attempt(attempt)
             return await super().exchange_refresh_token(client, refresh_token, scopes)
+        start_needed = attempt is None
         if attempt is None:
             try:
                 attempt = self._begin_refresh_attempt(client, refresh_token.token)
@@ -463,9 +464,6 @@ class GeneFoundryOAuthProxy(OAuthProxy):
                 await observe_in_thread(self._note_observer_error, exc)
                 log.error("refresh_observability_start_failed", error_type=type(exc).__name__)
                 return await super().exchange_refresh_token(client, refresh_token, scopes)
-            start_needed = True
-        else:
-            start_needed = False
         try:
             if start_needed:
                 await observe_in_thread(self._record_refresh_start, attempt)
@@ -514,6 +512,8 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         params: AuthorizationParams,
     ) -> str:
         """Record only a validated authorization that successfully starts upstream."""
+        # ponytail: legacy …/mcp/mcp alias; drop once the alias counter shows zero.
+        params = resolve_resource_alias(params, self._resource_url, classify_oauth_client(client))
         result = await super().authorize(client, params)
         if self._refresh_ledger is not None:
             req_id = _safe_request_id(correlation_id.get())

@@ -81,55 +81,64 @@ def test_router_reference_token_lifetime_is_bounded_and_configurable() -> None:
     assert configured_proxy._fastmcp_access_token_expiry_seconds == 7_200  # type: ignore[attr-defined]
 
 
-async def test_strict_rfc9728_resource_derivation_without_monkeypatch() -> None:
-    """Now that #235a fixed resource_base_url=public_base without route duplication,
-    no monkeypatching is applied to FastMCP's OAuthProxy, and a doubled /mcp/mcp
-    resource is strictly rejected by OAuthProxy."""
-    auth = build_auth(_settings("oauth"))
+def _alias_count() -> float:
+    from genefoundry_router.observability import METRICS_REGISTRY
+
+    value = METRICS_REGISTRY.get_sample_value(
+        "genefoundry_oauth_resource_alias_total", {"client_class": "other"}
+    )
+    return value or 0.0
+
+
+async def test_only_the_legacy_doubled_resource_is_aliased_to_the_canonical() -> None:
+    """ChatGPT apps created while the PRM advertised …/mcp/mcp (<= v0.10.3) still send it.
+    Exactly that doubled form is rewritten to the canonical resource before FastMCP's strict
+    RFC 8707 check, so the canonical value goes upstream; every other path stays rejected."""
+    from urllib.parse import parse_qs, urlsplit
+
     from fastmcp.server.auth.oauth_proxy import proxy as p
     from fastmcp.server.auth.oauth_proxy.proxy import AuthorizeError
     from mcp.server.auth.provider import AuthorizationParams
     from mcp.shared.auth import OAuthClientInformationFull
-
-    # Verify no monkeypatch is applied to FastMCP
-    assert not getattr(p, "_gf_resource_tolerant", False)
-    assert p.normalize_resource_url(f"{AUDIENCE}/mcp") == f"{AUDIENCE}/mcp"
-
-    proxy = _oauth_proxy(auth)
-    proxy.set_mcp_path(LIVE_MOUNT_PATH)  # type: ignore[attr-defined]
-
     from pydantic import AnyUrl
 
+    assert not getattr(p, "_gf_resource_tolerant", False)  # no FastMCP monkeypatch
+    proxy = _oauth_proxy(build_auth(_settings("oauth")))
+    proxy.set_mcp_path(LIVE_MOUNT_PATH)  # type: ignore[attr-defined]
     client = OAuthClientInformationFull(
         client_id="test-client",
         client_name="Test Client",
         redirect_uris=[AnyUrl("https://client.example/cb")],
     )
-    # Doubled resource is rejected by OAuthProxy resource check
-    params_doubled = AuthorizationParams(
-        state="state-123",
-        scopes=["mcp"],
-        code_challenge="challenge-123",
-        redirect_uri_provided_explicitly=True,
-        redirect_uri=AnyUrl("https://client.example/cb"),
-        resource=f"{AUDIENCE}/mcp",
-    )
-    with pytest.raises(AuthorizeError) as exc_info:
-        await proxy.authorize(client, params_doubled)  # type: ignore[attr-defined]
-    assert str(exc_info.value.error) == "invalid_target"
-    assert exc_info.value.error_description == "Resource does not match this server"
 
-    # Matching resource is accepted
-    params_valid = AuthorizationParams(
-        state="state-123",
-        scopes=["mcp"],
-        code_challenge="challenge-123",
-        redirect_uri_provided_explicitly=True,
-        redirect_uri=AnyUrl("https://client.example/cb"),
-        resource=AUDIENCE,
-    )
-    redirect_url = await proxy.authorize(client, params_valid)  # type: ignore[attr-defined]
-    assert redirect_url.startswith(f"{ISSUER}/protocol/openid-connect/auth")
+    def params(resource: str) -> AuthorizationParams:
+        return AuthorizationParams(
+            state="state-123",
+            scopes=["mcp"],
+            code_challenge="challenge-123",
+            redirect_uri_provided_explicitly=True,
+            redirect_uri=AnyUrl("https://client.example/cb"),
+            resource=resource,
+        )
+
+    for resource in (AUDIENCE, f"{AUDIENCE}/mcp", f"{AUDIENCE}/mcp/"):
+        before = _alias_count()
+        redirect_url = await proxy.authorize(client, params(resource))  # type: ignore[attr-defined]
+        assert redirect_url.startswith(f"{ISSUER}/protocol/openid-connect/auth")
+        assert parse_qs(urlsplit(redirect_url).query)["resource"] == [AUDIENCE]
+        assert _alias_count() == before + (resource != AUDIENCE)
+
+    for resource in (
+        f"{PUBLIC_BASE}/other",
+        f"{AUDIENCE}/other",
+        f"{AUDIENCE}/mcp/mcp",
+        "https://evil.example/mcp/mcp",
+    ):
+        with pytest.raises(AuthorizeError) as exc_info:
+            await proxy.authorize(client, params(resource))  # type: ignore[attr-defined]
+        assert str(exc_info.value.error) == "invalid_target"
+    # The minted audience is the canonical resource regardless of what the client sent.
+    assert proxy.jwt_issuer.audience == AUDIENCE  # type: ignore[attr-defined]
 
 
 def test_calling_set_mcp_path_slash_mcp_matches_audience() -> None:
@@ -169,11 +178,12 @@ def test_oauth_resource_url_and_metadata_match_audience(mcp_path: str) -> None:
         assert str(proxy._resource_url).rstrip("/") == expected_audience  # type: ignore[attr-defined]
 
 
-def test_doubled_resource_authorize_is_a_clean_invalid_target(
+def test_doubled_resource_authorize_reaches_the_idp_with_the_canonical_resource(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """#325: 187 ChatGPT authorizes with resource …/mcp/mcp hit the generic handler (500 path)
-    on v0.10.8. Through the live app it must be an RFC 8707 invalid_target redirect."""
+    """9 of 11 prod /authorize calls (2026-11-19) carry resource …/mcp/mcp from ChatGPT apps
+    created before v0.10.4. Through the live app they must reach the IdP, with the canonical
+    resource upstream, instead of an invalid_target ("We couldn't confirm the connection")."""
     from urllib.parse import parse_qs, urlsplit
 
     app = build_app(_settings("oauth"), [])
@@ -199,6 +209,9 @@ def test_doubled_resource_authorize_is_a_clean_invalid_target(
             follow_redirects=False,
         )
     assert response.status_code == 302
-    query = parse_qs(urlsplit(response.headers["location"]).query)
-    assert query["error"] == ["invalid_target"]
+    location = response.headers["location"]
+    query = parse_qs(urlsplit(location).query)
+    assert "error" not in query, location
+    assert location.startswith(f"{ISSUER}/protocol/openid-connect/auth"), location
+    assert query["resource"] == [AUDIENCE]
     assert "Unexpected error" not in caplog.text

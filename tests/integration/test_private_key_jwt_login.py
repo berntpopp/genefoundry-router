@@ -418,6 +418,10 @@ def oauth_harness(tmp_path, monkeypatch, gnomad_fake: FastMCP):
         GF_OAUTH_LEGACY_ISSUERS=[f"{PUBLIC_BASE}/"],
         GF_OAUTH_LEGACY_ISSUER_ACCEPT_UNTIL=datetime(2026, 9, 6, tzinfo=UTC),
         GF_REFRESH_OBSERVABILITY_DB=str(tmp_path / "refresh-observability.sqlite3"),
+        # The production limiter shape: a service account by client id, the owner by sub.
+        GF_RATE_LIMIT_RPM=60,
+        GF_RATE_LIMIT_IP_RPM=6000,
+        GF_RATE_LIMIT_OVERRIDES={"gfbench": 600, "user-1234": "unlimited"},
     )
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
     app = build_app(settings, registry, proxy_targets={"gnomad": gnomad_fake})
@@ -670,3 +674,65 @@ def test_doubled_slash_assertion_audience_is_rejected(oauth_harness: OAuthHarnes
         f"({response.status_code}) — the doubled-slash derivation is still live"
     )
     assert response.json()["error"] == "invalid_client"
+
+
+def _initialize(oauth_harness: OAuthHarness, access_token: str):
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-06-18",
+            "capabilities": {},
+            "clientInfo": {"name": "rate-limit-e2e", "version": "1.0.0"},
+        },
+    }
+    response = oauth_harness.mcp(payload, access_token)
+    assert response.status_code == 200, f"{response.status_code} {response.text[:400]}"
+    return response
+
+
+def test_service_account_override_applies_through_the_real_auth_stack(
+    oauth_harness: OAuthHarness,
+) -> None:
+    """A Keycloak client_credentials token (client_id/azp=gfbench, UUID sub) gets its override."""
+    now = int(time.time())
+    token = _sign(
+        oauth_harness.idp_key,
+        {
+            "iss": ISSUER,
+            "aud": AUDIENCE,
+            "sub": "5f0c6a52-1d1e-4c4b-9a59-2b7c1f0e9d11",
+            "azp": "gfbench",
+            "client_id": "gfbench",
+            "scope": "profile email",
+            "iat": now,
+            "exp": now + 300,
+        },
+    )
+    policy = _initialize(oauth_harness, token).headers.get_list("ratelimit-policy")
+    assert '"account";q=600;w=60' in policy, policy
+
+
+def test_owner_sub_override_exempts_an_interactive_oauth_login(
+    oauth_harness: OAuthHarness,
+) -> None:
+    """The owner's Keycloak sub ("unlimited") exempts their proxy-issued router token."""
+    txn_id, verifier = oauth_harness.authorize(
+        client_id=PUBLIC_CLIENT_ID, redirect_uri=PUBLIC_CLIENT_REDIRECT_URI
+    )
+    code = oauth_harness.idp_callback(txn_id, redirect_uri=PUBLIC_CLIENT_REDIRECT_URI)
+    login = oauth_harness.token(
+        {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": PUBLIC_CLIENT_REDIRECT_URI,
+            "client_id": PUBLIC_CLIENT_ID,
+            "code_verifier": verifier,
+        }
+    )
+    assert login.status_code == 200, login.text[:400]
+    policy = _initialize(oauth_harness, login.json()["access_token"]).headers.get_list(
+        "ratelimit-policy"
+    )
+    assert not any(p.startswith('"account"') for p in policy), policy

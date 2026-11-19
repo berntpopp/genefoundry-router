@@ -614,7 +614,7 @@ wheels = [
 
 [[package]]
 name = "genefoundry-router"
-version = "0.13.7"
+version = "0.13.8"
 source = { editable = "." }
 dependencies = [
     { name = "asgi-correlation-id" },
