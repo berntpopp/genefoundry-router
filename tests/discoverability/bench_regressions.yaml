@@ -17,3 +17,17 @@ tasks:
     category: nomenclature
     query: chromosome band location of a gene
     expected: [hgnc_get_gene, hgnc_resolve_symbol]
+  # #303: full-text / figure / table requests about one article must reach the passages tool
+  # (the reranker floor emptied these; BM25 + expansion must keep them in the top 5).
+  - id: article-full-text
+    category: literature
+    query: full text of a journal article
+    expected: [pubtator_get_publication_passages]
+  - id: article-figure-legends-tables
+    category: literature
+    query: figure legends and tables from a paper
+    expected: [pubtator_get_publication_passages]
+  - id: pmc-paper-tables
+    category: literature
+    query: read the tables in a PubMed Central paper
+    expected: [pubtator_get_publication_passages]

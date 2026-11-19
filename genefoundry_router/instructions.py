@@ -69,9 +69,10 @@ mean it is missing — it means you have not searched yet. Call `search_tools` b
 concluding a tool does not exist.{_entrypoints_block(registry)}
 
 WORKFLOW.
-  1. `search_tools(query="<natural language>")` — BM25 search over the whole \
-federated catalog; returns matching tool definitions (name, inputSchema, one-line \
+  1. `search_tools(query="<natural language>")` — search over the federated catalog \
+of every backend; returns matching tool definitions (name, inputSchema, one-line \
 `returns`) as DATA. Pass `limit` (e.g. `limit=2`) to get fewer hits and save context. \
+Hits flagged `low_confidence` (or none) mean no clear match: rephrase in domain terms. \
 Search ONE intent per call: a multi-part question (e.g. a disease's genes AND where those \
 genes sit on the chromosome) needs one search per part, chained on the first result.
   2. Read a hit's `name`; it is always `<namespace>_<tool>` \

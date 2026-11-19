@@ -52,6 +52,10 @@ DEFAULT_ALWAYS_VISIBLE: list[str] = [
 
 _MAX_RETURN_FIELDS = 12
 
+# When the reranker floor drops every candidate, serve this many top BM25 hits flagged
+# ``low_confidence`` instead of a bare [] that reads as "the fleet cannot do this" (#303).
+_LOW_CONFIDENCE_HITS = 2
+
 # How many extra copies of the high-signal "field" tokens (tool name, un-namespaced
 # leaf, and tags — which FastMCP's flat BM25 index ignores) to fold into the indexed
 # document. Repetition raises those tokens' term-frequency so a query that matches a
@@ -256,16 +260,21 @@ class CompactBM25SearchTransform(BM25SearchTransform):
 
     async def _ranked(
         self, tools: Sequence[Tool], query: str, limit: int | None = None
-    ) -> tuple[list[Tool], dict[str, float] | None]:
-        """Served hits plus reranker scores (``None`` when the BM25 order stands)."""
+    ) -> tuple[list[Tool], dict[str, float] | None, bool]:
+        """Served hits, reranker scores (``None`` when the BM25 order stands), and whether
+        the hits are a low-confidence fallback because the floor dropped every candidate."""
         served = limit or self.served_results
         shortlist = list(await self._search(tools, query, depth=max(served, self._max_results)))
         if self.reranker is not None:
             ranked = await self.reranker.rerank(query, shortlist)
             if ranked is not None:
-                top = ranked[:served]
-                return [t for t, _ in top], {t.name: score for t, score in top}
-        return shortlist[:served], None
+                scores = {t.name: score for t, score in ranked}
+                kept = [t for t, score in ranked if score >= self.reranker.min_score][:served]
+                if kept or not shortlist:
+                    return kept, {t.name: scores[t.name] for t in kept}, False
+                fallback = shortlist[: min(_LOW_CONFIDENCE_HITS, served)]
+                return fallback, {t.name: scores[t.name] for t in fallback}, True
+        return shortlist[:served], None, False
 
     def _make_search_tool(self) -> Tool:
         if self._search_tool is not None:
@@ -289,26 +298,31 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             ClinVar significance, literature, ontologies, …). Apart from ``call_tool``
             and a few pinned canonical resolvers, tools are not listed up front — so if
             a capability is not in your client's tool list, search for it HERE before
-            concluding it is missing. Hits are ranked by BM25 relevance; each hit's
+            concluding it is missing. Hits are ranked by relevance; each hit's
             ``name`` is the ``<namespace>_<tool>`` you then pass to ``call_tool``.
             Returns the top ``limit`` hits; lower ``limit`` to save context. Defaults to a
             compact form (full inputSchema + one-line ``returns``); pass
             ``detail="full"`` for the complete output schema or ``detail="strict"`` for
-            OpenAI-compatible strict schemas with ``strict: True``. An empty list means
-            no tool matched well: rephrase in domain terms before concluding it does
-            not exist.
+            OpenAI-compatible strict schemas with ``strict: True``. Hits marked
+            ``low_confidence`` are only the closest candidates; an empty list means
+            nothing matched. Either way, rephrase in domain terms before concluding a
+            tool does not exist.
             """
             if detail not in ("compact", "full", "strict"):
                 raise ToolError(
                     f"Invalid detail level '{detail}'. Expected one of: 'compact', 'full', 'strict'."
                 )
             catalog = await transform.get_tool_catalog(ctx)
-            results, relevance = await transform._ranked(catalog, query, limit)
+            results, relevance, low = await transform._ranked(catalog, query, limit)
             if detail == "full":
-                return serialize_tools_for_output_json(results)
-            if detail == "strict":
-                return serialize_tools_strict(results)
-            return serialize_tools_compact(results, relevance, transform._always_visible)
+                hits = serialize_tools_for_output_json(results)
+            elif detail == "strict":
+                hits = serialize_tools_strict(results)
+            else:
+                hits = serialize_tools_compact(results, relevance, transform._always_visible)
+            for hit in hits if low else ():
+                hit["low_confidence"] = True
+            return hits
 
         # Bounds depend on this instance, and `from __future__ import annotations` defers
         # signature annotations to module scope — so attach the bounded type here.

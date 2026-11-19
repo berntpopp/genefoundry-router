@@ -11720,7 +11720,19 @@
         "evidence snippets",
         "structured abstract",
         "literature passages",
-        "paper excerpts"
+        "paper excerpts",
+        "PubMed Central",
+        "PMC article",
+        "full text of an article",
+        "journal article full text",
+        "figure captions",
+        "figure legends",
+        "figures",
+        "tables",
+        "table captions",
+        "supplementary material",
+        "paper sections",
+        "read a paper"
       ]
     },
     "pubtator_get_research_session_status": {

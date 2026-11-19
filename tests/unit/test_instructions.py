@@ -103,3 +103,10 @@ def test_unpinned_tools_are_called_only_through_call_tool() -> None:
     text = build_instructions(_registry())
     assert "directly callable" not in text
     assert "ONLY through `call_tool" in text
+
+
+def test_search_is_not_described_as_bm25_only() -> None:
+    """#303: with the reranker on, "BM25 search" misstates how hits are ranked."""
+    text = build_instructions(_registry())
+    assert "BM25" not in text
+    assert "search over the federated catalog" in text
