@@ -80,6 +80,12 @@ SEARCH_RESULTS = Counter(
     ["result"],  # hits | zero | low_confidence | error
     registry=METRICS_REGISTRY,
 )
+UNADVERTISED_PARAMS = Counter(
+    "genefoundry_unadvertised_params_used_total",
+    "Slim-mode calls that used a param the slim tools/list hid",
+    ["tool"],
+    registry=METRICS_REGISTRY,
+)
 TOOL_LATENCY = Histogram(
     "genefoundry_tool_latency_seconds",
     "Federated tool-call latency",

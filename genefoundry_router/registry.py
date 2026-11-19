@@ -46,6 +46,9 @@ class BackendDef(BaseModel):
     # or stemming, so a canonical tool can lose to verbose tools that repeat a keyword).
     # Leaf names; the router namespaces them to <namespace>_<leaf>.
     entrypoints: list[str] = Field(default_factory=list)
+    # X-GF-Schema-Mode: slim keeps these optional params of an entry point (leaf -> <=2 names)
+    # instead of the first two non-response_mode optionals in schema order.
+    slim_keep: dict[str, list[str]] = Field(default_factory=dict)
     # Override for the backend's ratified ``serverInfo.name`` when it legitimately differs
     # from ``<namespace>-link``. The router aliases a few backends to a shorter namespace
     # than their published identity (e.g. the ``spliceailookup-link`` backend is namespaced
