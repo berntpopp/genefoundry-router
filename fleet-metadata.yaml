@@ -65,6 +65,8 @@ vocabulary:
     - variant-annotation
     - variant-effect
     - population-genetics
+    - mitochondrial-dna
+    - mtdna
     - allele-frequency
     - pathogenicity
     - loss-of-function
@@ -102,8 +104,6 @@ vocabulary:
     - pharmacogenomics
     - gene-drug
     - dosing-guideline
-    - mitochondrial-dna
-    - mtdna
   # Source tier — the upstream's proper noun. These are near-empty topic pages
   # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
   source:
@@ -129,8 +129,8 @@ vocabulary:
     - ensembl
     - panelapp
     - mondo
-    - mavedb
     - mitomap
+    - mavedb
     - hpo
     - human-phenotype-ontology
     - metadome
@@ -280,6 +280,13 @@ backends:
       release — not the eUtils API.
     topics: [clinvar, variant-interpretation, clinical-genetics, pathogenicity, genomics]
 
+  - namespace: mitomap
+    description: >-
+      MCP server for MITOMAP: mitochondrial DNA (mtDNA) disease mutations and polymorphisms
+      with MITOMAP status, plasmy, GenBank frequency and literature from a pinned snapshot,
+      for LLM agents.
+    topics: [mitomap, mitochondrial-dna, mtdna, rare-disease, genetics]
+
   - namespace: vep
     description: >-
       MCP server for Ensembl VEP (Variant Effect Predictor) and Variant Recoder: variant
@@ -332,10 +339,3 @@ backends:
       gene-drug interactions, clinical guidelines, dosing recommendations, and variant
       annotations for LLM agents.
     topics: [clinpgx, pharmacogenomics, gene-drug, clinical-genetics, cpic]
-
-  - namespace: mitomap
-    description: >-
-      MCP server for MITOMAP: mitochondrial DNA (mtDNA) disease mutations and polymorphisms
-      with MITOMAP status, plasmy, GenBank frequency and literature from a pinned snapshot,
-      for LLM agents.
-    topics: [mitomap, mitochondrial-dna, mtdna, rare-disease, genetics]

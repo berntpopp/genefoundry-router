@@ -160,6 +160,20 @@ servers:
     entrypoints: [get_variant]
     tool_cache_ttl: 86400
 
+  # MITOMAP mtDNA variants; external-reference CC BY 3.0 data release of the daily dump (v0.3.0;
+  # issue #189). Staged: flip `enabled` to true once mitomap-link.genefoundry.org is live and
+  # the baseline is re-pinned.
+  - name: mitomap
+    repo: berntpopp/mitomap-link
+    url_env: GF_MITOMAP_URL
+    namespace: mitomap
+    description: Mitochondrial DNA (mtDNA) variants & disease associations
+    source_name: MITOMAP
+    source_url: https://www.mitomap.org/
+    tags: [mitochondrial, mtdna, variant, disease, heteroplasmy, rcrs]
+    entrypoints: [get_variant, search_variants]
+    enabled: false
+
   # action server: annotate/recode/liftover verbs (Standard v1.1-pending), still unprefixed
   - name: vep
     repo: berntpopp/vep-link
@@ -244,17 +258,3 @@ servers:
     source_url: https://clinpgx.org/
     tags: [pharmacogenomics, drug, gene-drug, dosing, guideline, variant]
     entrypoints: [search_records, get_record, get_related_records, search_dataset]
-
-  # MITOMAP mtDNA variants; external-reference CC BY 3.0 data release of the daily dump (v0.3.0;
-  # issue #189). Staged: flip `enabled` to true once mitomap-link.genefoundry.org is live and
-  # the baseline is re-pinned.
-  - name: mitomap
-    repo: berntpopp/mitomap-link
-    url_env: GF_MITOMAP_URL
-    namespace: mitomap
-    description: Mitochondrial DNA (mtDNA) variants & disease associations
-    source_name: MITOMAP
-    source_url: https://www.mitomap.org/
-    tags: [mitochondrial, mtdna, variant, disease, heteroplasmy, rcrs]
-    entrypoints: [get_variant, search_variants]
-    enabled: false
