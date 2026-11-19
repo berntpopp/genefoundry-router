@@ -11,7 +11,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/control-audit.yml"
 CHECKOUT_ACTION = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
-SETUP_UV_ACTION = "astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884"
+SETUP_UV_ACTION = "astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2"
 APP_TOKEN_ACTION = "actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510"  # noqa: S105 - action identifier
 UPLOAD_ACTION = "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"
 SHELL_LEDGER = "$RUNNER_TEMP/container-controls.json"
@@ -178,7 +178,7 @@ def test_live_probe_is_strictly_validated_before_success_only_upload() -> None:
         # Without it, uv 0.8.7 downloads its newest known 3.14 (3.14.0rc1), which pydantic rejects.
         {
             "name": "Set up Python",
-            "uses": "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97",
+            "uses": "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
             "with": {"python-version": "3.14"},
         },
         {
@@ -253,7 +253,7 @@ def test_workflow_has_no_long_lived_or_failure_suppressing_escape_hatches() -> N
 
 def test_reviewed_action_version_comments_match_pins() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
-    assert f"uses: {SETUP_UV_ACTION} # v10.3.0" in text
+    assert f"uses: {SETUP_UV_ACTION} # v10.3.3" in text
     assert f"uses: {APP_TOKEN_ACTION} # v3.3.0" in text
     assert f"uses: {UPLOAD_ACTION} # v7.0.2" in text
 
