@@ -33,6 +33,13 @@ def test_every_expansion_targets_a_catalog_tool() -> None:
     assert not orphans, f"expansions for tools not in the catalog: {orphans}"
 
 
+def test_every_catalog_tool_has_an_expansion() -> None:
+    # #297: stale entries degrade gracefully; a missing one leaves a tool with description-only
+    # recall (11/25 vs 25/25 in the audit), so a new tool without one fails CI.
+    missing = sorted(set(_catalog()) - set(_packaged()))
+    assert not missing, f"catalog tools without an expansion (run `make expansions`): {missing}"
+
+
 def test_expansions_cover_and_match_the_catalog() -> None:
     packaged, catalog = _packaged(), _catalog()
     stale = sorted(

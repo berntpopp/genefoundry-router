@@ -7,6 +7,10 @@ tasks:
     category: ppi
     query: do two specific proteins interact with each other
     expected: [stringdb_search_protein_interactions]
+  - id: protein-pair-binding-evidence
+    category: ppi
+    query: is there evidence that one protein binds another named protein
+    expected: [stringdb_search_protein_interactions]
   # A disease -> gene -> location question is two searches (instructions say: one intent per
   # search); each half must resolve on its own.
   - id: disease-causal-genes
