@@ -4,6 +4,13 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.11] - 2026-11-19
+
+### Added
+
+- **`X-GF-Schema-Mode: slim`** (and `GF_SCHEMA_MODE=slim`; default stays `standard`): a token-lean `tools/list` for the pinned tools, independent of `X-GF-Pinned-Mode`. A slim tool lists its required params plus at most 2 optional ones (a per-tool `slim_keep` allowlist in `servers.yaml`, else the first two non-`response_mode` optionals), 80-char param descriptions without `examples`/`title`/`default`, no `additionalProperties: false`, the description's first sentence and no `outputSchema`; the listing is name-ordered and byte-stable. `search_tools`/`call_tool` and search hits keep full schemas, and calls validate against the backend's full schema. Default pins: ~62.4k → ~24.7k chars; minimal pins: ~12.4k → ~7.6k chars. CI budget: default + slim ≤ 6.6k tokens (chars/4).
+- Slim-mode observability for the bench: a call that used a hidden param gets `_meta.unadvertised_params_used: [names]` (router-owned), an `unadvertised_params_used` log event (names only, never values) and `genefoundry_unadvertised_params_used_total{tool}`; a failing slim call missing a required param or using a hidden one logs `slim_hidden_param_validation_error`.
+
 ## [0.13.10] - 2026-11-19
 
 ### Fixed

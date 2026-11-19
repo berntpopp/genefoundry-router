@@ -42,6 +42,7 @@ servers:
     source_url: https://gtexportal.org/
     tags: [expression, tissue]
     entrypoints: [get_median_expression_levels]
+    slim_keep: {get_median_expression_levels: [sort, top_n]}
 
   - name: hgnc                                  # deployed 2026-06-16 (hgnc-link.genefoundry.org)
     repo: berntpopp/hgnc-link
@@ -159,6 +160,7 @@ servers:
     source_url: https://www.ncbi.nlm.nih.gov/books/NBK1116/
     tags: [literature, gene-disease]
     entrypoints: [search_genereviews, search_passages]
+    slim_keep: {search_passages: [gene, sections]}  # `query` is an alias of `q`
 
   # Adopted Tool-Naming Standard v1 (pubtator-link#57, PR #64); no transform needed.
   - name: pubtator
@@ -171,6 +173,7 @@ servers:
     source_url: https://www.ncbi.nlm.nih.gov/research/pubtator3/
     tags: [literature, entity]
     entrypoints: [search_literature]
+    slim_keep: {search_literature: [year_min, limit]}
 
   # --- Deployed 2026-06-17 at <name>-link.genefoundry.org (DNS + container + NPM live). ---
   - name: clinvar
@@ -182,6 +185,7 @@ servers:
     source_url: https://www.ncbi.nlm.nih.gov/clinvar/
     tags: [variant, clinical-significance, classification]
     entrypoints: [get_variant]
+    slim_keep: {get_variant: [id_type]}
     tool_cache_ttl: 86400
 
   # MITOMAP mtDNA variants; external-reference CC BY 3.0 data release of the daily dump (v0.3.0;

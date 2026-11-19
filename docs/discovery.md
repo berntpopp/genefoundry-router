@@ -53,7 +53,39 @@ JSON-encoded strings, because a strict client cannot pass an open map (#293, #29
 compact hit's `call` example follows the request's mode. `search_tools(detail="strict")`
 returns strict schemas in either mode.
 
-Calls are the same in both modes: `call_tool` accepts `arguments` as an object or a
+**Slim** (`GF_SCHEMA_MODE=slim` or `X-GF-Schema-Mode: slim`) trims only the pinned tools
+for token cost; `search_tools`, `call_tool` and `search_tools` hits keep their full schemas.
+Independent of `X-GF-Pinned-Mode`, so `minimal`+`slim` and `default`+`slim` are both arms.
+A slim tool lists:
+
+- its required parameters plus at most 2 optional ones: the tool's `slim_keep` allowlist in
+  `servers.yaml` (`slim_keep: {<leaf>: [param, param]}` on the backend), else the first two
+  non-`response_mode` optionals in schema order;
+- parameter descriptions cut to 80 characters at a word boundary, without `examples`,
+  `title` or `default`;
+- no `additionalProperties: false`, so a validating client still lets a hidden parameter
+  through;
+- the description's first sentence (the D1 returns-lead, at most 300 characters) and no
+  `outputSchema`;
+- tools in name order, so the listing is byte-stable across restarts.
+
+Calls validate against the backend's full schema, so every original parameter still works.
+A call that used a parameter the slim listing hid gets
+`_meta.unadvertised_params_used: [names]` on the result (router-owned `_meta`, never the
+backend data), an `unadvertised_params_used` log event (tool + parameter names, never values)
+and a `genefoundry_unadvertised_params_used_total{tool}` count. A slim call that fails while
+missing a required parameter or using a hidden one logs `slim_hidden_param_validation_error`
+with the tool and parameter names.
+
+| `tools/list` (fleet-baseline, 2026-11-19) | tools | chars | ~tokens (chars/4) |
+|---|---|---|---|
+| default + standard | 31 | 62.4k | 15.6k |
+| default + slim | 31 | 24.7k | 6.2k |
+| minimal + standard | 8 | 12.4k | 3.1k |
+| minimal + slim | 8 | 7.6k | 1.9k |
+| none | 2 | 3.0k | 0.7k |
+
+Calls are the same in every mode: `call_tool` accepts `arguments` as an object or a
 JSON-encoded object string, and the `null` sentinels a strict client sends for unset
 optional fields are dropped before dispatch.
 

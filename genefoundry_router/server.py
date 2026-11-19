@@ -62,6 +62,7 @@ from genefoundry_router.runtime_drift import (
     fingerprint_definitions,
     load_runtime_guard,
 )
+from genefoundry_router.schema_slim import SlimParamsMiddleware
 from genefoundry_router.schema_strict import StrictNullMiddleware
 from genefoundry_router.search_rerank import SystemOneReranker
 from genefoundry_router.security import add_host_origin_validation, wrap_mcp_cors
@@ -70,6 +71,7 @@ from genefoundry_router.tool_search import (
     listed_pins,
     pin_policy,
     resolve_entrypoints,
+    slim_keep,
 )
 
 log = structlog.get_logger(__name__)
@@ -148,6 +150,7 @@ def build_server(
         PinnedModeInstructions(registry, policy, lambda: notfound_guard.unavailable)
     )
     server.add_middleware(StrictNullMiddleware())  # #293: before guard + cache (stable keys)
+    server.add_middleware(SlimParamsMiddleware(policy, settings.GF_SCHEMA_MODE))  # outside cache
     server.add_middleware(notfound_guard)
     server.notfound_guard = notfound_guard  # type: ignore[attr-defined]
     server.add_middleware(ArgumentGuard())  # #158: after the name guard (unknown -> not_found)
@@ -171,7 +174,12 @@ def build_server(
             continue
         register_backend(server, backend, proxy_target=target, timeout=settings.GF_BACKEND_TIMEOUT)
     if enable_search:
-        apply_tool_search(server, settings, always_visible=resolve_entrypoints(registry))
+        apply_tool_search(
+            server,
+            settings,
+            always_visible=resolve_entrypoints(registry),
+            slim_keep=slim_keep(registry),
+        )
     # Layer 3 (protocol-handler backstop) + Layer 5 (log-scrub filter) of the not-found
     # guard. Installed here — after every proxy mount — so the CallTool/ReadResource/
     # GetPrompt handlers exist. The low-level request-handler callables are stable across
@@ -269,7 +277,10 @@ def build_app(
             async with mcp_app.lifespan(_app):
                 down = await _refresh_catalog("startup", settling=True)
                 search = apply_tool_search(  # ordering: after normalization
-                    server, settings, always_visible=resolve_entrypoints(registry)
+                    server,
+                    settings,
+                    always_visible=resolve_entrypoints(registry),
+                    slim_keep=slim_keep(registry),
                 )
                 refresher = PollingRefresher(settings.GF_POLL_INTERVAL, _relist)
                 await refresher.start()

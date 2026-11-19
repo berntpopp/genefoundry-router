@@ -34,6 +34,7 @@ from pydantic import Field
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.pinned_mode import PinPolicy, SchemaMode, request_schema_mode
 from genefoundry_router.registry import BackendDef, qualified_name
+from genefoundry_router.schema_slim import slim_tool
 from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_strict_schema
 from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.search_rerank import Reranker, build_reranker
@@ -255,7 +256,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         self.schema_mode = schema_mode
         depth = max(rerank_pool, max_results) if reranker is not None else max_results
         super().__init__(max_results=depth, always_visible=always_visible)
-        self._strict_cache: dict[str, tuple[Tool, Tool]] = {}
+        self._projected: dict[tuple[str, str], tuple[Tool, Tool]] = {}
         self.served_results = max_results
         self.max_limit = max(rerank_pool, max_results)
         self.expansions = dict(expansions or {})
@@ -348,8 +349,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         return self._search_tool
 
     async def transform_tools(self, tools: Sequence[Tool]) -> Sequence[Tool]:
-        """Advertise the listed tools' standard schemas, or OpenAI-strict ones (#293) when the
-        schema mode (``GF_SCHEMA_MODE`` / ``X-GF-Schema-Mode``) is ``strict``.
+        """Advertise the listed tools' standard schemas, OpenAI-strict ones (#293), or the
+        pinned tools slimmed (``schema_slim``), per ``GF_SCHEMA_MODE`` / ``X-GF-Schema-Mode``.
 
         Only the listing changes: calls resolve the original tool, and
         :class:`StrictNullMiddleware` strips the ``null`` sentinels strict clients send.
@@ -357,18 +358,26 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         listed = await super().transform_tools(tools)
         keep, pins = self.policy.listed(), self._always_visible  # #320: per-request pin mode
         shown = [t for t in listed if t.name not in pins or t.name in keep]
-        if request_schema_mode(self.schema_mode) != "strict":
-            return shown
-        return [self._strict_listing(t) for t in shown]
+        mode = request_schema_mode(self.schema_mode)
+        if mode == "strict":
+            return [self._projection(mode, t) for t in shown]
+        if mode == "slim":  # byte-stable: name order, whatever order backends mounted in
+            slim = [self._projection(mode, t) if t.name in keep else t for t in shown]
+            return sorted(slim, key=lambda t: t.name)
+        return shown
 
-    def _strict_listing(self, tool: Tool) -> Tool:
-        """Strict projection, cached per source object so a relist does not rebuild (#232)."""
-        cached = self._strict_cache.get(tool.name)
+    def _projection(self, mode: SchemaMode, tool: Tool) -> Tool:
+        """Strict or slim projection, cached per source object so a relist does not rebuild
+        (#232)."""
+        cached = self._projected.get((mode, tool.name))
         if cached is not None and cached[0] is tool:
             return cached[1]
-        params = to_openai_strict_schema(tool.parameters or {})
-        projected = tool.model_copy(update={"parameters": params})
-        self._strict_cache[tool.name] = (tool, projected)
+        if mode == "slim":
+            projected = slim_tool(tool, self.policy.slim_keep.get(tool.name))
+        else:
+            params = to_openai_strict_schema(tool.parameters or {})
+            projected = tool.model_copy(update={"parameters": params})
+        self._projected[(mode, tool.name)] = (tool, projected)
         return projected
 
     def _make_call_tool(self) -> Tool:
@@ -438,12 +447,23 @@ def resolve_entrypoints(registry: list[BackendDef]) -> list[str]:
     return pins or list(DEFAULT_ALWAYS_VISIBLE)
 
 
+def slim_keep(registry: list[BackendDef]) -> dict[str, list[str]]:
+    """Namespaced servers.yaml ``slim_keep`` allowlists of the enabled backends."""
+    return {
+        qualified_name(b.namespace, leaf): keep
+        for b in registry
+        if b.enabled
+        for leaf, keep in b.slim_keep.items()
+    }
+
+
 def pin_policy(registry: list[BackendDef], settings: RouterSettings) -> PinPolicy:
     """The pinned names per mode for ``registry``, defaulting to ``GF_PINNED_MODE``."""
     return PinPolicy(
         tuple(resolve_entrypoints(registry)),
         tuple(settings.GF_PINNED_MINIMAL),
         settings.GF_PINNED_MODE,
+        slim_keep(registry),
     )
 
 
@@ -456,12 +476,15 @@ def apply_tool_search(
     server: FastMCP,
     settings: RouterSettings,
     always_visible: list[str] | None = None,
+    slim_keep: Mapping[str, Sequence[str]] | None = None,
 ) -> CompactBM25SearchTransform:
     """Replace the full tool listing with search_tools + call_tool + pinned tools.
 
     Which pins are listed follows ``GF_PINNED_MODE`` or the request's header (#320)."""
     pinned = always_visible if always_visible is not None else DEFAULT_ALWAYS_VISIBLE
-    policy = PinPolicy(tuple(pinned), tuple(settings.GF_PINNED_MINIMAL), settings.GF_PINNED_MODE)
+    policy = PinPolicy(
+        tuple(pinned), tuple(settings.GF_PINNED_MINIMAL), settings.GF_PINNED_MODE, slim_keep or {}
+    )
     expansions = expansion_texts(settings.GF_SEARCH_EXPANSIONS)
     reranker = build_reranker(settings)
     transform = CompactBM25SearchTransform(

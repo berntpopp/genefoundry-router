@@ -9,12 +9,14 @@ it reaches authorization, call routing or rate limits, and every tool stays call
 ``call_tool``.
 
 ``GF_SCHEMA_MODE`` / ``X-GF-Schema-Mode`` pick the listed schema form the same way: the
-backends' standard schemas, or the OpenAI-strict projection (#293) for clients that need it.
+backends' standard schemas, the OpenAI-strict projection (#293) for clients that need it, or
+the token-lean slim projection (``schema_slim``).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from typing import Literal, get_args
 
 from fastmcp.server.dependencies import get_http_request
@@ -22,7 +24,7 @@ from fastmcp.server.dependencies import get_http_request
 PinnedMode = Literal["default", "minimal", "none"]
 PINNED_MODE_HEADER = "x-gf-pinned-mode"
 _MODES: tuple[str, ...] = get_args(PinnedMode)
-SchemaMode = Literal["standard", "strict"]
+SchemaMode = Literal["standard", "strict", "slim"]
 SCHEMA_MODE_HEADER = "x-gf-schema-mode"
 
 
@@ -52,6 +54,8 @@ class PinPolicy:
     pins: tuple[str, ...]
     minimal: tuple[str, ...] = ()
     default: PinnedMode = "default"
+    # Slim-mode optional-param allowlist per namespaced tool (servers.yaml ``slim_keep``).
+    slim_keep: Mapping[str, Sequence[str]] = field(default_factory=dict, hash=False)
 
     def all(self) -> list[str]:
         """Every name any mode may list: what the search transform keeps visible."""
