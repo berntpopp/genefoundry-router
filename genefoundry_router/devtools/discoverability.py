@@ -24,12 +24,14 @@ from typing import Any
 import yaml
 from fastmcp.tools.base import Tool
 
+from genefoundry_router.skill_search import skill_tools
 from genefoundry_router.tool_search import CompactBM25SearchTransform
 
 _HERE = Path(__file__).resolve()
 # tests/discoverability/ holds the snapshot + task set (committed fixtures).
 DATA_DIR = _HERE.parents[2] / "tests" / "discoverability"
 DEFAULT_CATALOG = DATA_DIR / "catalog.json"
+SKILLS_DIR = _HERE.parents[2] / "skills"  # skill_<name> pointer documents are served too (#336)
 DEFAULT_TASKS = DATA_DIR / "tasks.yaml"
 # Held-out set written blind to the search code (lay, jargon, crosslingual, ambiguous, …).
 # It exposed what tasks.yaml could not: BM25 alone reached only 0.68 hit@5 here.
@@ -115,7 +117,8 @@ class Report:
 def load_catalog(path: Path = DEFAULT_CATALOG) -> list[Tool]:
     """Rebuild Tool objects from the lean snapshot, reconstructing exactly the fields
     FastMCP's BM25 index reads (``parameters.properties[name].description``) and the
-    parameter enum values the reranker's summary reads."""
+    parameter enum values the reranker's summary reads. The repo's ``skill_<name>`` search
+    documents are appended, exactly as the served search ranks them with the tools."""
     raw = json.loads(path.read_text(encoding="utf-8"))
     tools: list[Tool] = []
     for entry in raw:
@@ -134,7 +137,7 @@ def load_catalog(path: Path = DEFAULT_CATALOG) -> list[Tool]:
                 tags=set(entry.get("tags") or []),
             )
         )
-    return tools
+    return tools + skill_tools(SKILLS_DIR)
 
 
 def load_tasks(path: Path = DEFAULT_TASKS, *, include_negatives: bool = False) -> list[Task]:

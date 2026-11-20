@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import Annotated, Any, Literal
 from urllib.parse import urlsplit
 
@@ -38,6 +39,7 @@ from genefoundry_router.schema_slim import slim_tool
 from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_strict_schema
 from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.search_rerank import Reranker, build_reranker
+from genefoundry_router.skill_search import SKILL_PREFIX, skill_hit, skill_tools
 
 log = structlog.get_logger(__name__)
 
@@ -61,6 +63,11 @@ _MAX_RETURN_FIELDS = 12
 # prose — the flat-index miss diagnosed in issue #3. Tuned via the discoverability
 # benchmark (genefoundry_router/devtools/discoverability.py).
 _FIELD_BOOST = 12
+
+# A skill document (~60-90 tokens) is far shorter than a tool document (~300 without
+# expansions), so BM25 length normalization would rank it above tools on any shared word.
+# A neutral filler token pads it to this floor; tuned on the discoverability benchmark (#336).
+_SKILL_DOC_TOKENS = 300
 
 # call_tool's default FastMCP description ("Call a tool by name…") doesn't convey the
 # namespaced name format or that a host's "Unknown tool" eviction is recoverable, so we
@@ -251,6 +258,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         rerank_pool: int = 20,
         policy: PinPolicy | None = None,
         schema_mode: SchemaMode = "standard",
+        skills: Sequence[Tool] = (),
     ) -> None:
         self.policy = policy or PinPolicy(tuple(always_visible or ()))
         self.schema_mode = schema_mode
@@ -263,6 +271,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         self.reranker = reranker
         self._search_tool: Tool | None = None
         self._call_tool: Tool | None = None
+        self.skills = list(skills)  # search-only pointer documents (#336)
 
     async def _ranked(
         self, tools: Sequence[Tool], query: str, limit: int | None = None
@@ -270,7 +279,10 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         """Served hits, reranker scores (``None`` when the BM25 order stands), and whether
         the hits are a low-confidence fallback because the floor dropped every candidate."""
         served = limit or self.served_results
-        shortlist = list(await self._search(tools, query, depth=max(served, self._max_results)))
+        candidates = [*tools, *self.skills]
+        shortlist = list(
+            await self._search(candidates, query, depth=max(served, self._max_results))
+        )
         if self.reranker is not None:
             ranked = await self.reranker.rerank(query, shortlist)
             if ranked is not None:
@@ -322,15 +334,19 @@ class CompactBM25SearchTransform(BM25SearchTransform):
                 )
             catalog = await transform.get_tool_catalog(ctx)
             results, relevance, low = await transform._ranked(catalog, query, limit)
+            skills = {t.name for t in transform.skills}
+            tools = [t for t in results if t.name not in skills]
             if detail == "full":
-                hits = serialize_tools_for_output_json(results)
+                serialized = serialize_tools_for_output_json(tools)
             elif detail == "strict":
-                hits = serialize_tools_strict(results)
+                serialized = serialize_tools_strict(tools)
             else:
                 strict = request_schema_mode(transform.schema_mode) == "strict"
-                hits = serialize_tools_compact(
-                    results, relevance, transform.policy.listed(), strict
+                serialized = serialize_tools_compact(
+                    tools, relevance, transform.policy.listed(), strict
                 )
+            rest = iter(serialized)  # skill hits keep their rank as resource pointers
+            hits = [skill_hit(t) if t.name in skills else next(rest) for t in results]
             for hit in hits if low else ():
                 hit["low_confidence"] = True
             return hits
@@ -411,7 +427,12 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         """Field-weighted index document: FastMCP's flat text (name + description +
         param names/descriptions) PLUS boosted copies of the tool's own name, its
         un-namespaced leaf, and its tags (which FastMCP otherwise never indexes) — and,
-        once, the tool's offline expansion text (synthetic user requests + keywords)."""
+        once, the tool's offline expansion text (synthetic user requests + keywords).
+        A skill document is unboosted name + description, padded to a length floor."""
+        if tool.name.startswith(SKILL_PREFIX):
+            text = _stem_text(f"{tool.name.replace('-', ' ')} {tool.description}")
+            pad = max(0, _SKILL_DOC_TOKENS - len(text.split()))
+            return text + " skillpad" * pad
         leaf = tool.name.split("_", 1)[-1] if "_" in tool.name else tool.name
         fields = " ".join([tool.name, leaf, leaf.replace("_", " "), *sorted(tool.tags)])
         expansion = self.expansions.get(tool.name, "")
@@ -495,6 +516,7 @@ def apply_tool_search(
         rerank_pool=settings.GF_SEARCH_RERANK_POOL,
         policy=policy,
         schema_mode=settings.GF_SCHEMA_MODE,
+        skills=skill_tools(Path(settings.GF_SKILLS_DIR)),
     )
     server.add_transform(transform)
     log.info(
