@@ -10,17 +10,18 @@ import sys
 
 def _norm(text: str) -> str:
     text = text.lower().replace("…", " ").replace("...", " ")
-    text = re.sub(r"[\"'“”‘’`]", "", text)
+    text = re.sub(r"[\"'\u201c\u201d\u2018\u2019`]", "", text)
     return re.sub(r"\s+", " ", text).strip(" .")
 
 
 def _rows(path: str) -> list[list[str]]:
     rows = []
-    for line in open(path, encoding="utf-8"):
-        line = line.strip()
-        if not line.startswith("|") or set(line) <= set("|-: "):
-            continue
-        rows.append([c.strip() for c in line.strip("|").split("|")])
+    with open(path, encoding="utf-8") as fh:
+        for raw in fh:
+            line = raw.strip()
+            if not line.startswith("|") or set(line) <= set("|-: "):
+                continue
+            rows.append([c.strip() for c in line.strip("|").split("|")])
     return rows
 
 
@@ -48,6 +49,8 @@ if __name__ == "__main__":
         sys.exit(__doc__)
     recall, missed, unplanted = score(*sys.argv[1:])
     print(f"recall: {recall:.0%}  missed: {', '.join(missed) or 'none'}")
-    print(f"unplanted Critical/Major (adjudicate; real errors are not false accusations): {len(unplanted)}")
+    print(
+        f"unplanted Critical/Major (adjudicate; real errors are not false accusations): {len(unplanted)}"
+    )
     for row in unplanted:
         print(f"  - {row}")

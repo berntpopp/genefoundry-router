@@ -1,6 +1,6 @@
 ---
 name: somatic-variant-interpretation
-description: Use when asked whether a cancer (somatic) variant is oncogenic, actionable, or how often it occurs in a tumour type — e.g. "is BRAF V600E actionable in melanoma", "is TP53 R175H a hotspot", "KRAS G12C prevalence in lung adenocarcinoma". Chains GeneFoundry tools across ClinVar somatic, CIViC, cBioPortal, Cancer Hotspots, MOAlmanac and Open Targets. Research use only.
+description: Use when asked whether a somatic (tumour, cancer) variant is oncogenic or actionable, or how often a somatic variant occurs in a tumour type — e.g. "is BRAF V600E actionable in melanoma", "is TP53 R175H a hotspot", "KRAS G12C prevalence in lung adenocarcinoma". Research use only.
 ---
 
 # Somatic variant interpretation

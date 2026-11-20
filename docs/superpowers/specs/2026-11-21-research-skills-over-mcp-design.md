@@ -1,5 +1,8 @@
 # Research workflow skills over MCP — design
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 Date: 2026-11-21 · Closes #336 · Status: approved for implementation
 
 ## Intent

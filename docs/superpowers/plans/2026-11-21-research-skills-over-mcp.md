@@ -1,5 +1,8 @@
 # Research workflow skills over MCP Implementation Plan
 
+> Historical record — this document records the design or plan as of its date. Current behavior is
+> defined by implemented code, standards, release evidence, and tests.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Serve `skills/` over MCP from the router (SEP-2640 + `skill://` resources + a `search_tools` skill pointer) and ship six new research workflow skills, each gated by lint, trigger tests and a benchmark A/B.

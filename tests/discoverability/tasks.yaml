@@ -299,3 +299,36 @@ tasks:
     category: disease_ontology
     query: I have a disease name and need its ontology identifier
     expected: [mondo_resolve_disease, gencc_resolve_identifier]
+  # --- research workflow skills (skill:// pointers, #336) ---
+  - id: skill-phenotype-to-genes
+    category: skill
+    query: rank candidate genes for a patient's HPO phenotypes
+    expected: [skill_phenotype-to-candidate-genes]
+  - id: skill-phenotype-exome-candidates
+    category: skill
+    query: prioritize exome candidate genes by phenotype
+    expected: [skill_phenotype-to-candidate-genes]
+  - id: skill-identifier-ensembl-batch
+    category: skill
+    query: convert a list of Ensembl gene ids to HGNC symbols
+    expected: [skill_identifier-resolution-and-lookup, hgnc_resolve_symbols_batch]
+  - id: skill-acmg-classify
+    category: skill
+    query: classify this missense variant using ACMG criteria
+    expected: [skill_germline-variant-classification]
+  - id: skill-literature-review
+    category: skill
+    query: review the published evidence that this gene causes this disease
+    expected: [skill_literature-evidence-review]
+  - id: skill-report-review
+    category: skill
+    query: second look at a genetic test report before sign-out
+    expected: [skill_genetic-report-review]
+  - id: skill-report-errors
+    category: skill
+    query: check this exome report for errors
+    expected: [skill_genetic-report-review]
+  - id: skill-lay-summary
+    category: skill
+    query: explain a VUS result to a patient's family in plain language
+    expected: [skill_lay-summary]
