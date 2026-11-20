@@ -75,7 +75,9 @@ def build_instructions(registry: list[BackendDef], listed: Collection[str] | Non
     return f"""\
 genefoundry is a META-ROUTER (a gateway), not a data server. It federates the \
 GeneFoundry "-link" fleet — {breadth} — behind ONE MCP endpoint and exposes a \
-SEARCH SURFACE instead of listing its whole ~200-tool catalog at once.
+SEARCH SURFACE instead of listing its whole ~200-tool catalog at once. Research \
+workflow skills (step order, stop rules, output template) are `skill://` resources \
+and also show up as `search_tools` hits; read one before a multi-step job.
 
 WHAT IS LISTED vs WHAT EXISTS. {listing} \
 Every other capability — across {catalog} — is present and callable, but it is \

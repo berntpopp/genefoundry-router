@@ -26,6 +26,11 @@ from genefoundry_router.server import build_app, build_server
 BASELINE_PATH = Path("genefoundry_router/data/fleet-baseline.json")
 
 
+def _backend_resources(resources: list) -> list:
+    """Federated backend resources; router-served skill:// resources (#336) are excluded."""
+    return [r for r in resources if not str(r.uri).startswith("skill://")]
+
+
 async def test_client_list_resources_and_prompts_empty_on_tools_only_fleet(
     gnomad_fake: FastMCP,
 ) -> None:
@@ -38,7 +43,7 @@ async def test_client_list_resources_and_prompts_empty_on_tools_only_fleet(
 
     async with Client(server) as client:
         resources = await client.list_resources()
-        assert resources == []
+        assert _backend_resources(resources) == []
 
         prompts = await client.list_prompts()
         assert prompts == []
@@ -62,7 +67,7 @@ async def test_client_federates_resources_and_prompts_when_exposed_by_backend() 
 
     async with Client(server) as client:
         # 1. Verify resources/list federates the resource
-        resources = await client.list_resources()
+        resources = _backend_resources(await client.list_resources())
         assert len(resources) == 1
         res = resources[0]
         assert str(res.uri).startswith("resource://")
@@ -105,7 +110,7 @@ async def test_build_app_serves_valid_resources_and_prompts_protocol(
         assert capabilities["tools"] == {"listChanged": False}
 
     async with Client(app.state.mcp_server) as client:
-        assert await client.list_resources() == []
+        assert _backend_resources(await client.list_resources()) == []
         assert await client.list_prompts() == []
 
 

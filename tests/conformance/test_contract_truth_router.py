@@ -28,6 +28,7 @@ async def test_router_active_documentation_matches_its_live_tool_catalog(
 
     settings = RouterSettings(_env_file=None)
     assert settings.GF_AUTH_MODE == "none"
+    settings.GF_SKILLS_DIR = str(Path(__file__).resolve().parents[2] / "skills")  # cwd is tmp
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
     server = build_server(
         settings,

@@ -82,6 +82,8 @@ class RouterSettings(BaseSettings):
 
     # Registry
     GF_SERVERS_FILE: str = "servers.yaml"
+    # Research workflow skills served as skill:// resources (#336); must exist.
+    GF_SKILLS_DIR: str = "skills"
 
     # Tool search
     GF_SEARCH_MAX_RESULTS: int = 5

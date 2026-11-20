@@ -7,12 +7,14 @@ import contextlib
 import time
 from collections.abc import Sequence
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, Literal
 
 import structlog
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI, Request
 from fastmcp import FastMCP
+from fastmcp.skills.provider import SkillsDirectoryProvider
 from fastmcp.tools import Tool
 from starlette.responses import JSONResponse
 
@@ -28,6 +30,7 @@ from genefoundry_router.composition import (
 )
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.discovery import PollingRefresher
+from genefoundry_router.exceptions import ConfigurationError
 from genefoundry_router.hints import NamespaceHintMiddleware
 from genefoundry_router.instructions import PinnedModeInstructions, build_instructions
 from genefoundry_router.limits import (
@@ -173,6 +176,10 @@ def build_server(
             log.warning("backend_skipped", backend=backend.name, reason="missing_url")
             continue
         register_backend(server, backend, proxy_target=target, timeout=settings.GF_BACKEND_TIMEOUT)
+    skills_dir = Path(settings.GF_SKILLS_DIR)
+    if not skills_dir.is_dir():  # the provider would silently serve zero skills
+        raise ConfigurationError(f"GF_SKILLS_DIR {str(skills_dir)!r} is not a directory")
+    server.add_provider(SkillsDirectoryProvider(skills_dir))
     if enable_search:
         apply_tool_search(
             server,

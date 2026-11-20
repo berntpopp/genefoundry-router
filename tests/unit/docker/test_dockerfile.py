@@ -29,3 +29,10 @@ def test_dockerfile_applies_available_runtime_security_upgrades() -> None:
     )[0]
 
     assert "apt-get update && apt-get upgrade -y" in prepared
+
+
+def test_dockerfile_ships_skills_and_asserts_them() -> None:
+    # #336: GF_SKILLS_DIR defaults to ./skills; a build without it must fail, not serve zero.
+    text = DOCKERFILE.read_text(encoding="utf-8")
+    assert "COPY skills ./skills" in text
+    assert "Path('skills').glob('*/SKILL.md')" in text
