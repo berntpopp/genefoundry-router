@@ -41,6 +41,15 @@ def test_pinned_description_must_name_the_sibling() -> None:
     assert lint.missing_pointers(backends, pins) == {"a_get_gene -> get_genes"}
 
 
+def test_sibling_is_matched_as_a_whole_name_optionally_namespaced() -> None:
+    backends = {
+        "a": _backend(get_gene="One gene; see get_genes_by_panel.", get_genes="Many."),
+        "b": _backend(get_gene="One gene. For a list call b_get_genes.", get_genes="Many."),
+    }
+    pins = {"a": ["get_gene"], "b": ["get_gene"]}
+    assert lint.missing_pointers(backends, pins) == {"a_get_gene -> get_genes"}
+
+
 def test_known_failures_match_the_packaged_baseline_exactly() -> None:
     # Strict both ways: a new miss fails, and so does a fixed pair still listed.
     assert lint.missing_pointers(*lint.load()) == lint.KNOWN_FAILURES

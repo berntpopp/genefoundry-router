@@ -14,6 +14,7 @@ listed pair that now passes is an error, so a fix cannot regress unnoticed.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -25,7 +26,10 @@ BASELINE = "genefoundry_router/data/fleet-baseline.json"
 
 # namespace -> pinned leaf -> set-level siblings that share no name with it.
 SET_LEVEL: dict[str, dict[str, list[str]]] = {
-    "hpo": {"get_phenotypes_for_gene": ["score_genes_for_phenotypes"]},
+    "hpo": {
+        "get_phenotypes_for_gene": ["score_genes_for_phenotypes"],
+        "get_genes_for_phenotype": ["score_genes_for_phenotypes"],
+    },
     "stringdb": {"get_interaction_partners": ["compute_functional_enrichment"]},
 }
 
@@ -36,6 +40,7 @@ KNOWN_FAILURES: frozenset[str] = frozenset(
         "clinvar_get_variant -> get_variants",
         "genereviews_search_passages -> search_passages_batch",
         "hgnc_resolve_symbol -> resolve_symbols_batch",
+        "hpo_get_genes_for_phenotype -> score_genes_for_phenotypes",
         "hpo_get_phenotypes_for_gene -> score_genes_for_phenotypes",
         "mondo_resolve_disease -> resolve_disease_batch",
         "spliceai_predict_splicing -> predict_splicing_batch",
@@ -65,7 +70,9 @@ def missing_pointers(backends: dict[str, Any], entrypoints: dict[str, list[str]]
         for pinned in pinned_tools:
             description = (tools.get(pinned) or {}).get("description") or ""
             for sibling in siblings(namespace, pinned, list(tools)):
-                if sibling not in description:
+                # A whole name, optionally namespaced: `get_variants` is not named by `get_variants_by_gene`.
+                named = rf"(?<![A-Za-z0-9_])(?:{namespace}_)?{re.escape(sibling)}(?![A-Za-z0-9_])"
+                if not re.search(named, description):
                     missing.add(f"{namespace}_{pinned} -> {sibling}")
     return missing
 

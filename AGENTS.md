@@ -93,7 +93,10 @@ Conformance is gated, not just documented. `docs/conformance/` is the canonical 
 byte-identical into every `-link` repo: `conformance.py` gates *transport*, `behaviour.py` gates the
 *contract* an agent relies on (no silently-empty filter, honest `total`/`truncated`, an error that
 names the parameter, `isError` on every error envelope), `identifiers.py` gates foreign
-identifier forms (Response-Envelope §2b; per-backend expected failures in `identifiers.json`).
+identifier forms (Response-Envelope §2b). `identifiers.json` carries each backend's seed block
+(parameter declarations, expected failures); a backend that fixes a tool edits only its own
+`tests/conformance/identifiers.local.json`, which replaces the seed and survives re-vendoring, so
+the router copy never has to change in the same PR.
 Behaviour probes are derived from each
 server's own advertised schema — there is no per-repo probe list to write, and none to forget.
 

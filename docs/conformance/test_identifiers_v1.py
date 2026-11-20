@@ -1,8 +1,9 @@
 """Foreign-identifier conformance gate, Response-Envelope Standard v1 §2b (vendored).
 
 Skips unless CONFORMANCE_MCP_URL points at a running server, like the other gates here. See
-identifiers.py for what it asserts; identifiers.json holds this backend's parameter declarations
-and known failures under `backends.<CONFORMANCE_NAME>`.
+identifiers.py for what it asserts. This backend's parameter declarations and known failures are
+in identifiers.local.json when present, otherwise the seed in identifiers.json under
+`backends.<CONFORMANCE_NAME>`.
 """
 
 from __future__ import annotations

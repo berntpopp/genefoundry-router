@@ -67,8 +67,9 @@ jobs:
         run: uv run pytest tests/conformance/test_behaviour_v1.py -v
       - name: Run foreign-identifier probe
         # Response-Envelope §2b: every gene parameter must resolve a well-formed foreign id or
-        # reject it as an actionable invalid_input. Expected failures for this server live in
-        # tests/conformance/identifiers.json under backends.<CONFORMANCE_NAME>.
+        # reject it as an actionable invalid_input. This server's block (parameter declarations,
+        # expected failures) is tests/conformance/identifiers.local.json when present, otherwise
+        # the seed in identifiers.json under backends.<CONFORMANCE_NAME>.
         env:
           CONFORMANCE_MCP_URL: http://127.0.0.1:${{ env.MCP_PORT }}
         run: uv run pytest tests/conformance/test_identifiers_v1.py -v -s

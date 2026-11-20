@@ -160,28 +160,37 @@ question contains (a PMCID where the tool wants a PMID, a gene symbol where it w
 - **Ambiguity is not a guess.** If the form names several objects (a symbol matching two reviewed
   entries, a multi-allelic rsID), answer per §2a: an error with typed `candidates`, not a pick.
 - **No new cross-backend runtime calls.** Where conversion needs another backend, keep the honest
-  `invalid_input` / `not_found` naming the field, with the converter (e.g. `hgnc_resolve_symbol`,
+  `invalid_input` naming the field, with the converter (e.g. `hgnc_resolve_symbol`,
   `mondo_resolve_disease`) in `_meta.next_commands`.
 - Each adopting backend carries one regression test that passes the "wrong but obvious" form.
 
 Clarifications (added 2026-11-20, router #343):
 
 - **A form the tool does not accept is `invalid_input`, never an absence.** The error carries
-  `field`, `allowed_values` and a `_meta.next_commands` entry that is not the same tool with the
-  same value. `not_found`, "no curation" and `success: true` with zero rows all claim the object
-  is absent, and the tool has not looked.
+  `field`, `allowed_values` and the converter in `_meta.next_commands`: a tool that takes this
+  value, not this tool again and not a meta tool (`get_server_capabilities`). `not_found`,
+  "no curation" and `success: true` with zero rows all claim the object is absent, and the tool
+  has not looked.
+- **Where the fleet has no converter, the error says so.** An input no fleet tool can convert to
+  the expected entity (an Ensembl transcript id where a gene is expected) is still
+  `invalid_input` with `field` and `allowed_values`; its `hint` states that no converter exists,
+  and `next_commands` need not name one.
 - **A bare number is never silently assigned a namespace.** `3845` is an NCBI Gene id in one
   backend and an HGNC id in another. A tool that accepts a bare number MUST state the namespace it
   assumed (`resolved_from.form`) and offer the call for the alternative reading in
   `_meta.next_commands`.
-- **Batch results are per item.** A tool that takes a list returns one outcome per input
-  (resolved, or unresolved with a reason). One bad item MUST NOT fail the batch.
+- **Batch results are per item.** A tool that takes a list returns one outcome per input. One bad
+  item MUST NOT fail the batch. An item in a form the tool does not accept gets a reason that
+  says so (`unsupported_identifier`, distinct from `not_found`) and names the converter; a batch
+  holds the same rule as the single-item tool, it does not get to claim absence.
 
 Gated by `docs/conformance/identifiers.py` (vendored; `tests/conformance/test_identifiers_v1.py`):
-every gene parameter is sent one gene as symbol, Ensembl, HGNC and NCBI Gene id, and each answer
-must resolve to that gene or be the `invalid_input` above. Parameter declarations and expected
-failures per backend live in `identifiers.json` beside it. Bare numbers and mixed batches are not
-probed yet.
+every derived gene parameter with a working positive control is sent one gene as symbol, Ensembl,
+HGNC and NCBI Gene id, and each answer must return the control's rows (or name the gene) or be the
+`invalid_input` above. A parameter with no working control is UNGATED and fails, unless the
+backend declares it out with a reason. Seeds for parameter declarations and expected failures are
+in `identifiers.json`; a backend's own `identifiers.local.json` replaces its seed. Bare numbers,
+mixed batches and the no-converter exception are not probed yet.
 
 ### 3. Lean by default — token economy is a contract, not a lever
 

@@ -146,6 +146,10 @@ and `pattern`. The fix already exists inside the fleet; it just has not been app
    it fits. Siblings are derived from names (`_batch`/`_bulk`, or the plural form); set-level
    tools that share no name are listed in `SET_LEVEL` in `scripts/check_batch_pointers.py`. Known
    failures are listed there too and are strict: a listed pair that passes fails the lint.
+   The pointer is required but is not enough alone: on one task a mid-size model made 928
+   single-item calls with the pointer in place and 75 batch calls once the batch tool was pinned.
+   Where a batch tool replaces a per-item loop over a pinned tool, pinning the batch tool
+   (`servers.yaml` `entrypoints`) is the recommended remedy.
 
 > **This standard is fleet policy, not MCP conformance.** The MCP specification says **nothing**
 > about parameter descriptions, examples, or enums on tool inputs; `description` is an optional
