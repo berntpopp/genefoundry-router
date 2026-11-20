@@ -1,10 +1,10 @@
 {
   "snapshot_meta": {
-    "captured_at": "2026-11-19T18:22:15Z",
+    "captured_at": "2026-11-20T06:59:59Z",
     "source": "release-candidate",
     "router_servers_file": "servers.yaml",
     "release_candidate": {
-      "identity": "fleet-2026-11-19b",
+      "identity": "fleet-2026-11-20",
       "backends": {
         "autopvs1": {
           "endpoint": "https://autopvs1-link.genefoundry.org/mcp",
@@ -67,18 +67,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/clingen-link",
-            "version": "4.1.5",
+            "version": "4.2.0",
             "source": {
-              "tag": "v4.1.5",
-              "revision": "4bf6643ec97a2b5d793cbcc83be0e6350c7a4735"
+              "tag": "v4.2.0",
+              "revision": "892d5ea5c6caf8468a022fba67f12555a0f7289c"
             },
             "image": {
               "name": "ghcr.io/berntpopp/clingen-link",
-              "digest": "sha256:3c6dfd93fd9217b5f2f12d6712e2fc63478465db32e8fb85e25cba26c51a5eea",
+              "digest": "sha256:561406191295431022e70648a9846e699d8539efffbfd5daa572510fadacea00",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:3c6dfd93fd9217b5f2f12d6712e2fc63478465db32e8fb85e25cba26c51a5eea"
+                  "digest": "sha256:561406191295431022e70648a9846e699d8539efffbfd5daa572510fadacea00"
                 }
               ]
             },
@@ -88,29 +88,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "f2849a28257d27443339eb0348793f920e63d7dc049ba92577c798b853d44aec",
-              "capture_context_sha256": "4eb812cb0a6a1561b828b7877211835180c35b35235e733acfe5112527ae38de",
+              "definitions_sha256": "9cc4a4f5667aa4e36d857f27c92ec2f7126dc9b8a726eb400ee514ba1619d08a",
+              "capture_context_sha256": "ec61a9173dabb3849c91b15373dd70c625b5ba212539f46d2e8b8cce2b699b3e",
               "definition_contract": "data-bound"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-19T13:02:29.533007Z",
-              "sbom_sha256": "9679f8dbe0e61d02abb562cf52292dd20a98eff0ab83d41f7cc52cae01c07590",
-              "scanner_evidence_sha256": "b8400d20656e7a1d6a16b519c806ab54e6e3b01bbf7652c8e963dedf26cba6aa",
-              "attestation_bundle_sha256": "3b469c1c75be22ba38f98f190685cedce861c77166e1ad53529100f13f2ee04f",
+              "database_updated_at": "2026-11-19T19:04:59.970326Z",
+              "sbom_sha256": "55b6487e4ceb2deaf20564e7c91bf62c754b3625eade8e4da96c706963ef9574",
+              "scanner_evidence_sha256": "aae6e47d367f2b60de3b898d8f5215c898455af0a3174b1cb3b415a7c7190296",
+              "attestation_bundle_sha256": "87a50e9923e1e8f7074c8aa063f5661fb09207564b6e532133be02a24b6b56f2",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "f10f0ab39368ccbb5eb85816f6726048c1b9d8b600366c65ae0c4599a30d3c22"
+              "verification_sha256": "0a29b3b4253936177c82cb97b239040942986186dca10a291b4f9e8d4b13ae8f"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:3c6dfd93fd9217b5f2f12d6712e2fc63478465db32e8fb85e25cba26c51a5eea",
-              "sbom.spdx.json": "sha256:9679f8dbe0e61d02abb562cf52292dd20a98eff0ab83d41f7cc52cae01c07590",
-              "mcp-definitions.json": "sha256:f2849a28257d27443339eb0348793f920e63d7dc049ba92577c798b853d44aec",
-              "mcp-capture-context.json": "sha256:4eb812cb0a6a1561b828b7877211835180c35b35235e733acfe5112527ae38de",
-              "trivy.json": "sha256:b8400d20656e7a1d6a16b519c806ab54e6e3b01bbf7652c8e963dedf26cba6aa",
-              "attestation-bundle.json": "sha256:3b469c1c75be22ba38f98f190685cedce861c77166e1ad53529100f13f2ee04f",
+              "image-manifest.json": "sha256:561406191295431022e70648a9846e699d8539efffbfd5daa572510fadacea00",
+              "sbom.spdx.json": "sha256:55b6487e4ceb2deaf20564e7c91bf62c754b3625eade8e4da96c706963ef9574",
+              "mcp-definitions.json": "sha256:9cc4a4f5667aa4e36d857f27c92ec2f7126dc9b8a726eb400ee514ba1619d08a",
+              "mcp-capture-context.json": "sha256:ec61a9173dabb3849c91b15373dd70c625b5ba212539f46d2e8b8cce2b699b3e",
+              "trivy.json": "sha256:aae6e47d367f2b60de3b898d8f5215c898455af0a3174b1cb3b415a7c7190296",
+              "attestation-bundle.json": "sha256:87a50e9923e1e8f7074c8aa063f5661fb09207564b6e532133be02a24b6b56f2",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:f10f0ab39368ccbb5eb85816f6726048c1b9d8b600366c65ae0c4599a30d3c22"
+              "verification.json": "sha256:0a29b3b4253936177c82cb97b239040942986186dca10a291b4f9e8d4b13ae8f"
             },
             "data_requirements": {
               "release_tag": "data-clingen-9a97518362a6acda",
@@ -311,18 +311,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/genereviews-link",
-            "version": "5.3.2",
+            "version": "5.4.0",
             "source": {
-              "tag": "v5.3.2",
-              "revision": "fa3456bd2770e651d8a09190d51d758dce7d8b9f"
+              "tag": "v5.4.0",
+              "revision": "e167ba70a5993909055b925cc5a40d4e9714831b"
             },
             "image": {
               "name": "ghcr.io/berntpopp/genereviews-link",
-              "digest": "sha256:917cd504b76f84347d6d802d9ae9740e1b1e99955416fac3907a4490a658c5b8",
+              "digest": "sha256:a07c9de39611cd8126e9246835bc7140294bf2fadea29a87d385e75d235b0164",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:917cd504b76f84347d6d802d9ae9740e1b1e99955416fac3907a4490a658c5b8"
+                  "digest": "sha256:a07c9de39611cd8126e9246835bc7140294bf2fadea29a87d385e75d235b0164"
                 }
               ]
             },
@@ -332,29 +332,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "af91fec0a0f3ab351ad990c3fc5600d106a3da4638417765b70b69f0adc41607",
-              "capture_context_sha256": "dc67597390917fc06e565aedeb7a2041f8543497bc6f6de5b038946074151f8f",
+              "definitions_sha256": "c1719652373c3d327fd5ba04ce74e24e80841667982557c9695675fabfa8f544",
+              "capture_context_sha256": "06d07d747db705495b9e737683ed62738b25e27b981f9ee9dd92041cd9c2d951",
               "definition_contract": "data-bound"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-18T19:07:09.820302Z",
-              "sbom_sha256": "d4932b6e0f1143a248c752cde43c8e406ccab514e956547485ba576730bbf6c5",
-              "scanner_evidence_sha256": "94644217166a12f04fbfae76cfcb3a51693bdc54924a404342d00f42ba825973",
-              "attestation_bundle_sha256": "0ad22f5e20ff219e75a5b724f4c1620f7247553bdab1dca8c30db24ecd3cfe3f",
+              "database_updated_at": "2026-11-19T19:04:59.970326Z",
+              "sbom_sha256": "10bdb9e92d09261109f314a9b55fc3d14b995088b99a304947f3b76d627a5408",
+              "scanner_evidence_sha256": "7913036ccfd2d45459c1db81ec0b3a76c20692581e2652a0dcab20a63373c862",
+              "attestation_bundle_sha256": "a45e1ad66f14d460ee5c60600065d43c70d6b50615e797b3cade57b3106fad02",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "566a8f11f4ddffec4cbb7549fc8c6a235dd3064035edce0f0be3981dbdaa101d"
+              "verification_sha256": "73fa780a0a3c01218317f8319832fb47b0447100be2c8dae482d9c9e0531122c"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:917cd504b76f84347d6d802d9ae9740e1b1e99955416fac3907a4490a658c5b8",
-              "sbom.spdx.json": "sha256:d4932b6e0f1143a248c752cde43c8e406ccab514e956547485ba576730bbf6c5",
-              "mcp-definitions.json": "sha256:af91fec0a0f3ab351ad990c3fc5600d106a3da4638417765b70b69f0adc41607",
-              "mcp-capture-context.json": "sha256:dc67597390917fc06e565aedeb7a2041f8543497bc6f6de5b038946074151f8f",
-              "trivy.json": "sha256:94644217166a12f04fbfae76cfcb3a51693bdc54924a404342d00f42ba825973",
-              "attestation-bundle.json": "sha256:0ad22f5e20ff219e75a5b724f4c1620f7247553bdab1dca8c30db24ecd3cfe3f",
+              "image-manifest.json": "sha256:a07c9de39611cd8126e9246835bc7140294bf2fadea29a87d385e75d235b0164",
+              "sbom.spdx.json": "sha256:10bdb9e92d09261109f314a9b55fc3d14b995088b99a304947f3b76d627a5408",
+              "mcp-definitions.json": "sha256:c1719652373c3d327fd5ba04ce74e24e80841667982557c9695675fabfa8f544",
+              "mcp-capture-context.json": "sha256:06d07d747db705495b9e737683ed62738b25e27b981f9ee9dd92041cd9c2d951",
+              "trivy.json": "sha256:7913036ccfd2d45459c1db81ec0b3a76c20692581e2652a0dcab20a63373c862",
+              "attestation-bundle.json": "sha256:a45e1ad66f14d460ee5c60600065d43c70d6b50615e797b3cade57b3106fad02",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:566a8f11f4ddffec4cbb7549fc8c6a235dd3064035edce0f0be3981dbdaa101d"
+              "verification.json": "sha256:73fa780a0a3c01218317f8319832fb47b0447100be2c8dae482d9c9e0531122c"
             },
             "data_requirements": {
               "release_tag": "corpus-data-2026-11-12-r1",
@@ -372,18 +372,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/gnomad-link",
-            "version": "9.3.0",
+            "version": "9.3.1",
             "source": {
-              "tag": "v9.3.0",
-              "revision": "26e6484b159f790f20dc8261df926e59f7bddf4c"
+              "tag": "v9.3.1",
+              "revision": "59e478d175df30c6a00cc4739bfa2979c8ef723f"
             },
             "image": {
               "name": "ghcr.io/berntpopp/gnomad-link",
-              "digest": "sha256:8d4fae20615360a23cb10f55f7b5af98447e9a34b19b6952d14e2dd6fbe83768",
+              "digest": "sha256:104b0c49874b55c9929e50ce928d62dce6fe36a3a96c1e439c1ce34a8dd90c2b",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:8d4fae20615360a23cb10f55f7b5af98447e9a34b19b6952d14e2dd6fbe83768"
+                  "digest": "sha256:104b0c49874b55c9929e50ce928d62dce6fe36a3a96c1e439c1ce34a8dd90c2b"
                 }
               ]
             },
@@ -393,29 +393,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "93e7c5b1f91b29828c6db7ac08ecc474a840986decbe16c830b8b3ca26c3ea92",
-              "capture_context_sha256": "58a04fd2433385bde3ff0ec849e2b1b313910fea91e1127d014798ab53f027db",
+              "definitions_sha256": "65d173dc5a45eb26bc815f83817d9c941a4b66a66240a1f09916f9752b5a7baa",
+              "capture_context_sha256": "3095b8f27e34ff11259dc7fd0bf45a28d62165bc0afd28cba60b0fb6b92c7ee4",
               "definition_contract": "data-independent"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-19T07:06:49.809946Z",
-              "sbom_sha256": "b9f2ac059bdb371c604d5e2428800651a10762dbe6c404e221d06d8e47607a69",
-              "scanner_evidence_sha256": "4e93d69da15c52f3b6b939a5cd7ceb00a9c3d7a7c7fc8a8c57219d9e54296955",
-              "attestation_bundle_sha256": "e78fa1709ec164ff941defa1cff56ff21a2a71d72773c404ed1dbda6ce904733",
+              "database_updated_at": "2026-11-19T19:04:59.970326Z",
+              "sbom_sha256": "c2c6a7e285cc0547ad26d83fc1fb577e6f7b936888a558543d3a4164be40f8a9",
+              "scanner_evidence_sha256": "a4401c0ee7f93d3c182537b51f7600dfbd12403e8f53461de0ff539425b0261b",
+              "attestation_bundle_sha256": "78188b0d30c59b11f4f8cb2efe5e5e33cba92fdaed96064164a01c716d6e9280",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "6a0b3806b7f46b1eab0ad4d469f2009180ce7401bbc9da2345b16c6bc483e377"
+              "verification_sha256": "c29f792682006bed8decd7bf51f03992756c9021ca4822e0c181b625c8e3e312"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:8d4fae20615360a23cb10f55f7b5af98447e9a34b19b6952d14e2dd6fbe83768",
-              "sbom.spdx.json": "sha256:b9f2ac059bdb371c604d5e2428800651a10762dbe6c404e221d06d8e47607a69",
-              "mcp-definitions.json": "sha256:93e7c5b1f91b29828c6db7ac08ecc474a840986decbe16c830b8b3ca26c3ea92",
-              "mcp-capture-context.json": "sha256:58a04fd2433385bde3ff0ec849e2b1b313910fea91e1127d014798ab53f027db",
-              "trivy.json": "sha256:4e93d69da15c52f3b6b939a5cd7ceb00a9c3d7a7c7fc8a8c57219d9e54296955",
-              "attestation-bundle.json": "sha256:e78fa1709ec164ff941defa1cff56ff21a2a71d72773c404ed1dbda6ce904733",
+              "image-manifest.json": "sha256:104b0c49874b55c9929e50ce928d62dce6fe36a3a96c1e439c1ce34a8dd90c2b",
+              "sbom.spdx.json": "sha256:c2c6a7e285cc0547ad26d83fc1fb577e6f7b936888a558543d3a4164be40f8a9",
+              "mcp-definitions.json": "sha256:65d173dc5a45eb26bc815f83817d9c941a4b66a66240a1f09916f9752b5a7baa",
+              "mcp-capture-context.json": "sha256:3095b8f27e34ff11259dc7fd0bf45a28d62165bc0afd28cba60b0fb6b92c7ee4",
+              "trivy.json": "sha256:a4401c0ee7f93d3c182537b51f7600dfbd12403e8f53461de0ff539425b0261b",
+              "attestation-bundle.json": "sha256:78188b0d30c59b11f4f8cb2efe5e5e33cba92fdaed96064164a01c716d6e9280",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:6a0b3806b7f46b1eab0ad4d469f2009180ce7401bbc9da2345b16c6bc483e377"
+              "verification.json": "sha256:c29f792682006bed8decd7bf51f03992756c9021ca4822e0c181b625c8e3e312"
             },
             "data_requirements": {
               "mode": "none",
@@ -484,18 +484,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/hgnc-link",
-            "version": "2.4.3",
+            "version": "2.5.0",
             "source": {
-              "tag": "v2.4.3",
-              "revision": "e42f99240efcf72d3024c7dea8eb7e642ffc0687"
+              "tag": "v2.5.0",
+              "revision": "035303684d5e859c7d1fc21ccd659afad2d343bb"
             },
             "image": {
               "name": "ghcr.io/berntpopp/hgnc-link",
-              "digest": "sha256:a96582f2b0ae3f053152bdf2f97ff0d39ba6dbff145898b89b918a7fa1d126c8",
+              "digest": "sha256:84bd576862ff022517efda0a4778eb65c60a3cb8d77f88cc784237e76b121fd6",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:a96582f2b0ae3f053152bdf2f97ff0d39ba6dbff145898b89b918a7fa1d126c8"
+                  "digest": "sha256:84bd576862ff022517efda0a4778eb65c60a3cb8d77f88cc784237e76b121fd6"
                 }
               ]
             },
@@ -505,29 +505,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "d279ecea20be847438b5ee8b2f1c8ca55fd25d298e1874e6a810917a67ddbf18",
-              "capture_context_sha256": "8ea1de43fb59cf9469f75bc543ae5dd7bcec2b6800eed0a1340fa89531a5402a",
+              "definitions_sha256": "17843ba4d1f1c6e00837230f01bd25982af465949c2457990a00b4ee77e81e54",
+              "capture_context_sha256": "426dd04889b2210a8c7467140ff29825d1ac3d05183beb54bc44a83c80de385b",
               "definition_contract": "data-bound"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-19T13:02:29.533007Z",
-              "sbom_sha256": "c4140137e19665cf4ffe81f72694a5f68dd088a178837dff2393ebd72d133c64",
-              "scanner_evidence_sha256": "b0a1aea9a765d615324b258d6b4e688ca41fc4acfa0c042d3a660612688b83c9",
-              "attestation_bundle_sha256": "c3ba2f8447601eac44efa7c75799b408c44472b3563254ffc9f9d4ebf05dd296",
+              "database_updated_at": "2026-11-19T19:04:59.970326Z",
+              "sbom_sha256": "1387c05a4a203b962e67983e9819b49a8dcd1b4fc3d515ae20c96028f9c029c1",
+              "scanner_evidence_sha256": "3d7e2b63de6e9ec4e5aacdae619d6082484f769f24ae3dd117ee16611c433869",
+              "attestation_bundle_sha256": "dbad63393f5de3d1fcddf6d4bf78ff955dc82ec0e421fbb87510e3ded7c5376b",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "132497556f200cab2fcb0857d6854f9a99961cce72db80130456946ff2335a13"
+              "verification_sha256": "94f42ca7006d47aa14b663d2f22e4353b3672ea1492741c5478b729dd160f238"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:a96582f2b0ae3f053152bdf2f97ff0d39ba6dbff145898b89b918a7fa1d126c8",
-              "sbom.spdx.json": "sha256:c4140137e19665cf4ffe81f72694a5f68dd088a178837dff2393ebd72d133c64",
-              "mcp-definitions.json": "sha256:d279ecea20be847438b5ee8b2f1c8ca55fd25d298e1874e6a810917a67ddbf18",
-              "mcp-capture-context.json": "sha256:8ea1de43fb59cf9469f75bc543ae5dd7bcec2b6800eed0a1340fa89531a5402a",
-              "trivy.json": "sha256:b0a1aea9a765d615324b258d6b4e688ca41fc4acfa0c042d3a660612688b83c9",
-              "attestation-bundle.json": "sha256:c3ba2f8447601eac44efa7c75799b408c44472b3563254ffc9f9d4ebf05dd296",
+              "image-manifest.json": "sha256:84bd576862ff022517efda0a4778eb65c60a3cb8d77f88cc784237e76b121fd6",
+              "sbom.spdx.json": "sha256:1387c05a4a203b962e67983e9819b49a8dcd1b4fc3d515ae20c96028f9c029c1",
+              "mcp-definitions.json": "sha256:17843ba4d1f1c6e00837230f01bd25982af465949c2457990a00b4ee77e81e54",
+              "mcp-capture-context.json": "sha256:426dd04889b2210a8c7467140ff29825d1ac3d05183beb54bc44a83c80de385b",
+              "trivy.json": "sha256:3d7e2b63de6e9ec4e5aacdae619d6082484f769f24ae3dd117ee16611c433869",
+              "attestation-bundle.json": "sha256:dbad63393f5de3d1fcddf6d4bf78ff955dc82ec0e421fbb87510e3ded7c5376b",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:132497556f200cab2fcb0857d6854f9a99961cce72db80130456946ff2335a13"
+              "verification.json": "sha256:94f42ca7006d47aa14b663d2f22e4353b3672ea1492741c5478b729dd160f238"
             },
             "data_requirements": {
               "release_tag": "data-hgnc-d1c34e1547c96761",
@@ -545,18 +545,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/hpo-link",
-            "version": "0.9.0",
+            "version": "0.11.0",
             "source": {
-              "tag": "v0.9.0",
-              "revision": "4c02c7aa96b2732d4bff775f5a10486953092718"
+              "tag": "v0.11.0",
+              "revision": "aa1d2d2508fd9e3bebcf6255a070a358896bc59b"
             },
             "image": {
               "name": "ghcr.io/berntpopp/hpo-link",
-              "digest": "sha256:bcc05eb5c72a4933a30d02024e7864265c2b5a633e8c502d57c5d093477c6eb6",
+              "digest": "sha256:fdff401ded294695eba83aee20caf16ef63aa433e9ec794d6a73c37c95b035dd",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:bcc05eb5c72a4933a30d02024e7864265c2b5a633e8c502d57c5d093477c6eb6"
+                  "digest": "sha256:fdff401ded294695eba83aee20caf16ef63aa433e9ec794d6a73c37c95b035dd"
                 }
               ]
             },
@@ -566,29 +566,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "531a760fe9f1dc8a8219b6c47bd54e8c640d418eee1726dfcba7a3bb6e30531e",
-              "capture_context_sha256": "a33623142b5d5ba6258393d5c916f8c54e1fe0fb0422705e52f2c181655ad79a",
+              "definitions_sha256": "4da2c61a869b63b411458a8ca3d48c902c0853c87bbe8e08c4e53aad45267778",
+              "capture_context_sha256": "5be42d156291f70d81a6b3db721d32742c0b5e2d35cd7b2f6375349ee9052bb1",
               "definition_contract": "data-bound"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-18T19:07:09.820302Z",
-              "sbom_sha256": "345dc3bbc3c38224f2e097d6b09e8fe7d86da69310d63081ce7445ba5980d90f",
-              "scanner_evidence_sha256": "9462e60e5862987ffc803f0247704508220a8baaf9b3976665acc0ccb012df25",
-              "attestation_bundle_sha256": "729ccf0c291ae94417d764933d178c647f3991444a31e9fca5e6f7fb2336c561",
+              "database_updated_at": "2026-11-19T19:04:59.970326Z",
+              "sbom_sha256": "f942cb32546453925f2d87c1c94015ff7e04a1e507b1002636937200eee7e32c",
+              "scanner_evidence_sha256": "71815724fb206edecf4575851d0f88117e857fca4959cb84b203f84aa8a445fe",
+              "attestation_bundle_sha256": "d8a4de4ca7a42bd3f1e8887da83e4e1561704bb0cd5282337f677703e5127c7a",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "8613b08645972495d647d5d0fe5b06406a27908fa7310a250aa012c31f02b0a7"
+              "verification_sha256": "fe5cd0fafc5eee54d8c9c9117d515ea3d7dfa32ac798835ca61c699a0c5ed94c"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:bcc05eb5c72a4933a30d02024e7864265c2b5a633e8c502d57c5d093477c6eb6",
-              "sbom.spdx.json": "sha256:345dc3bbc3c38224f2e097d6b09e8fe7d86da69310d63081ce7445ba5980d90f",
-              "mcp-definitions.json": "sha256:531a760fe9f1dc8a8219b6c47bd54e8c640d418eee1726dfcba7a3bb6e30531e",
-              "mcp-capture-context.json": "sha256:a33623142b5d5ba6258393d5c916f8c54e1fe0fb0422705e52f2c181655ad79a",
-              "trivy.json": "sha256:9462e60e5862987ffc803f0247704508220a8baaf9b3976665acc0ccb012df25",
-              "attestation-bundle.json": "sha256:729ccf0c291ae94417d764933d178c647f3991444a31e9fca5e6f7fb2336c561",
+              "image-manifest.json": "sha256:fdff401ded294695eba83aee20caf16ef63aa433e9ec794d6a73c37c95b035dd",
+              "sbom.spdx.json": "sha256:f942cb32546453925f2d87c1c94015ff7e04a1e507b1002636937200eee7e32c",
+              "mcp-definitions.json": "sha256:4da2c61a869b63b411458a8ca3d48c902c0853c87bbe8e08c4e53aad45267778",
+              "mcp-capture-context.json": "sha256:5be42d156291f70d81a6b3db721d32742c0b5e2d35cd7b2f6375349ee9052bb1",
+              "trivy.json": "sha256:71815724fb206edecf4575851d0f88117e857fca4959cb84b203f84aa8a445fe",
+              "attestation-bundle.json": "sha256:d8a4de4ca7a42bd3f1e8887da83e4e1561704bb0cd5282337f677703e5127c7a",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:8613b08645972495d647d5d0fe5b06406a27908fa7310a250aa012c31f02b0a7"
+              "verification.json": "sha256:fe5cd0fafc5eee54d8c9c9117d515ea3d7dfa32ac798835ca61c699a0c5ed94c"
             },
             "data_requirements": {
               "release_tag": "db-v2026-09-01",
@@ -606,18 +606,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/litvar-link",
-            "version": "6.2.1",
+            "version": "6.3.0",
             "source": {
-              "tag": "v6.2.1",
-              "revision": "f9258aaa358099d0c26d9294c74c759172b0d3af"
+              "tag": "v6.3.0",
+              "revision": "626acd1ded5d366eeba7463c8227d51d4a50a089"
             },
             "image": {
               "name": "ghcr.io/berntpopp/litvar-link",
-              "digest": "sha256:99c75cc0b009decd9d31fbabafb74dfdd54ed6b5c25fa46138f1de6092ac0858",
+              "digest": "sha256:f8fa37845b5753f7a4cb8e887ac4684b46e94078cf92ea641cd2596d99222094",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:99c75cc0b009decd9d31fbabafb74dfdd54ed6b5c25fa46138f1de6092ac0858"
+                  "digest": "sha256:f8fa37845b5753f7a4cb8e887ac4684b46e94078cf92ea641cd2596d99222094"
                 }
               ]
             },
@@ -627,29 +627,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "42a451564cafabbbac4d1799774edbf1f7c817061263a627a4f5242a65a38497",
-              "capture_context_sha256": "6d22afc933ffb4cbe1ccd5de2542f4fc07b50d95f941b4dcef62103e6a52afd3",
+              "definitions_sha256": "e1dcd0dd649fa061d18251f3608b72db796b64c9407c1f94c552ae810105b145",
+              "capture_context_sha256": "972b77541c1e0dc66934a94a6918bdc76e6c7340c715bedc1e590021452a7310",
               "definition_contract": "data-independent"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-19T07:06:49.809946Z",
-              "sbom_sha256": "5c3425ccf107a3aadcb46c89fb6efc48b1c5fa213f20acace744e6d35f3cc01e",
-              "scanner_evidence_sha256": "d084f82e54b7c8d40e8d5c4a5bfa11afa076a343d7057fb629204cf6f113b868",
-              "attestation_bundle_sha256": "848dd0118d089a3f16f52fe5fcfcd240f2dff6ff7356ff5545e7f3c2a2c42279",
+              "database_updated_at": "2026-11-19T19:04:59.970326Z",
+              "sbom_sha256": "a68dcae4e338627645b785224b0203a23333d4dd267e10366c41d9fa61ae0cbe",
+              "scanner_evidence_sha256": "8093069ea29b9590c7576577d06ac7876e715fbb07a92ecf5d3a85943e5655ba",
+              "attestation_bundle_sha256": "7face03843e63047a53092e8e8500cb29b5a9cb048f1edc65f12abd8deb2dff2",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "6a31ebeb38e2c4923e28ef85f76088687f04a8615cb3b3309016e0fc92151a43"
+              "verification_sha256": "63cce9673a4f533736c77b1246b3bd6e06b5c6f278cf67a9c212699ab1e66428"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:99c75cc0b009decd9d31fbabafb74dfdd54ed6b5c25fa46138f1de6092ac0858",
-              "sbom.spdx.json": "sha256:5c3425ccf107a3aadcb46c89fb6efc48b1c5fa213f20acace744e6d35f3cc01e",
-              "mcp-definitions.json": "sha256:42a451564cafabbbac4d1799774edbf1f7c817061263a627a4f5242a65a38497",
-              "mcp-capture-context.json": "sha256:6d22afc933ffb4cbe1ccd5de2542f4fc07b50d95f941b4dcef62103e6a52afd3",
-              "trivy.json": "sha256:d084f82e54b7c8d40e8d5c4a5bfa11afa076a343d7057fb629204cf6f113b868",
-              "attestation-bundle.json": "sha256:848dd0118d089a3f16f52fe5fcfcd240f2dff6ff7356ff5545e7f3c2a2c42279",
+              "image-manifest.json": "sha256:f8fa37845b5753f7a4cb8e887ac4684b46e94078cf92ea641cd2596d99222094",
+              "sbom.spdx.json": "sha256:a68dcae4e338627645b785224b0203a23333d4dd267e10366c41d9fa61ae0cbe",
+              "mcp-definitions.json": "sha256:e1dcd0dd649fa061d18251f3608b72db796b64c9407c1f94c552ae810105b145",
+              "mcp-capture-context.json": "sha256:972b77541c1e0dc66934a94a6918bdc76e6c7340c715bedc1e590021452a7310",
+              "trivy.json": "sha256:8093069ea29b9590c7576577d06ac7876e715fbb07a92ecf5d3a85943e5655ba",
+              "attestation-bundle.json": "sha256:7face03843e63047a53092e8e8500cb29b5a9cb048f1edc65f12abd8deb2dff2",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:6a31ebeb38e2c4923e28ef85f76088687f04a8615cb3b3309016e0fc92151a43"
+              "verification.json": "sha256:63cce9673a4f533736c77b1246b3bd6e06b5c6f278cf67a9c212699ab1e66428"
             },
             "data_requirements": {
               "mode": "none",
@@ -963,18 +963,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/orphanet-link",
-            "version": "0.6.2",
+            "version": "0.7.0",
             "source": {
-              "tag": "v0.6.2",
-              "revision": "6ef6142a86b7b0daa6a6634418c8865c01a455b7"
+              "tag": "v0.7.0",
+              "revision": "4e286af2e0e443183f37b35ae86ac4c7f16c0d25"
             },
             "image": {
               "name": "ghcr.io/berntpopp/orphanet-link",
-              "digest": "sha256:f26708cc7d75ecea70d1e4ec63047cfd94b7a0f8538894a2f2c1d6f83144660a",
+              "digest": "sha256:7afd3202036778a5f75731cfa64825586b800c051dfcbab5009736ee0fc5558a",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:f26708cc7d75ecea70d1e4ec63047cfd94b7a0f8538894a2f2c1d6f83144660a"
+                  "digest": "sha256:7afd3202036778a5f75731cfa64825586b800c051dfcbab5009736ee0fc5558a"
                 }
               ]
             },
@@ -984,29 +984,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "4050b66f2c0e0b4cc9ad69137fc54f3e8afb17f447678c71d52305a4509564dd",
-              "capture_context_sha256": "724fc2830374be1b9ee2a38e4dca4a4637944f5ff3c5b869616be15d38fe9084",
+              "definitions_sha256": "32a99db91857680e6a4f5162754ffc514f21952f829f0a6070cc0cfb7e6f5184",
+              "capture_context_sha256": "3571e5bec515fd3c5c349e5216650ead2de8be23d048fcf148097e1eb66e0146",
               "definition_contract": "data-bound"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-18T19:07:09.820302Z",
-              "sbom_sha256": "cf7e5f31ad8f5c82cef1e943a060ab2274d41ae18d7346a9b81828664b6cb98a",
-              "scanner_evidence_sha256": "92f81186a8df2b29de3747bf85dbf938633860028bdc40f4074d330e55fe85e6",
-              "attestation_bundle_sha256": "ef2f33fbe8fae1585a3f81e78fe975b0dc938778fe7ee7b00d86ba4f4139d3be",
+              "database_updated_at": "2026-11-19T19:04:59.970326Z",
+              "sbom_sha256": "e7211e84e489d35273ca042089641b95985cbf551f1f2b0d2502d34da3ed87a3",
+              "scanner_evidence_sha256": "66bda388f69b391002f97f268b22209af1628f797f2baa12880dadcf56a63eb8",
+              "attestation_bundle_sha256": "5449cbfc12f3cb8a8db3ec79a28982639a4bc7ae91cfe2aed0d00d80428b2eda",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "df9e2b7052ff30e65d99fba57ab069aad511667a39574a1f56407eb5669e668a"
+              "verification_sha256": "411e62182a8513e3a4f3a816005cf9702de4f70b87c1fcc042083d370e1c7f13"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:f26708cc7d75ecea70d1e4ec63047cfd94b7a0f8538894a2f2c1d6f83144660a",
-              "sbom.spdx.json": "sha256:cf7e5f31ad8f5c82cef1e943a060ab2274d41ae18d7346a9b81828664b6cb98a",
-              "mcp-definitions.json": "sha256:4050b66f2c0e0b4cc9ad69137fc54f3e8afb17f447678c71d52305a4509564dd",
-              "mcp-capture-context.json": "sha256:724fc2830374be1b9ee2a38e4dca4a4637944f5ff3c5b869616be15d38fe9084",
-              "trivy.json": "sha256:92f81186a8df2b29de3747bf85dbf938633860028bdc40f4074d330e55fe85e6",
-              "attestation-bundle.json": "sha256:ef2f33fbe8fae1585a3f81e78fe975b0dc938778fe7ee7b00d86ba4f4139d3be",
+              "image-manifest.json": "sha256:7afd3202036778a5f75731cfa64825586b800c051dfcbab5009736ee0fc5558a",
+              "sbom.spdx.json": "sha256:e7211e84e489d35273ca042089641b95985cbf551f1f2b0d2502d34da3ed87a3",
+              "mcp-definitions.json": "sha256:32a99db91857680e6a4f5162754ffc514f21952f829f0a6070cc0cfb7e6f5184",
+              "mcp-capture-context.json": "sha256:3571e5bec515fd3c5c349e5216650ead2de8be23d048fcf148097e1eb66e0146",
+              "trivy.json": "sha256:66bda388f69b391002f97f268b22209af1628f797f2baa12880dadcf56a63eb8",
+              "attestation-bundle.json": "sha256:5449cbfc12f3cb8a8db3ec79a28982639a4bc7ae91cfe2aed0d00d80428b2eda",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:df9e2b7052ff30e65d99fba57ab069aad511667a39574a1f56407eb5669e668a"
+              "verification.json": "sha256:411e62182a8513e3a4f3a816005cf9702de4f70b87c1fcc042083d370e1c7f13"
             },
             "data_requirements": {
               "release_tag": "data-1.3.42-4.1.8-2025-03-03-r20260623T075350Z-r3",
@@ -1307,18 +1307,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/stringdb-link",
-            "version": "4.4.1",
+            "version": "4.5.0",
             "source": {
-              "tag": "v4.4.1",
-              "revision": "1934b24cad0ab35db3f2a09940cf9d4f14e65daf"
+              "tag": "v4.5.0",
+              "revision": "229ee1a5222838ecd21afdcc04757a12599c46f7"
             },
             "image": {
               "name": "ghcr.io/berntpopp/stringdb-link",
-              "digest": "sha256:44d3bfdb2e644c96af1fe4d796dfa890e25c7880a701eba101e068b19e0a14b3",
+              "digest": "sha256:d73a05daf72af86f357caac46e87192101a69f8665fb6f07cfe9765fdeab9c70",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:44d3bfdb2e644c96af1fe4d796dfa890e25c7880a701eba101e068b19e0a14b3"
+                  "digest": "sha256:d73a05daf72af86f357caac46e87192101a69f8665fb6f07cfe9765fdeab9c70"
                 }
               ]
             },
@@ -1328,29 +1328,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "ba648646f80c9926ad467fd2c23ce0d5631e5c913989bcd326594d249e4b035d",
-              "capture_context_sha256": "88e0f4ea732b51718d4bedfba81838fd86be56813af6f7093311c95d31d6fc1b",
+              "definitions_sha256": "e7eb83412332702dded220bc915f14f80276deb94526230b1530331dd636153f",
+              "capture_context_sha256": "da2206637072b518ad9f7a251ac741b1ac3b30f5e9501854517f2487fe5f1278",
               "definition_contract": "data-independent"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-19T07:06:49.809946Z",
-              "sbom_sha256": "bc10b2fd506c2dcb685b9c4fb0839f2884e9f84a896b3aaf182ca71df6974380",
-              "scanner_evidence_sha256": "ae54f8cf75f64aae6b582dbee7d82a28ff98e5c647ebc24b7dbc54b75b2ea368",
-              "attestation_bundle_sha256": "fcfb52e6672d3bdd100ad7a1c7774c58549a71ced5f31d9d78c8649d43856507",
+              "database_updated_at": "2026-11-19T19:04:59.970326Z",
+              "sbom_sha256": "8db8f436d73a4586f9acc76a25e3384e652f1a67eb8d60382fcaeaf1983babaf",
+              "scanner_evidence_sha256": "b744e0698e696ae08b9b7f1f107e5414008b470f2bd80e496fd163756a154721",
+              "attestation_bundle_sha256": "954685c796c9c8e3e7362795ddec2cf5da28377f4bd555d1e0ebf996a4f10a7d",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "32c50eb6081f1ebfb32c5b0bbff1eafb7c6d3036741c8428a9667e8f3345d0a4"
+              "verification_sha256": "17dea292d9ae9751fb3318e55a5ce7a181ee4621fd4aee4cd0ec045f700d00ec"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:44d3bfdb2e644c96af1fe4d796dfa890e25c7880a701eba101e068b19e0a14b3",
-              "sbom.spdx.json": "sha256:bc10b2fd506c2dcb685b9c4fb0839f2884e9f84a896b3aaf182ca71df6974380",
-              "mcp-definitions.json": "sha256:ba648646f80c9926ad467fd2c23ce0d5631e5c913989bcd326594d249e4b035d",
-              "mcp-capture-context.json": "sha256:88e0f4ea732b51718d4bedfba81838fd86be56813af6f7093311c95d31d6fc1b",
-              "trivy.json": "sha256:ae54f8cf75f64aae6b582dbee7d82a28ff98e5c647ebc24b7dbc54b75b2ea368",
-              "attestation-bundle.json": "sha256:fcfb52e6672d3bdd100ad7a1c7774c58549a71ced5f31d9d78c8649d43856507",
+              "image-manifest.json": "sha256:d73a05daf72af86f357caac46e87192101a69f8665fb6f07cfe9765fdeab9c70",
+              "sbom.spdx.json": "sha256:8db8f436d73a4586f9acc76a25e3384e652f1a67eb8d60382fcaeaf1983babaf",
+              "mcp-definitions.json": "sha256:e7eb83412332702dded220bc915f14f80276deb94526230b1530331dd636153f",
+              "mcp-capture-context.json": "sha256:da2206637072b518ad9f7a251ac741b1ac3b30f5e9501854517f2487fe5f1278",
+              "trivy.json": "sha256:b744e0698e696ae08b9b7f1f107e5414008b470f2bd80e496fd163756a154721",
+              "attestation-bundle.json": "sha256:954685c796c9c8e3e7362795ddec2cf5da28377f4bd555d1e0ebf996a4f10a7d",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:32c50eb6081f1ebfb32c5b0bbff1eafb7c6d3036741c8428a9667e8f3345d0a4"
+              "verification.json": "sha256:17dea292d9ae9751fb3318e55a5ce7a181ee4621fd4aee4cd0ec045f700d00ec"
             },
             "data_requirements": {
               "mode": "none",
@@ -1419,18 +1419,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/uniprot-link",
-            "version": "5.4.0",
+            "version": "5.5.0",
             "source": {
-              "tag": "v5.4.0",
-              "revision": "bb37fcdabe1a4bccf3b71de035081d2b355fe1d4"
+              "tag": "v5.5.0",
+              "revision": "4a56f94bdb0ff48b5764900871999132483f4016"
             },
             "image": {
               "name": "ghcr.io/berntpopp/uniprot-link",
-              "digest": "sha256:3f57462d835204e7ba1ffeb099c669a5dd1cb07053a959a4fdc19c878df2e410",
+              "digest": "sha256:ab490e61fe75fd446717535b65bc5d965733acd8627ca12376f9ff95b0c3631f",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:3f57462d835204e7ba1ffeb099c669a5dd1cb07053a959a4fdc19c878df2e410"
+                  "digest": "sha256:ab490e61fe75fd446717535b65bc5d965733acd8627ca12376f9ff95b0c3631f"
                 }
               ]
             },
@@ -1440,29 +1440,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "294e3ecebf9876c3f682a9433007ea817a6af9d173f09d04070b5e64c70e8994",
-              "capture_context_sha256": "86bc156f15da77957c5f7878235a51e3da4ee12be2eb87640ff705364288edf7",
+              "definitions_sha256": "5f5e86accc11ee679ed714e5e0ab86fe717697dc78caaee7f2d5619fce434010",
+              "capture_context_sha256": "680b8115530f267f6d73670ece5d139447ef9b5b6e2b2a18a4f0cf9d41176a87",
               "definition_contract": "data-independent"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-19T07:06:49.809946Z",
-              "sbom_sha256": "cadc5d835a6fca6b5b24d6a2ea0a8f21da6b40b146f7c085744d0038b7eb9d4a",
-              "scanner_evidence_sha256": "ddaac3b9d3f0b5a56886b31207ff38cf19ae3422ee5ac6647870eff72b171d63",
-              "attestation_bundle_sha256": "24015696c3c8c1b1badad57e27ebd10e7b0a0c2873e29f2001af485c5e9212a0",
+              "database_updated_at": "2026-11-19T19:04:59.970326Z",
+              "sbom_sha256": "26747d0c3d39741ca676c704e8be9bbef4289d2edf44185891887d350201c7e2",
+              "scanner_evidence_sha256": "cc161a5c3b23a35de47f0ee14367b5e8013ddad100f8cc5e1be7db0a51b2feb5",
+              "attestation_bundle_sha256": "cb154f1a67eb5f7871404a79aaf17c038085c11770c9b36329e212eaf7424b0b",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "41784f0474490039454d9a3b0c783d8292c25c14b1b988642d24b4b49f6137be"
+              "verification_sha256": "945637ed2497511cb71e41306c3f4ec8b979a53744ad5b7a6ef64d1abd695de2"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:3f57462d835204e7ba1ffeb099c669a5dd1cb07053a959a4fdc19c878df2e410",
-              "sbom.spdx.json": "sha256:cadc5d835a6fca6b5b24d6a2ea0a8f21da6b40b146f7c085744d0038b7eb9d4a",
-              "mcp-definitions.json": "sha256:294e3ecebf9876c3f682a9433007ea817a6af9d173f09d04070b5e64c70e8994",
-              "mcp-capture-context.json": "sha256:86bc156f15da77957c5f7878235a51e3da4ee12be2eb87640ff705364288edf7",
-              "trivy.json": "sha256:ddaac3b9d3f0b5a56886b31207ff38cf19ae3422ee5ac6647870eff72b171d63",
-              "attestation-bundle.json": "sha256:24015696c3c8c1b1badad57e27ebd10e7b0a0c2873e29f2001af485c5e9212a0",
+              "image-manifest.json": "sha256:ab490e61fe75fd446717535b65bc5d965733acd8627ca12376f9ff95b0c3631f",
+              "sbom.spdx.json": "sha256:26747d0c3d39741ca676c704e8be9bbef4289d2edf44185891887d350201c7e2",
+              "mcp-definitions.json": "sha256:5f5e86accc11ee679ed714e5e0ab86fe717697dc78caaee7f2d5619fce434010",
+              "mcp-capture-context.json": "sha256:680b8115530f267f6d73670ece5d139447ef9b5b6e2b2a18a4f0cf9d41176a87",
+              "trivy.json": "sha256:cc161a5c3b23a35de47f0ee14367b5e8013ddad100f8cc5e1be7db0a51b2feb5",
+              "attestation-bundle.json": "sha256:cb154f1a67eb5f7871404a79aaf17c038085c11770c9b36329e212eaf7424b0b",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:41784f0474490039454d9a3b0c783d8292c25c14b1b988642d24b4b49f6137be"
+              "verification.json": "sha256:945637ed2497511cb71e41306c3f4ec8b979a53744ad5b7a6ef64d1abd695de2"
             },
             "data_requirements": {
               "mode": "none",
@@ -1531,7 +1531,7 @@
   },
   "backends": {
     "gnomad": {
-      "version": "9.3.0",
+      "version": "9.3.1",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -2025,16 +2025,15 @@
         },
         {
           "name": "get_gene_variants",
-          "description": "Use this when a caller wants per-variant rows for an Ensembl gene; returns each variant's id, consequence, HGVS, and AC/AN/AF. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100.",
+          "description": "Use this when a caller wants per-variant rows for a gene (ENSG/symbol); returns each variant's id, consequence, HGVS, and AC/AN/AF. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100.",
           "inputSchema": {
             "type": "object",
             "properties": {
               "gene_id": {
-                "description": "Ensembl gene ID.",
+                "description": "Ensembl gene ID or gene symbol.",
                 "examples": [
                   "ENSG00000169174"
                 ],
-                "pattern": "^ENSG\\d{11}$",
                 "type": "string"
               },
               "dataset": {
@@ -2223,7 +2222,7 @@
               },
               "include_conflicting_clinvar": {
                 "default": false,
-                "description": "Include conflicting ClinVar variants, resolved by P/LP submission share. Resolution is batched server-side (~1 extra request per 24 conflicting variants), so this stays fast.",
+                "description": "Include conflicting ClinVar variants, resolved by P/LP submission share: 1 extra request per 24 variants, sent in turn; only the first 288 are resolved, the rest are counted in `degraded`.",
                 "type": "boolean"
               },
               "conflicting_threshold": {
@@ -2923,15 +2922,6 @@
                 "maximum": 500,
                 "minimum": 1,
                 "type": "integer"
-              },
-              "response_mode": {
-                "default": "compact",
-                "description": "compact projects each row to a fixed key-set; full is reserved.",
-                "enum": [
-                  "compact",
-                  "full"
-                ],
-                "type": "string"
               }
             },
             "required": [
@@ -4393,7 +4383,7 @@
       ]
     },
     "hgnc": {
-      "version": "2.4.3",
+      "version": "2.5.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -4453,17 +4443,19 @@
         },
         {
           "name": "resolve_symbol",
-          "description": "Resolve any gene symbol or HGNC id to its canonical record. Accepts a current symbol, a previous (withdrawn) symbol, an alias, an NCBI Gene synonym HGNC does not list, or an HGNC id in either form (HGNC:1100 or 1100), case-insensitively. Returns {hgnc_id, approved_symbol, name, status, locus_type, location, match_type (hgnc_id|current|previous|alias|ncbi_synonym)}; location is the cytogenetic band (chromosome location, e.g. 3p24.3). ncbi_synonym means only NCBI Gene (not HGNC) knows the symbol, and it ranks below every HGNC match. An alias or synonym shared by several genes returns an ambiguous_query error with the candidate list (not silently picked); a withdrawn/merged symbol returns a not_found error that redirects to the successor record.",
+          "description": "Resolve any gene symbol, HGNC id or external gene id to its canonical record. For 2 or more genes, call resolve_symbols_batch once (up to 200, same accepted forms) instead of calling this tool per gene. Accepts a current symbol, a previous (withdrawn) symbol, an alias, an NCBI Gene synonym HGNC does not list, an HGNC id in either form (HGNC:1100 or 1100), or an Ensembl gene id (ENSG00000157764), RefSeq accession, UniProt accession or NCBIGene:<n> CURIE, case-insensitively. Returns {hgnc_id, approved_symbol, name, status, locus_type, location, match_type (hgnc_id|current|previous|alias|ncbi_synonym|ensembl_gene_id|entrez_id|refseq_accession|mane_select|uniprot_ids)}; an id-type match_type names the external id type that matched; location is the cytogenetic band (chromosome location, e.g. 3p24.3). ncbi_synonym means only NCBI Gene (not HGNC) knows the symbol, and it ranks below every HGNC match. A bare number is always read as an HGNC id, never an NCBI Gene id (write NCBIGene:<n> for that): the result then carries a note, and next_commands offers resolve_gene_by_xref(source='entrez_id'). An alias or synonym shared by several genes returns an ambiguous_query error with the candidate list (not silently picked); a withdrawn/merged symbol returns a not_found error that redirects to the successor record.",
           "inputSchema": {
             "type": "object",
             "properties": {
               "query": {
-                "description": "A gene symbol (current/previous/alias, case-insensitive) or HGNC id (HGNC:1100 or 1100).",
+                "description": "A gene symbol (current/previous/alias), an HGNC id (HGNC:1100 or 1100; a bare number is always an HGNC id), or an external gene id: Ensembl gene id, RefSeq accession, UniProt accession or NCBIGene:<n> CURIE. Case-insensitive.",
                 "examples": [
                   "BRAF",
                   "HGNC:1097",
                   "MLL2",
-                  "1100"
+                  "1100",
+                  "ENSG00000157764",
+                  "NCBIGene:673"
                 ],
                 "type": "string"
               },
@@ -4501,17 +4493,21 @@
         },
         {
           "name": "resolve_symbols_batch",
-          "description": "Resolve a batch of gene symbols / HGNC ids in one call (max 200). Each entry is resolved with the same current->previous->alias->ncbi_synonym cascade as resolve_symbol; an individual miss or withdrawal never fails the batch (it is marked unresolved / obsolete in that entry). Returns per-query results plus resolved/unresolved counts. Signature: resolve_symbols_batch(queries, response_mode=).",
+          "description": "Resolve or translate a batch of gene symbols, HGNC ids and/or external gene ids in one call (max 200). Accepts Ensembl gene ids (e.g. ENSG00000157764), RefSeq accessions, UniProt accessions and NCBIGene:<n> CURIEs, so a list of ENSG ids -> HGNC symbols is one call. Each entry is resolved exactly like resolve_symbol; an individual miss or withdrawal never fails the batch (it is marked unresolved / obsolete in that entry). Returns one row per input in input order (each keeps its input as query, with approved_symbol, hgnc_id, match_type), resolved/unresolved counts, and unresolved_queries (the inputs with no single match). Signature: resolve_symbols_batch(queries, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
               "queries": {
-                "description": "Gene symbols and/or HGNC ids to resolve (max 200).",
+                "description": "Gene symbols, HGNC ids and/or Ensembl gene / RefSeq / UniProt / NCBIGene:<n> ids to resolve (max 200).",
                 "examples": [
                   [
                     "BRCA1",
                     "TP53",
                     "HGNC:1100"
+                  ],
+                  [
+                    "ENSG00000157764",
+                    "ENSG00000141510"
                   ]
                 ],
                 "items": {
@@ -4554,17 +4550,19 @@
         },
         {
           "name": "get_gene",
-          "description": "Return the full HGNC record for a gene, resolved from an HGNC id, current symbol, previous symbol, or alias. Includes name, status, locus group/type, location (cytogenetic band), aliases/previous symbols, gene groups, and all cross-references. For a complete alias list read alias_symbol + prev_symbol (HGNC) AND ncbi_gene_synonyms (NCBI Gene's own synonyms, kept separate; may repeat or extend HGNC's). response_mode controls verbosity (compact drops dates/provenance; minimal keeps identity + anchor ids). Signature: get_gene(query, response_mode=).",
+          "description": "Return the full HGNC record for a gene, resolved from an HGNC id, current symbol, previous symbol, alias, or an external gene id (Ensembl gene id, RefSeq / UniProt accession, NCBIGene:<n>) exactly like resolve_symbol. Includes name, status, locus group/type, location (cytogenetic band), aliases/previous symbols, gene groups, and all cross-references. For a complete alias list read alias_symbol + prev_symbol (HGNC) AND ncbi_gene_synonyms (NCBI Gene's own synonyms, kept separate; may repeat or extend HGNC's). response_mode controls verbosity (compact drops dates/provenance; minimal keeps identity + anchor ids). Signature: get_gene(query, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
               "query": {
-                "description": "A gene symbol (current/previous/alias, case-insensitive) or HGNC id (HGNC:1100 or 1100).",
+                "description": "A gene symbol (current/previous/alias), an HGNC id (HGNC:1100 or 1100; a bare number is always an HGNC id), or an external gene id: Ensembl gene id, RefSeq accession, UniProt accession or NCBIGene:<n> CURIE. Case-insensitive.",
                 "examples": [
                   "BRAF",
                   "HGNC:1097",
                   "MLL2",
-                  "1100"
+                  "1100",
+                  "ENSG00000157764",
+                  "NCBIGene:673"
                 ],
                 "type": "string"
               },
@@ -4654,17 +4652,19 @@
         },
         {
           "name": "get_gene_cross_references",
-          "description": "Return external database cross-references for a gene (forward identifier mapping): NCBI Gene, Ensembl, UniProt, RefSeq, MANE Select, OMIM, UCSC, VEGA, CCDS, MGI, RGD, Orphanet, COSMIC, PubMed. response_mode sets the default field set: minimal=NCBI+Ensembl ids; compact (default)=the high-value ids (NCBI, Ensembl, UniProt, RefSeq, MANE Select, OMIM, CCDS); standard/full=every populated field. databases optionally filters to specific sources by field key OR friendly label (e.g. 'mane', 'ncbi', 'uniprot') and OVERRIDES the response_mode tier; an unknown key is rejected with invalid_input + did-you-mean. Resolve the gene from an id/symbol/alias first. Signature: get_gene_cross_references(query, databases=, response_mode=).",
+          "description": "Return external database cross-references for a gene (forward identifier mapping): NCBI Gene, Ensembl, UniProt, RefSeq, MANE Select, OMIM, UCSC, VEGA, CCDS, MGI, RGD, Orphanet, COSMIC, PubMed. response_mode sets the default field set: minimal=NCBI+Ensembl ids; compact (default)=the high-value ids (NCBI, Ensembl, UniProt, RefSeq, MANE Select, OMIM, CCDS); standard/full=every populated field. databases optionally filters to specific sources by field key OR friendly label (e.g. 'mane', 'ncbi', 'uniprot') and OVERRIDES the response_mode tier; an unknown key is rejected with invalid_input + did-you-mean. query takes the same forms as resolve_symbol (symbol, HGNC id, Ensembl gene id, RefSeq / UniProt accession, NCBIGene:<n>). Signature: get_gene_cross_references(query, databases=, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
               "query": {
-                "description": "A gene symbol (current/previous/alias, case-insensitive) or HGNC id (HGNC:1100 or 1100).",
+                "description": "A gene symbol (current/previous/alias), an HGNC id (HGNC:1100 or 1100; a bare number is always an HGNC id), or an external gene id: Ensembl gene id, RefSeq accession, UniProt accession or NCBIGene:<n> CURIE. Case-insensitive.",
                 "examples": [
                   "BRAF",
                   "HGNC:1097",
                   "MLL2",
-                  "1100"
+                  "1100",
+                  "ENSG00000157764",
+                  "NCBIGene:673"
                 ],
                 "type": "string"
               },
@@ -5601,7 +5601,7 @@
       ]
     },
     "uniprot": {
-      "version": "5.4.0",
+      "version": "5.5.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -5794,12 +5794,12 @@
         },
         {
           "name": "find_proteins",
-          "description": "Search UniProtKB for the entries of a GENE and return matching entries (accession, mnemonic, recommended name, reviewed flag, organism). gene_symbol is REQUIRED; refine the hits with organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name), reviewed, name_contains (matched per word, in any order, case-insensitive), or the structured filters mnemonic / ec_number / keyword. Reviewed (Swiss-Prot) hits are ranked first. UniProt SPARQL has no general full-text index; for EC-only, keyword-only, or free-text search WITHOUT a gene, use search_example_queries or search_sparql_query. Pair with get_protein for full detail. Results are ordered reviewed-first, then by mnemonic, then accession (stable across pages). Cold search can take several seconds; an identical repeat is cached (~0 ms). If you already know the accession, call get_protein directly -- it is far faster. Signature: find_proteins(gene_symbol, organism_taxon=, reviewed=, keyword=, ec_number=, mnemonic=, name_contains=, limit=, offset=).",
+          "description": "Search UniProtKB for the entries of a GENE and return matching entries (accession, mnemonic, recommended name, reviewed flag, organism). For 2 or more genes, call find_proteins_batch once instead of calling this tool per item. gene_symbol is REQUIRED (a symbol, HGNC:<n> or NCBIGene:<n>; see resolved_from); refine the hits with organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name), reviewed, name_contains (matched per word, in any order, case-insensitive), or the structured filters mnemonic / ec_number / keyword. Reviewed (Swiss-Prot) hits are ranked first. UniProt SPARQL has no general full-text index; for EC-only, keyword-only, or free-text search WITHOUT a gene, use search_example_queries or search_sparql_query. Pair with get_protein for full detail. Results are ordered reviewed-first, then by mnemonic, then accession (stable across pages). Cold search can take several seconds; an identical repeat is cached (~0 ms). If you already know the accession, call get_protein directly -- it is far faster. Signature: find_proteins(gene_symbol, organism_taxon=, reviewed=, keyword=, ec_number=, mnemonic=, name_contains=, limit=, offset=).",
           "inputSchema": {
             "type": "object",
             "properties": {
               "gene_symbol": {
-                "description": "Gene symbol to search for, e.g. BRCA1.",
+                "description": "Gene symbol, HGNC:<n> or NCBIGene:<n>.",
                 "examples": [
                   "BRCA1",
                   "TP53"
@@ -5924,7 +5924,7 @@
         },
         {
           "name": "find_proteins_batch",
-          "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, and unresolved_genes (a symbol that matched nothing is disclosed, never silently dropped). Optionally scope by organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name) and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
+          "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, unresolved_genes and unresolved_reasons (not_found, or unsupported_identifier with its converter in next_commands; HGNC:<n> and NCBIGene:<n> are accepted). Optionally scope by organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name) and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -6008,7 +6008,7 @@
             "type": "object",
             "properties": {
               "accession": {
-                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
                 "examples": [
                   "P05067",
                   "P38398"
@@ -6053,7 +6053,7 @@
             "type": "object",
             "properties": {
               "accession": {
-                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
                 "examples": [
                   "P05067",
                   "P38398"
@@ -6104,7 +6104,7 @@
             "type": "object",
             "properties": {
               "accession": {
-                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
                 "examples": [
                   "P05067",
                   "P38398"
@@ -6218,7 +6218,7 @@
             "type": "object",
             "properties": {
               "accession": {
-                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
                 "examples": [
                   "P05067",
                   "P38398"
@@ -6302,7 +6302,7 @@
             "type": "object",
             "properties": {
               "accession": {
-                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
                 "examples": [
                   "P05067",
                   "P38398"
@@ -6348,7 +6348,7 @@
             "type": "object",
             "properties": {
               "accession": {
-                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
                 "examples": [
                   "P05067",
                   "P38398"
@@ -6415,7 +6415,7 @@
             "type": "object",
             "properties": {
               "accession": {
-                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
                 "examples": [
                   "P05067",
                   "P38398"
@@ -6474,7 +6474,7 @@
             "type": "object",
             "properties": {
               "accession": {
-                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+                "description": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
                 "examples": [
                   "P05067",
                   "P38398"
@@ -6579,7 +6579,7 @@
       ]
     },
     "clingen": {
-      "version": "4.1.5",
+      "version": "4.2.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -6619,7 +6619,7 @@
                 ],
                 "maxLength": 64,
                 "minLength": 1,
-                "pattern": "^[A-Za-z0-9._-]{1,32}$|^HGNC:\\d+$",
+                "pattern": "^[A-Za-z0-9._-]{1,32}$|^[Hh][Gg][Nn][Cc]:\\d+$",
                 "type": "string"
               },
               "response_mode": {
@@ -6668,7 +6668,7 @@
                 ],
                 "maxLength": 64,
                 "minLength": 1,
-                "pattern": "^[A-Za-z0-9._-]{1,32}$|^HGNC:\\d+$",
+                "pattern": "^[A-Za-z0-9._-]{1,32}$|^[Hh][Gg][Nn][Cc]:\\d+$",
                 "type": "string"
               },
               "response_mode": {
@@ -6717,7 +6717,7 @@
                 ],
                 "maxLength": 64,
                 "minLength": 1,
-                "pattern": "^[A-Za-z0-9._-]{1,32}$|^HGNC:\\d+$",
+                "pattern": "^[A-Za-z0-9._-]{1,32}$|^[Hh][Gg][Nn][Cc]:\\d+$",
                 "type": "string"
               },
               "classification": {
@@ -6963,7 +6963,7 @@
                 ],
                 "maxLength": 64,
                 "minLength": 1,
-                "pattern": "^[A-Za-z0-9._-]{1,32}$|^HGNC:\\d+$",
+                "pattern": "^[A-Za-z0-9._-]{1,32}$|^[Hh][Gg][Nn][Cc]:\\d+$",
                 "type": "string"
               },
               "response_mode": {
@@ -7172,7 +7172,7 @@
                 ],
                 "maxLength": 64,
                 "minLength": 1,
-                "pattern": "^[A-Za-z0-9._-]{1,32}$|^HGNC:\\d+$",
+                "pattern": "^[A-Za-z0-9._-]{1,32}$|^[Hh][Gg][Nn][Cc]:\\d+$",
                 "type": "string"
               },
               "context": {
@@ -7518,7 +7518,7 @@
               "gene_symbol": {
                 "anyOf": [
                   {
-                    "pattern": "^[A-Za-z0-9._-]{1,32}$",
+                    "pattern": "^[A-Za-z0-9._-]{1,32}$|^[Hh][Gg][Nn][Cc]:\\d+$",
                     "type": "string"
                   },
                   {
@@ -7526,7 +7526,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Gene symbol covered by the spec (resolve with search_genes first).",
+                "description": "Gene symbol or HGNC id covered by the spec.",
                 "examples": [
                   "BRCA1"
                 ]
@@ -8684,7 +8684,7 @@
       ]
     },
     "litvar": {
-      "version": "6.2.1",
+      "version": "6.3.0",
       "tools": [
         {
           "name": "search_genetic_variants",
@@ -8746,7 +8746,7 @@
             "type": "object",
             "properties": {
               "variant_id": {
-                "description": "LitVar2 variant id (litvar@rs...##), rsID, or HGVS/protein name. Non-canonical input is resolved via autocomplete; the record that actually answered is echoed back as `resolved_variant_id`.",
+                "description": "LitVar2 variant id (litvar@rs...##), rsID, or HGVS/protein name. Non-canonical input is resolved via autocomplete; the record that actually answered is echoed back as `resolved_variant_id`. Genomic coordinates are not accepted: pass an rsID or HGVS.",
                 "examples": [
                   "litvar@rs1061170##",
                   "rs1061170"
@@ -8788,7 +8788,7 @@
           "inputSchema": {
             "properties": {
               "variant_id": {
-                "description": "LitVar id (litvar@rs...##), rsID, or HGVS/free text. Non-canonical input is resolved via autocomplete.",
+                "description": "LitVar id (litvar@rs...##), rsID, or HGVS/free text. Non-canonical input is resolved via autocomplete. Genomic coordinates are not accepted: pass an rsID or HGVS.",
                 "examples": [
                   "rs1061170",
                   "litvar@rs1061170##"
@@ -8882,7 +8882,7 @@
             "type": "object",
             "properties": {
               "gene_symbol": {
-                "description": "HGNC gene symbol, e.g. CFH.",
+                "description": "HGNC gene symbol, e.g. CFH. Symbols only: an Ensembl, HGNC, NCBI or RefSeq id is rejected with the converter call to run first.",
                 "examples": [
                   "BRCA1"
                 ],
@@ -8968,11 +8968,11 @@
       ]
     },
     "stringdb": {
-      "version": "4.4.1",
+      "version": "4.5.0",
       "tools": [
         {
           "name": "resolve_protein_identifiers",
-          "description": "Maps common protein names, gene symbols, UniProt IDs, and other identifiers\n    to STRING database identifiers. The STRING database uses an intelligent\n    mapping system to find the best matching identifier for each input.\n\n    **Supported identifier types:**\n    - Gene symbols (e.g., p53, BRCA1, CDK2)\n    - UniProt IDs (e.g., P04637, P38398)\n    - Ensembl IDs (e.g., ENSP00000269305)\n    - RefSeq IDs (e.g., NP_000537)\n    - Common protein names\n\n    **Species support:**\n    - Humans (9606), Mouse (10090), E. coli (511145), and 2000+ other species\n    - If no species is specified, STRING attempts cross-species mapping",
+          "description": "Maps common protein names, gene symbols, UniProt IDs, and other identifiers\n    to STRING database identifiers. The STRING database uses an intelligent\n    mapping system to find the best matching identifier for each input.\n\n    **Supported identifier types:**\n    - Gene symbols (e.g., p53, BRCA1, CDK2)\n    - UniProt IDs (e.g., P04637, P38398)\n    - Ensembl IDs (e.g., ENSP00000269305)\n    - RefSeq IDs (e.g., NP_000537)\n    - Common protein names\n\n    **One row per protein:** STRING returns a single row when several inputs name the\n    same protein (an Ensembl gene id, an HGNC id and an NCBI Gene id of one gene). The\n    MCP response lists every input under `mapped` or `unmapped`, as all tools taking\n    `identifiers` do.\n\n    **Species support:**\n    - Humans (9606), Mouse (10090), E. coli (511145), and 2000+ other species\n    - If no species is specified, STRING attempts cross-species mapping",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -9138,7 +9138,7 @@
         },
         {
           "name": "get_interaction_partners",
-          "description": "Use this to list the top interaction partners (neighbourhood) of each protein, capped at limit per protein; returns preferredName_B, stringId_B and combined score per partner, plus total_count and truncated. Not a pair test: absence from a capped list is not evidence of no interaction; use search_protein_interactions for that.",
+          "description": "Use this to list the top interaction partners (neighbourhood) of each protein, capped at limit per protein; returns preferredName_B, stringId_B and combined score per partner, plus total_count and truncated. To test a gene list for enriched functions or interactions, call compute_functional_enrichment or compute_ppi_enrichment once instead of calling this tool per gene. Not a pair test: absence from a capped list is not evidence of no interaction; use search_protein_interactions for that.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -9304,6 +9304,15 @@
             ],
             "additionalProperties": false,
             "$defs": {
+              "NetworkType": {
+                "type": "string",
+                "enum": [
+                  "functional",
+                  "physical"
+                ],
+                "title": "NetworkType",
+                "description": "Network types supported by STRING."
+              },
               "NetworkFlavor": {
                 "type": "string",
                 "enum": [
@@ -9313,15 +9322,6 @@
                 ],
                 "title": "NetworkFlavor",
                 "description": "Network visualization styles supported by STRING."
-              },
-              "NetworkType": {
-                "type": "string",
-                "enum": [
-                  "functional",
-                  "physical"
-                ],
-                "title": "NetworkType",
-                "description": "Network types supported by STRING."
               }
             }
           },
@@ -9877,6 +9877,15 @@
             ],
             "additionalProperties": false,
             "$defs": {
+              "NetworkType": {
+                "type": "string",
+                "enum": [
+                  "functional",
+                  "physical"
+                ],
+                "title": "NetworkType",
+                "description": "Network types supported by STRING."
+              },
               "NetworkFlavor": {
                 "type": "string",
                 "enum": [
@@ -9896,15 +9905,6 @@
                 ],
                 "title": "ImageFormat",
                 "description": "Image formats for network visualization."
-              },
-              "NetworkType": {
-                "type": "string",
-                "enum": [
-                  "functional",
-                  "physical"
-                ],
-                "title": "NetworkType",
-                "description": "Network types supported by STRING."
               }
             }
           },
@@ -11312,7 +11312,7 @@
       ]
     },
     "genereviews": {
-      "version": "5.3.2",
+      "version": "5.4.0",
       "tools": [
         {
           "name": "search_genereviews",
@@ -11322,7 +11322,7 @@
             "properties": {
               "gene_symbol": {
                 "type": "string",
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._-]*|[Hh][Gg][Nn][Cc]:[0-9]+|[Nn][Cc][Bb][Ii][Gg][Ee][Nn][Ee]:[0-9]+)$",
                 "title": "Gene Symbol",
                 "description": "HGNC gene symbol to resolve, e.g. 'BRCA1'.",
                 "examples": [
@@ -11514,7 +11514,7 @@
             "properties": {
               "gene_symbol": {
                 "type": "string",
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+                "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._-]*|[Hh][Gg][Nn][Cc]:[0-9]+|[Nn][Cc][Bb][Ii][Gg][Ee][Nn][Ee]:[0-9]+)$",
                 "title": "Gene Symbol",
                 "description": "HGNC gene symbol to resolve, e.g. 'CFTR'.",
                 "examples": [
@@ -11577,7 +11577,7 @@
         },
         {
           "name": "search_passages",
-          "description": "Search the active GeneReviews corpus; returns ranked passages with passage_id, nbk_id, chapter_section, snippet or text, and recommended_citation. For intervention/treatment queries, pass sections=[\"management\"]; for diagnostic criteria, pass sections=[\"diagnosis\", \"clinical_features\"]. This is the main precision filter.\n\nRerank with `rrf` (default) for hybrid retrieval, `lexical` for exact terms, or `off` for raw repository order when debugging.\n\nUse `brief` (default) for triage snippets, `full` for passage text, or `ids_only` for identifiers and ranks. Filter by `gene`, `nbk_id`, or `sections`. In `brief`/`full`, use `include` and `exclude` for field projection; include/exclude do not apply to `ids_only`, and `ids_only` omits `recommended_citation`.",
+          "description": "Search the active GeneReviews corpus; returns ranked passages with passage_id, nbk_id, chapter_section, snippet or text, and recommended_citation. For 2 or more queries, call search_passages_batch once instead of calling this tool per item. For intervention/treatment queries, pass sections=[\"management\"]; for diagnostic criteria, pass sections=[\"diagnosis\", \"clinical_features\"]. This is the main precision filter.\n\nRerank with `rrf` (default) for hybrid retrieval, `lexical` for exact terms, or `off` for raw repository order when debugging.\n\nUse `brief` (default) for triage snippets, `full` for passage text, or `ids_only` for identifiers and ranks. Filter by `gene`, `nbk_id`, or `sections`. In `brief`/`full`, use `include` and `exclude` for field projection; include/exclude do not apply to `ids_only`, and `ids_only` omits `recommended_citation`.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -11931,7 +11931,7 @@
         },
         {
           "name": "search_passages_batch",
-          "description": "Search GeneReviews passages with 1-5 independent queries in one call; returns results[i].hits per query, each shaped like search_passages hits. Accepts 1-5 search specs, each with its own ``q``, ``sections``, ``nbk_id``, ``gene``, ``mode``, ``rerank``, etc. (mirrors the query parameters of ``GET /passages/search``). Executes all specs concurrently via ``asyncio.gather`` and returns a flat envelope.\n\n**When to use:** when a clinical-report workflow issues several related but independent queries (e.g. one scoped to ``management``, one to ``genetic_counseling``, one open-section exploratory) \u2014 batching cuts N round-trip latencies to ~1x the slowest query.\n\n**Response shape:** ``results[i].query_index`` matches the zero-based position of the spec in the request. ``results[i].hits`` mirrors the shape of ``GET /passages/search`` results for that spec's ``mode``.\n\n**Deduplication:** when the same ``passage_id`` appears in hits for multiple specs, every occurrence except the one from the lowest ``query_index`` carries ``also_matched_query_indices`` (a list of the other indices). Hits are never removed \u2014 the annotation signals redundancy without discarding evidence.\n\n**Cap:** requests with more than 5 specs are rejected with 422.\n\n**MCP:** registered as the ``search_passages_batch`` MCP tool via the FastMCP OpenAPI proxy.\n\nLatency: p95 <= 1.5x the slowest single-query latency for a 3-spec batch (concurrent execution).",
+          "description": "Search GeneReviews passages with 1-5 independent queries in one call; returns results[i].hits per query, each shaped like search_passages hits. Accepts 1-5 search specs, each with its own ``q``, ``sections``, ``nbk_id``, ``gene``, ``mode``, ``rerank``, etc. (mirrors the query parameters of ``GET /passages/search``). Executes all specs concurrently via ``asyncio.gather`` and returns a flat envelope.\n\n**When to use:** when a clinical-report workflow issues several related but independent queries (e.g. one scoped to ``management``, one to ``genetic_counseling``, one open-section exploratory) \u2014 batching cuts N round-trip latencies to ~1x the slowest query.\n\n**Response shape:** ``results[i].query_index`` matches the zero-based position of the spec in the request. ``results[i].hits`` mirrors the shape of ``GET /passages/search`` results for that spec's ``mode``.\n\n**Deduplication:** when the same ``passage_id`` appears in hits for multiple specs, every occurrence except the one from the lowest ``query_index`` carries ``also_matched_query_indices`` (a list of the other indices). Hits are never removed \u2014 the annotation signals redundancy without discarding evidence.\n\n**Per-spec errors:** a spec that cannot run (e.g. ``gene`` is an identifier, not a symbol, or is not indexed) gets ``results[i].error`` with empty ``hits``; the other specs still return. Outcomes are always per spec: the call itself succeeds even when every spec (or the only spec) fails, so check each ``error``.\n\n**Cap:** requests with more than 5 specs are rejected with 422.\n\n**MCP:** registered as the ``search_passages_batch`` MCP tool via the FastMCP OpenAPI proxy.\n\nLatency: p95 <= 1.5x the slowest single-query latency for a 3-spec batch (concurrent execution).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19261,7 +19261,7 @@
       ]
     },
     "hpo": {
-      "version": "0.9.0",
+      "version": "0.11.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -19325,7 +19325,7 @@
         },
         {
           "name": "resolve_term",
-          "description": "Resolve a phenotype label, synonym, HP id (HP:0000118), or external cross-reference CURIE (UMLS:C0000737, SNOMEDCT_US:263681008, ...) to the canonical HPO term {hpo_id, name, match_type}. An ambiguous label returns ambiguous_query with candidates (each {hpo_id, name}); an obsolete HP id resolves with success:true, obsolete:true, and its successor in replaced_by. This is the recommended first step \u2014 resolve any query to a canonical HP id before calling get_term. Returns the single best match; text queries add other_matches_count, and to list every term matching a text use search_terms. Signature: resolve_term(query, response_mode=).",
+          "description": "Resolve a phenotype label, synonym, HP id (HP:0000118), or external cross-reference CURIE (UMLS:C0000737, SNOMEDCT_US:263681008, ...) to the canonical HPO term {hpo_id, name, match_type}. For 2 or more terms, call resolve_terms_batch once instead of calling this tool per item. An ambiguous label returns ambiguous_query with candidates (each {hpo_id, name}); an obsolete HP id resolves with success:true, obsolete:true, and its successor in replaced_by. This is the recommended first step \u2014 resolve any query to a canonical HP id before calling get_term. Returns the single best match; text queries add other_matches_count, and to list every term matching a text use search_terms. Signature: resolve_term(query, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19365,6 +19365,64 @@
           },
           "execution": null,
           "tags": [
+            "disease",
+            "gene",
+            "hpo",
+            "ontology",
+            "phenotype",
+            "resolve"
+          ]
+        },
+        {
+          "name": "resolve_terms_batch",
+          "description": "Resolve many phenotype labels, synonyms, HP ids or xref CURIEs in one call (label -> HP id and HP id -> label); returns one results[] row per input in input order: {index, query, ok: true, hpo_id, name, match_type} or {index, ok: false, error_code, message} (an ambiguous label adds candidates). One bad item never fails the call; unresolved_count says how many missed. Max 100 items. Signature: resolve_terms_batch(queries, response_mode=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "queries": {
+                "description": "1..100 phenotype labels/synonyms, HP ids, or xref CURIEs.",
+                "examples": [
+                  [
+                    "Seizure",
+                    "HP:0001263",
+                    "Renal cyst"
+                  ]
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "minItems": 1,
+                "type": "array"
+              },
+              "response_mode": {
+                "default": "compact",
+                "description": "Verbosity: minimal|compact|standard|full (default compact).",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "queries"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "batch",
             "disease",
             "gene",
             "hpo",
@@ -19443,7 +19501,7 @@
         },
         {
           "name": "get_term",
-          "description": "Return an HPO phenotype term record: definition, synonyms (exact/related/broad/narrow), alt_ids, subsets, comments, cross-references, direct parents and children, and obsolescence (replaced_by). The term accepts an HP id, a label/synonym, or an external xref CURIE (resolved first). Pass fields=['synonyms', 'definition'] for a sparse projection. Note on synonyms shape: compact (default) returns synonyms as plain strings; standard/full return {text, scope} objects. Signature: get_term(hpo_id, response_mode=, fields=).",
+          "description": "Return an HPO phenotype term record: definition, synonyms (exact/related/broad/narrow), alt_ids, subsets, comments, cross-references, direct parents and children, and obsolescence (replaced_by). The term accepts an HP id, a label/synonym, or an external xref CURIE (resolved first). For only the labels of several HP ids, call resolve_terms_batch once. Pass fields=['synonyms', 'definition'] for a sparse projection. Note on synonyms shape: compact (default) returns synonyms as plain strings; standard/full return {text, scope} objects. Signature: get_term(hpo_id, response_mode=, fields=).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19890,12 +19948,12 @@
         },
         {
           "name": "get_phenotypes_for_gene",
-          "description": "Return the HPO phenotype terms annotated to a gene (symbol or NCBI id). Signature: get_phenotypes_for_gene(gene, limit=, offset=, response_mode=).",
+          "description": "Return the HPO phenotype terms annotated to a gene (symbol or NCBI id). Signature: get_phenotypes_for_gene(gene, limit=, offset=, response_mode=). For several phenotypes and/or a candidate gene list at once, use score_genes_for_phenotypes instead of looping over single-gene calls.",
           "inputSchema": {
             "type": "object",
             "properties": {
               "gene": {
-                "description": "A gene symbol (e.g. 'PAX6') or NCBI gene CURIE (e.g. 'NCBIGene:5080'). Bare NCBI numeric ids (e.g. '5080') are also accepted.",
+                "description": "A gene symbol (e.g. 'PAX6') or NCBI gene CURIE (e.g. 'NCBIGene:5080'). Bare NCBI numeric ids (e.g. '5080') are also accepted. Ensembl gene (ENSG...), RefSeq and HGNC ids are rejected: translate them with hgnc_resolve_symbol first. Transcript ids (ENST...) are not gene ids.",
                 "examples": [
                   "PAX6",
                   "NCBIGene:5080",
@@ -19953,7 +20011,7 @@
         },
         {
           "name": "get_genes_for_phenotype",
-          "description": "Return the genes annotated to an HPO phenotype term, optionally expanded to include descendants. Signature: get_genes_for_phenotype(hpo_id, include_descendants=, limit=, offset=, response_mode=).",
+          "description": "Return the genes annotated to an HPO phenotype term, optionally expanded to include descendants. Signature: get_genes_for_phenotype(hpo_id, include_descendants=, limit=, offset=, response_mode=). For several phenotypes and/or a candidate gene list at once, use score_genes_for_phenotypes instead of looping over single-term calls.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -20024,7 +20082,7 @@
             "type": "object",
             "properties": {
               "disease_id": {
-                "description": "A disease CURIE, e.g. 'OMIM:106210' (MIM Morbid) or 'ORPHA:550' (Orphanet). The prefix is case-sensitive.",
+                "description": "A disease CURIE: 'OMIM:106210', 'ORPHA:550' (Orphanet) or 'DECIPHER:16'; the 'MIM:' and 'Orphanet:' spellings are accepted. MONDO and other ontology ids are rejected: convert them with mondo_map_cross_ontology first.",
                 "examples": [
                   "OMIM:106210",
                   "ORPHA:550"
@@ -20152,7 +20210,7 @@
             "type": "object",
             "properties": {
               "disease_id": {
-                "description": "A disease CURIE, e.g. 'OMIM:106210' (MIM Morbid) or 'ORPHA:550' (Orphanet). The prefix is case-sensitive.",
+                "description": "A disease CURIE: 'OMIM:106210', 'ORPHA:550' (Orphanet) or 'DECIPHER:16'; the 'MIM:' and 'Orphanet:' spellings are accepted. MONDO and other ontology ids are rejected: convert them with mondo_map_cross_ontology first.",
                 "examples": [
                   "OMIM:106210",
                   "ORPHA:550"
@@ -20214,7 +20272,7 @@
             "type": "object",
             "properties": {
               "gene": {
-                "description": "A gene symbol (e.g. 'PAX6') or NCBI gene CURIE (e.g. 'NCBIGene:5080'). Bare NCBI numeric ids (e.g. '5080') are also accepted.",
+                "description": "A gene symbol (e.g. 'PAX6') or NCBI gene CURIE (e.g. 'NCBIGene:5080'). Bare NCBI numeric ids (e.g. '5080') are also accepted. Ensembl gene (ENSG...), RefSeq and HGNC ids are rejected: translate them with hgnc_resolve_symbol first. Transcript ids (ENST...) are not gene ids.",
                 "examples": [
                   "PAX6",
                   "NCBIGene:5080",
@@ -20272,7 +20330,7 @@
         },
         {
           "name": "score_genes_for_phenotypes",
-          "description": "Rank genes for a set of HPO phenotype terms (Resnik similarity to annotated diseases); returns ranked candidate genes for a patient's phenotypes, each with score, best disease and matched term pairs (shared ancestor + IC); excluded terms are reported as conflicts, never scored. Signature: score_genes_for_phenotypes(hpo_ids, excluded_hpo_ids=, candidate_genes=, limit=, offset=, response_mode=).",
+          "description": "Rank genes for a set of HPO phenotype terms (Resnik similarity to annotated diseases); returns ranked candidate genes for a patient's phenotypes, each with score, best disease and matched term pairs (shared ancestor + IC); excluded terms are reported as conflicts, never scored. Every input HP id is scored as given, listed in replaced_hpo_ids (obsolete id or alt_id, scored as replaced_by) or listed in ignored_hpo_ids with a reason. close_call=true (with rank1_margin) means the top ranks are too close to pick rank 1 by score alone; close_call=false does not confirm rank 1. In minimal mode top_matches reads '<input id> = <disease term>' for the same term, '~' for a related one, f=? when no frequency is recorded. Signature: score_genes_for_phenotypes(hpo_ids, excluded_hpo_ids=, candidate_genes=, limit=, offset=, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -20321,7 +20379,18 @@
                   }
                 ],
                 "default": null,
-                "description": "Restrict ranking to these gene symbols (e.g. genes with exome variants); symbols that are unknown or have no HPO-annotated disease are listed in unranked_candidate_genes."
+                "description": "Restrict ranking to these genes (e.g. genes with exome variants): gene symbols (SCN1A) or NCBI gene ids (NCBIGene:6323 or 6323). Ensembl gene (ENSG...), HGNC (HGNC:...) and RefSeq ids are not mapped here: translate the list with hgnc_resolve_symbols_batch first (transcript ids, ENST..., are not gene ids). Each ranked row echoes the caller's spelling as input_id; entries that cannot be ranked are listed in unranked_candidate_genes as {input_id, reason} (unsupported_identifier | not_rankable).",
+                "examples": [
+                  [
+                    "SCN1A",
+                    "KCNQ2",
+                    "STXBP1"
+                  ],
+                  [
+                    "NCBIGene:6323",
+                    "3785"
+                  ]
+                ]
               },
               "limit": {
                 "default": 20,
@@ -21012,7 +21081,7 @@
       ]
     },
     "orphanet": {
-      "version": "0.6.2",
+      "version": "0.7.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -21080,16 +21149,17 @@
         },
         {
           "name": "resolve_disease",
-          "description": "Resolve a disease label, synonym, or ORPHAcode (ORPHA:166024 or 166024) to the canonical Orphanet term {orpha_code, name, match_type}. An ambiguous label returns ambiguous_query with candidates. Signature: resolve_disease(query, response_mode=).",
+          "description": "Resolve a disease label, synonym, ORPHAcode (ORPHA:166024 or 166024), or cross-reference CURIE (OMIM:607131, MONDO:0006516, ICD-10, ICD-11, UMLS, MeSH, GARD, MedDRA) to the canonical Orphanet term {orpha_code, name, match_type}. For 2 or more queries, call resolve_disease_batch once instead of calling this tool per item. A bare number is read as an ORPHAcode; prefix an OMIM number (OMIM:163950). An ambiguous label returns ambiguous_query with candidates. Signature: resolve_disease(query, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
               "query": {
-                "description": "A disease label, synonym, or ORPHAcode (ORPHA:166024 or 166024).",
+                "description": "A disease label, synonym, ORPHAcode (ORPHA:166024 or 166024), or cross-reference CURIE (OMIM:607131, MONDO:0006516). A bare number is an ORPHAcode.",
                 "examples": [
                   "Aicardi syndrome",
                   "ORPHA:58",
-                  "ORPHA:166024"
+                  "ORPHA:166024",
+                  "OMIM:607131"
                 ],
                 "maxLength": 256,
                 "type": "string"
@@ -21137,11 +21207,12 @@
             "type": "object",
             "properties": {
               "query": {
-                "description": "A disease label, synonym, or ORPHAcode (ORPHA:166024 or 166024).",
+                "description": "A disease label, synonym, ORPHAcode (ORPHA:166024 or 166024), or cross-reference CURIE (OMIM:607131, MONDO:0006516). A bare number is an ORPHAcode.",
                 "examples": [
                   "Aicardi syndrome",
                   "ORPHA:58",
-                  "ORPHA:166024"
+                  "ORPHA:166024",
+                  "OMIM:607131"
                 ],
                 "maxLength": 256,
                 "type": "string"
@@ -21202,7 +21273,7 @@
         },
         {
           "name": "get_disease",
-          "description": "Return an Orphanet disease record: definition, synonyms, grouped cross-references, classification parents/children, age of onset, inheritance, and disorder type. The term accepts an ORPHAcode, a label/synonym, or an external xref CURIE (resolved first). xrefs are grouped by source; any nested count is leaf rows, not groups. Pass fields=['xrefs.OMIM', ...] for a sparse projection, or include=['genes','phenotypes','prevalence','disability'] to compose a full entity in ONE call. Signature: get_disease(term, response_mode=, fields=, include=).",
+          "description": "Return an Orphanet disease record: definition, synonyms, grouped cross-references, classification parents/children, age of onset, inheritance, and disorder type. For 2 or more terms, call get_disease_batch once instead of calling this tool per item. The term accepts an ORPHAcode, a label/synonym, or an external xref CURIE (resolved first; a bare number is read as an ORPHAcode, so prefix an OMIM number: OMIM:163950). xrefs are grouped by source; any nested count is leaf rows, not groups. Pass fields=['xrefs.OMIM', ...] for a sparse projection, or include=['genes','phenotypes','prevalence','disability'] to compose a full entity in ONE call. Signature: get_disease(term, response_mode=, fields=, include=).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -21596,16 +21667,17 @@
         },
         {
           "name": "find_diseases_by_gene",
-          "description": "Find all Orphanet disorders associated with an HGNC gene symbol. Returns {orpha_code, name} per disorder with pagination. Signature: find_diseases_by_gene(gene_symbol, limit=, offset=, response_mode=).",
+          "description": "Find all Orphanet disorders associated with a gene, given as an HGNC symbol, an HGNC id (HGNC:6407) or an Ensembl gene id (ENSG00000133703). Returns {orpha_code, name} per disorder with pagination; an id is matched on Orphanet's own gene cross-references and echoed as resolved_from. Other gene id forms return invalid_input: RefSeq and NCBI Gene ids name the hgnc converter, a transcript id does not convert. Signature: find_diseases_by_gene(gene_symbol, limit=, offset=, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
               "gene_symbol": {
-                "description": "HGNC gene symbol, e.g. 'KIF7' or 'HNF1B'.",
+                "description": "HGNC gene symbol, e.g. 'KIF7' or 'HNF1B'; an HGNC id ('HGNC:6407') or Ensembl gene id ('ENSG00000133703') is also accepted.",
                 "examples": [
                   "KIF7",
                   "HNF1B",
-                  "BRCA1"
+                  "BRCA1",
+                  "HGNC:6407"
                 ],
                 "maxLength": 64,
                 "type": "string"
@@ -21662,19 +21734,18 @@
         },
         {
           "name": "find_diseases_by_phenotype",
-          "description": "Find all Orphanet disorders annotated with an HPO term id. Returns {orpha_code, name} per disorder with pagination. Signature: find_diseases_by_phenotype(hpo_id, limit=, offset=, response_mode=).",
+          "description": "Find all Orphanet disorders annotated with an HPO term id. Returns {orpha_code, name} per disorder with pagination. A phenotype label is not accepted (invalid_input): get its id from hpo_resolve_term first. Signature: find_diseases_by_phenotype(hpo_id, limit=, offset=, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
               "hpo_id": {
-                "description": "HPO term id, e.g. 'HP:0000256'.",
+                "description": "HPO term id (HP: + seven digits), e.g. 'HP:0000256'; not a label.",
                 "examples": [
                   "HP:0000256",
                   "HP:0001250",
                   "HP:0002015"
                 ],
                 "maxLength": 64,
-                "pattern": "^(HP:)?\\d{7}$",
                 "type": "string"
               },
               "limit": {

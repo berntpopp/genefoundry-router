@@ -440,7 +440,7 @@
       "gene-disease"
     ],
     "params": {
-      "gene_symbol": "Gene symbol covered by the spec (resolve with search_genes first).",
+      "gene_symbol": "Gene symbol or HGNC id covered by the spec.",
       "affiliation": "ClinGen affiliation id of the curating VCEP.",
       "status": "CSpec lifecycle status filter (cspecStatus). A value outside the enum is rejected by validation.",
       "page": "1-based page number.",
@@ -1788,7 +1788,7 @@
   },
   {
     "name": "genereviews_search_passages",
-    "description": "Search the active GeneReviews corpus; returns ranked passages with passage_id, nbk_id, chapter_section, snippet or text, and recommended_citation. For intervention/treatment queries, pass sections=[\"management\"]; for diagnostic criteria, pass sections=[\"diagnosis\", \"clinical_features\"]. This is the main precision filter.\n\nRerank with `rrf` (default) for hybrid retrieval, `lexical` for exact terms, or `off` for raw repository order when debugging.\n\nUse `brief` (default) for triage snippets, `full` for passage text, or `ids_only` for identifiers and ranks. Filter by `gene`, `nbk_id`, or `sections`. In `brief`/`full`, use `include` and `exclude` for field projection; include/exclude do not apply to `ids_only`, and `ids_only` omits `recommended_citation`.",
+    "description": "Search the active GeneReviews corpus; returns ranked passages with passage_id, nbk_id, chapter_section, snippet or text, and recommended_citation. For 2 or more queries, call search_passages_batch once instead of calling this tool per item. For intervention/treatment queries, pass sections=[\"management\"]; for diagnostic criteria, pass sections=[\"diagnosis\", \"clinical_features\"]. This is the main precision filter.\n\nRerank with `rrf` (default) for hybrid retrieval, `lexical` for exact terms, or `off` for raw repository order when debugging.\n\nUse `brief` (default) for triage snippets, `full` for passage text, or `ids_only` for identifiers and ranks. Filter by `gene`, `nbk_id`, or `sections`. In `brief`/`full`, use `include` and `exclude` for field projection; include/exclude do not apply to `ids_only`, and `ids_only` omits `recommended_citation`.",
     "tags": [
       "Passages",
       "gene-disease",
@@ -1823,7 +1823,7 @@
   },
   {
     "name": "genereviews_search_passages_batch",
-    "description": "Search GeneReviews passages with 1-5 independent queries in one call; returns results[i].hits per query, each shaped like search_passages hits. Accepts 1-5 search specs, each with its own ``q``, ``sections``, ``nbk_id``, ``gene``, ``mode``, ``rerank``, etc. (mirrors the query parameters of ``GET /passages/search``). Executes all specs concurrently via ``asyncio.gather`` and returns a flat envelope.\n\n**When to use:** when a clinical-report workflow issues several related but independent queries (e.g. one scoped to ``management``, one to ``genetic_counseling``, one open-section exploratory) \u2014 batching cuts N round-trip latencies to ~1x the slowest query.\n\n**Response shape:** ``results[i].query_index`` matches the zero-based position of the spec in the request. ``results[i].hits`` mirrors the shape of ``GET /passages/search`` results for that spec's ``mode``.\n\n**Deduplication:** when the same ``passage_id`` appears in hits for multiple specs, every occurrence except the one from the lowest ``query_index`` carries ``also_matched_query_indices`` (a list of the other indices). Hits are never removed \u2014 the annotation signals redundancy without discarding evidence.\n\n**Cap:** requests with more than 5 specs are rejected with 422.\n\n**MCP:** registered as the ``search_passages_batch`` MCP tool via the FastMCP OpenAPI proxy.\n\nLatency: p95 <= 1.5x the slowest single-query latency for a 3-spec batch (concurrent execution).",
+    "description": "Search GeneReviews passages with 1-5 independent queries in one call; returns results[i].hits per query, each shaped like search_passages hits. Accepts 1-5 search specs, each with its own ``q``, ``sections``, ``nbk_id``, ``gene``, ``mode``, ``rerank``, etc. (mirrors the query parameters of ``GET /passages/search``). Executes all specs concurrently via ``asyncio.gather`` and returns a flat envelope.\n\n**When to use:** when a clinical-report workflow issues several related but independent queries (e.g. one scoped to ``management``, one to ``genetic_counseling``, one open-section exploratory) \u2014 batching cuts N round-trip latencies to ~1x the slowest query.\n\n**Response shape:** ``results[i].query_index`` matches the zero-based position of the spec in the request. ``results[i].hits`` mirrors the shape of ``GET /passages/search`` results for that spec's ``mode``.\n\n**Deduplication:** when the same ``passage_id`` appears in hits for multiple specs, every occurrence except the one from the lowest ``query_index`` carries ``also_matched_query_indices`` (a list of the other indices). Hits are never removed \u2014 the annotation signals redundancy without discarding evidence.\n\n**Per-spec errors:** a spec that cannot run (e.g. ``gene`` is an identifier, not a symbol, or is not indexed) gets ``results[i].error`` with empty ``hits``; the other specs still return. Outcomes are always per spec: the call itself succeeds even when every spec (or the only spec) fails, so check each ``error``.\n\n**Cap:** requests with more than 5 specs are rejected with 422.\n\n**MCP:** registered as the ``search_passages_batch`` MCP tool via the FastMCP OpenAPI proxy.\n\nLatency: p95 <= 1.5x the slowest single-query latency for a 3-spec batch (concurrent execution).",
     "tags": [
       "Passages",
       "gene-disease",
@@ -1912,7 +1912,7 @@
       "include_missense": "Count missense/inframe variants (requires ClinVar P/LP).",
       "include_clinvar": "Use ClinVar Pathogenic/Likely-pathogenic evidence.",
       "clinvar_star_threshold": "Minimum ClinVar gold stars for a P/LP match.",
-      "include_conflicting_clinvar": "Include conflicting ClinVar variants, resolved by P/LP submission share. Resolution is batched server-side (~1 extra request per 24 conflicting variants), so this stays fast.",
+      "include_conflicting_clinvar": "Include conflicting ClinVar variants, resolved by P/LP submission share: 1 extra request per 24 variants, sent in turn; only the first 288 are resolved, the rest are counted in `degraded`.",
       "conflicting_threshold": "Min %% of P/LP submissions to accept a conflicting variant.",
       "method": "hom_exclusion=GCR 1-prod(1-VCR) (default); hwe=2pq; simplified=2*sum(AF).",
       "penetrance": "Penetrance for Bayesian prevalence (q^2 * penetrance).",
@@ -2101,7 +2101,7 @@
   },
   {
     "name": "gnomad_get_gene_variants",
-    "description": "Use this when a caller wants per-variant rows for an Ensembl gene; returns each variant's id, consequence, HGVS, and AC/AN/AF. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100.",
+    "description": "Use this when a caller wants per-variant rows for a gene (ENSG/symbol); returns each variant's id, consequence, HGVS, and AC/AN/AF. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100.",
     "tags": [
       "frequency",
       "gene",
@@ -2109,7 +2109,7 @@
       "variant"
     ],
     "params": {
-      "gene_id": "Ensembl gene ID.",
+      "gene_id": "Ensembl gene ID or gene symbol.",
       "dataset": "gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
       "limit": "Max variants returned (hard cap 500).",
       "consequence": "Exact VEP major_consequence term to keep (e.g. 'missense_variant', 'stop_gained'); not a category like 'lof'. An unrecognised term is rejected as invalid_input, not zeroed.",
@@ -2397,8 +2397,7 @@
       "sv_type": "Filter by SV class (uppercase enum). An unrecognised value is rejected as invalid_input.",
       "min_length": "Drop SVs shorter than this length (bp).",
       "max_length": "Drop SVs longer than this length (bp).",
-      "limit": "Max SV rows returned (hard cap 500).",
-      "response_mode": "compact projects each row to a fixed key-set; full is reserved."
+      "limit": "Max SV rows returned (hard cap 500)."
     },
     "enums": {
       "sv_dataset": [
@@ -2414,10 +2413,6 @@
         "CPX",
         "CTX",
         "MCNV"
-      ],
-      "response_mode": [
-        "compact",
-        "full"
       ]
     }
   },
@@ -2801,13 +2796,13 @@
   },
   {
     "name": "hgnc_get_gene",
-    "description": "Return the full HGNC record for a gene, resolved from an HGNC id, current symbol, previous symbol, or alias. Includes name, status, locus group/type, location (cytogenetic band), aliases/previous symbols, gene groups, and all cross-references. For a complete alias list read alias_symbol + prev_symbol (HGNC) AND ncbi_gene_synonyms (NCBI Gene's own synonyms, kept separate; may repeat or extend HGNC's). response_mode controls verbosity (compact drops dates/provenance; minimal keeps identity + anchor ids). Signature: get_gene(query, response_mode=).",
+    "description": "Return the full HGNC record for a gene, resolved from an HGNC id, current symbol, previous symbol, alias, or an external gene id (Ensembl gene id, RefSeq / UniProt accession, NCBIGene:<n>) exactly like resolve_symbol. Includes name, status, locus group/type, location (cytogenetic band), aliases/previous symbols, gene groups, and all cross-references. For a complete alias list read alias_symbol + prev_symbol (HGNC) AND ncbi_gene_synonyms (NCBI Gene's own synonyms, kept separate; may repeat or extend HGNC's). response_mode controls verbosity (compact drops dates/provenance; minimal keeps identity + anchor ids). Signature: get_gene(query, response_mode=).",
     "tags": [
       "gene",
       "nomenclature"
     ],
     "params": {
-      "query": "A gene symbol (current/previous/alias, case-insensitive) or HGNC id (HGNC:1100 or 1100).",
+      "query": "A gene symbol (current/previous/alias), an HGNC id (HGNC:1100 or 1100; a bare number is always an HGNC id), or an external gene id: Ensembl gene id, RefSeq accession, UniProt accession or NCBIGene:<n> CURIE. Case-insensitive.",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
     },
     "enums": {
@@ -2821,14 +2816,14 @@
   },
   {
     "name": "hgnc_get_gene_cross_references",
-    "description": "Return external database cross-references for a gene (forward identifier mapping): NCBI Gene, Ensembl, UniProt, RefSeq, MANE Select, OMIM, UCSC, VEGA, CCDS, MGI, RGD, Orphanet, COSMIC, PubMed. response_mode sets the default field set: minimal=NCBI+Ensembl ids; compact (default)=the high-value ids (NCBI, Ensembl, UniProt, RefSeq, MANE Select, OMIM, CCDS); standard/full=every populated field. databases optionally filters to specific sources by field key OR friendly label (e.g. 'mane', 'ncbi', 'uniprot') and OVERRIDES the response_mode tier; an unknown key is rejected with invalid_input + did-you-mean. Resolve the gene from an id/symbol/alias first. Signature: get_gene_cross_references(query, databases=, response_mode=).",
+    "description": "Return external database cross-references for a gene (forward identifier mapping): NCBI Gene, Ensembl, UniProt, RefSeq, MANE Select, OMIM, UCSC, VEGA, CCDS, MGI, RGD, Orphanet, COSMIC, PubMed. response_mode sets the default field set: minimal=NCBI+Ensembl ids; compact (default)=the high-value ids (NCBI, Ensembl, UniProt, RefSeq, MANE Select, OMIM, CCDS); standard/full=every populated field. databases optionally filters to specific sources by field key OR friendly label (e.g. 'mane', 'ncbi', 'uniprot') and OVERRIDES the response_mode tier; an unknown key is rejected with invalid_input + did-you-mean. query takes the same forms as resolve_symbol (symbol, HGNC id, Ensembl gene id, RefSeq / UniProt accession, NCBIGene:<n>). Signature: get_gene_cross_references(query, databases=, response_mode=).",
     "tags": [
       "gene",
       "nomenclature",
       "xref"
     ],
     "params": {
-      "query": "A gene symbol (current/previous/alias, case-insensitive) or HGNC id (HGNC:1100 or 1100).",
+      "query": "A gene symbol (current/previous/alias), an HGNC id (HGNC:1100 or 1100; a bare number is always an HGNC id), or an external gene id: Ensembl gene id, RefSeq accession, UniProt accession or NCBIGene:<n> CURIE. Case-insensitive.",
       "databases": "Optional cross-reference filter: a list of field keys or friendly labels (e.g. 'ncbi', 'ensembl', 'uniprot', 'refseq', 'mane', 'omim', 'ucsc', 'vega', 'ccds', 'mgi', 'rgd', 'pubmed'). Overrides the response_mode tier; an unknown key is rejected with invalid_input + did_you_mean.",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
     },
@@ -2986,14 +2981,14 @@
   },
   {
     "name": "hgnc_resolve_symbol",
-    "description": "Resolve any gene symbol or HGNC id to its canonical record. Accepts a current symbol, a previous (withdrawn) symbol, an alias, an NCBI Gene synonym HGNC does not list, or an HGNC id in either form (HGNC:1100 or 1100), case-insensitively. Returns {hgnc_id, approved_symbol, name, status, locus_type, location, match_type (hgnc_id|current|previous|alias|ncbi_synonym)}; location is the cytogenetic band (chromosome location, e.g. 3p24.3). ncbi_synonym means only NCBI Gene (not HGNC) knows the symbol, and it ranks below every HGNC match. An alias or synonym shared by several genes returns an ambiguous_query error with the candidate list (not silently picked); a withdrawn/merged symbol returns a not_found error that redirects to the successor record.",
+    "description": "Resolve any gene symbol, HGNC id or external gene id to its canonical record. For 2 or more genes, call resolve_symbols_batch once (up to 200, same accepted forms) instead of calling this tool per gene. Accepts a current symbol, a previous (withdrawn) symbol, an alias, an NCBI Gene synonym HGNC does not list, an HGNC id in either form (HGNC:1100 or 1100), or an Ensembl gene id (ENSG00000157764), RefSeq accession, UniProt accession or NCBIGene:<n> CURIE, case-insensitively. Returns {hgnc_id, approved_symbol, name, status, locus_type, location, match_type (hgnc_id|current|previous|alias|ncbi_synonym|ensembl_gene_id|entrez_id|refseq_accession|mane_select|uniprot_ids)}; an id-type match_type names the external id type that matched; location is the cytogenetic band (chromosome location, e.g. 3p24.3). ncbi_synonym means only NCBI Gene (not HGNC) knows the symbol, and it ranks below every HGNC match. A bare number is always read as an HGNC id, never an NCBI Gene id (write NCBIGene:<n> for that): the result then carries a note, and next_commands offers resolve_gene_by_xref(source='entrez_id'). An alias or synonym shared by several genes returns an ambiguous_query error with the candidate list (not silently picked); a withdrawn/merged symbol returns a not_found error that redirects to the successor record.",
     "tags": [
       "gene",
       "nomenclature",
       "resolve"
     ],
     "params": {
-      "query": "A gene symbol (current/previous/alias, case-insensitive) or HGNC id (HGNC:1100 or 1100).",
+      "query": "A gene symbol (current/previous/alias), an HGNC id (HGNC:1100 or 1100; a bare number is always an HGNC id), or an external gene id: Ensembl gene id, RefSeq accession, UniProt accession or NCBIGene:<n> CURIE. Case-insensitive.",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
     },
     "enums": {
@@ -3007,14 +3002,14 @@
   },
   {
     "name": "hgnc_resolve_symbols_batch",
-    "description": "Resolve a batch of gene symbols / HGNC ids in one call (max 200). Each entry is resolved with the same current->previous->alias->ncbi_synonym cascade as resolve_symbol; an individual miss or withdrawal never fails the batch (it is marked unresolved / obsolete in that entry). Returns per-query results plus resolved/unresolved counts. Signature: resolve_symbols_batch(queries, response_mode=).",
+    "description": "Resolve or translate a batch of gene symbols, HGNC ids and/or external gene ids in one call (max 200). Accepts Ensembl gene ids (e.g. ENSG00000157764), RefSeq accessions, UniProt accessions and NCBIGene:<n> CURIEs, so a list of ENSG ids -> HGNC symbols is one call. Each entry is resolved exactly like resolve_symbol; an individual miss or withdrawal never fails the batch (it is marked unresolved / obsolete in that entry). Returns one row per input in input order (each keeps its input as query, with approved_symbol, hgnc_id, match_type), resolved/unresolved counts, and unresolved_queries (the inputs with no single match). Signature: resolve_symbols_batch(queries, response_mode=).",
     "tags": [
       "gene",
       "nomenclature",
       "resolve"
     ],
     "params": {
-      "queries": "Gene symbols and/or HGNC ids to resolve (max 200).",
+      "queries": "Gene symbols, HGNC ids and/or Ensembl gene / RefSeq / UniProt / NCBIGene:<n> ids to resolve (max 200).",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
     },
     "enums": {
@@ -3071,7 +3066,7 @@
       "phenotype"
     ],
     "params": {
-      "gene": "A gene symbol (e.g. 'PAX6') or NCBI gene CURIE (e.g. 'NCBIGene:5080'). Bare NCBI numeric ids (e.g. '5080') are also accepted.",
+      "gene": "A gene symbol (e.g. 'PAX6') or NCBI gene CURIE (e.g. 'NCBIGene:5080'). Bare NCBI numeric ids (e.g. '5080') are also accepted. Ensembl gene (ENSG...), RefSeq and HGNC ids are rejected: translate them with hgnc_resolve_symbol first. Transcript ids (ENST...) are not gene ids.",
       "limit": "Max diseases to return (default 25).",
       "offset": "Rows to skip for forward paging (default 0).",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
@@ -3124,7 +3119,7 @@
       "phenotype"
     ],
     "params": {
-      "disease_id": "A disease CURIE, e.g. 'OMIM:106210' (MIM Morbid) or 'ORPHA:550' (Orphanet). The prefix is case-sensitive.",
+      "disease_id": "A disease CURIE: 'OMIM:106210', 'ORPHA:550' (Orphanet) or 'DECIPHER:16'; the 'MIM:' and 'Orphanet:' spellings are accepted. MONDO and other ontology ids are rejected: convert them with mondo_map_cross_ontology first.",
       "limit": "Max genes to return (default 25).",
       "offset": "Rows to skip for forward paging (default 0).",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
@@ -3140,7 +3135,7 @@
   },
   {
     "name": "hpo_get_genes_for_phenotype",
-    "description": "Return the genes annotated to an HPO phenotype term, optionally expanded to include descendants. Signature: get_genes_for_phenotype(hpo_id, include_descendants=, limit=, offset=, response_mode=).",
+    "description": "Return the genes annotated to an HPO phenotype term, optionally expanded to include descendants. Signature: get_genes_for_phenotype(hpo_id, include_descendants=, limit=, offset=, response_mode=). For several phenotypes and/or a candidate gene list at once, use score_genes_for_phenotypes instead of looping over single-term calls.",
     "tags": [
       "annotation",
       "disease",
@@ -3177,7 +3172,7 @@
       "phenotype"
     ],
     "params": {
-      "disease_id": "A disease CURIE, e.g. 'OMIM:106210' (MIM Morbid) or 'ORPHA:550' (Orphanet). The prefix is case-sensitive.",
+      "disease_id": "A disease CURIE: 'OMIM:106210', 'ORPHA:550' (Orphanet) or 'DECIPHER:16'; the 'MIM:' and 'Orphanet:' spellings are accepted. MONDO and other ontology ids are rejected: convert them with mondo_map_cross_ontology first.",
       "limit": "Max phenotypes to return (default 25).",
       "offset": "Rows to skip for forward paging (default 0).",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
@@ -3193,7 +3188,7 @@
   },
   {
     "name": "hpo_get_phenotypes_for_gene",
-    "description": "Return the HPO phenotype terms annotated to a gene (symbol or NCBI id). Signature: get_phenotypes_for_gene(gene, limit=, offset=, response_mode=).",
+    "description": "Return the HPO phenotype terms annotated to a gene (symbol or NCBI id). Signature: get_phenotypes_for_gene(gene, limit=, offset=, response_mode=). For several phenotypes and/or a candidate gene list at once, use score_genes_for_phenotypes instead of looping over single-gene calls.",
     "tags": [
       "annotation",
       "disease",
@@ -3203,7 +3198,7 @@
       "phenotype"
     ],
     "params": {
-      "gene": "A gene symbol (e.g. 'PAX6') or NCBI gene CURIE (e.g. 'NCBIGene:5080'). Bare NCBI numeric ids (e.g. '5080') are also accepted.",
+      "gene": "A gene symbol (e.g. 'PAX6') or NCBI gene CURIE (e.g. 'NCBIGene:5080'). Bare NCBI numeric ids (e.g. '5080') are also accepted. Ensembl gene (ENSG...), RefSeq and HGNC ids are rejected: translate them with hgnc_resolve_symbol first. Transcript ids (ENST...) are not gene ids.",
       "limit": "Max phenotypes to return (default 25).",
       "offset": "Rows to skip for forward paging (default 0).",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
@@ -3239,7 +3234,7 @@
   },
   {
     "name": "hpo_get_term",
-    "description": "Return an HPO phenotype term record: definition, synonyms (exact/related/broad/narrow), alt_ids, subsets, comments, cross-references, direct parents and children, and obsolescence (replaced_by). The term accepts an HP id, a label/synonym, or an external xref CURIE (resolved first). Pass fields=['synonyms', 'definition'] for a sparse projection. Note on synonyms shape: compact (default) returns synonyms as plain strings; standard/full return {text, scope} objects. Signature: get_term(hpo_id, response_mode=, fields=).",
+    "description": "Return an HPO phenotype term record: definition, synonyms (exact/related/broad/narrow), alt_ids, subsets, comments, cross-references, direct parents and children, and obsolescence (replaced_by). The term accepts an HP id, a label/synonym, or an external xref CURIE (resolved first). For only the labels of several HP ids, call resolve_terms_batch once. Pass fields=['synonyms', 'definition'] for a sparse projection. Note on synonyms shape: compact (default) returns synonyms as plain strings; standard/full return {text, scope} objects. Signature: get_term(hpo_id, response_mode=, fields=).",
     "tags": [
       "disease",
       "gene",
@@ -3391,7 +3386,7 @@
   },
   {
     "name": "hpo_resolve_term",
-    "description": "Resolve a phenotype label, synonym, HP id (HP:0000118), or external cross-reference CURIE (UMLS:C0000737, SNOMEDCT_US:263681008, ...) to the canonical HPO term {hpo_id, name, match_type}. An ambiguous label returns ambiguous_query with candidates (each {hpo_id, name}); an obsolete HP id resolves with success:true, obsolete:true, and its successor in replaced_by. This is the recommended first step \u2014 resolve any query to a canonical HP id before calling get_term. Returns the single best match; text queries add other_matches_count, and to list every term matching a text use search_terms. Signature: resolve_term(query, response_mode=).",
+    "description": "Resolve a phenotype label, synonym, HP id (HP:0000118), or external cross-reference CURIE (UMLS:C0000737, SNOMEDCT_US:263681008, ...) to the canonical HPO term {hpo_id, name, match_type}. For 2 or more terms, call resolve_terms_batch once instead of calling this tool per item. An ambiguous label returns ambiguous_query with candidates (each {hpo_id, name}); an obsolete HP id resolves with success:true, obsolete:true, and its successor in replaced_by. This is the recommended first step \u2014 resolve any query to a canonical HP id before calling get_term. Returns the single best match; text queries add other_matches_count, and to list every term matching a text use search_terms. Signature: resolve_term(query, response_mode=).",
     "tags": [
       "disease",
       "gene",
@@ -3402,6 +3397,31 @@
     ],
     "params": {
       "query": "A phenotype label, synonym, HP id (HP:0000118), or external xref CURIE (UMLS:C0036572, SNOMEDCT_US:263681008, ...).",
+      "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "hpo_resolve_terms_batch",
+    "description": "Resolve many phenotype labels, synonyms, HP ids or xref CURIEs in one call (label -> HP id and HP id -> label); returns one results[] row per input in input order: {index, query, ok: true, hpo_id, name, match_type} or {index, ok: false, error_code, message} (an ambiguous label adds candidates). One bad item never fails the call; unresolved_count says how many missed. Max 100 items. Signature: resolve_terms_batch(queries, response_mode=).",
+    "tags": [
+      "batch",
+      "disease",
+      "gene",
+      "hpo",
+      "ontology",
+      "phenotype",
+      "resolve"
+    ],
+    "params": {
+      "queries": "1..100 phenotype labels/synonyms, HP ids, or xref CURIEs.",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
     },
     "enums": {
@@ -3442,7 +3462,7 @@
   },
   {
     "name": "hpo_score_genes_for_phenotypes",
-    "description": "Rank genes for a set of HPO phenotype terms (Resnik similarity to annotated diseases); returns ranked candidate genes for a patient's phenotypes, each with score, best disease and matched term pairs (shared ancestor + IC); excluded terms are reported as conflicts, never scored. Signature: score_genes_for_phenotypes(hpo_ids, excluded_hpo_ids=, candidate_genes=, limit=, offset=, response_mode=).",
+    "description": "Rank genes for a set of HPO phenotype terms (Resnik similarity to annotated diseases); returns ranked candidate genes for a patient's phenotypes, each with score, best disease and matched term pairs (shared ancestor + IC); excluded terms are reported as conflicts, never scored. Every input HP id is scored as given, listed in replaced_hpo_ids (obsolete id or alt_id, scored as replaced_by) or listed in ignored_hpo_ids with a reason. close_call=true (with rank1_margin) means the top ranks are too close to pick rank 1 by score alone; close_call=false does not confirm rank 1. In minimal mode top_matches reads '<input id> = <disease term>' for the same term, '~' for a related one, f=? when no frequency is recorded. Signature: score_genes_for_phenotypes(hpo_ids, excluded_hpo_ids=, candidate_genes=, limit=, offset=, response_mode=).",
     "tags": [
       "annotation",
       "disease",
@@ -3455,7 +3475,7 @@
     "params": {
       "hpo_ids": "Present patient phenotypes as HP ids (e.g. HP:0001250).",
       "excluded_hpo_ids": "Phenotypes observed ABSENT. Reported as conflicts on each gene's best disease; they never lower a score.",
-      "candidate_genes": "Restrict ranking to these gene symbols (e.g. genes with exome variants); symbols that are unknown or have no HPO-annotated disease are listed in unranked_candidate_genes.",
+      "candidate_genes": "Restrict ranking to these genes (e.g. genes with exome variants): gene symbols (SCN1A) or NCBI gene ids (NCBIGene:6323 or 6323). Ensembl gene (ENSG...), HGNC (HGNC:...) and RefSeq ids are not mapped here: translate the list with hgnc_resolve_symbols_batch first (transcript ids, ENST..., are not gene ids). Each ranked row echoes the caller's spelling as input_id; entries that cannot be ranked are listed in unranked_candidate_genes as {input_id, reason} (unsupported_identifier | not_rankable).",
       "limit": "Max genes to return (default 20).",
       "offset": "Rows to skip for forward paging (default 0).",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
@@ -3513,7 +3533,7 @@
       "variant"
     ],
     "params": {
-      "variant_id": "LitVar id (litvar@rs...##), rsID, or HGVS/free text. Non-canonical input is resolved via autocomplete.",
+      "variant_id": "LitVar id (litvar@rs...##), rsID, or HGVS/free text. Non-canonical input is resolved via autocomplete. Genomic coordinates are not accepted: pass an rsID or HGVS.",
       "limit": "Max publications per page (default 25, max 100).",
       "cursor": "Opaque pagination cursor from a previous call's `_meta.pagination.next_cursor`. Omit for the first page."
     }
@@ -3526,7 +3546,7 @@
       "variant"
     ],
     "params": {
-      "variant_id": "LitVar2 variant id (litvar@rs...##), rsID, or HGVS/protein name. Non-canonical input is resolved via autocomplete; the record that actually answered is echoed back as `resolved_variant_id`.",
+      "variant_id": "LitVar2 variant id (litvar@rs...##), rsID, or HGVS/protein name. Non-canonical input is resolved via autocomplete; the record that actually answered is echoed back as `resolved_variant_id`. Genomic coordinates are not accepted: pass an rsID or HGVS.",
       "response_mode": "compact (high-signal fields) or full (raw payload)."
     },
     "enums": {
@@ -3556,7 +3576,7 @@
       "variant"
     ],
     "params": {
-      "gene_symbol": "HGNC gene symbol, e.g. CFH.",
+      "gene_symbol": "HGNC gene symbol, e.g. CFH. Symbols only: an Ensembl, HGNC, NCBI or RefSeq id is rejected with the converter call to run first.",
       "limit": "Max variants per page (default 25, max 100).",
       "cursor": "Opaque pagination cursor from a previous call's `_meta.pagination.next_cursor`. Omit for the first page.",
       "response_mode": "compact (high-signal fields) or full (raw payload)."
@@ -4919,7 +4939,7 @@
   },
   {
     "name": "orphanet_find_diseases_by_gene",
-    "description": "Find all Orphanet disorders associated with an HGNC gene symbol. Returns {orpha_code, name} per disorder with pagination. Signature: find_diseases_by_gene(gene_symbol, limit=, offset=, response_mode=).",
+    "description": "Find all Orphanet disorders associated with a gene, given as an HGNC symbol, an HGNC id (HGNC:6407) or an Ensembl gene id (ENSG00000133703). Returns {orpha_code, name} per disorder with pagination; an id is matched on Orphanet's own gene cross-references and echoed as resolved_from. Other gene id forms return invalid_input: RefSeq and NCBI Gene ids name the hgnc converter, a transcript id does not convert. Signature: find_diseases_by_gene(gene_symbol, limit=, offset=, response_mode=).",
     "tags": [
       "disease",
       "epidemiology",
@@ -4931,7 +4951,7 @@
       "search"
     ],
     "params": {
-      "gene_symbol": "HGNC gene symbol, e.g. 'KIF7' or 'HNF1B'.",
+      "gene_symbol": "HGNC gene symbol, e.g. 'KIF7' or 'HNF1B'; an HGNC id ('HGNC:6407') or Ensembl gene id ('ENSG00000133703') is also accepted.",
       "limit": "Max rows returned (default 50).",
       "offset": "Rows to skip for forward paging (default 0).",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
@@ -4947,7 +4967,7 @@
   },
   {
     "name": "orphanet_find_diseases_by_phenotype",
-    "description": "Find all Orphanet disorders annotated with an HPO term id. Returns {orpha_code, name} per disorder with pagination. Signature: find_diseases_by_phenotype(hpo_id, limit=, offset=, response_mode=).",
+    "description": "Find all Orphanet disorders annotated with an HPO term id. Returns {orpha_code, name} per disorder with pagination. A phenotype label is not accepted (invalid_input): get its id from hpo_resolve_term first. Signature: find_diseases_by_phenotype(hpo_id, limit=, offset=, response_mode=).",
     "tags": [
       "disease",
       "epidemiology",
@@ -4959,7 +4979,7 @@
       "search"
     ],
     "params": {
-      "hpo_id": "HPO term id, e.g. 'HP:0000256'.",
+      "hpo_id": "HPO term id (HP: + seven digits), e.g. 'HP:0000256'; not a label.",
       "limit": "Max rows returned (default 50).",
       "offset": "Rows to skip for forward paging (default 0).",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
@@ -4989,7 +5009,7 @@
   },
   {
     "name": "orphanet_get_disease",
-    "description": "Return an Orphanet disease record: definition, synonyms, grouped cross-references, classification parents/children, age of onset, inheritance, and disorder type. The term accepts an ORPHAcode, a label/synonym, or an external xref CURIE (resolved first). xrefs are grouped by source; any nested count is leaf rows, not groups. Pass fields=['xrefs.OMIM', ...] for a sparse projection, or include=['genes','phenotypes','prevalence','disability'] to compose a full entity in ONE call. Signature: get_disease(term, response_mode=, fields=, include=).",
+    "description": "Return an Orphanet disease record: definition, synonyms, grouped cross-references, classification parents/children, age of onset, inheritance, and disorder type. For 2 or more terms, call get_disease_batch once instead of calling this tool per item. The term accepts an ORPHAcode, a label/synonym, or an external xref CURIE (resolved first; a bare number is read as an ORPHAcode, so prefix an OMIM number: OMIM:163950). xrefs are grouped by source; any nested count is leaf rows, not groups. Pass fields=['xrefs.OMIM', ...] for a sparse projection, or include=['genes','phenotypes','prevalence','disability'] to compose a full entity in ONE call. Signature: get_disease(term, response_mode=, fields=, include=).",
     "tags": [
       "disease",
       "epidemiology",
@@ -5303,7 +5323,7 @@
   },
   {
     "name": "orphanet_resolve_disease",
-    "description": "Resolve a disease label, synonym, or ORPHAcode (ORPHA:166024 or 166024) to the canonical Orphanet term {orpha_code, name, match_type}. An ambiguous label returns ambiguous_query with candidates. Signature: resolve_disease(query, response_mode=).",
+    "description": "Resolve a disease label, synonym, ORPHAcode (ORPHA:166024 or 166024), or cross-reference CURIE (OMIM:607131, MONDO:0006516, ICD-10, ICD-11, UMLS, MeSH, GARD, MedDRA) to the canonical Orphanet term {orpha_code, name, match_type}. For 2 or more queries, call resolve_disease_batch once instead of calling this tool per item. A bare number is read as an ORPHAcode; prefix an OMIM number (OMIM:163950). An ambiguous label returns ambiguous_query with candidates. Signature: resolve_disease(query, response_mode=).",
     "tags": [
       "disease",
       "epidemiology",
@@ -5314,7 +5334,7 @@
       "resolve"
     ],
     "params": {
-      "query": "A disease label, synonym, or ORPHAcode (ORPHA:166024 or 166024).",
+      "query": "A disease label, synonym, ORPHAcode (ORPHA:166024 or 166024), or cross-reference CURIE (OMIM:607131, MONDO:0006516). A bare number is an ORPHAcode.",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
     },
     "enums": {
@@ -5393,7 +5413,7 @@
       "search"
     ],
     "params": {
-      "query": "A disease label, synonym, or ORPHAcode (ORPHA:166024 or 166024).",
+      "query": "A disease label, synonym, ORPHAcode (ORPHA:166024 or 166024), or cross-reference CURIE (OMIM:607131, MONDO:0006516). A bare number is an ORPHAcode.",
       "limit": "Max hits (default 25).",
       "offset": "Rows to skip for forward paging (default 0).",
       "include_obsolete": "Include obsolete terms (default false).",
@@ -7138,7 +7158,7 @@
   },
   {
     "name": "stringdb_get_interaction_partners",
-    "description": "Use this to list the top interaction partners (neighbourhood) of each protein, capped at limit per protein; returns preferredName_B, stringId_B and combined score per partner, plus total_count and truncated. Not a pair test: absence from a capped list is not evidence of no interaction; use search_protein_interactions for that.",
+    "description": "Use this to list the top interaction partners (neighbourhood) of each protein, capped at limit per protein; returns preferredName_B, stringId_B and combined score per partner, plus total_count and truncated. To test a gene list for enriched functions or interactions, call compute_functional_enrichment or compute_ppi_enrichment once instead of calling this tool per gene. Not a pair test: absence from a capped list is not evidence of no interaction; use search_protein_interactions for that.",
     "tags": [
       "network",
       "networks",
@@ -7260,7 +7280,7 @@
   },
   {
     "name": "stringdb_resolve_protein_identifiers",
-    "description": "Maps common protein names, gene symbols, UniProt IDs, and other identifiers\n    to STRING database identifiers. The STRING database uses an intelligent\n    mapping system to find the best matching identifier for each input.\n\n    **Supported identifier types:**\n    - Gene symbols (e.g., p53, BRCA1, CDK2)\n    - UniProt IDs (e.g., P04637, P38398)\n    - Ensembl IDs (e.g., ENSP00000269305)\n    - RefSeq IDs (e.g., NP_000537)\n    - Common protein names\n\n    **Species support:**\n    - Humans (9606), Mouse (10090), E. coli (511145), and 2000+ other species\n    - If no species is specified, STRING attempts cross-species mapping",
+    "description": "Maps common protein names, gene symbols, UniProt IDs, and other identifiers\n    to STRING database identifiers. The STRING database uses an intelligent\n    mapping system to find the best matching identifier for each input.\n\n    **Supported identifier types:**\n    - Gene symbols (e.g., p53, BRCA1, CDK2)\n    - UniProt IDs (e.g., P04637, P38398)\n    - Ensembl IDs (e.g., ENSP00000269305)\n    - RefSeq IDs (e.g., NP_000537)\n    - Common protein names\n\n    **One row per protein:** STRING returns a single row when several inputs name the\n    same protein (an Ensembl gene id, an HGNC id and an NCBI Gene id of one gene). The\n    MCP response lists every input under `mapped` or `unmapped`, as all tools taking\n    `identifiers` do.\n\n    **Species support:**\n    - Humans (9606), Mouse (10090), E. coli (511145), and 2000+ other species\n    - If no species is specified, STRING attempts cross-species mapping",
     "tags": [
       "identifiers",
       "network",
@@ -7531,14 +7551,14 @@
   },
   {
     "name": "uniprot_find_proteins",
-    "description": "Search UniProtKB for the entries of a GENE and return matching entries (accession, mnemonic, recommended name, reviewed flag, organism). gene_symbol is REQUIRED; refine the hits with organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name), reviewed, name_contains (matched per word, in any order, case-insensitive), or the structured filters mnemonic / ec_number / keyword. Reviewed (Swiss-Prot) hits are ranked first. UniProt SPARQL has no general full-text index; for EC-only, keyword-only, or free-text search WITHOUT a gene, use search_example_queries or search_sparql_query. Pair with get_protein for full detail. Results are ordered reviewed-first, then by mnemonic, then accession (stable across pages). Cold search can take several seconds; an identical repeat is cached (~0 ms). If you already know the accession, call get_protein directly -- it is far faster. Signature: find_proteins(gene_symbol, organism_taxon=, reviewed=, keyword=, ec_number=, mnemonic=, name_contains=, limit=, offset=).",
+    "description": "Search UniProtKB for the entries of a GENE and return matching entries (accession, mnemonic, recommended name, reviewed flag, organism). For 2 or more genes, call find_proteins_batch once instead of calling this tool per item. gene_symbol is REQUIRED (a symbol, HGNC:<n> or NCBIGene:<n>; see resolved_from); refine the hits with organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name), reviewed, name_contains (matched per word, in any order, case-insensitive), or the structured filters mnemonic / ec_number / keyword. Reviewed (Swiss-Prot) hits are ranked first. UniProt SPARQL has no general full-text index; for EC-only, keyword-only, or free-text search WITHOUT a gene, use search_example_queries or search_sparql_query. Pair with get_protein for full detail. Results are ordered reviewed-first, then by mnemonic, then accession (stable across pages). Cold search can take several seconds; an identical repeat is cached (~0 ms). If you already know the accession, call get_protein directly -- it is far faster. Signature: find_proteins(gene_symbol, organism_taxon=, reviewed=, keyword=, ec_number=, mnemonic=, name_contains=, limit=, offset=).",
     "tags": [
       "function",
       "protein",
       "search"
     ],
     "params": {
-      "gene_symbol": "Gene symbol to search for, e.g. BRCA1.",
+      "gene_symbol": "Gene symbol, HGNC:<n> or NCBIGene:<n>.",
       "organism_taxon": "Positive NCBI taxon id or exact common/scientific organism name, e.g. 9606, 'human', or 'Homo sapiens'.",
       "reviewed": "True = Swiss-Prot only; False = TrEMBL only.",
       "keyword": "UniProt keyword (KW-id like KW-0007, or a label).",
@@ -7551,7 +7571,7 @@
   },
   {
     "name": "uniprot_find_proteins_batch",
-    "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, and unresolved_genes (a symbol that matched nothing is disclosed, never silently dropped). Optionally scope by organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name) and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
+    "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, unresolved_genes and unresolved_reasons (not_found, or unsupported_identifier with its converter in next_commands; HGNC:<n> and NCBIGene:<n> are accepted). Optionally scope by organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name) and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
     "tags": [
       "batch",
       "function",
@@ -7586,7 +7606,7 @@
       "protein"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
       "response_mode": "Verbosity: minimal | compact | standard | full."
     },
     "enums": {
@@ -7607,7 +7627,7 @@
       "xref"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
       "databases": "Database short names to keep (case-sensitive; omit for all). A malformed name is rejected (invalid_input); a well-formed name that matched nothing is echoed under unmatched_databases.",
       "response_mode": "Verbosity: minimal | compact | standard | full."
     },
@@ -7629,7 +7649,7 @@
       "protein"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
       "response_mode": "Verbosity: minimal | compact | standard | full."
     },
     "enums": {
@@ -7650,7 +7670,7 @@
       "protein"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
       "feature_types": "Feature-type keys to keep (omit for all). Closed vocabulary: an unrecognised key is rejected (invalid_input), never matched to nothing. See feature_types in get_server_capabilities.",
       "limit": "Max features to return (default 200).",
       "include_secondary_structure": "Include helix/strand/turn features (hidden by default).",
@@ -7706,7 +7726,7 @@
       "protein"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
       "aspect": "Restrict to one GO aspect (omit for all).",
       "limit": "Max terms to return (0 = all)."
     },
@@ -7727,7 +7747,7 @@
       "sequence"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
       "response_mode": "Verbosity: minimal | compact | standard | full.",
       "canonical_only": "Return only the canonical isoform (omit the additional-isoform list)."
     },
@@ -7749,7 +7769,7 @@
       "variants"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
       "limit": "Max variants to return.",
       "disease_associated_only": "Return only variants linked to a disease.",
       "response_mode": "Verbosity: minimal | compact | standard | full.",
@@ -7806,7 +7826,7 @@
       "xref"
     ],
     "params": {
-      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol, e.g. TP53 (resolved to its reviewed entry; see resolved_from).",
+      "accession": "UniProtKB accession, e.g. P05067 (isoforms like P05067-2 accepted), or a human gene symbol / HGNC:<n> / NCBIGene:<n> (resolved to its reviewed entry: resolved_from).",
       "databases": "Target database short names (case-sensitive; omit for the primary set).",
       "response_mode": "Verbosity: minimal | compact | standard | full."
     },

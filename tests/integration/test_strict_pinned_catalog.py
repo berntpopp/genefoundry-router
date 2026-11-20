@@ -21,7 +21,13 @@ ROOT = Path(__file__).resolve().parents[2]
 BASELINE = ROOT / "genefoundry_router" / "data" / "fleet-baseline.json"
 # ~4 chars/token, same estimator as scripts/surface.py. Ceiling for the advertised listing;
 # lower it as pinned schemas are trimmed (#293), never raise it to admit growth.
-PINNED_LISTING_TOKEN_BUDGET = 18_000  # measured ~17.1k on 2026-11-19 (#320; was ~18.1k)
+PINNED_LISTING_TOKEN_BUDGET = 18_000  # measured 17,809 on 2026-11-20: 191 tokens of headroom
+# The opt-in strict listing (GF_SCHEMA_MODE=strict) has its own ceiling since 2026-11-20:
+# measured 18,669. Cause: the fleet-2026-11-20 backend releases added ~3,000 chars of
+# description to pinned tools, plus the two #341 pins (hpo_score_genes_for_phenotypes,
+# hgnc_resolve_symbols_batch). The owner approved a strict-only ceiling instead of un-pinning;
+# the default listing keeps 18,000. Same rule: lower it, never raise it to admit growth.
+STRICT_LISTING_TOKEN_BUDGET = 18_700
 STRICT = RouterSettings(_env_file=None, GF_SCHEMA_MODE="strict")
 
 
@@ -59,7 +65,8 @@ async def test_advertised_tools_are_openai_strict_and_budgeted() -> None:
         default_size = _tokens(await client.list_tools())
     # Both modes are gated; strict (every field required + nullable) is the larger one.
     size = _tokens(listed)
-    assert default_size <= size <= PINNED_LISTING_TOKEN_BUDGET, (default_size, size)
+    assert default_size <= PINNED_LISTING_TOKEN_BUDGET, default_size
+    assert default_size <= size <= STRICT_LISTING_TOKEN_BUDGET, (default_size, size)
 
 
 async def test_strict_null_sentinels_are_stripped_before_dispatch() -> None:

@@ -31,7 +31,9 @@ META = ("search_tools", "call_tool")
 #   6.8k -> 6.9k  hgnc_resolve_symbols_batch (+112 tokens slim): with only a description pointer
 #                 928 single / 8 batch calls, 14 samples out of turns, accuracy 0.72; pinned,
 #                 2 single / 75 batch calls, 0 out of turns, accuracy 0.80.
-SLIM_LISTING_TOKEN_BUDGET = 6_900  # measured 6,886 on 2026-11-20 (standard: ~17.1k)
+# fleet-2026-11-20 schemas measured 6,929; hiding `offset` on hpo_search_terms and
+# hpo_get_phenotypes_for_gene (slim_keep) brought it back under the ceiling.
+SLIM_LISTING_TOKEN_BUDGET = 6_900  # measured 6,875 on 2026-11-20 (standard: 17,809)
 
 
 def _walk_param(node, path: str):

@@ -13,15 +13,16 @@ RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 
-# fleet-2026-11-19b: strict capture of 26 verified signed backend releases (FastMCP 4 wave +
-# strchive/ucsc/mitomap/pgscatalog).
+# fleet-2026-11-20: strict capture of 26 verified signed backend releases (nine re-released for
+# foreign-identifier handling and batch pointers: hgnc, hpo, clingen, orphanet, uniprot, gnomad,
+# litvar, stringdb, genereviews).
 # Updating these four hashes adopts the reviewed fleet atomically with its captured evidence;
 # they must never move independently merely to make a failing check pass.
 HISTORICAL_EVIDENCE_SHA256 = {
-    APPLICATION_RELEASES: "d60e181064ebd9d9dd8da40ce533f56f76bf2dccf4a77ebc7c5cd063bba8df53",
-    RELEASE_INVENTORY: "ec7878ce98e3bf34d28fd9d6041a42ff8e6b57235177253dead7c85d5d5a2bf0",
-    RELEASE_CANDIDATE: "faeef7ccc333d92245f43b5d5eef566ad701a58f247a8da4f225c50bbf2d070a",
-    BASELINE: "faeef7ccc333d92245f43b5d5eef566ad701a58f247a8da4f225c50bbf2d070a",
+    APPLICATION_RELEASES: "65d27dc763f98849473c7fe71d42ee12add6815f4e6e8773bdc8d319ef6e0580",
+    RELEASE_INVENTORY: "644ff1da082caa319edd84dc9896d32ad8adf9f1bad0559ee625f8f4e25b47b3",
+    RELEASE_CANDIDATE: "bb402546d16587fc438419fb79556d71cd0c1fe26c5a76e7b5f84504a356acd9",
+    BASELINE: "bb402546d16587fc438419fb79556d71cd0c1fe26c5a76e7b5f84504a356acd9",
 }
 
 

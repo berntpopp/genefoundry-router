@@ -12,7 +12,11 @@ from fastmcp import Client
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.server import build_app
-from tests.integration.test_strict_pinned_catalog import PINNED_LISTING_TOKEN_BUDGET, _pinned_server
+from tests.integration.test_strict_pinned_catalog import (
+    PINNED_LISTING_TOKEN_BUDGET,
+    STRICT_LISTING_TOKEN_BUDGET,
+    _pinned_server,
+)
 from tests.unit.test_schema_strict import assert_strict_invariants
 
 META = {"search_tools", "call_tool"}
@@ -44,7 +48,8 @@ async def test_each_mode_lists_its_pins_and_shrinks(schema: str) -> None:
         for tool in listed if schema == "strict" else ():
             assert_strict_invariants(tool.input_schema, tool.name)
         sizes[mode] = _tokens(listed)
-    assert sizes["none"] < sizes["minimal"] < sizes["default"] <= PINNED_LISTING_TOKEN_BUDGET
+    budget = STRICT_LISTING_TOKEN_BUDGET if schema == "strict" else PINNED_LISTING_TOKEN_BUDGET
+    assert sizes["none"] < sizes["minimal"] < sizes["default"] <= budget
 
 
 async def test_none_mode_still_searches_and_calls_every_tool() -> None:

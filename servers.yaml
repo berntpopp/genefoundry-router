@@ -257,7 +257,7 @@ servers:
     # score_genes_for_phenotypes is pinned (#341): unpinned, models looped the single-term
     # lookups by hand and never searched for it (0 of 75 gene-ranking samples).
     entrypoints: [search_terms, get_phenotypes_for_gene, get_genes_for_phenotype, score_genes_for_phenotypes]
-    slim_keep: {score_genes_for_phenotypes: [candidate_genes]}
+    slim_keep: {score_genes_for_phenotypes: [candidate_genes], search_terms: [limit], get_phenotypes_for_gene: [limit]}
 
   - name: metadome
     repo: berntpopp/metadome-link
