@@ -4,6 +4,19 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.13] - 2026-11-20
+
+### Added
+
+- **Cancer/somatic backends staged** (`enabled: false`; plan `docs/plans/2026-11-20-cancer-somatic-expansion.md`, #347–#350): `civic` (CIViC GraphQL, CC0), `cbioportal` (api.cbioportal.org + Cancer Hotspots snapshot, ODbL), `opentargets` (Open Targets Platform 26.09, CC0, datasource allowlist) and `moalmanac` (MOAlmanac 2.0 snapshot v.2026-11-05, CC BY 4.0), each released v0.1.0. Registry entries with entry points (`search_molecular_profiles`, `get_gene_alteration_frequency`, `resolve_target`, `search_approvals`), env vars, control-ledger rows, control-audit repo list, untrusted-text inventory rows and fleet metadata. Nothing changes in the served catalog until an entry is enabled after deploy and the baseline is re-pinned.
+- **Research skill `skills/somatic-variant-interpretation/`**: chains ClinVar somatic, CIViC, MOAlmanac, cBioPortal, hotspots, Open Targets and the germline fleet; keeps oncogenicity, actionability and germline classification apart.
+
+### Changed
+
+- Search vocabulary: `manual_keywords` for somatic intents on `clinvar_get_variant` (somatic, oncogenicity, AMP/ASCO/CAP tier) and OncoTree on `mondo_map_cross_ontology` / `mondo_resolve_xref`.
+- Untrusted-text inventory: vep fences `clinvar_somatic_classification` (vep-link 1.2.3); clinvar fences somatic tumour types and therapies (clinvar-link 0.9.0).
+- `check_fleet_metadata.py` accepts metadata for staged backends; provenance counts enabled backends only.
+
 ## [0.13.12] - 2026-11-20
 
 ### Added
