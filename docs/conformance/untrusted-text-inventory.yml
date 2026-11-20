@@ -248,6 +248,11 @@ backends:
       - {tool: search_variants, pointer: /results/*/traits/*/name}
       - {tool: get_variants_by_gene, pointer: /results/*/traits/*/name}
       - {tool: get_gene_clinvar_summary, pointer: /top_traits/*/trait}
+      - {tool: get_variant, pointer: /somatic_clinical_impact/assertions/*/tumour_types/*/name}
+      - {tool: get_variant, pointer: /somatic_clinical_impact/assertions/*/drugs/*}
+      - {tool: get_variant, pointer: /oncogenicity/assertions/*/tumour_types/*/name}
+      - {tool: search_somatic_classifications, pointer: /results/*/somatic_clinical_impact/assertions/*/tumour_types/*/name}
+      - {tool: search_somatic_classifications, pointer: /results/*/somatic_clinical_impact/assertions/*/drugs/*}
     max_text_bytes: 2097152
     max_objects: 128
     measured_exceptions:
