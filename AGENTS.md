@@ -92,7 +92,9 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
 Conformance is gated, not just documented. `docs/conformance/` is the canonical source vendored
 byte-identical into every `-link` repo: `conformance.py` gates *transport*, `behaviour.py` gates the
 *contract* an agent relies on (no silently-empty filter, honest `total`/`truncated`, an error that
-names the parameter, `isError` on every error envelope). Behaviour probes are derived from each
+names the parameter, `isError` on every error envelope), `identifiers.py` gates foreign
+identifier forms (Response-Envelope §2b; per-backend expected failures in `identifiers.json`).
+Behaviour probes are derived from each
 server's own advertised schema — there is no per-repo probe list to write, and none to forget.
 
 ## Boundary

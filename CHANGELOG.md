@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Foreign-identifier conformance check** (`docs/conformance/identifiers.py`, `identifiers.json`, `test_identifiers_v1.py`; refs #343): for every gene parameter of a backend, sends one gene as symbol, Ensembl, HGNC and NCBI Gene id and requires each answer to resolve to that gene or be an `invalid_input` with `field`, `allowed_values` and a non-looping `next_commands`. Silent empties, wrong entities, absence claims and self-loops fail. Gene parameters are derived from the tool schema; `identifiers.json` holds per-backend corrections and a strict expected-fail list (a listed key that passes is an error). Runs like the behaviour gate (`CONFORMANCE_MCP_URL`, `CONFORMANCE_NAME`); `make identifiers MCP_URL=... NAME=...`.
+- **Batch-pointer lint** (`scripts/check_batch_pointers.py`, `make lint-batch-pointers`, in `ci-local`): a pinned tool must name its batch or set-level sibling in its description (Tool-Schema Documentation Standard rule 8, `D2`). Runs offline on the packaged baseline; 10 known failures are listed as expected-fail.
+- Response-Envelope Standard §2b: an unaccepted identifier form is `invalid_input`, never an absence; a bare number states the namespace it was read in; batch results are per item.
+
 ## [0.13.11] - 2026-11-19
 
 ### Added

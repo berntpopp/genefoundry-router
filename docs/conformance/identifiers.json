@@ -1,0 +1,84 @@
+{
+  "_note": "backends.<serverInfo.name>: params corrects the derived gene parameters ({\"tool.param\": \"gene\" | null}); known_failures lists expected-fail keys \"tool.param:form\". Seeded 2026-11-20 from router #343: hgnc-link from a run against 2.5.0, the rest from the audit (clinvar, gencc, metadome and mgi name the audited tool with the Ensembl form inferred). Delete a key when its fix lands.",
+  "entities": {
+    "gene": {
+      "param_name": "^(candidate_)?genes?(_symbols?|_ids?)?$",
+      "param_description": "^(an? )?(hgnc |approved |mouse )?(gene|marker) symbols?\\b",
+      "forms": {
+        "symbol": "KRAS",
+        "ensembl": "ENSG00000133703",
+        "hgnc": "HGNC:6407",
+        "ncbigene": "NCBIGene:3845"
+      }
+    }
+  },
+  "backends": {
+    "clingen-link": {
+      "known_failures": [
+        "get_gene_validity.gene_symbol:ensembl",
+        "get_gene_summary.gene_symbol:ensembl",
+        "get_gene_dosage.gene_symbol:ensembl",
+        "get_gene_actionability.gene_symbol:ensembl"
+      ]
+    },
+    "clinvar-link": {
+      "known_failures": [
+        "get_gene_clinvar_summary.gene_symbol:ensembl"
+      ]
+    },
+    "gencc-link": {
+      "params": {
+        "resolve_identifier.query": "gene"
+      },
+      "known_failures": [
+        "resolve_identifier.query:ensembl"
+      ]
+    },
+    "genereviews-link": {
+      "known_failures": [
+        "search_genereviews.gene_symbol:ensembl",
+        "search_passages.gene:hgnc"
+      ]
+    },
+    "gnomad-link": {
+      "known_failures": [
+        "search_genes.query:hgnc"
+      ]
+    },
+    "hgnc-link": {
+      "known_failures": [
+        "resolve_symbol.query:ncbigene",
+        "get_gene.query:ensembl",
+        "get_gene.query:ncbigene",
+        "get_gene_cross_references.query:ensembl",
+        "get_gene_cross_references.query:ncbigene"
+      ]
+    },
+    "litvar-link": {
+      "known_failures": [
+        "search_gene_variants.gene_symbol:ensembl"
+      ]
+    },
+    "metadome-link": {
+      "known_failures": [
+        "resolve_transcript.query:ensembl"
+      ]
+    },
+    "mgi-link": {
+      "known_failures": [
+        "get_marker_phenotypes.query:ensembl"
+      ]
+    },
+    "orphanet-link": {
+      "known_failures": [
+        "find_diseases_by_gene.gene_symbol:ensembl",
+        "find_diseases_by_gene.gene_symbol:hgnc"
+      ]
+    },
+    "uniprot-link": {
+      "known_failures": [
+        "find_proteins.gene_symbol:ensembl"
+      ]
+    }
+  }
+}

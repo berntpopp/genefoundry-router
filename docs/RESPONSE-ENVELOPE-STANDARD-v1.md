@@ -164,6 +164,25 @@ question contains (a PMCID where the tool wants a PMID, a gene symbol where it w
   `mondo_resolve_disease`) in `_meta.next_commands`.
 - Each adopting backend carries one regression test that passes the "wrong but obvious" form.
 
+Clarifications (added 2026-11-20, router #343):
+
+- **A form the tool does not accept is `invalid_input`, never an absence.** The error carries
+  `field`, `allowed_values` and a `_meta.next_commands` entry that is not the same tool with the
+  same value. `not_found`, "no curation" and `success: true` with zero rows all claim the object
+  is absent, and the tool has not looked.
+- **A bare number is never silently assigned a namespace.** `3845` is an NCBI Gene id in one
+  backend and an HGNC id in another. A tool that accepts a bare number MUST state the namespace it
+  assumed (`resolved_from.form`) and offer the call for the alternative reading in
+  `_meta.next_commands`.
+- **Batch results are per item.** A tool that takes a list returns one outcome per input
+  (resolved, or unresolved with a reason). One bad item MUST NOT fail the batch.
+
+Gated by `docs/conformance/identifiers.py` (vendored; `tests/conformance/test_identifiers_v1.py`):
+every gene parameter is sent one gene as symbol, Ensembl, HGNC and NCBI Gene id, and each answer
+must resolve to that gene or be the `invalid_input` above. Parameter declarations and expected
+failures per backend live in `identifiers.json` beside it. Bare numbers and mixed batches are not
+probed yet.
+
 ### 3. Lean by default — token economy is a contract, not a lever
 
 The reports' core token finding was *"the levers exist; the defaults don't respect them."*
