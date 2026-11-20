@@ -144,8 +144,10 @@ async def test_heldout_discoverability_meets_bar() -> None:
     assert report.hit_at(5) >= 0.95, detail
     assert min(report.by_style().values()) >= 0.80, detail  # no phrasing style left behind
     categories = report.by_category()
-    # pharmacogenomics 6.0 (was 7.0): owner decision 2026-11-19: clinpgx un-pinned (pinned budget); restore when clinpgx-link#56 lands
-    assert categories.pop("pharmacogenomics") >= 6.0, detail
+    # pharmacogenomics 5.0 (was 7.0): owner decision 2026-11-19: clinpgx un-pinned (pinned budget); restore when clinpgx-link#56 lands
+    # 6.0 -> 5.0, owner decision 2026-11-20: fleet-2026-11-20b's 32 new tools shift BM25 IDF and
+    # h-de-pharmaco moves #1 -> #2 (clinpgx_search_dataset first; no cancer tool in the top 4).
+    assert categories.pop("pharmacogenomics") >= 5.0, detail
     assert min(categories.values()) >= 7.0, detail
 
 

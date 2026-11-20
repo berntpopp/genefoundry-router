@@ -273,6 +273,22 @@ tasks:
     category: gene_disease
     query: published polygenic risk scores for a trait
     expected: [pgscatalog_search_scores, pgscatalog_resolve_trait]
+  - id: civic-variant-evidence
+    category: variant
+    query: clinical evidence that a somatic cancer variant predicts response to a therapy
+    expected: [civic_search_molecular_profiles, civic_search_evidence_items, civic_search_assertions]
+  - id: cbioportal-mutation-prevalence
+    category: variant
+    query: how often a gene is mutated in a tumour type across cancer cohorts
+    expected: [cbioportal_get_gene_alteration_frequency, cbioportal_get_gene_mutations]
+  - id: opentargets-target-drugs
+    category: gene_disease
+    query: drugs in development against a target gene and their clinical stage
+    expected: [opentargets_get_drug_candidates, opentargets_resolve_target]
+  - id: moalmanac-regulatory-approval
+    category: variant
+    query: FDA approved targeted therapies for a cancer biomarker
+    expected: [moalmanac_search_approvals]
 
   # --- cross-cutting first-step resolvers ---
   - id: resolve-gene-generic

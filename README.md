@@ -69,7 +69,7 @@ bite MCP clients.
 ### Federated backends
 
 <!-- BEGIN GENERATED: fleet-inventory -->
-**26 backends, 313 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
+**30 backends, 345 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
 
 | Namespace | Domain | Data source | Tools | Repo |
 |-----------|--------|-------------|------:|------|
@@ -86,17 +86,21 @@ bite MCP clients.
 | `mondo` | Disease ontology / cross-references | [Mondo](https://mondo.monarchinitiative.org/) | 13 | [mondo-link](https://github.com/berntpopp/mondo-link) |
 | `gencc` | Gene–disease curation | [GenCC](https://thegencc.org/) | 12 | [gencc-link](https://github.com/berntpopp/gencc-link) |
 | `metadome` | Protein tolerance landscapes | [MetaDome](https://stuart.radboudumc.nl/metadome/) | 11 | [metadome-link](https://github.com/berntpopp/metadome-link) |
+| `civic` | Somatic variant clinical evidence & AMP/ASCO/CAP assertions | [CIViC](https://civicdb.org/) | 10 | [civic-link](https://github.com/berntpopp/civic-link) |
 | `stringdb` | Protein–protein interaction networks | [STRING](https://string-db.org/) | 10 | [stringdb-link](https://github.com/berntpopp/stringdb-link) |
+| `cbioportal` | Cancer genomics mutation prevalence & hotspots | [cBioPortal](https://www.cbioportal.org/) | 9 | [cbioportal-link](https://github.com/berntpopp/cbioportal-link) |
 | `gtex` | Tissue expression | [GTEx Portal](https://gtexportal.org/) | 9 | [gtex-link](https://github.com/berntpopp/gtex-link) |
 | `hgnc` | Gene nomenclature | [HGNC](https://www.genenames.org/) | 9 | [hgnc-link](https://github.com/berntpopp/hgnc-link) |
 | `panelapp` | Diagnostic gene panels & curation | [PanelApp](https://panelapp.genomicsengland.co.uk/) | 9 | [panelapp-link](https://github.com/berntpopp/panelapp-link) |
+| `clinvar` | Variant clinical significance | [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/) | 8 | [clinvar-link](https://github.com/berntpopp/clinvar-link) |
 | `pgscatalog` | Polygenic scores, traits, ancestry & performance metrics | [PGS Catalog](https://www.pgscatalog.org/) | 8 | [pgscatalog-link](https://github.com/berntpopp/pgscatalog-link) |
 | `ucsc` | Genome Browser region tracks, reference sequence, BLAT & in-silico PCR | [UCSC Genome Browser](https://genome.ucsc.edu/) | 8 | [ucsc-link](https://github.com/berntpopp/ucsc-link) |
 | `autopvs1` | Variant ACMG PVS1 | [AutoPVS1](https://autopvs1.bgi.com/) | 7 | [autopvs1-link](https://github.com/berntpopp/autopvs1-link) |
-| `clinvar` | Variant clinical significance | [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/) | 7 | [clinvar-link](https://github.com/berntpopp/clinvar-link) |
+| `opentargets` | Target tractability, drug candidates & target-disease evidence | [Open Targets Platform](https://platform.opentargets.org/) | 7 | [opentargets-link](https://github.com/berntpopp/opentargets-link) |
 | `spliceai` | Splicing prediction | [SpliceAI Lookup](https://spliceailookup.broadinstitute.org/) | 7 | [spliceailookup-link](https://github.com/berntpopp/spliceailookup-link) |
 | `vep` | Variant annotation / consequence | [Ensembl VEP](https://rest.ensembl.org/) | 7 | [vep-link](https://github.com/berntpopp/vep-link) |
 | `litvar` | Variant literature | [LitVar2](https://www.ncbi.nlm.nih.gov/research/litvar2/) | 6 | [litvar-link](https://github.com/berntpopp/litvar-link) |
+| `moalmanac` | Regulatory approvals for cancer biomarker-therapy pairs | [Molecular Oncology Almanac](https://moalmanac.org/) | 5 | [moalmanac-link](https://github.com/berntpopp/moalmanac-link) |
 | `strchive` | Tandem-repeat (STR) disease loci & repeat ranges | [STRchive](https://strchive.org/) | 5 | [strchive-link](https://github.com/berntpopp/strchive-link) |
 | `mitomap` | Mitochondrial DNA (mtDNA) variants & disease associations | [MITOMAP](https://www.mitomap.org/) | 4 | [mitomap-link](https://github.com/berntpopp/mitomap-link) |
 <!-- END GENERATED: fleet-inventory -->
