@@ -75,3 +75,18 @@ says nothing about its somatic Tier I status.
 - Cite the source record ids (CIViC EID/AID, ClinVar VCV, MOAlmanac indication id, study id).
 - OncoKB, COSMIC, AACR GENIE and JAX CKB are not in the fleet (licence). You may suggest the
   user check them directly; never present their content.
+
+## Evidence rules (all GeneFoundry skills)
+
+- Research use only. Not clinical decision support. Use de-identified input only; if the input
+  contains names, dates of birth or record numbers, stop and ask for a de-identified version.
+- Every fact comes from a tool result in this session. Cite the record id the tool returned
+  (PMID, VCV, HGNC id, MONDO id, ...). Never cite from memory.
+- Give every checked claim one state: **confirmed** (tool agrees), **contradicted** (tool disagrees;
+  show the evidence), **not confirmable** (tool returned nothing or failed), **not checked**.
+  "Not found in source X" never means "negative" or "benign".
+- State genome build and transcript before any variant lookup. Resolve identifiers once, in batch.
+- Scores, points and risks are added up step by step by the stated rule, never estimated.
+- If a call errors or is rate limited, do not repeat the identical call: use another source or
+  report the gap. Stop when the skill's stop rule is met.
+- End with: tools used and the data versions they report.
