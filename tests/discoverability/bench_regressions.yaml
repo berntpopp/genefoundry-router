@@ -45,3 +45,17 @@ tasks:
     category: variant_frequency
     query: frecuencia de una variante genética en la población general
     expected: [gnomad_get_variant_frequencies, gnomad_get_variant_details]
+  # #341: a phenotype SET + candidate genes must reach the set-based scorer, not the
+  # single-term lookups models otherwise loop over.
+  - id: phenotype-set-rank-candidate-genes
+    category: phenotype
+    query: rank candidate genes by phenotype
+    expected: [hpo_score_genes_for_phenotypes]
+  - id: phenotype-set-prioritise-genes
+    category: phenotype
+    query: prioritise genes for HPO terms
+    expected: [hpo_score_genes_for_phenotypes]
+  - id: phenotype-set-causal-gene
+    category: phenotype
+    query: causal gene from phenotypes
+    expected: [hpo_score_genes_for_phenotypes]

@@ -25,7 +25,15 @@ SLIM = RouterSettings(_env_file=None, GF_SCHEMA_MODE="slim")
 META = ("search_tools", "call_tool")
 # Default pins + slim, same ~4 chars/token estimator as the pinned-listing budget. A ceiling:
 # lower it as pinned schemas are trimmed, never raise it to admit growth.
-SLIM_LISTING_TOKEN_BUDGET = 6_600  # measured ~6.5k on 2026-11-19 (standard: ~15.6k)
+# Raised for two deliberate pins (#341), each on a 75-sample gene-ranking run of one model:
+#   6.6k -> 6.8k  hpo_score_genes_for_phenotypes (+235 tokens slim): unpinned it was called in
+#                 0 of 75 samples. Swapping out hpo_get_phenotypes_for_gene would not have fit.
+#   6.8k -> 6.9k  hgnc_resolve_symbols_batch (+112 tokens slim): with only a description pointer
+#                 928 single / 8 batch calls, 14 samples out of turns, accuracy 0.72; pinned,
+#                 2 single / 75 batch calls, 0 out of turns, accuracy 0.80.
+# fleet-2026-11-20 schemas measured 6,929; hiding `offset` on hpo_search_terms and
+# hpo_get_phenotypes_for_gene (slim_keep) brought it back under the ceiling.
+SLIM_LISTING_TOKEN_BUDGET = 6_900  # measured 6,875 on 2026-11-20 (standard: 17,809)
 
 
 def _walk_param(node, path: str):

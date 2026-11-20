@@ -38,14 +38,8 @@ KNOWN_FAILURES: frozenset[str] = frozenset(
     {
         "autopvs1_get_variant_pvs1_data -> get_variants_pvs1_data_bulk",
         "clinvar_get_variant -> get_variants",
-        "genereviews_search_passages -> search_passages_batch",
-        "hgnc_resolve_symbol -> resolve_symbols_batch",
-        "hpo_get_genes_for_phenotype -> score_genes_for_phenotypes",
-        "hpo_get_phenotypes_for_gene -> score_genes_for_phenotypes",
         "mondo_resolve_disease -> resolve_disease_batch",
         "spliceai_predict_splicing -> predict_splicing_batch",
-        "stringdb_get_interaction_partners -> compute_functional_enrichment",
-        "uniprot_find_proteins -> find_proteins_batch",
         "vep_annotate_variant -> annotate_variants_batch",
     }
 )

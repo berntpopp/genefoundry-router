@@ -69,14 +69,14 @@ bite MCP clients.
 ### Federated backends
 
 <!-- BEGIN GENERATED: fleet-inventory -->
-**26 backends, 312 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
+**26 backends, 313 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
 
 | Namespace | Domain | Data source | Tools | Repo |
 |-----------|--------|-------------|------:|------|
 | `pubtator` | Literature & entity annotation | [PubTator3](https://www.ncbi.nlm.nih.gov/research/pubtator3/) | 35 | [pubtator-link](https://github.com/berntpopp/pubtator-link) |
 | `gnomad` | Variant / gene / population frequency | [gnomAD](https://gnomad.broadinstitute.org/) | 22 | [gnomad-link](https://github.com/berntpopp/gnomad-link) |
+| `hpo` | Phenotype ontology & associations | [Human Phenotype Ontology](https://hpo.jax.org/) | 19 | [hpo-link](https://github.com/berntpopp/hpo-link) |
 | `orphanet` | Rare disease ontology & associations | [Orphadata](https://www.orphadata.com/) | 19 | [orphanet-link](https://github.com/berntpopp/orphanet-link) |
-| `hpo` | Phenotype ontology & associations | [Human Phenotype Ontology](https://hpo.jax.org/) | 18 | [hpo-link](https://github.com/berntpopp/hpo-link) |
 | `clingen` | Gene–disease curation | [ClinGen](https://clinicalgenome.org/) | 17 | [clingen-link](https://github.com/berntpopp/clingen-link) |
 | `mavedb` | Variant-effect assay scores | [MaveDB](https://www.mavedb.org/) | 15 | [mavedb-link](https://github.com/berntpopp/mavedb-link) |
 | `uniprot` | Protein function | [UniProt](https://www.uniprot.org/) | 15 | [uniprot-link](https://github.com/berntpopp/uniprot-link) |

@@ -68,11 +68,11 @@ def test_baseline_has_22_backends_and_287_tools() -> None:
     manifest = load_manifest(BASELINE_PATH)
     assert len(manifest.backends) == 26
     total_tools = sum(len(b.tools) for b in manifest.backends.values())
-    assert total_tools == 312
+    assert total_tools == 313
 
 
 def test_baseline_input_schemas_are_valid_draft_2020_12_objects() -> None:
-    """All 312 tools must advertise valid Draft 2020-12 object input schemas."""
+    """All 313 tools must advertise valid Draft 2020-12 object input schemas."""
     manifest = load_manifest(BASELINE_PATH)
     for namespace, backend in manifest.backends.items():
         for tool in backend.tools:

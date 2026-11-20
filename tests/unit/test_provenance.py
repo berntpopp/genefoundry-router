@@ -20,7 +20,7 @@ def test_load_fleet_provenance_structure() -> None:
     fleet = data["fleet"]
     assert fleet["total_backends"] == 26
     assert fleet["total_repositories"] == 27
-    assert fleet["total_tools"] == 312
+    assert fleet["total_tools"] == 313
 
     router = data["router"]
     assert router["repository"] == "berntpopp/genefoundry-router"
@@ -78,14 +78,14 @@ def test_provenance_http_endpoints() -> None:
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "application/json"
         assert resp.headers["x-genefoundry-fleet-backends"] == "26"
-        assert resp.headers["x-genefoundry-fleet-tools"] == "312"
+        assert resp.headers["x-genefoundry-fleet-tools"] == "313"
         assert resp.headers["access-control-allow-origin"] == "*"
         assert "ETag" in resp.headers
         etag = resp.headers["etag"]
 
         body = resp.json()
         assert body["fleet"]["total_backends"] == 26
-        assert body["fleet"]["total_tools"] == 312
+        assert body["fleet"]["total_tools"] == 313
 
         # Test HEAD request
         head_resp = client.head(path)
