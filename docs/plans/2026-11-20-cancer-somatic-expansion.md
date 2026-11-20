@@ -1,5 +1,7 @@
 # Cancer / Somatic Expansion Plan — GeneFoundry fleet (2026-11-20)
 
+> Historical record — research plan as of 2026-11-20; tool names below are proposals, not the live catalog.
+
 > Status: **PLAN / research-complete, not started.** Nothing here is built or registered.
 > **Owner decisions (2026-11-20):** drug/driver layer = Open Targets only; MOAlmanac = own
 > `moalmanac-link`; first wave = Phase 0 + `civic-link` + `cbioportal-link` (with hotspots).
