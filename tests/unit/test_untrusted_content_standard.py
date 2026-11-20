@@ -7,6 +7,8 @@ INVENTORY = Path("docs/conformance/untrusted-text-inventory.yml")
 
 EXPECTED_BACKENDS = {
     "autopvs1",
+    "cbioportal",
+    "civic",
     "clingen",
     "clinpgx",
     "clinvar",
@@ -21,7 +23,9 @@ EXPECTED_BACKENDS = {
     "metadome",
     "mgi",
     "mitomap",
+    "moalmanac",
     "mondo",
+    "opentargets",
     "orphanet",
     "panelapp",
     "pgscatalog",

@@ -300,3 +300,56 @@ servers:
     source_name: PGS Catalog
     source_url: https://www.pgscatalog.org/
     tags: [polygenic-score, prs, trait, gwas, ancestry, performance, publication]
+
+  # Cancer/somatic wave (docs/plans/2026-11-20-cancer-somatic-expansion.md). Staged: flip
+  # `enabled` to true once <name>-link.genefoundry.org is live and the baseline is re-pinned.
+  # civic-link: live CIViC GraphQL, fixed queries only, CC0 (v0.1.0; genefoundry-router#347).
+  - name: civic
+    repo: berntpopp/civic-link
+    url_env: GF_CIVIC_URL
+    namespace: civic
+    description: Somatic variant clinical evidence & AMP/ASCO/CAP assertions
+    source_name: CIViC
+    source_url: https://civicdb.org/
+    tags: [cancer, somatic, variant, actionability, oncogenicity, evidence, therapy]
+    entrypoints: [search_molecular_profiles]
+    enabled: false
+
+  # cbioportal-link: live api.cbioportal.org (llms.txt policy: sequential, filtered, cached)
+  # + Cancer Hotspots v2/3D snapshot, ODbL (v0.1.0; genefoundry-router#348).
+  - name: cbioportal
+    repo: berntpopp/cbioportal-link
+    url_env: GF_CBIOPORTAL_URL
+    namespace: cbioportal
+    description: Cancer genomics mutation prevalence & hotspots
+    source_name: cBioPortal
+    source_url: https://www.cbioportal.org/
+    tags: [cancer, somatic, mutation, prevalence, hotspot, study, cohort]
+    entrypoints: [get_gene_alteration_frequency]
+    enabled: false
+
+  # opentargets-link: live Open Targets Platform GraphQL 26.09, CC0, datasource allowlist
+  # (no COSMIC CGC / Europe PMC / CGI biomarkers) (v0.1.0; genefoundry-router#349).
+  - name: opentargets
+    repo: berntpopp/opentargets-link
+    url_env: GF_OPENTARGETS_URL
+    namespace: opentargets
+    description: Target tractability, drug candidates & target-disease evidence
+    source_name: Open Targets Platform
+    source_url: https://platform.opentargets.org/
+    tags: [target, drug, tractability, disease, evidence, cancer, driver]
+    entrypoints: [resolve_target]
+    enabled: false
+
+  # moalmanac-link: snapshot of MOAlmanac 2.0 data release v.2026-11-05, CC BY 4.0
+  # (v0.1.0; genefoundry-router#350).
+  - name: moalmanac
+    repo: berntpopp/moalmanac-link
+    url_env: GF_MOALMANAC_URL
+    namespace: moalmanac
+    description: Regulatory approvals for cancer biomarker-therapy pairs
+    source_name: Molecular Oncology Almanac
+    source_url: https://moalmanac.org/
+    tags: [cancer, somatic, biomarker, therapy, approval, fda, ema]
+    entrypoints: [search_approvals]
+    enabled: false

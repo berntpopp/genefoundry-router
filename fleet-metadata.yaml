@@ -110,6 +110,14 @@ vocabulary:
     - polygenic-score
     - polygenic-risk-score
     - gwas
+    - cancer
+    - cancer-genomics
+    - somatic-variants
+    - somatic-mutations
+    - cancer-hotspots
+    - precision-oncology
+    - drug-discovery
+    - regulatory-approvals
   # Source tier — the upstream's proper noun. These are near-empty topic pages
   # (`gnomad` 21 repos, `orphanet` 6), so they buy exact-intent traffic cheaply.
   source:
@@ -148,6 +156,10 @@ vocabulary:
     - cpic
     - pharmgkb
     - pgs-catalog
+    - civic
+    - cbioportal
+    - open-targets
+    - moalmanac
 
 # Official MCP Registry (registry.modelcontextprotocol.io) — ROUTER ONLY.
 #
@@ -370,3 +382,31 @@ backends:
       development and evaluation ancestry, licences, performance metrics and source
       publications.
     topics: [pgs-catalog, polygenic-score, polygenic-risk-score, gwas, genomics]
+
+  - namespace: civic
+    description: >-
+      MCP server for CIViC (Clinical Interpretation of Variants in Cancer): molecular profiles,
+      variants, publication-backed evidence items and AMP-tiered assertions, via the live CIViC
+      GraphQL API.
+    topics: [civic, cancer, somatic-variants, precision-oncology, genomics]
+
+  - namespace: cbioportal
+    description: >-
+      MCP server for cBioPortal somatic cancer genomics: alteration frequency by cancer type with
+      profiled denominators, studies, mutations, OncoTree cancer types and Cancer Hotspots, with
+      per-study licences.
+    topics: [cbioportal, cancer-genomics, cancer-hotspots, somatic-mutations, genomics]
+
+  - namespace: opentargets
+    description: >-
+      MCP server for the Open Targets Platform: target tractability, ChEMBL drug and clinical
+      candidates, disease-target associations and allowlisted target-disease evidence, via the
+      live Open Targets GraphQL API.
+    topics: [open-targets, drug-discovery, cancer, precision-oncology, genomics]
+
+  - namespace: moalmanac
+    description: >-
+      MCP server for the Molecular Oncology Almanac: regulatory approvals of biomarker-directed
+      cancer therapies (FDA, EMA, Health Canada, HSE, HPRA) with label versions and dates, from a
+      pinned CC BY 4.0 release.
+    topics: [moalmanac, regulatory-approvals, cancer-genomics, precision-oncology, genomics]

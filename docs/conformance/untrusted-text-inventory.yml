@@ -608,3 +608,77 @@ backends:
       phenotype, covariates, comments -- with performance pages capped at 50 rows so fenced
       objects stay <=128) + pgscatalog_link/mcp/untrusted_content.py
     existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
+
+  - backend: civic
+    tool: get_evidence_item
+    json_pointers: [/evidence_item/statement]
+    surfaces:
+      - {tool: get_evidence_item, pointer: /evidence_item/statement}
+      - {tool: get_evidence_item, pointer: /evidence_item/source/title}
+      - {tool: search_evidence_items, pointer: /evidence_items/*/statement}
+      - {tool: get_assertion, pointer: /assertion/summary}
+      - {tool: get_assertion, pointer: /assertion/description}
+      - {tool: search_assertions, pointer: /assertions/*/summary}
+      - {tool: get_molecular_profile, pointer: /molecular_profile/description}
+      - {tool: get_gene, pointer: /gene/description}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      civic_link/shaping.py + civic_link/service.py (fence(): evidence statements, source
+      titles, assertion summaries/descriptions, molecular-profile and gene descriptions; list
+      limit capped at 50 so fenced objects stay <=128) + civic_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
+
+  - backend: cbioportal
+    tool: get_study
+    json_pointers: [/study/description]
+    surfaces:
+      - {tool: get_study, pointer: /study/description}
+      - {tool: search_studies, pointer: /studies/*/description}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      cbioportal_link/shaping.py + cbioportal_link/service.py (fence(): submitter-written
+      study descriptions, full mode only) + cbioportal_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
+
+  - backend: opentargets
+    tool: get_drug_candidates
+    json_pointers: [/drug_candidates/*/mechanism_of_action]
+    surfaces:
+      - {tool: get_drug_candidates, pointer: /drug_candidates/*/mechanism_of_action}
+      - {tool: get_drug_candidates, pointer: /drug_candidates/*/clinical_reports/*/title}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      opentargets_link/shaping.py (fence(): ChEMBL mechanism-of-action strings and
+      clinical-report titles; DRUG_MAX_LIMIT 20 x 4 fences stays <=128) +
+      opentargets_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
+
+  - backend: moalmanac
+    tool: get_indication
+    json_pointers: [/indication/description]
+    surfaces:
+      - {tool: get_indication, pointer: /indication/description}
+      - {tool: get_indication, pointer: /indication/contributions/*/description}
+      - {tool: search_approvals, pointer: /approvals/*/indication}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      moalmanac_link/service.py (fence(): regulatory label indication text and contribution
+      descriptions; search_approvals fences the indication in full mode) +
+      moalmanac_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
