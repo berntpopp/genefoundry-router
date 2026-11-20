@@ -1,10 +1,10 @@
 {
   "snapshot_meta": {
-    "captured_at": "2026-11-20T06:59:59Z",
+    "captured_at": "2026-11-20T21:27:53Z",
     "source": "release-candidate",
     "router_servers_file": "servers.yaml",
     "release_candidate": {
-      "identity": "fleet-2026-11-20",
+      "identity": "fleet-2026-11-20b",
       "backends": {
         "autopvs1": {
           "endpoint": "https://autopvs1-link.genefoundry.org/mcp",
@@ -55,6 +55,118 @@
               "attestation-bundle.json": "sha256:8c1b8590da8cec2dea1310a3ef9f000410e8841ec50265db50c7da9cb9b50940",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
               "verification.json": "sha256:3cc3903cf4cd822b63385eb5b3eddec2288fedb949534bbc5a7194aace57604d"
+            },
+            "data_requirements": {
+              "mode": "none",
+              "schema_compatibility": []
+            }
+          }
+        },
+        "cbioportal": {
+          "endpoint": "https://cbioportal-link.genefoundry.org/mcp",
+          "application_release": {
+            "schema_version": 1,
+            "repository": "berntpopp/cbioportal-link",
+            "version": "0.2.0",
+            "source": {
+              "tag": "v0.2.0",
+              "revision": "ac6a8eec89dfdf47f9317530efbc4b1ac19d7d2c"
+            },
+            "image": {
+              "name": "ghcr.io/berntpopp/cbioportal-link",
+              "digest": "sha256:c8274954a6b7a3744d93033c6b02aa6e9300060ae313e0a01046377a37f0e0e6",
+              "platforms": [
+                {
+                  "platform": "linux/amd64",
+                  "digest": "sha256:c8274954a6b7a3744d93033c6b02aa6e9300060ae313e0a01046377a37f0e0e6"
+                }
+              ]
+            },
+            "workflow": {
+              "caller": "berntpopp/cbioportal-link/.github/workflows/container-release.yml",
+              "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+              "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
+            },
+            "mcp": {
+              "definitions_sha256": "0fa624aaef71d907d46ff6f003097828e2eaecc043c1555b4f724d06fee860f0",
+              "capture_context_sha256": "1caa369190769420992779052df481520d8f73180bb68b75f2c60b29ed5db06b",
+              "definition_contract": "data-independent"
+            },
+            "security_evidence": {
+              "scanner": "trivy",
+              "scanner_version": "0.70.0",
+              "database_updated_at": "2026-11-20T07:09:47.681202Z",
+              "sbom_sha256": "1ed1c224f4fb5ddc53b928604ab1a48d1e7413621c41ecbd3fce1dba74b6bd36",
+              "scanner_evidence_sha256": "edf4a484c55eaa5aa5ebedb62ba9d1b4782e5efcd6f8f125da1182af8ca5dbce",
+              "attestation_bundle_sha256": "3f8460ddf609fd1fd33ed6aa4918ed282c5dba39c665650e32cf8660e310c003",
+              "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+              "verification_sha256": "718ed21ec3cacb7dc7ea4a632d537c2ec00c83862627abd40fc83df4348d0736"
+            },
+            "release_assets": {
+              "image-manifest.json": "sha256:c8274954a6b7a3744d93033c6b02aa6e9300060ae313e0a01046377a37f0e0e6",
+              "sbom.spdx.json": "sha256:1ed1c224f4fb5ddc53b928604ab1a48d1e7413621c41ecbd3fce1dba74b6bd36",
+              "mcp-definitions.json": "sha256:0fa624aaef71d907d46ff6f003097828e2eaecc043c1555b4f724d06fee860f0",
+              "mcp-capture-context.json": "sha256:1caa369190769420992779052df481520d8f73180bb68b75f2c60b29ed5db06b",
+              "trivy.json": "sha256:edf4a484c55eaa5aa5ebedb62ba9d1b4782e5efcd6f8f125da1182af8ca5dbce",
+              "attestation-bundle.json": "sha256:3f8460ddf609fd1fd33ed6aa4918ed282c5dba39c665650e32cf8660e310c003",
+              "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+              "verification.json": "sha256:718ed21ec3cacb7dc7ea4a632d537c2ec00c83862627abd40fc83df4348d0736"
+            },
+            "data_requirements": {
+              "mode": "none",
+              "schema_compatibility": []
+            }
+          }
+        },
+        "civic": {
+          "endpoint": "https://civic-link.genefoundry.org/mcp",
+          "application_release": {
+            "schema_version": 1,
+            "repository": "berntpopp/civic-link",
+            "version": "0.1.1",
+            "source": {
+              "tag": "v0.1.1",
+              "revision": "a9c7acaf0662e49436f202a7ffe9c9d454c1db3f"
+            },
+            "image": {
+              "name": "ghcr.io/berntpopp/civic-link",
+              "digest": "sha256:59eabd6a1dbb1c4322b8b5603a97213fed3a8f36aa21cc92bb56da5ed53172b7",
+              "platforms": [
+                {
+                  "platform": "linux/amd64",
+                  "digest": "sha256:59eabd6a1dbb1c4322b8b5603a97213fed3a8f36aa21cc92bb56da5ed53172b7"
+                }
+              ]
+            },
+            "workflow": {
+              "caller": "berntpopp/civic-link/.github/workflows/container-release.yml",
+              "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+              "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
+            },
+            "mcp": {
+              "definitions_sha256": "28b48ddd4ad0d282f579e7755444ab5e6f66b4d96b3da04a492d8d1ea25cad7a",
+              "capture_context_sha256": "d57fbef9481e412acebe24eb73a17bc1f137a9e74ef3930080ec438fc2b42efc",
+              "definition_contract": "data-independent"
+            },
+            "security_evidence": {
+              "scanner": "trivy",
+              "scanner_version": "0.70.0",
+              "database_updated_at": "2026-11-20T07:09:47.681202Z",
+              "sbom_sha256": "ef491c4df94cfa0302fd2025f78bb97cd1fa241467134ff5c32e92582b8b09cd",
+              "scanner_evidence_sha256": "809528837729e793b2bf41f8ced287d15fbe0f81f72b928fd79058dcc884cc89",
+              "attestation_bundle_sha256": "125005b466632d956b6d250bdc714d07832552b8e3e176b885a3b5a10c3a2e1b",
+              "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+              "verification_sha256": "1e3483fb0a8245e9459f84a3bd5d74d36ece3f2532f74d5bb9b086dab273d4cb"
+            },
+            "release_assets": {
+              "image-manifest.json": "sha256:59eabd6a1dbb1c4322b8b5603a97213fed3a8f36aa21cc92bb56da5ed53172b7",
+              "sbom.spdx.json": "sha256:ef491c4df94cfa0302fd2025f78bb97cd1fa241467134ff5c32e92582b8b09cd",
+              "mcp-definitions.json": "sha256:28b48ddd4ad0d282f579e7755444ab5e6f66b4d96b3da04a492d8d1ea25cad7a",
+              "mcp-capture-context.json": "sha256:d57fbef9481e412acebe24eb73a17bc1f137a9e74ef3930080ec438fc2b42efc",
+              "trivy.json": "sha256:809528837729e793b2bf41f8ced287d15fbe0f81f72b928fd79058dcc884cc89",
+              "attestation-bundle.json": "sha256:125005b466632d956b6d250bdc714d07832552b8e3e176b885a3b5a10c3a2e1b",
+              "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+              "verification.json": "sha256:1e3483fb0a8245e9459f84a3bd5d74d36ece3f2532f74d5bb9b086dab273d4cb"
             },
             "data_requirements": {
               "mode": "none",
@@ -189,18 +301,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/clinvar-link",
-            "version": "0.8.4",
+            "version": "0.10.0",
             "source": {
-              "tag": "v0.8.4",
-              "revision": "ca177c5df27574f1bb856ea5b0e5a71677f3ff25"
+              "tag": "v0.10.0",
+              "revision": "59d4eb7ec5b9bfb0209cdb2b12815f55352ece1c"
             },
             "image": {
               "name": "ghcr.io/berntpopp/clinvar-link",
-              "digest": "sha256:c889751b9969c27696a9ed8d02566d493718680e12b309cf606df95d2545afe7",
+              "digest": "sha256:c947f81564d1d8acd0cf78f5fb5be17cd2a170526ec35e0451ca349c3c115dcb",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:c889751b9969c27696a9ed8d02566d493718680e12b309cf606df95d2545afe7"
+                  "digest": "sha256:c947f81564d1d8acd0cf78f5fb5be17cd2a170526ec35e0451ca349c3c115dcb"
                 }
               ]
             },
@@ -210,33 +322,33 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "346257b14e8a3fdddc9927ccf5b3f3c7b57a83e6d1b1f970c42b5f9b61078055",
-              "capture_context_sha256": "fb79e271cb3de8c8b07d4702777dce23a4ade726302f420b6dbce8507cb2c8c5",
+              "definitions_sha256": "c1ab533e7f0ce57315b8ca06c2c1987ee5deff44fb38b5f95d28bb12ab9fddc8",
+              "capture_context_sha256": "138ae73c98d8163729043bb5adef9b9090dd8ce7aed8e41626601e804b12a667",
               "definition_contract": "data-bound"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-18T19:07:09.820302Z",
-              "sbom_sha256": "524f0cd89a1e61b4010f95f61e264e8eb0b75a834a4b577272b32a3c8ab06e91",
-              "scanner_evidence_sha256": "c0a55706bd2d50f80b560c3cecef94c013835fdf344b18419d894105e326331e",
-              "attestation_bundle_sha256": "dfe74bd00f434154b72b93b6e240c38ef02250266a1f33627feb4b25bed81279",
+              "database_updated_at": "2026-11-20T07:09:47.681202Z",
+              "sbom_sha256": "faf906f69ccf88d7dc0766fa46190de3c6554a46c97fc1c4660002fcec923204",
+              "scanner_evidence_sha256": "b450f05f57e6228545ac56ccffcaa1ab02ac46e90ea22325ac86aaa3411b9c7e",
+              "attestation_bundle_sha256": "f62d3b7853098563cec33784724c980bb7e89147970511ed9b8a7626033f0382",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "e3112717a243349c8719c0e85aa63b1d71614c2bde50b8513d1725ffd652b9af"
+              "verification_sha256": "f3934d89c9d861a625db9f275bd9f6db09f30fbf95a89c72783860538da151fc"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:c889751b9969c27696a9ed8d02566d493718680e12b309cf606df95d2545afe7",
-              "sbom.spdx.json": "sha256:524f0cd89a1e61b4010f95f61e264e8eb0b75a834a4b577272b32a3c8ab06e91",
-              "mcp-definitions.json": "sha256:346257b14e8a3fdddc9927ccf5b3f3c7b57a83e6d1b1f970c42b5f9b61078055",
-              "mcp-capture-context.json": "sha256:fb79e271cb3de8c8b07d4702777dce23a4ade726302f420b6dbce8507cb2c8c5",
-              "trivy.json": "sha256:c0a55706bd2d50f80b560c3cecef94c013835fdf344b18419d894105e326331e",
-              "attestation-bundle.json": "sha256:dfe74bd00f434154b72b93b6e240c38ef02250266a1f33627feb4b25bed81279",
+              "image-manifest.json": "sha256:c947f81564d1d8acd0cf78f5fb5be17cd2a170526ec35e0451ca349c3c115dcb",
+              "sbom.spdx.json": "sha256:faf906f69ccf88d7dc0766fa46190de3c6554a46c97fc1c4660002fcec923204",
+              "mcp-definitions.json": "sha256:c1ab533e7f0ce57315b8ca06c2c1987ee5deff44fb38b5f95d28bb12ab9fddc8",
+              "mcp-capture-context.json": "sha256:138ae73c98d8163729043bb5adef9b9090dd8ce7aed8e41626601e804b12a667",
+              "trivy.json": "sha256:b450f05f57e6228545ac56ccffcaa1ab02ac46e90ea22325ac86aaa3411b9c7e",
+              "attestation-bundle.json": "sha256:f62d3b7853098563cec33784724c980bb7e89147970511ed9b8a7626033f0382",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:e3112717a243349c8719c0e85aa63b1d71614c2bde50b8513d1725ffd652b9af"
+              "verification.json": "sha256:f3934d89c9d861a625db9f275bd9f6db09f30fbf95a89c72783860538da151fc"
             },
             "data_requirements": {
-              "release_tag": "bundle-2026-11-09-r2",
-              "digest": "sha256:c9b952add7fe78ebd6bcbd0fe0648014e9d01f7356d770e0e9b838c254d72287",
+              "release_tag": "bundle-2026-11-16",
+              "digest": "sha256:f6009745ae0fff4788218c24274d2d94e3a403ca0d98ada4e9cb944cb5c1a1a3",
               "schema_compatibility": [
                 "1"
               ],
@@ -545,18 +657,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/hpo-link",
-            "version": "0.11.0",
+            "version": "0.12.0",
             "source": {
-              "tag": "v0.11.0",
-              "revision": "aa1d2d2508fd9e3bebcf6255a070a358896bc59b"
+              "tag": "v0.12.0",
+              "revision": "9e916ca419798e123c4b0d836a124ec9e0281901"
             },
             "image": {
               "name": "ghcr.io/berntpopp/hpo-link",
-              "digest": "sha256:fdff401ded294695eba83aee20caf16ef63aa433e9ec794d6a73c37c95b035dd",
+              "digest": "sha256:4cdeb650e52ed6c9030d50f508ca93481bd94a9379d11db7fa901071af54381e",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:fdff401ded294695eba83aee20caf16ef63aa433e9ec794d6a73c37c95b035dd"
+                  "digest": "sha256:4cdeb650e52ed6c9030d50f508ca93481bd94a9379d11db7fa901071af54381e"
                 }
               ]
             },
@@ -567,28 +679,28 @@
             },
             "mcp": {
               "definitions_sha256": "4da2c61a869b63b411458a8ca3d48c902c0853c87bbe8e08c4e53aad45267778",
-              "capture_context_sha256": "5be42d156291f70d81a6b3db721d32742c0b5e2d35cd7b2f6375349ee9052bb1",
+              "capture_context_sha256": "8c407250e82c73f4df65d3741701aabde862aab5c7ef72c3e01a9a1eee20e04d",
               "definition_contract": "data-bound"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
               "database_updated_at": "2026-11-19T19:04:59.970326Z",
-              "sbom_sha256": "f942cb32546453925f2d87c1c94015ff7e04a1e507b1002636937200eee7e32c",
-              "scanner_evidence_sha256": "71815724fb206edecf4575851d0f88117e857fca4959cb84b203f84aa8a445fe",
-              "attestation_bundle_sha256": "d8a4de4ca7a42bd3f1e8887da83e4e1561704bb0cd5282337f677703e5127c7a",
+              "sbom_sha256": "3a3b22618a7cd2c3ed249731ff58583cb74d8c32e9bb5363e4aba98be8cf473b",
+              "scanner_evidence_sha256": "d3fbf68d7d679e5fdff59d579ec03f99019b68c9e538316190915bdc08392e14",
+              "attestation_bundle_sha256": "dc4ad87329814afc9d4f701cfe1bfd8a5af68501c5a63a2181b5fdb270c59a0d",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "fe5cd0fafc5eee54d8c9c9117d515ea3d7dfa32ac798835ca61c699a0c5ed94c"
+              "verification_sha256": "c47a232b513b57cbc181c6e6319e17f71a47d05dab6231c13fcf5c49cb8337f2"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:fdff401ded294695eba83aee20caf16ef63aa433e9ec794d6a73c37c95b035dd",
-              "sbom.spdx.json": "sha256:f942cb32546453925f2d87c1c94015ff7e04a1e507b1002636937200eee7e32c",
+              "image-manifest.json": "sha256:4cdeb650e52ed6c9030d50f508ca93481bd94a9379d11db7fa901071af54381e",
+              "sbom.spdx.json": "sha256:3a3b22618a7cd2c3ed249731ff58583cb74d8c32e9bb5363e4aba98be8cf473b",
               "mcp-definitions.json": "sha256:4da2c61a869b63b411458a8ca3d48c902c0853c87bbe8e08c4e53aad45267778",
-              "mcp-capture-context.json": "sha256:5be42d156291f70d81a6b3db721d32742c0b5e2d35cd7b2f6375349ee9052bb1",
-              "trivy.json": "sha256:71815724fb206edecf4575851d0f88117e857fca4959cb84b203f84aa8a445fe",
-              "attestation-bundle.json": "sha256:d8a4de4ca7a42bd3f1e8887da83e4e1561704bb0cd5282337f677703e5127c7a",
+              "mcp-capture-context.json": "sha256:8c407250e82c73f4df65d3741701aabde862aab5c7ef72c3e01a9a1eee20e04d",
+              "trivy.json": "sha256:d3fbf68d7d679e5fdff59d579ec03f99019b68c9e538316190915bdc08392e14",
+              "attestation-bundle.json": "sha256:dc4ad87329814afc9d4f701cfe1bfd8a5af68501c5a63a2181b5fdb270c59a0d",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:fe5cd0fafc5eee54d8c9c9117d515ea3d7dfa32ac798835ca61c699a0c5ed94c"
+              "verification.json": "sha256:c47a232b513b57cbc181c6e6319e17f71a47d05dab6231c13fcf5c49cb8337f2"
             },
             "data_requirements": {
               "release_tag": "db-v2026-09-01",
@@ -896,23 +1008,79 @@
             }
           }
         },
+        "moalmanac": {
+          "endpoint": "https://moalmanac-link.genefoundry.org/mcp",
+          "application_release": {
+            "schema_version": 1,
+            "repository": "berntpopp/moalmanac-link",
+            "version": "0.2.0",
+            "source": {
+              "tag": "v0.2.0",
+              "revision": "f71391d5a529b55c4215fa4255f44c71042b157d"
+            },
+            "image": {
+              "name": "ghcr.io/berntpopp/moalmanac-link",
+              "digest": "sha256:402f599c433ca2fae8b61688fe15f90ca41d4130c70ea7a543ddba8757675ca0",
+              "platforms": [
+                {
+                  "platform": "linux/amd64",
+                  "digest": "sha256:402f599c433ca2fae8b61688fe15f90ca41d4130c70ea7a543ddba8757675ca0"
+                }
+              ]
+            },
+            "workflow": {
+              "caller": "berntpopp/moalmanac-link/.github/workflows/container-release.yml",
+              "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+              "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
+            },
+            "mcp": {
+              "definitions_sha256": "96c437bd74f96623277f640b94ec5fae95daa0712d9f4226d38e860bcb50ea60",
+              "capture_context_sha256": "2a18c33f836f8b7c093cb84db6fc3040ae8229eab80356b1f47715bae1b87c44",
+              "definition_contract": "data-independent"
+            },
+            "security_evidence": {
+              "scanner": "trivy",
+              "scanner_version": "0.70.0",
+              "database_updated_at": "2026-11-20T07:09:47.681202Z",
+              "sbom_sha256": "4a682b1c351e9165cb390bc16b964052db97b2ab4c2be2830b3d2760134a13b5",
+              "scanner_evidence_sha256": "be2692a8879852a5c8627666d6bbeed721ea1ad8b0a93dbd32d50d62dcbb87be",
+              "attestation_bundle_sha256": "a859f659ce33822a65ad7ab72a60bf41cb36fac4fbdeadac1d39cdc43a499ea9",
+              "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+              "verification_sha256": "c0423c9853fcf1befe01e6e01ab2a6c7e05caa8212b1066c36c8f3b7f74918ab"
+            },
+            "release_assets": {
+              "image-manifest.json": "sha256:402f599c433ca2fae8b61688fe15f90ca41d4130c70ea7a543ddba8757675ca0",
+              "sbom.spdx.json": "sha256:4a682b1c351e9165cb390bc16b964052db97b2ab4c2be2830b3d2760134a13b5",
+              "mcp-definitions.json": "sha256:96c437bd74f96623277f640b94ec5fae95daa0712d9f4226d38e860bcb50ea60",
+              "mcp-capture-context.json": "sha256:2a18c33f836f8b7c093cb84db6fc3040ae8229eab80356b1f47715bae1b87c44",
+              "trivy.json": "sha256:be2692a8879852a5c8627666d6bbeed721ea1ad8b0a93dbd32d50d62dcbb87be",
+              "attestation-bundle.json": "sha256:a859f659ce33822a65ad7ab72a60bf41cb36fac4fbdeadac1d39cdc43a499ea9",
+              "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+              "verification.json": "sha256:c0423c9853fcf1befe01e6e01ab2a6c7e05caa8212b1066c36c8f3b7f74918ab"
+            },
+            "data_requirements": {
+              "mode": "none",
+              "schema_compatibility": []
+            }
+          }
+        },
         "mondo": {
           "endpoint": "https://mondo-link.genefoundry.org/mcp",
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/mondo-link",
-            "version": "0.11.0",
+            "version": "0.11.2",
             "source": {
-              "tag": "v0.11.0",
-              "revision": "d16dda6079fc8478ae6a0623f509fd9607bd01a2"
+              "tag": "v0.11.2",
+              "revision": "28cbd641f1a84ad0a02ef650106085dd01b03a8a"
             },
             "image": {
               "name": "ghcr.io/berntpopp/mondo-link",
-              "digest": "sha256:c3ba6f639615a133ee5d29ede00697b0def7071a59f8b2af3d286920d0ed74b1",
+              "digest": "sha256:ea6eff72966163396b9e5416ce3f67a004e36185e9102cabc95c208355c999b2",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:c3ba6f639615a133ee5d29ede00697b0def7071a59f8b2af3d286920d0ed74b1"
+                  "digest": "sha256:ea6eff72966163396b9e5416ce3f67a004e36185e9102cabc95c208355c999b2"
                 }
               ]
             },
@@ -922,29 +1090,29 @@
               "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
             },
             "mcp": {
-              "definitions_sha256": "7d34f1277ab75467956a939e75eeabae8b3174e65ccd9f729557ba041fad0ea1",
-              "capture_context_sha256": "95fa46072bb9bf32bba401099b343833ebecef4268670dcf2d17c70dd8c8a462",
+              "definitions_sha256": "e9a4257c4452d59b7061e904a5f9c53006aec2c0d487a207817375a0e30c534f",
+              "capture_context_sha256": "a5bb3c667970555409126bf51e9be946c2b59a7254b869598d3909f93e458ddd",
               "definition_contract": "data-bound"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-19T07:06:49.809946Z",
-              "sbom_sha256": "8b9f69c87f8cf56b557967a46f1cb59bcd485908fa8678a452cd1379144adabb",
-              "scanner_evidence_sha256": "0ead587b50567e11ad9287ea0962e0b60697434e916f2c37f2643fad959985ec",
-              "attestation_bundle_sha256": "3f61287a798ceddf3271b51a46428ef4c274021df0bf91729856b8c958e2cfb9",
+              "database_updated_at": "2026-11-20T13:11:33.075919Z",
+              "sbom_sha256": "66bc5abd2d629700fa00270a55fb972029a89875799616cb39e1e15a6fea4013",
+              "scanner_evidence_sha256": "4461cd035d29e058853d772afd0de572a91048ffb3dede9518560557f8d90b8c",
+              "attestation_bundle_sha256": "93cd6435808cee8c517e9286f7b0a88c82a5e74736077cdee571b083a8b4e1bf",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "331e669821e58b9224f4ec49a85ce0a0abb9ceac4cb5826afbe379d42dc0f54f"
+              "verification_sha256": "136389dc70f302dd355a1d08d302338abd188ba42c1e3c5fd08c68e5cda1fc5e"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:c3ba6f639615a133ee5d29ede00697b0def7071a59f8b2af3d286920d0ed74b1",
-              "sbom.spdx.json": "sha256:8b9f69c87f8cf56b557967a46f1cb59bcd485908fa8678a452cd1379144adabb",
-              "mcp-definitions.json": "sha256:7d34f1277ab75467956a939e75eeabae8b3174e65ccd9f729557ba041fad0ea1",
-              "mcp-capture-context.json": "sha256:95fa46072bb9bf32bba401099b343833ebecef4268670dcf2d17c70dd8c8a462",
-              "trivy.json": "sha256:0ead587b50567e11ad9287ea0962e0b60697434e916f2c37f2643fad959985ec",
-              "attestation-bundle.json": "sha256:3f61287a798ceddf3271b51a46428ef4c274021df0bf91729856b8c958e2cfb9",
+              "image-manifest.json": "sha256:ea6eff72966163396b9e5416ce3f67a004e36185e9102cabc95c208355c999b2",
+              "sbom.spdx.json": "sha256:66bc5abd2d629700fa00270a55fb972029a89875799616cb39e1e15a6fea4013",
+              "mcp-definitions.json": "sha256:e9a4257c4452d59b7061e904a5f9c53006aec2c0d487a207817375a0e30c534f",
+              "mcp-capture-context.json": "sha256:a5bb3c667970555409126bf51e9be946c2b59a7254b869598d3909f93e458ddd",
+              "trivy.json": "sha256:4461cd035d29e058853d772afd0de572a91048ffb3dede9518560557f8d90b8c",
+              "attestation-bundle.json": "sha256:93cd6435808cee8c517e9286f7b0a88c82a5e74736077cdee571b083a8b4e1bf",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:331e669821e58b9224f4ec49a85ce0a0abb9ceac4cb5826afbe379d42dc0f54f"
+              "verification.json": "sha256:136389dc70f302dd355a1d08d302338abd188ba42c1e3c5fd08c68e5cda1fc5e"
             },
             "data_requirements": {
               "release_tag": "data-mondo-1ed8ac77ae72f843",
@@ -955,6 +1123,62 @@
               ],
               "data_identity_contract": "runtime-v1",
               "mode": "external-reference"
+            }
+          }
+        },
+        "opentargets": {
+          "endpoint": "https://opentargets-link.genefoundry.org/mcp",
+          "application_release": {
+            "schema_version": 1,
+            "repository": "berntpopp/opentargets-link",
+            "version": "0.1.1",
+            "source": {
+              "tag": "v0.1.1",
+              "revision": "cd3e8c894267716f00f811a3e71cbdc6e4bfc769"
+            },
+            "image": {
+              "name": "ghcr.io/berntpopp/opentargets-link",
+              "digest": "sha256:c6ca7da138648169f8a89b4714951bb74654eae3be2422f0c1a90b96de9364ad",
+              "platforms": [
+                {
+                  "platform": "linux/amd64",
+                  "digest": "sha256:c6ca7da138648169f8a89b4714951bb74654eae3be2422f0c1a90b96de9364ad"
+                }
+              ]
+            },
+            "workflow": {
+              "caller": "berntpopp/opentargets-link/.github/workflows/container-release.yml",
+              "standard": "berntpopp/genefoundry-router/.github/workflows/_container-release.yml",
+              "standard_revision": "2cd86e35373cc7b1bdd8686ed9c69ca584b00ed9"
+            },
+            "mcp": {
+              "definitions_sha256": "f86b3ee917b1ffbd3d9d4892cf9d0ba29ab3ba9de5c3982343ac7f6c66e83ba0",
+              "capture_context_sha256": "3775aff9f48ff558c414f97ba064fce1d023affa4a4bb8a7be4612996df5645c",
+              "definition_contract": "data-independent"
+            },
+            "security_evidence": {
+              "scanner": "trivy",
+              "scanner_version": "0.70.0",
+              "database_updated_at": "2026-11-20T07:09:47.681202Z",
+              "sbom_sha256": "20f8f2d218ed1f09e9ec39171e07d5ab1bb59e990bb718dd22465d349b95f3a5",
+              "scanner_evidence_sha256": "a93c050e06add8ba391c66ac51a50f4059de96f1551a14b7e203c447dc7dcd05",
+              "attestation_bundle_sha256": "401d39d0f9d0e6f2e8a15554ccce82683216252f8599d887c6e2e6656e50c2eb",
+              "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+              "verification_sha256": "056920cf0da5834039b6746ad80c9b580ae46dbfac916579cbc2f485eca0af4b"
+            },
+            "release_assets": {
+              "image-manifest.json": "sha256:c6ca7da138648169f8a89b4714951bb74654eae3be2422f0c1a90b96de9364ad",
+              "sbom.spdx.json": "sha256:20f8f2d218ed1f09e9ec39171e07d5ab1bb59e990bb718dd22465d349b95f3a5",
+              "mcp-definitions.json": "sha256:f86b3ee917b1ffbd3d9d4892cf9d0ba29ab3ba9de5c3982343ac7f6c66e83ba0",
+              "mcp-capture-context.json": "sha256:3775aff9f48ff558c414f97ba064fce1d023affa4a4bb8a7be4612996df5645c",
+              "trivy.json": "sha256:a93c050e06add8ba391c66ac51a50f4059de96f1551a14b7e203c447dc7dcd05",
+              "attestation-bundle.json": "sha256:401d39d0f9d0e6f2e8a15554ccce82683216252f8599d887c6e2e6656e50c2eb",
+              "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+              "verification.json": "sha256:056920cf0da5834039b6746ad80c9b580ae46dbfac916579cbc2f485eca0af4b"
+            },
+            "data_requirements": {
+              "mode": "none",
+              "schema_compatibility": []
             }
           }
         },
@@ -1363,18 +1587,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/ucsc-link",
-            "version": "0.5.1",
+            "version": "0.6.0",
             "source": {
-              "tag": "v0.5.1",
-              "revision": "2e09139c69dbfd074c06b2c81d4404b64488ee88"
+              "tag": "v0.6.0",
+              "revision": "aa4e2cd0cea3d2786dcd70782928b6ac8df975af"
             },
             "image": {
               "name": "ghcr.io/berntpopp/ucsc-link",
-              "digest": "sha256:b0b44466d186d0e9eb86b957e2167accb7958384f43e707b29168e3e9951a3c0",
+              "digest": "sha256:9c230bf78f7284b45f2194366bca76455d3816d9f1a9ccf22085393f3be96155",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:b0b44466d186d0e9eb86b957e2167accb7958384f43e707b29168e3e9951a3c0"
+                  "digest": "sha256:9c230bf78f7284b45f2194366bca76455d3816d9f1a9ccf22085393f3be96155"
                 }
               ]
             },
@@ -1385,28 +1609,28 @@
             },
             "mcp": {
               "definitions_sha256": "9f5ef426852e70e25c4e159770ed2f0ac11e3648587bd3c4a42ab67e172326e7",
-              "capture_context_sha256": "051aa3f955c68193540cb8044084761ec819dbcfa58a1bfa253e4a90280ff0a5",
+              "capture_context_sha256": "e65be8f36fc1edba9dee7030ec47af6d556de01f75a60af5a0ebb06ea62142ee",
               "definition_contract": "data-independent"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-19T13:02:29.533007Z",
-              "sbom_sha256": "89e1ef164dfb008f85a0fa97cd22e93573bface9dadb015d375c8f01a7b26d37",
-              "scanner_evidence_sha256": "2103f38dde8df915886473da07ac2dd449b4c66b4f2d1e22cc12e1c78e4be39e",
-              "attestation_bundle_sha256": "013215ee5a458b1f2cc122b23ab44054ad9c86af8364d54aec3b6651533c383c",
+              "database_updated_at": "2026-11-20T13:11:33.075919Z",
+              "sbom_sha256": "b3fc9f22feb2be48bd1c1c2f10db36eca4e45dc198c2334b0ef5d6bf789475f5",
+              "scanner_evidence_sha256": "3b220c984aae9e2a51d68eeb4570d43638e7ab9ccdd182f264cf2a0b89d85ea7",
+              "attestation_bundle_sha256": "def15935cc2524118c2460116c936aaf0d77d94f6369baf08fead4e7828760eb",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "00242f20c4d28c8565dc312a9db3aa8908a1303a81d43c64aa1a191dbd190a5c"
+              "verification_sha256": "6c11105971be0647d5a01a03029e2621141f7ea1cfb98dbf637dc0f896cc29ff"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:b0b44466d186d0e9eb86b957e2167accb7958384f43e707b29168e3e9951a3c0",
-              "sbom.spdx.json": "sha256:89e1ef164dfb008f85a0fa97cd22e93573bface9dadb015d375c8f01a7b26d37",
+              "image-manifest.json": "sha256:9c230bf78f7284b45f2194366bca76455d3816d9f1a9ccf22085393f3be96155",
+              "sbom.spdx.json": "sha256:b3fc9f22feb2be48bd1c1c2f10db36eca4e45dc198c2334b0ef5d6bf789475f5",
               "mcp-definitions.json": "sha256:9f5ef426852e70e25c4e159770ed2f0ac11e3648587bd3c4a42ab67e172326e7",
-              "mcp-capture-context.json": "sha256:051aa3f955c68193540cb8044084761ec819dbcfa58a1bfa253e4a90280ff0a5",
-              "trivy.json": "sha256:2103f38dde8df915886473da07ac2dd449b4c66b4f2d1e22cc12e1c78e4be39e",
-              "attestation-bundle.json": "sha256:013215ee5a458b1f2cc122b23ab44054ad9c86af8364d54aec3b6651533c383c",
+              "mcp-capture-context.json": "sha256:e65be8f36fc1edba9dee7030ec47af6d556de01f75a60af5a0ebb06ea62142ee",
+              "trivy.json": "sha256:3b220c984aae9e2a51d68eeb4570d43638e7ab9ccdd182f264cf2a0b89d85ea7",
+              "attestation-bundle.json": "sha256:def15935cc2524118c2460116c936aaf0d77d94f6369baf08fead4e7828760eb",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:00242f20c4d28c8565dc312a9db3aa8908a1303a81d43c64aa1a191dbd190a5c"
+              "verification.json": "sha256:6c11105971be0647d5a01a03029e2621141f7ea1cfb98dbf637dc0f896cc29ff"
             },
             "data_requirements": {
               "mode": "none",
@@ -1475,18 +1699,18 @@
           "application_release": {
             "schema_version": 1,
             "repository": "berntpopp/vep-link",
-            "version": "1.2.2",
+            "version": "1.2.3",
             "source": {
-              "tag": "v1.2.2",
-              "revision": "f3ece2cf4407b4964061b3cdffef459d897cebad"
+              "tag": "v1.2.3",
+              "revision": "7cf04356c73a5b325212b4589ae0dc340f6b284c"
             },
             "image": {
               "name": "ghcr.io/berntpopp/vep-link",
-              "digest": "sha256:12f262f464c69c8846e6988b5d9b8aa703e3a80f0ed784e40a605aac083de634",
+              "digest": "sha256:e0498a5875e53b09fc64c69d6b988002050122fb503bc616f57357207f9bcf14",
               "platforms": [
                 {
                   "platform": "linux/amd64",
-                  "digest": "sha256:12f262f464c69c8846e6988b5d9b8aa703e3a80f0ed784e40a605aac083de634"
+                  "digest": "sha256:e0498a5875e53b09fc64c69d6b988002050122fb503bc616f57357207f9bcf14"
                 }
               ]
             },
@@ -1497,28 +1721,28 @@
             },
             "mcp": {
               "definitions_sha256": "092e4b2c2f3a5a903b58242f79ddf020fe92d00b23fc959a4cd34b4b316a714e",
-              "capture_context_sha256": "c6a19b428ad99cfac5ad894c0667cbe15fabcb3efe0f5ae4065f33f0f180d1eb",
+              "capture_context_sha256": "427537d0b0cf08967fb0feb8c0e7c5849a6153c63d7b765f62df63cf71eb3f0a",
               "definition_contract": "data-independent"
             },
             "security_evidence": {
               "scanner": "trivy",
               "scanner_version": "0.70.0",
-              "database_updated_at": "2026-11-18T19:07:09.820302Z",
-              "sbom_sha256": "c936c622f4dbe79c44df4eb1b42f5dc3de49c5cbbeec30c1b511f3ab1c760200",
-              "scanner_evidence_sha256": "52b5f0970e661025d48f25e089d5e065f59c744b76051130f3f5b78b0b32bef0",
-              "attestation_bundle_sha256": "c1ce2a84a8ead5aaf02691e9d744dcd34e79b48a1c5e9f73274dbe3baafd12f4",
+              "database_updated_at": "2026-11-20T07:09:47.681202Z",
+              "sbom_sha256": "2ebc5d7aa9103eacf2ed9fb2977e7ad87697610c80d186d543c472572616699f",
+              "scanner_evidence_sha256": "e0ffcd92237fefbadc5eb315b3beb09dec13f64c561bb6988959b0a9620acae7",
+              "attestation_bundle_sha256": "64647e24707752b026599cdb272387bad21ee7526c4372f16d60bfc73c5b68eb",
               "trusted_root_sha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification_sha256": "7d307a53fb5a20aa655a78a5129059c6849fa88572135058d5751a6149f36169"
+              "verification_sha256": "00ad39fafd40cb33eb586a847d94080c2dddaec57f75756603205cdbb8238027"
             },
             "release_assets": {
-              "image-manifest.json": "sha256:12f262f464c69c8846e6988b5d9b8aa703e3a80f0ed784e40a605aac083de634",
-              "sbom.spdx.json": "sha256:c936c622f4dbe79c44df4eb1b42f5dc3de49c5cbbeec30c1b511f3ab1c760200",
+              "image-manifest.json": "sha256:e0498a5875e53b09fc64c69d6b988002050122fb503bc616f57357207f9bcf14",
+              "sbom.spdx.json": "sha256:2ebc5d7aa9103eacf2ed9fb2977e7ad87697610c80d186d543c472572616699f",
               "mcp-definitions.json": "sha256:092e4b2c2f3a5a903b58242f79ddf020fe92d00b23fc959a4cd34b4b316a714e",
-              "mcp-capture-context.json": "sha256:c6a19b428ad99cfac5ad894c0667cbe15fabcb3efe0f5ae4065f33f0f180d1eb",
-              "trivy.json": "sha256:52b5f0970e661025d48f25e089d5e065f59c744b76051130f3f5b78b0b32bef0",
-              "attestation-bundle.json": "sha256:c1ce2a84a8ead5aaf02691e9d744dcd34e79b48a1c5e9f73274dbe3baafd12f4",
+              "mcp-capture-context.json": "sha256:427537d0b0cf08967fb0feb8c0e7c5849a6153c63d7b765f62df63cf71eb3f0a",
+              "trivy.json": "sha256:e0ffcd92237fefbadc5eb315b3beb09dec13f64c561bb6988959b0a9620acae7",
+              "attestation-bundle.json": "sha256:64647e24707752b026599cdb272387bad21ee7526c4372f16d60bfc73c5b68eb",
               "trusted-root.json": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
-              "verification.json": "sha256:7d307a53fb5a20aa655a78a5129059c6849fa88572135058d5751a6149f36169"
+              "verification.json": "sha256:00ad39fafd40cb33eb586a847d94080c2dddaec57f75756603205cdbb8238027"
             },
             "data_requirements": {
               "mode": "none",
@@ -3155,7 +3379,7 @@
       ]
     },
     "ucsc": {
-      "version": "0.5.1",
+      "version": "0.6.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -9304,15 +9528,6 @@
             ],
             "additionalProperties": false,
             "$defs": {
-              "NetworkType": {
-                "type": "string",
-                "enum": [
-                  "functional",
-                  "physical"
-                ],
-                "title": "NetworkType",
-                "description": "Network types supported by STRING."
-              },
               "NetworkFlavor": {
                 "type": "string",
                 "enum": [
@@ -9322,6 +9537,15 @@
                 ],
                 "title": "NetworkFlavor",
                 "description": "Network visualization styles supported by STRING."
+              },
+              "NetworkType": {
+                "type": "string",
+                "enum": [
+                  "functional",
+                  "physical"
+                ],
+                "title": "NetworkType",
+                "description": "Network types supported by STRING."
               }
             }
           },
@@ -9877,15 +10101,6 @@
             ],
             "additionalProperties": false,
             "$defs": {
-              "NetworkType": {
-                "type": "string",
-                "enum": [
-                  "functional",
-                  "physical"
-                ],
-                "title": "NetworkType",
-                "description": "Network types supported by STRING."
-              },
               "NetworkFlavor": {
                 "type": "string",
                 "enum": [
@@ -9905,6 +10120,15 @@
                 ],
                 "title": "ImageFormat",
                 "description": "Image formats for network visualization."
+              },
+              "NetworkType": {
+                "type": "string",
+                "enum": [
+                  "functional",
+                  "physical"
+                ],
+                "title": "NetworkType",
+                "description": "Network types supported by STRING."
               }
             }
           },
@@ -15043,11 +15267,11 @@
       ]
     },
     "clinvar": {
-      "version": "0.8.4",
+      "version": "0.10.0",
       "tools": [
         {
           "name": "get_variant",
-          "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, or VariationID; returns its normalized classification, review status and 0-4 star rating plus a recommended_citation. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). Except in minimal mode it also returns the PubMed / PMC / Bookshelf ids its submissions cite: citations lists at most 50, citation_count is the full total; submissions holds OMIM's own SCV text (description, conditions, PMIDs). Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
+          "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, or VariationID; returns its normalized classification, review status and 0-4 star rating plus a recommended_citation. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). minimal keeps up to 5 trait names; every other mode also returns the PubMed / PMC / Bookshelf ids its submissions cite: citations lists at most 50, citation_count is the full total; submissions holds OMIM's own SCV text (description, conditions, PMIDs); a description is capped at 500 characters in compact, 2,000 in standard (description_truncated) and a repeated description or PMID list is sent once (description_same_as, pmids_same_as). classification is the GERMLINE aggregate; somatic_clinical_impact (AMP tier) and oncogenicity are separate blocks (null when ClinVar has none); search_somatic_classifications(identifier=...) gives their per-submission tumour types and drugs without the germline payload. Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -15219,7 +15443,7 @@
         },
         {
           "name": "search_variants",
-          "description": "Free-text search across ClinVar variant names, genes, and traits; returns matching variants (vcv_accession, gene, classification, star rating) as a paginated list. Use this to locate a record when you only have a gene symbol plus a change or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, so results never wander into an unrelated gene, and _meta.search declares what was inferred and whether the match degraded. Pagination: total_count / has_more / next_offset; in minimal/compact mode the citation is hoisted once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
+          "description": "Free-text search across ClinVar variant names, genes, and traits; returns matching variants (vcv_accession, gene, classification, star rating) as a paginated list. Use this to locate a record when you only have a gene symbol plus a change (BRAF V600E reads as p.Val600Glu) or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, so results never wander into an unrelated gene, and _meta.search declares what was inferred and whether the match degraded. Pagination: total_count / has_more / next_offset; in minimal/compact mode the citation is hoisted once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -15717,6 +15941,176 @@
           ]
         },
         {
+          "name": "search_somatic_classifications",
+          "description": "List ClinVar variants that carry a SOMATIC classification: the AMP/ASCO/CAP clinical-impact tier (somatic_clinical_impact) and the ClinGen/CGC/VICC oncogenicity call (oncogenicity), each with review status and date, beside the separate germline_classification (never merged). Tier I first, paginated with total_count / has_more / next_offset. standard/full add per-submission tumour type, therapy and assertion type. Use this for oncology questions (actionable tier, oncogenic call); coverage is ClinVar's somatic submissions only, so an empty page is not evidence a variant lacks clinical impact.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "gene_symbol": {
+                "anyOf": [
+                  {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Restrict to this HGNC gene symbol (case-insensitive). A symbol with no ClinVar variants is rejected with invalid_input; a known gene with no somatic call returns an empty page.",
+                "examples": [
+                  "BRAF"
+                ]
+              },
+              "tier": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Filter by the aggregate AMP/ASCO/CAP somatic clinical-impact tier: tier_i strong, tier_ii potential, tier_iii unknown, tier_iv benign/likely benign. ClinVar's wording ('Tier I - Strong', 'Tier 1') is accepted; anything else is invalid_input.",
+                "enum": [
+                  "tier_i",
+                  "tier_ii",
+                  "tier_iii",
+                  "tier_iv",
+                  null
+                ],
+                "examples": [
+                  "tier_i"
+                ]
+              },
+              "oncogenicity": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Filter by the aggregate ClinGen/CGC/VICC oncogenicity classification (a somatic scale, not germline pathogenicity). ClinVar's wording ('Likely oncogenic') is accepted; anything else is invalid_input.",
+                "enum": [
+                  "oncogenic",
+                  "likely_oncogenic",
+                  "uncertain_significance",
+                  "likely_benign",
+                  "benign",
+                  "conflicting",
+                  null
+                ],
+                "examples": [
+                  "oncogenic"
+                ]
+              },
+              "tumour_type": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Keep variants with at least one somatic submission naming this tumour type: a case-insensitive substring of ClinVar's MedGen name ('melanoma') or an exact MedGen id ('C0025202'); standard/full then show only that tumour's assertions (other_assertions counts the rest). tier / oncogenicity still filter the variant's aggregate, so that tumour's own submission may carry a lower tier. A value no submission names is rejected with invalid_input, never an empty page.",
+                "examples": [
+                  "melanoma"
+                ]
+              },
+              "identifier": {
+                "anyOf": [
+                  {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Narrow to one variant (VCV, VariationID, rsID or HGVS, as get_variant takes): its somatic detail without the germline payload. No somatic call is an empty page.",
+                "examples": [
+                  "VCV000013961"
+                ]
+              },
+              "limit": {
+                "default": 20,
+                "description": "Maximum rows to return in this page (1-100).",
+                "examples": [
+                  20
+                ],
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "default": 0,
+                "description": "Rows to skip before this page; use the response's next_offset to paginate. Rows beyond total_count return an empty page, never an error.",
+                "examples": [
+                  0
+                ],
+                "minimum": 0,
+                "type": "integer"
+              },
+              "response_mode": {
+                "default": "compact",
+                "description": "Payload verbosity: minimal = ids + the two somatic aggregates; compact (default) adds the variant name and germline_classification; standard/full add per-submission assertions (submitter, assertion type, tumour types, drugs).",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ],
+                "examples": [
+                  "compact"
+                ],
+                "type": "string"
+              },
+              "request_id": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one.",
+                "examples": [
+                  "req-42"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "classification",
+            "clinical-significance",
+            "somatic",
+            "variant"
+          ]
+        },
+        {
           "name": "get_server_capabilities",
           "description": "Use this for orientation in a new session: the supported tool surface, response modes, filter vocabularies (the exact accepted values for classification / assembly / sort), recommended workflows, the live ClinVar release date, error codes, and current limitations. Returns ~3kB.",
           "inputSchema": {
@@ -16039,7 +16433,7 @@
       ]
     },
     "vep": {
-      "version": "1.2.2",
+      "version": "1.2.3",
       "tools": [
         {
           "name": "get_capabilities",
@@ -17386,7 +17780,7 @@
       ]
     },
     "mondo": {
-      "version": "0.11.0",
+      "version": "0.11.2",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -17844,7 +18238,7 @@
         },
         {
           "name": "resolve_xref",
-          "description": "Resolve an external cross-reference CURIE (OMIM/Orphanet/DOID/NCIT/UMLS/MeSH/MedGen/SNOMED/GARD) back to the Mondo term(s) that map to it, ranked by mapping predicate (exactMatch > equivalentTo > closeMatch > ...). Returns matches[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step (offset). Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
+          "description": "Resolve an external cross-reference CURIE (OMIM/Orphanet/DOID/NCIT/UMLS/MeSH/MedGen/SNOMED/GARD/ONCOTREE) back to the Mondo term(s) that map to it, ranked by mapping predicate (exactMatch > equivalentTo > closeMatch > ...). Returns matches[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step (offset). Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -17905,7 +18299,7 @@
         },
         {
           "name": "map_cross_ontology",
-          "description": "List a Mondo term's cross-references to other ontologies, grouped by target prefix. get_disease surfaces every source; this tool's `prefixes` filter is the first-class set (OMIM/ORPHA/DOID/NCIT/UMLS/MESH/MEDGEN/SCTID/GARD), each with its mapping predicate and origin (obo_xref|sssom). An unrecognised prefix is rejected with invalid_input. Signature: map_cross_ontology(term, prefixes=, response_mode=).",
+          "description": "List a Mondo term's cross-references to other ontologies, grouped by target prefix. get_disease surfaces every source; this tool's `prefixes` filter is the first-class set (OMIM/ORPHA/DOID/NCIT/UMLS/MESH/MEDGEN/SCTID/GARD/ONCOTREE), each with its mapping predicate and origin (obo_xref|sssom). An unrecognised prefix is rejected with invalid_input. Signature: map_cross_ontology(term, prefixes=, response_mode=).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -17931,7 +18325,8 @@
                         "MESH",
                         "MEDGEN",
                         "SCTID",
-                        "GARD"
+                        "GARD",
+                        "ONCOTREE"
                       ],
                       "type": "string"
                     },
@@ -17942,7 +18337,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Restrict to these first-class cross-reference sources (OMIM/ORPHA/DOID/NCIT/UMLS/MESH/MEDGEN/SCTID/GARD). An unrecognised prefix is rejected with invalid_input. Omit to return every source.",
+                "description": "Restrict to these first-class cross-reference sources (OMIM/ORPHA/DOID/NCIT/UMLS/MESH/MEDGEN/SCTID/GARD/ONCOTREE). An unrecognised prefix is rejected with invalid_input. Omit to return every source.",
                 "examples": [
                   [
                     "OMIM",
@@ -19261,7 +19656,7 @@
       ]
     },
     "hpo": {
-      "version": "0.11.0",
+      "version": "0.12.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -24378,6 +24773,1948 @@
             "publication",
             "publications",
             "trait"
+          ]
+        }
+      ]
+    },
+    "civic": {
+      "version": "0.1.1",
+      "tools": [
+        {
+          "name": "get_server_capabilities",
+          "description": "Describe this server: CIViC identifiers, limits, data release, licence, classification axes, rate-limit policy and error codes. Signature: get_server_capabilities().",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "cancer",
+            "discovery",
+            "evidence",
+            "oncogenicity",
+            "somatic",
+            "therapy",
+            "variant"
+          ]
+        },
+        {
+          "name": "get_diagnostics",
+          "description": "Report runtime state without calling CIViC: build, upstream request budget (today's usage vs the daily cap), cache hits and tool latency metrics. Signature: get_diagnostics().",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "cancer",
+            "discovery",
+            "evidence",
+            "oncogenicity",
+            "somatic",
+            "therapy",
+            "variant"
+          ]
+        },
+        {
+          "name": "search_molecular_profiles",
+          "description": "Find CIViC molecular profiles (what evidence attaches to) for a gene + variant name (BRAF V600E), a ClinGen CAID (CA123643), a ClinVar variation ID (376069) or an HGVS string, and return exact_match (the single-variant profile) plus `simple` and `complex` lists kept apart: a complex profile (V600E AND MSI Low) only applies to that combination. Each row: id, name, evidence counts; simple_total and complex_total count the whole result. Start here. Signature: search_molecular_profiles(query, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "description": "Gene + variant, CAID, ClinVar variation ID or HGVS.",
+                "examples": [
+                  "BRAF V600E"
+                ],
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              "limit": {
+                "description": "Max profiles (default 25, max 100).",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "cancer",
+            "evidence",
+            "oncogenicity",
+            "profiles",
+            "somatic",
+            "therapy",
+            "variant"
+          ]
+        },
+        {
+          "name": "get_molecular_profile",
+          "description": "Return one molecular profile: its variants, kind (simple/complex), live evidence counts by status (and accepted by type), its ACCEPTED assertions, each with actionability (AMP tier/level), oncogenicity or germline_pathogenicity as separate fields and a DOID disease, and other_assertions (submitted/rejected: id and status only). evidence_note flags a profile without an accepted assertion: no CIViC evidence is not 'not actionable'. Signature: get_molecular_profile(molecular_profile_id).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "molecular_profile_id": {
+                "description": "CIViC molecular profile ID.",
+                "examples": [
+                  12
+                ],
+                "maximum": 2147483647,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "molecular_profile_id"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "cancer",
+            "evidence",
+            "oncogenicity",
+            "profiles",
+            "somatic",
+            "therapy",
+            "variant"
+          ]
+        },
+        {
+          "name": "get_variant",
+          "description": "Return one CIViC variant: coordinates with their assembly (CIViC's primary build is GRCh37), genomic HGVS labelled GRCh37/GRCh38, transcript HGVS, MANE Select HGVS, ClinGen CAID, ClinVar IDs, variant types (SO) and its single-variant molecular profile. Signature: get_variant(variant_id).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "variant_id": {
+                "description": "CIViC variant ID.",
+                "examples": [
+                  12
+                ],
+                "maximum": 2147483647,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "variant_id"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "cancer",
+            "evidence",
+            "oncogenicity",
+            "somatic",
+            "therapy",
+            "variant",
+            "variants"
+          ]
+        },
+        {
+          "name": "search_evidence_items",
+          "description": "List CIViC evidence items (one publication-backed clinical claim each) matching ALL given filters: molecular_profile_id, disease, therapy, evidence_type, evidence_level (A validated .. E inferential), significance, status (ACCEPTED by default). Rows: type, level, direction, significance, rating, DOID disease, therapies (NCIt), source PMID. `total` is exact and counts_by_level splits it by level; zero rows says no CIViC evidence found. Signature: search_evidence_items(molecular_profile_id=, disease=, therapy=, evidence_type=, evidence_level=, significance=, status=, response_mode=, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "molecular_profile_id": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only this molecular profile's evidence."
+              },
+              "disease": {
+                "anyOf": [
+                  {
+                    "maxLength": 120,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "DOID (DOID:1909, exact) or disease name (Melanoma, matches CIViC names containing it); unknown is not_found."
+              },
+              "therapy": {
+                "anyOf": [
+                  {
+                    "maxLength": 120,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "NCIt code (C64768, exact) or therapy name (Vemurafenib, matches CIViC names containing it); unknown is not_found."
+              },
+              "evidence_type": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "PREDICTIVE",
+                      "DIAGNOSTIC",
+                      "PROGNOSTIC",
+                      "PREDISPOSING",
+                      "ONCOGENIC",
+                      "FUNCTIONAL"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Evidence type."
+              },
+              "evidence_level": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "A",
+                      "B",
+                      "C",
+                      "D",
+                      "E"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "CIViC evidence level."
+              },
+              "significance": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "SENSITIVITYRESPONSE",
+                      "RESISTANCE",
+                      "REDUCED_SENSITIVITY",
+                      "ADVERSE_RESPONSE",
+                      "BETTER_OUTCOME",
+                      "POOR_OUTCOME",
+                      "POSITIVE",
+                      "NEGATIVE",
+                      "ONCOGENICITY",
+                      "LIKELY_ONCOGENIC",
+                      "PATHOGENIC",
+                      "LIKELY_PATHOGENIC",
+                      "UNCERTAIN_SIGNIFICANCE",
+                      "BENIGN",
+                      "LIKELY_BENIGN",
+                      "PREDISPOSITION",
+                      "PROTECTIVENESS",
+                      "GAIN_OF_FUNCTION",
+                      "LOSS_OF_FUNCTION",
+                      "UNALTERED_FUNCTION",
+                      "NEOMORPHIC",
+                      "DOMINANT_NEGATIVE",
+                      "UNKNOWN",
+                      "NA"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Clinical significance as CIViC records it."
+              },
+              "status": {
+                "description": "Curation status; ACCEPTED (default) excludes unreviewed submissions.",
+                "enum": [
+                  "ACCEPTED",
+                  "SUBMITTED",
+                  "NON_REJECTED",
+                  "ALL"
+                ]
+              },
+              "response_mode": {
+                "description": "minimal: IDs + classification | compact (default): + disease, therapies, profile, source | standard/full: + fenced curator text.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              },
+              "limit": {
+                "description": "Max rows (default 10, max 50).",
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "cancer",
+            "evidence",
+            "oncogenicity",
+            "somatic",
+            "therapy",
+            "variant"
+          ]
+        },
+        {
+          "name": "get_evidence_item",
+          "description": "Return one evidence item: type, level, direction, significance, rating, DOID disease, therapies, the curator's statement (fenced untrusted_text), source PMID/citation and NCT IDs, phenotypes (HPO) and the assertions it supports. Signature: get_evidence_item(evidence_id).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "evidence_id": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "pattern": "^(?i:EID)?[1-9]\\d{0,8}$",
+                    "type": "string"
+                  }
+                ],
+                "description": "CIViC evidence item ID as a number or 'EID95'.",
+                "examples": [
+                  95
+                ]
+              }
+            },
+            "required": [
+              "evidence_id"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "cancer",
+            "evidence",
+            "oncogenicity",
+            "somatic",
+            "therapy",
+            "variant"
+          ]
+        },
+        {
+          "name": "search_assertions",
+          "description": "List CIViC assertions (curated summary calls built on evidence items) matching ALL given filters: molecular_profile_id, disease, therapy, assertion_type, amp_level, status (ACCEPTED by default). Each row keeps actionability (AMP/ASCO/CAP tier and level, FDA companion test, NCCN), oncogenicity (ClinGen/CGC/VICC) and germline_pathogenicity (ACMG) apart. Zero rows says no CIViC evidence found. Signature: search_assertions(molecular_profile_id=, disease=, therapy=, assertion_type=, amp_level=, status=, response_mode=, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "molecular_profile_id": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only this molecular profile's assertions."
+              },
+              "disease": {
+                "anyOf": [
+                  {
+                    "maxLength": 120,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "DOID (DOID:1909, exact) or disease name (Melanoma, matches CIViC names containing it); unknown is not_found."
+              },
+              "therapy": {
+                "anyOf": [
+                  {
+                    "maxLength": 120,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "NCIt code (C64768, exact) or therapy name (Vemurafenib, matches CIViC names containing it); unknown is not_found."
+              },
+              "assertion_type": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "PREDICTIVE",
+                      "DIAGNOSTIC",
+                      "PROGNOSTIC",
+                      "PREDISPOSING",
+                      "ONCOGENIC"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Assertion type."
+              },
+              "amp_level": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "TIER_I_LEVEL_A",
+                      "TIER_I_LEVEL_B",
+                      "TIER_II_LEVEL_C",
+                      "TIER_II_LEVEL_D",
+                      "TIER_III",
+                      "TIER_IV"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "AMP/ASCO/CAP 2017 tier and level."
+              },
+              "status": {
+                "description": "Curation status; ACCEPTED (default) excludes unreviewed submissions.",
+                "enum": [
+                  "ACCEPTED",
+                  "SUBMITTED",
+                  "NON_REJECTED",
+                  "ALL"
+                ]
+              },
+              "response_mode": {
+                "description": "minimal: IDs + classification | compact (default): + disease, therapies, profile, source | standard/full: + fenced curator text.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              },
+              "limit": {
+                "description": "Max rows (default 10, max 50).",
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "assertions",
+            "cancer",
+            "evidence",
+            "oncogenicity",
+            "somatic",
+            "therapy",
+            "variant"
+          ]
+        },
+        {
+          "name": "get_assertion",
+          "description": "Return one assertion: type, direction, actionability (AMP tier/level, FDA companion test, regulatory approval, NCCN guideline) or oncogenicity / germline_pathogenicity with their codes, DOID disease, therapies, the fenced summary and description, and the evidence items behind it (status, level, molecular profile, PMID). Signature: get_assertion(assertion_id).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "assertion_id": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "pattern": "^(?i:AID)?[1-9]\\d{0,8}$",
+                    "type": "string"
+                  }
+                ],
+                "description": "CIViC assertion ID as a number or 'AID10'.",
+                "examples": [
+                  10
+                ]
+              }
+            },
+            "required": [
+              "assertion_id"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "assertions",
+            "cancer",
+            "evidence",
+            "oncogenicity",
+            "somatic",
+            "therapy",
+            "variant"
+          ]
+        },
+        {
+          "name": "get_gene",
+          "description": "Return a CIViC gene (symbol, full name, NCBI Gene ID, aliases, fenced curator summary) and the variants CIViC curates for it, each with its single-variant molecular profile ID; `total` is exact, page with offset. Ensembl or HGNC IDs are rejected with a converter step. Signature: get_gene(gene, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "gene": {
+                "description": "HGNC symbol (BRAF) or NCBI Gene ID (NCBIGene:673).",
+                "examples": [
+                  "BRAF"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              "limit": {
+                "description": "Max variants (default 50, max 100).",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "gene"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "actionability",
+            "cancer",
+            "evidence",
+            "genes",
+            "oncogenicity",
+            "somatic",
+            "therapy",
+            "variant"
+          ]
+        }
+      ]
+    },
+    "cbioportal": {
+      "version": "0.2.0",
+      "tools": [
+        {
+          "name": "get_server_capabilities",
+          "description": "Describe this server: identifiers, limits, data version, licence handling, rate-limit policy, citations and error codes. Signature: get_server_capabilities().",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "cohort",
+            "discovery",
+            "hotspot",
+            "mutation",
+            "prevalence",
+            "somatic",
+            "study"
+          ]
+        },
+        {
+          "name": "get_diagnostics",
+          "description": "Report runtime state without calling cBioPortal: build, upstream request budget (today's usage vs the daily cap), cache hits and tool latency metrics. Signature: get_diagnostics().",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "cohort",
+            "discovery",
+            "hotspot",
+            "mutation",
+            "prevalence",
+            "somatic",
+            "study"
+          ]
+        },
+        {
+          "name": "get_gene_alteration_frequency",
+          "description": "Get how often a gene is altered per cBioPortal study: mutation (altered / profiled samples, panel-aware), optional protein_change (e.g. KRAS G12C) and CNA (amplified / deep-deleted / profiled), each row with licence, citation and import_date. Pick studies by cancer_type (OncoTree code, subtypes included, largest first, max_studies; total/truncated count matching studies) or study_ids; neither = MSK-IMPACT 2017 pan-cancer. Never sum rows (cohorts overlap). Restricted (NC/ND) studies are skipped unless include_restricted. Signature: get_gene_alteration_frequency(gene, cancer_type=, study_ids=, protein_change=, include_restricted=, max_studies=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "gene": {
+                "description": "Gene symbol (HGNC, e.g. BRAF) or NCBI Gene ID (673 or NCBIGene:673).",
+                "examples": [
+                  "BRAF"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              "cancer_type": {
+                "anyOf": [
+                  {
+                    "pattern": "^[A-Za-z0-9_]{2,40}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Lowercase OncoTree code as cBioPortal uses it (luad, skcm, mel); subtypes are included. Find codes with list_cancer_types."
+              },
+              "study_ids": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 10,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Explicit study IDs (1-10); instead of cancer_type.",
+                "examples": [
+                  [
+                    "luad_tcga_pan_can_atlas_2018"
+                  ]
+                ]
+              },
+              "protein_change": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[pP]\\.)?[A-Za-z*]{1,3}\\d{1,5}[A-Za-z0-9_*>]{0,30}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Protein change, e.g. V600E or G12C (p. prefix optional; three-letter p.Gly12Cys is converted).",
+                "examples": [
+                  "G12C"
+                ]
+              },
+              "include_restricted": {
+                "description": "Opt in to studies with non-commercial/no-derivatives terms (flagged).",
+                "type": "boolean"
+              },
+              "max_studies": {
+                "description": "With cancer_type: studies to query (default 3).",
+                "maximum": 10,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "gene"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "cohort",
+            "hotspot",
+            "mutation",
+            "prevalence",
+            "somatic",
+            "study"
+          ]
+        },
+        {
+          "name": "search_studies",
+          "description": "Search public cBioPortal studies by keyword (ID, name, citation) and/or cancer_type (OncoTree code, subtypes included), largest first. Each row: study_id, name, licence, restricted, citation, pmid, import_date, cancer_type, sample counts and assembly. Restricted (NC/ND) studies are excluded unless include_restricted (restricted_excluded counts them). No filter lists all. Signature: search_studies(query=, cancer_type=, include_restricted=, response_mode=, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "anyOf": [
+                  {
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Keyword, e.g. 'pan-cancer atlas'."
+              },
+              "cancer_type": {
+                "anyOf": [
+                  {
+                    "pattern": "^[A-Za-z0-9_]{2,40}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Lowercase OncoTree code as cBioPortal uses it (luad, skcm, mel); subtypes are included. Find codes with list_cancer_types."
+              },
+              "include_restricted": {
+                "description": "Opt in to studies with non-commercial/no-derivatives terms (flagged).",
+                "type": "boolean"
+              },
+              "response_mode": {
+                "description": "minimal: id, name, licence, citation | compact (default): + cancer type, sample counts, assembly | standard: + URL | full: + fenced description.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              },
+              "limit": {
+                "description": "Max rows (default 20, max 100).",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "cohort",
+            "hotspot",
+            "mutation",
+            "prevalence",
+            "somatic",
+            "studies",
+            "study"
+          ]
+        },
+        {
+          "name": "get_study",
+          "description": "Get one cBioPortal study: licence, restricted flag, citation, pmid, import_date, cancer type, sample counts, assembly, the fenced description, every PMID (pmids) and its molecular profile IDs (no data matrices). An unknown ID is not_found. Signature: get_study(study_id).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "study_id": {
+                "description": "cBioPortal study ID (from search_studies).",
+                "examples": [
+                  "luad_tcga_pan_can_atlas_2018"
+                ],
+                "pattern": "^[A-Za-z0-9_.\\-]{2,100}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "study_id"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "cohort",
+            "hotspot",
+            "mutation",
+            "prevalence",
+            "somatic",
+            "studies",
+            "study"
+          ]
+        },
+        {
+          "name": "get_gene_mutations",
+          "description": "Get the distinct somatic mutations of one gene in one study, most recurrent first: protein_change, samples, mutation_type and genomic chr/start/end/ref/alt with their assembly (mostly GRCh37), plus mutated_samples and the study's licence and citation. protein_change keeps one change. No sample or patient IDs. Signature: get_gene_mutations(gene, study_id, protein_change=, include_restricted=, response_mode=, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "gene": {
+                "description": "Gene symbol (HGNC, e.g. BRAF) or NCBI Gene ID (673 or NCBIGene:673).",
+                "examples": [
+                  "BRAF"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              "study_id": {
+                "description": "cBioPortal study ID (from search_studies).",
+                "examples": [
+                  "luad_tcga_pan_can_atlas_2018"
+                ],
+                "pattern": "^[A-Za-z0-9_.\\-]{2,100}$",
+                "type": "string"
+              },
+              "protein_change": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[pP]\\.)?[A-Za-z*]{1,3}\\d{1,5}[A-Za-z0-9_*>]{0,30}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Protein change, e.g. V600E or G12C (p. prefix optional; three-letter p.Gly12Cys is converted).",
+                "examples": [
+                  "G12C"
+                ]
+              },
+              "include_restricted": {
+                "description": "Opt in to studies with non-commercial/no-derivatives terms (flagged).",
+                "type": "boolean"
+              },
+              "response_mode": {
+                "description": "minimal: protein change and samples | compact (default): + type and genomic coordinates | standard/full: + variant type, RefSeq transcript, protein position, keyword.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              },
+              "limit": {
+                "description": "Max rows (default 20, max 100).",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "gene",
+              "study_id"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "cohort",
+            "hotspot",
+            "mutation",
+            "mutations",
+            "prevalence",
+            "somatic",
+            "study"
+          ]
+        },
+        {
+          "name": "get_mutation_position_counts",
+          "description": "Get portal-wide mutation counts at protein positions of a gene (e.g. BRAF 600) across all public cBioPortal studies: a recurrence check with no denominator (overlapping cohorts count repeatedly; restricted studies included). For a frequency use get_gene_alteration_frequency. Signature: get_mutation_position_counts(gene, positions).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "gene": {
+                "description": "Gene symbol (HGNC, e.g. BRAF) or NCBI Gene ID (673 or NCBIGene:673).",
+                "examples": [
+                  "BRAF"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              "positions": {
+                "description": "Protein positions (1-20).",
+                "examples": [
+                  [
+                    600
+                  ]
+                ],
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 20,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "gene",
+              "positions"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "cohort",
+            "hotspot",
+            "mutation",
+            "mutations",
+            "prevalence",
+            "somatic",
+            "study"
+          ]
+        },
+        {
+          "name": "list_cancer_types",
+          "description": "List cBioPortal cancer types: code (lowercase OncoTree code, the cancer_type other tools take), name and parent. query matches names or an exact code; parent lists every subtype below a code. Signature: list_cancer_types(query=, parent=, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "anyOf": [
+                  {
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Name substring or exact code."
+              },
+              "parent": {
+                "anyOf": [
+                  {
+                    "pattern": "^[A-Za-z0-9_]{2,40}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only subtypes below this code (e.g. nsclc)."
+              },
+              "limit": {
+                "description": "Max rows (default 20, max 100).",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "cancer_types",
+            "cohort",
+            "hotspot",
+            "mutation",
+            "prevalence",
+            "somatic",
+            "study"
+          ]
+        },
+        {
+          "name": "get_mutation_hotspots",
+          "description": "Get Cancer Hotspots calls for a gene (bundled v2 + 3D snapshot, ODbL 1.0): residue, type (single_residue, in_frame_indel, splice_site, 3d), tumor_count, q_value (3d: p_value, clusters), variants (+ tumor_types in standard mode). With residue (V600, V600E, R175H) it answers residue_is_hotspot and is_hotspot (for a change: variant_tumor_count, its largest count over the calls, is > 0); not a hotspot does not mean benign. Residues follow the assembly's transcript (default GRCh38). Signature: get_mutation_hotspots(gene, residue=, assembly=, response_mode=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "gene": {
+                "description": "Gene symbol (HGNC, e.g. BRAF) or NCBI Gene ID (673 or NCBIGene:673).",
+                "examples": [
+                  "BRAF"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              "residue": {
+                "anyOf": [
+                  {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Residue or change: V600 or V600E."
+              },
+              "assembly": {
+                "description": "Build whose transcript numbers the residues (default GRCh38).",
+                "enum": [
+                  "GRCh38",
+                  "GRCh37"
+                ]
+              },
+              "response_mode": {
+                "description": "minimal/compact (default): calls without the per-tumour-type breakdown | standard/full: + tumor_types per call.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              }
+            },
+            "required": [
+              "gene"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "cohort",
+            "hotspot",
+            "hotspots",
+            "mutation",
+            "prevalence",
+            "somatic",
+            "study"
+          ]
+        }
+      ]
+    },
+    "opentargets": {
+      "version": "0.1.1",
+      "tools": [
+        {
+          "name": "get_server_capabilities",
+          "description": "Describe this server: Open Targets identifiers, limits, data release, licence, classification axes, rate-limit policy and error codes. Signature: get_server_capabilities().",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "discovery",
+            "disease",
+            "driver",
+            "drug",
+            "evidence",
+            "target",
+            "tractability"
+          ]
+        },
+        {
+          "name": "get_diagnostics",
+          "description": "Report runtime state without calling Open Targets: build, upstream request budget (today's usage vs the daily cap), cache hits and tool latency metrics. Signature: get_diagnostics().",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "discovery",
+            "disease",
+            "driver",
+            "drug",
+            "evidence",
+            "target",
+            "tractability"
+          ]
+        },
+        {
+          "name": "resolve_target",
+          "description": "Return one Open Targets target (Ensembl gene ID, symbol, name, biotype, GRCh38 location, synonyms) for a symbol, alias (HER2) or Ensembl ID. Start here. Signature: resolve_target(query).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "description": "HGNC symbol, alias, HGNC ID or Ensembl gene ID.",
+                "examples": [
+                  "BRAF"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "disease",
+            "driver",
+            "drug",
+            "evidence",
+            "target",
+            "targets",
+            "tractability"
+          ]
+        },
+        {
+          "name": "get_target_tractability",
+          "description": "Return a target's tractability buckets per modality (SM small molecule, AB antibody, PR PROTAC, OC other), split into true/false labels such as 'Approved Drug' or 'High-Quality Pocket', plus its ChEMBL target class. Signature: get_target_tractability(target).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "target": {
+                "description": "Ensembl gene ID (ENSG00000157764), HGNC symbol (BRAF) or HGNC ID.",
+                "examples": [
+                  "BRAF"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "disease",
+            "driver",
+            "drug",
+            "evidence",
+            "target",
+            "targets",
+            "tractability"
+          ]
+        },
+        {
+          "name": "get_drug_candidates",
+          "description": "Return ChEMBL drugs and clinical candidates acting on a target, most advanced stage first: ChEMBL ID, name, stage for this target, action types, indications. disease= keeps drugs studied in that disease or its descendants. standard adds fenced mechanism text; full adds the top 3 clinical reports. Stages lag regulators; empty is not 'no drug'. Signature: get_drug_candidates(target, disease=, response_mode=, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "target": {
+                "description": "Ensembl gene ID (ENSG00000157764), HGNC symbol (BRAF) or HGNC ID.",
+                "examples": [
+                  "BRAF"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              "disease": {
+                "anyOf": [
+                  {
+                    "maxLength": 200,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only this disease and its descendants (MONDO/EFO/HP ID or name)."
+              },
+              "response_mode": {
+                "description": "Row detail. minimal: IDs, stage or score, disease, variant; compact (default): key fields, floats to 4 significant digits; standard: upstream values verbatim (+ literature, drug mechanism); full: + top 3 drug clinical reports.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              },
+              "limit": {
+                "description": "Max rows (default 10, max 20).",
+                "maximum": 20,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "disease",
+            "driver",
+            "drug",
+            "drugs",
+            "evidence",
+            "target",
+            "tractability"
+          ]
+        },
+        {
+          "name": "search_disease_targets",
+          "description": "Return targets associated with a disease, ranked by Open Targets association score recomputed from served datasources only, with per-datasource scores. datasource= keeps targets with that source and ranks by its score (ranked_by): 'intogen' somatic cancer drivers; 'gene_burden' or 'gwas_credible_sets' germline signals. `total` is exact. Signature: search_disease_targets(disease, datasource=, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "disease": {
+                "description": "MONDO/EFO/HP ID (MONDO_0005105) or disease name (melanoma, top match is reported as resolved_from); covers descendants.",
+                "examples": [
+                  "MONDO_0005105"
+                ],
+                "maxLength": 200,
+                "minLength": 2,
+                "type": "string"
+              },
+              "datasource": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "intogen",
+                      "eva_somatic",
+                      "eva",
+                      "clinical_precedence",
+                      "gene_burden",
+                      "gwas_credible_sets",
+                      "clingen",
+                      "orphanet",
+                      "gene2phenotype",
+                      "uniprot_variants",
+                      "uniprot_literature",
+                      "reactome",
+                      "impc",
+                      "expression_atlas"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only this served datasource (intogen = somatic drivers)."
+              },
+              "limit": {
+                "description": "Max rows (default 10, max 50).",
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "disease"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "associations",
+            "cancer",
+            "disease",
+            "driver",
+            "drug",
+            "evidence",
+            "target",
+            "tractability"
+          ]
+        },
+        {
+          "name": "get_target_disease_evidence",
+          "description": "Return evidence rows linking a target to a disease and its descendants (or, without disease, to every associated disease) from served datasources only: IntOGen drivers (cohort, methods, q-value), ClinVar somatic/germline (GRCh38 variant), clinical precedence, gene burden, GWAS credible sets. Page with next_cursor. Signature: get_target_disease_evidence(target, disease=, datasource=, response_mode=, limit=, cursor=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "target": {
+                "description": "Ensembl gene ID (ENSG00000157764), HGNC symbol (BRAF) or HGNC ID.",
+                "examples": [
+                  "BRAF"
+                ],
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              "disease": {
+                "anyOf": [
+                  {
+                    "maxLength": 200,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only this disease and its descendants (MONDO/EFO/HP ID or name)."
+              },
+              "datasource": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "intogen",
+                      "eva_somatic",
+                      "eva",
+                      "clinical_precedence",
+                      "gene_burden",
+                      "gwas_credible_sets",
+                      "clingen",
+                      "orphanet",
+                      "gene2phenotype",
+                      "uniprot_variants",
+                      "uniprot_literature",
+                      "reactome",
+                      "impc",
+                      "expression_atlas"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only this served datasource (intogen = somatic drivers)."
+              },
+              "response_mode": {
+                "description": "Row detail. minimal: IDs, stage or score, disease, variant; compact (default): key fields, floats to 4 significant digits; standard: upstream values verbatim (+ literature, drug mechanism); full: + top 3 drug clinical reports.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              },
+              "limit": {
+                "description": "Max rows (default 10, max 50).",
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "cursor": {
+                "anyOf": [
+                  {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The previous call's `next_cursor`."
+              }
+            },
+            "required": [
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "cancer",
+            "disease",
+            "driver",
+            "drug",
+            "evidence",
+            "target",
+            "tractability"
+          ]
+        }
+      ]
+    },
+    "moalmanac": {
+      "version": "0.2.0",
+      "tools": [
+        {
+          "name": "get_server_capabilities",
+          "description": "Describe this server: identifiers, agencies, limits, data version (release tag, commit, DOI), known upstream defects, licence, citation and error codes. Signature: get_server_capabilities().",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "approval",
+            "biomarker",
+            "cancer",
+            "discovery",
+            "ema",
+            "fda",
+            "somatic",
+            "therapy"
+          ]
+        },
+        {
+          "name": "get_diagnostics",
+          "description": "Report runtime state: build, the bundled snapshot's release, commit and sha256, and tool latency metrics. Signature: get_diagnostics().",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "approval",
+            "biomarker",
+            "cancer",
+            "discovery",
+            "ema",
+            "fda",
+            "somatic",
+            "therapy"
+          ]
+        },
+        {
+          "name": "search_approvals",
+          "description": "Search MOAlmanac regulatory approvals of biomarker-directed cancer therapies (FDA, EMA, Health Canada, Ireland HSE/HPRA). One row per agency statement: agency, status (Approved/Accelerated), biomarkers, genes, disease (NCIt, OncoTree), therapies, label document, version date and regulatory ID. Filters combine with AND; an unknown value is not_found naming it, with the closest names. Empty = no MOAlmanac approval found, not 'not approved'. `summary` counts agencies, regimens and biomarkers (co-occurring ones too) over all matches. 'Wild type X' rows are eligibility criteria, not X-targeted drugs. Rows hit by a known upstream error carry `known_defects`. Signature: search_approvals(gene=, biomarker=, disease=, therapy=, agency=, biomarker_type=, response_mode=, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "gene": {
+                "anyOf": [
+                  {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Gene symbol (ERBB2; aliases HER2, PD-L1), HGNC ID, Ensembl or NCBI Gene ID.",
+                "examples": [
+                  "KRAS"
+                ]
+              },
+              "biomarker": {
+                "anyOf": [
+                  {
+                    "maxLength": 80,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Biomarker words, e.g. 'BRAF V600E', 'G12C', 'v::ALK' (fusions are 'v::GENE', any partner; V600 also matches V600E/K); an exact list_biomarkers name matches only that biomarker."
+              },
+              "disease": {
+                "anyOf": [
+                  {
+                    "maxLength": 80,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Disease name words (melanoma), or an OncoTree (NSCLC) or NCIt code as MOAlmanac records it; subtype codes (LUAD) are not mapped to parents."
+              },
+              "therapy": {
+                "anyOf": [
+                  {
+                    "maxLength": 80,
+                    "minLength": 2,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Drug or brand name (sotorasib)."
+              },
+              "agency": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "fda",
+                      "ema",
+                      "hc",
+                      "hse",
+                      "hpra"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only this agency's statements."
+              },
+              "biomarker_type": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "Somatic variant",
+                      "Germline variant",
+                      "Protein expression",
+                      "Gene fusion",
+                      "Rearrangement",
+                      "Translocation",
+                      "Copy number",
+                      "Copy number (arm level)",
+                      "Wild type",
+                      "Microsatellite stability",
+                      "Mismatch repair",
+                      "Homologous recombination",
+                      "Tumor mutational burden",
+                      "Haplotype genotype"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only rows with a biomarker of this type (of `gene`, if given): 'Gene fusion' keeps ALK fusions and drops 'Wild type ALK' rows."
+              },
+              "response_mode": {
+                "description": "minimal: ids, agency, biomarkers, therapies, label date | compact (default): + genes, disease codes, label | standard: + label URL, predicate, strength | full: + fenced indication text.",
+                "enum": [
+                  "minimal",
+                  "compact",
+                  "standard",
+                  "full"
+                ]
+              },
+              "limit": {
+                "description": "Max rows (default 20, max 100); 0 = only total and summary.",
+                "maximum": 100,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "approval",
+            "approvals",
+            "biomarker",
+            "cancer",
+            "ema",
+            "fda",
+            "somatic",
+            "therapy"
+          ]
+        },
+        {
+          "name": "get_indication",
+          "description": "Get one MOAlmanac indication: status, fenced label indication text, agency history (dated approvals, extensions), label documents (brand, generic, company, version date, regulatory ID, URL) and its approval statements. An unknown ID is not_found. Signature: get_indication(indication_id).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "indication_id": {
+                "description": "MOAlmanac indication ID (from search_approvals).",
+                "examples": [
+                  "ind:fda:lumakras:0"
+                ],
+                "maxLength": 90,
+                "minLength": 8,
+                "type": "string"
+              }
+            },
+            "required": [
+              "indication_id"
+            ],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "approval",
+            "approvals",
+            "biomarker",
+            "cancer",
+            "ema",
+            "fda",
+            "somatic",
+            "therapy"
+          ]
+        },
+        {
+          "name": "list_biomarkers",
+          "description": "List MOAlmanac's biomarker vocabulary (e.g. 'EGFR p.L858R', 'HER2-positive', 'ERBB2 amplification') with type, linked genes and active approval count, most approvals first: map a variant onto the biomarker wording search_approvals matches. Signature: list_biomarkers(gene=, biomarker_type=, limit=, offset=).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "gene": {
+                "anyOf": [
+                  {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Gene symbol (ERBB2; aliases HER2, PD-L1), HGNC ID, Ensembl or NCBI Gene ID.",
+                "examples": [
+                  "KRAS"
+                ]
+              },
+              "biomarker_type": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "Somatic variant",
+                      "Germline variant",
+                      "Protein expression",
+                      "Gene fusion",
+                      "Rearrangement",
+                      "Translocation",
+                      "Copy number",
+                      "Copy number (arm level)",
+                      "Wild type",
+                      "Microsatellite stability",
+                      "Mismatch repair",
+                      "Homologous recombination",
+                      "Tumor mutational burden",
+                      "Haplotype genotype"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only this biomarker type."
+              },
+              "limit": {
+                "description": "Max rows (default 20, max 100).",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "description": "Rows to skip; use the previous `next_offset`.",
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "title": null,
+            "readOnlyHint": true,
+            "destructiveHint": null,
+            "idempotentHint": null,
+            "openWorldHint": true
+          },
+          "execution": null,
+          "tags": [
+            "approval",
+            "biomarker",
+            "biomarkers",
+            "cancer",
+            "ema",
+            "fda",
+            "somatic",
+            "therapy"
           ]
         }
       ]

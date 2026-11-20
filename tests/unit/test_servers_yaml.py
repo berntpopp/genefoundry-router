@@ -8,9 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_real_servers_yaml_parses():
     backends = load_registry(ROOT / "servers.yaml", {})
     by_name = {b.name: b for b in backends}
-    # 26 live backends + 4 staged cancer/somatic backends (enabled: false until deployed)
     assert len(backends) == 30
-    staged = {"civic", "cbioportal", "opentargets", "moalmanac"}
     # hgnc deployed 2026-06-16 (hgnc-link.genefoundry.org); now enabled
     assert by_name["hgnc"].enabled is True
     # the 4 newest backends are now deployed (<name>-link.genefoundry.org) and enabled.
@@ -18,8 +16,7 @@ def test_real_servers_yaml_parses():
     assert all(by_name[n].enabled is True for n in newest)
     latest = {"hpo", "mavedb", "metadome", "orphanet"}
     assert all(by_name[n].enabled is True for n in latest)
-    # every backend except the staged ones is live and enabled
-    assert {b.name for b in backends if not b.enabled} == staged
+    assert all(b.enabled for b in backends)
     assert all(b.transform is None for b in backends), (
         "baseline qualification assumes source-standard names; add explicit normalization support"
     )
@@ -30,19 +27,24 @@ def test_real_servers_yaml_parses():
     # server instructions so each domain's front-door tool is deterministically
     # discoverable regardless of BM25 ranking (discoverability-benchmark follow-up to #3).
     # clinpgx exempt — owner decision 2026-11-19: clinpgx un-pinned (pinned budget); restore when clinpgx-link#56 lands
-    # strchive/ucsc/mitomap/pgscatalog search-only — owner decision 2026-11-19 (pinned budget)
+    # strchive/ucsc/mitomap/pgscatalog search-only — owner decision 2026-11-19 (pinned budget);
+    # the cancer/somatic four follow the same rule.
     unpinned = {n for n in by_name if not by_name[n].entrypoints}
-    assert unpinned == {"clinpgx", "strchive", "ucsc", "mitomap", "pgscatalog"}, (
-        "each other backend needs an entrypoint"
-    )
+    assert unpinned == {
+        "clinpgx",
+        "strchive",
+        "ucsc",
+        "mitomap",
+        "pgscatalog",
+        "civic",
+        "cbioportal",
+        "opentargets",
+        "moalmanac",
+    }, "each other backend needs an entrypoint"
     assert "resolve_variant_id" in by_name["gnomad"].entrypoints
     # #320: disease/phenotype front doors are the ranked text searches, not exact resolvers.
     assert by_name["mondo"].entrypoints == ["search_diseases", "resolve_disease"]
     assert by_name["gencc"].entrypoints == ["get_gene_curations"]
-    assert by_name["civic"].entrypoints == ["search_molecular_profiles"]
-    assert by_name["cbioportal"].entrypoints == ["get_gene_alteration_frequency"]
-    assert by_name["opentargets"].entrypoints == ["resolve_target"]
-    assert by_name["moalmanac"].entrypoints == ["search_approvals"]
     assert by_name["hpo"].entrypoints == [
         "search_terms",
         "get_phenotypes_for_gene",

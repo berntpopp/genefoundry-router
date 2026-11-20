@@ -65,6 +65,10 @@ EXPECTED_URLS: dict[str, str] = {
     "GF_UCSC_URL": "https://ucsc-link.genefoundry.org/mcp",
     "GF_MITOMAP_URL": "https://mitomap-link.genefoundry.org/mcp",
     "GF_PGSCATALOG_URL": "https://pgscatalog-link.genefoundry.org/mcp",
+    "GF_CIVIC_URL": "https://civic-link.genefoundry.org/mcp",
+    "GF_CBIOPORTAL_URL": "https://cbioportal-link.genefoundry.org/mcp",
+    "GF_OPENTARGETS_URL": "https://opentargets-link.genefoundry.org/mcp",
+    "GF_MOALMANAC_URL": "https://moalmanac-link.genefoundry.org/mcp",
 }
 TOKEN_KEY = "GF_PUBTATOR_TOKEN"  # noqa: S105 - environment variable name, not a credential
 _IMAGE_REF = re.compile(rf"^{re.escape(ROUTER_IMAGE)}@sha256:[0-9a-f]{{64}}$")

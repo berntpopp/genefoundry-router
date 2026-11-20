@@ -64,15 +64,15 @@ def resolve_local_json_pointer(root: Any, ref: str) -> tuple[bool, Any, str]:
     return True, current, ""
 
 
-def test_baseline_has_22_backends_and_287_tools() -> None:
+def test_baseline_backend_and_tool_counts() -> None:
     manifest = load_manifest(BASELINE_PATH)
-    assert len(manifest.backends) == 26
+    assert len(manifest.backends) == 30
     total_tools = sum(len(b.tools) for b in manifest.backends.values())
-    assert total_tools == 313
+    assert total_tools == 345
 
 
 def test_baseline_input_schemas_are_valid_draft_2020_12_objects() -> None:
-    """All 313 tools must advertise valid Draft 2020-12 object input schemas."""
+    """All 345 tools must advertise valid Draft 2020-12 object input schemas."""
     manifest = load_manifest(BASELINE_PATH)
     for namespace, backend in manifest.backends.items():
         for tool in backend.tools:

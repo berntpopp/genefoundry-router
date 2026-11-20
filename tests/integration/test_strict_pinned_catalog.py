@@ -27,7 +27,9 @@ PINNED_LISTING_TOKEN_BUDGET = 18_000  # measured 17,809 on 2026-11-20: 191 token
 # description to pinned tools, plus the two #341 pins (hpo_score_genes_for_phenotypes,
 # hgnc_resolve_symbols_batch). The owner approved a strict-only ceiling instead of un-pinning;
 # the default listing keeps 18,000. Same rule: lower it, never raise it to admit growth.
-STRICT_LISTING_TOKEN_BUDGET = 18_700
+# fleet-2026-11-20b: measured 18,790. clinvar-link 0.10.0 added ~480 chars to clinvar_get_variant
+# (somatic_clinical_impact / oncogenicity pointers); the owner approved 18,800 on 2026-11-20.
+STRICT_LISTING_TOKEN_BUDGET = 18_800
 STRICT = RouterSettings(_env_file=None, GF_SCHEMA_MODE="strict")
 
 

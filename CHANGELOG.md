@@ -4,6 +4,20 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.14] - 2026-11-20
+
+### Added
+
+- **Cancer/somatic backends enabled** (search-only, no pinned entry points: pinned listing budget): `civic` (civic-link 0.1.1), `cbioportal` (0.2.0), `opentargets` (0.1.1), `moalmanac` (0.2.0), deployed at `<name>-link.genefoundry.org`. Fleet 30 backends, 345 tools. Closes #347, #348, #349, #350.
+
+### Changed
+
+- **Drift baseline re-pinned to `fleet-2026-11-20b`** from the deployed fleet: clinvar-link 0.10.0 (somatic classifications, `search_somatic_classifications`), vep-link 1.2.3, mondo-link 0.11.2, hpo-link 0.12.0, ucsc-link 0.6.0, plus the four new backends. Router v0.13.13 must not be deployed: its baseline pins the earlier definitions and `GF_DRIFT_MODE=enforce` refuses to boot against this fleet.
+- Held-out discoverability: pharmacogenomics bar 6.0 → 5.0 (owner-approved; the new tools shift BM25 word weights, one German clinpgx query moves #1 → #2). Overall held-out score 9.15.
+- Strict-mode pinned listing ceiling 18,700 → 18,800 tokens (owner-approved): `clinvar_get_variant` grew ~480 chars with the somatic pointers. The default listing stays within 18,000.
+- BM25 expansions generated for the 36 new or changed tools; four discoverability tasks for the cancer backends.
+- Regenerated catalog snapshot, fleet provenance, README inventory, `server.json`; `ci/fleet-urls.env` and the read-only drift probe list the four new URLs.
+
 ## [0.13.13] - 2026-11-20
 
 ### Added

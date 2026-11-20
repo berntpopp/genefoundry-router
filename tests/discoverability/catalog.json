@@ -200,6 +200,474 @@
     }
   },
   {
+    "name": "cbioportal_get_diagnostics",
+    "description": "Report runtime state without calling cBioPortal: build, upstream request budget (today's usage vs the daily cap), cache hits and tool latency metrics. Signature: get_diagnostics().",
+    "tags": [
+      "cancer",
+      "cohort",
+      "discovery",
+      "hotspot",
+      "mutation",
+      "prevalence",
+      "somatic",
+      "study"
+    ],
+    "params": {}
+  },
+  {
+    "name": "cbioportal_get_gene_alteration_frequency",
+    "description": "Get how often a gene is altered per cBioPortal study: mutation (altered / profiled samples, panel-aware), optional protein_change (e.g. KRAS G12C) and CNA (amplified / deep-deleted / profiled), each row with licence, citation and import_date. Pick studies by cancer_type (OncoTree code, subtypes included, largest first, max_studies; total/truncated count matching studies) or study_ids; neither = MSK-IMPACT 2017 pan-cancer. Never sum rows (cohorts overlap). Restricted (NC/ND) studies are skipped unless include_restricted. Signature: get_gene_alteration_frequency(gene, cancer_type=, study_ids=, protein_change=, include_restricted=, max_studies=).",
+    "tags": [
+      "cancer",
+      "cohort",
+      "hotspot",
+      "mutation",
+      "prevalence",
+      "somatic",
+      "study"
+    ],
+    "params": {
+      "gene": "Gene symbol (HGNC, e.g. BRAF) or NCBI Gene ID (673 or NCBIGene:673).",
+      "cancer_type": "Lowercase OncoTree code as cBioPortal uses it (luad, skcm, mel); subtypes are included. Find codes with list_cancer_types.",
+      "study_ids": "Explicit study IDs (1-10); instead of cancer_type.",
+      "protein_change": "Protein change, e.g. V600E or G12C (p. prefix optional; three-letter p.Gly12Cys is converted).",
+      "include_restricted": "Opt in to studies with non-commercial/no-derivatives terms (flagged).",
+      "max_studies": "With cancer_type: studies to query (default 3)."
+    }
+  },
+  {
+    "name": "cbioportal_get_gene_mutations",
+    "description": "Get the distinct somatic mutations of one gene in one study, most recurrent first: protein_change, samples, mutation_type and genomic chr/start/end/ref/alt with their assembly (mostly GRCh37), plus mutated_samples and the study's licence and citation. protein_change keeps one change. No sample or patient IDs. Signature: get_gene_mutations(gene, study_id, protein_change=, include_restricted=, response_mode=, limit=, offset=).",
+    "tags": [
+      "cancer",
+      "cohort",
+      "hotspot",
+      "mutation",
+      "mutations",
+      "prevalence",
+      "somatic",
+      "study"
+    ],
+    "params": {
+      "gene": "Gene symbol (HGNC, e.g. BRAF) or NCBI Gene ID (673 or NCBIGene:673).",
+      "study_id": "cBioPortal study ID (from search_studies).",
+      "protein_change": "Protein change, e.g. V600E or G12C (p. prefix optional; three-letter p.Gly12Cys is converted).",
+      "include_restricted": "Opt in to studies with non-commercial/no-derivatives terms (flagged).",
+      "response_mode": "minimal: protein change and samples | compact (default): + type and genomic coordinates | standard/full: + variant type, RefSeq transcript, protein position, keyword.",
+      "limit": "Max rows (default 20, max 100).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "cbioportal_get_mutation_hotspots",
+    "description": "Get Cancer Hotspots calls for a gene (bundled v2 + 3D snapshot, ODbL 1.0): residue, type (single_residue, in_frame_indel, splice_site, 3d), tumor_count, q_value (3d: p_value, clusters), variants (+ tumor_types in standard mode). With residue (V600, V600E, R175H) it answers residue_is_hotspot and is_hotspot (for a change: variant_tumor_count, its largest count over the calls, is > 0); not a hotspot does not mean benign. Residues follow the assembly's transcript (default GRCh38). Signature: get_mutation_hotspots(gene, residue=, assembly=, response_mode=).",
+    "tags": [
+      "cancer",
+      "cohort",
+      "hotspot",
+      "hotspots",
+      "mutation",
+      "prevalence",
+      "somatic",
+      "study"
+    ],
+    "params": {
+      "gene": "Gene symbol (HGNC, e.g. BRAF) or NCBI Gene ID (673 or NCBIGene:673).",
+      "residue": "Residue or change: V600 or V600E.",
+      "assembly": "Build whose transcript numbers the residues (default GRCh38).",
+      "response_mode": "minimal/compact (default): calls without the per-tumour-type breakdown | standard/full: + tumor_types per call."
+    },
+    "enums": {
+      "assembly": [
+        "GRCh38",
+        "GRCh37"
+      ],
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "cbioportal_get_mutation_position_counts",
+    "description": "Get portal-wide mutation counts at protein positions of a gene (e.g. BRAF 600) across all public cBioPortal studies: a recurrence check with no denominator (overlapping cohorts count repeatedly; restricted studies included). For a frequency use get_gene_alteration_frequency. Signature: get_mutation_position_counts(gene, positions).",
+    "tags": [
+      "cancer",
+      "cohort",
+      "hotspot",
+      "mutation",
+      "mutations",
+      "prevalence",
+      "somatic",
+      "study"
+    ],
+    "params": {
+      "gene": "Gene symbol (HGNC, e.g. BRAF) or NCBI Gene ID (673 or NCBIGene:673).",
+      "positions": "Protein positions (1-20)."
+    }
+  },
+  {
+    "name": "cbioportal_get_server_capabilities",
+    "description": "Describe this server: identifiers, limits, data version, licence handling, rate-limit policy, citations and error codes. Signature: get_server_capabilities().",
+    "tags": [
+      "cancer",
+      "cohort",
+      "discovery",
+      "hotspot",
+      "mutation",
+      "prevalence",
+      "somatic",
+      "study"
+    ],
+    "params": {}
+  },
+  {
+    "name": "cbioportal_get_study",
+    "description": "Get one cBioPortal study: licence, restricted flag, citation, pmid, import_date, cancer type, sample counts, assembly, the fenced description, every PMID (pmids) and its molecular profile IDs (no data matrices). An unknown ID is not_found. Signature: get_study(study_id).",
+    "tags": [
+      "cancer",
+      "cohort",
+      "hotspot",
+      "mutation",
+      "prevalence",
+      "somatic",
+      "studies",
+      "study"
+    ],
+    "params": {
+      "study_id": "cBioPortal study ID (from search_studies)."
+    }
+  },
+  {
+    "name": "cbioportal_list_cancer_types",
+    "description": "List cBioPortal cancer types: code (lowercase OncoTree code, the cancer_type other tools take), name and parent. query matches names or an exact code; parent lists every subtype below a code. Signature: list_cancer_types(query=, parent=, limit=, offset=).",
+    "tags": [
+      "cancer",
+      "cancer_types",
+      "cohort",
+      "hotspot",
+      "mutation",
+      "prevalence",
+      "somatic",
+      "study"
+    ],
+    "params": {
+      "query": "Name substring or exact code.",
+      "parent": "Only subtypes below this code (e.g. nsclc).",
+      "limit": "Max rows (default 20, max 100).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    }
+  },
+  {
+    "name": "cbioportal_search_studies",
+    "description": "Search public cBioPortal studies by keyword (ID, name, citation) and/or cancer_type (OncoTree code, subtypes included), largest first. Each row: study_id, name, licence, restricted, citation, pmid, import_date, cancer_type, sample counts and assembly. Restricted (NC/ND) studies are excluded unless include_restricted (restricted_excluded counts them). No filter lists all. Signature: search_studies(query=, cancer_type=, include_restricted=, response_mode=, limit=, offset=).",
+    "tags": [
+      "cancer",
+      "cohort",
+      "hotspot",
+      "mutation",
+      "prevalence",
+      "somatic",
+      "studies",
+      "study"
+    ],
+    "params": {
+      "query": "Keyword, e.g. 'pan-cancer atlas'.",
+      "cancer_type": "Lowercase OncoTree code as cBioPortal uses it (luad, skcm, mel); subtypes are included. Find codes with list_cancer_types.",
+      "include_restricted": "Opt in to studies with non-commercial/no-derivatives terms (flagged).",
+      "response_mode": "minimal: id, name, licence, citation | compact (default): + cancer type, sample counts, assembly | standard: + URL | full: + fenced description.",
+      "limit": "Max rows (default 20, max 100).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "civic_get_assertion",
+    "description": "Return one assertion: type, direction, actionability (AMP tier/level, FDA companion test, regulatory approval, NCCN guideline) or oncogenicity / germline_pathogenicity with their codes, DOID disease, therapies, the fenced summary and description, and the evidence items behind it (status, level, molecular profile, PMID). Signature: get_assertion(assertion_id).",
+    "tags": [
+      "actionability",
+      "assertions",
+      "cancer",
+      "evidence",
+      "oncogenicity",
+      "somatic",
+      "therapy",
+      "variant"
+    ],
+    "params": {
+      "assertion_id": "CIViC assertion ID as a number or 'AID10'."
+    }
+  },
+  {
+    "name": "civic_get_diagnostics",
+    "description": "Report runtime state without calling CIViC: build, upstream request budget (today's usage vs the daily cap), cache hits and tool latency metrics. Signature: get_diagnostics().",
+    "tags": [
+      "actionability",
+      "cancer",
+      "discovery",
+      "evidence",
+      "oncogenicity",
+      "somatic",
+      "therapy",
+      "variant"
+    ],
+    "params": {}
+  },
+  {
+    "name": "civic_get_evidence_item",
+    "description": "Return one evidence item: type, level, direction, significance, rating, DOID disease, therapies, the curator's statement (fenced untrusted_text), source PMID/citation and NCT IDs, phenotypes (HPO) and the assertions it supports. Signature: get_evidence_item(evidence_id).",
+    "tags": [
+      "actionability",
+      "cancer",
+      "evidence",
+      "oncogenicity",
+      "somatic",
+      "therapy",
+      "variant"
+    ],
+    "params": {
+      "evidence_id": "CIViC evidence item ID as a number or 'EID95'."
+    }
+  },
+  {
+    "name": "civic_get_gene",
+    "description": "Return a CIViC gene (symbol, full name, NCBI Gene ID, aliases, fenced curator summary) and the variants CIViC curates for it, each with its single-variant molecular profile ID; `total` is exact, page with offset. Ensembl or HGNC IDs are rejected with a converter step. Signature: get_gene(gene, limit=, offset=).",
+    "tags": [
+      "actionability",
+      "cancer",
+      "evidence",
+      "genes",
+      "oncogenicity",
+      "somatic",
+      "therapy",
+      "variant"
+    ],
+    "params": {
+      "gene": "HGNC symbol (BRAF) or NCBI Gene ID (NCBIGene:673).",
+      "limit": "Max variants (default 50, max 100).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    }
+  },
+  {
+    "name": "civic_get_molecular_profile",
+    "description": "Return one molecular profile: its variants, kind (simple/complex), live evidence counts by status (and accepted by type), its ACCEPTED assertions, each with actionability (AMP tier/level), oncogenicity or germline_pathogenicity as separate fields and a DOID disease, and other_assertions (submitted/rejected: id and status only). evidence_note flags a profile without an accepted assertion: no CIViC evidence is not 'not actionable'. Signature: get_molecular_profile(molecular_profile_id).",
+    "tags": [
+      "actionability",
+      "cancer",
+      "evidence",
+      "oncogenicity",
+      "profiles",
+      "somatic",
+      "therapy",
+      "variant"
+    ],
+    "params": {
+      "molecular_profile_id": "CIViC molecular profile ID."
+    }
+  },
+  {
+    "name": "civic_get_server_capabilities",
+    "description": "Describe this server: CIViC identifiers, limits, data release, licence, classification axes, rate-limit policy and error codes. Signature: get_server_capabilities().",
+    "tags": [
+      "actionability",
+      "cancer",
+      "discovery",
+      "evidence",
+      "oncogenicity",
+      "somatic",
+      "therapy",
+      "variant"
+    ],
+    "params": {}
+  },
+  {
+    "name": "civic_get_variant",
+    "description": "Return one CIViC variant: coordinates with their assembly (CIViC's primary build is GRCh37), genomic HGVS labelled GRCh37/GRCh38, transcript HGVS, MANE Select HGVS, ClinGen CAID, ClinVar IDs, variant types (SO) and its single-variant molecular profile. Signature: get_variant(variant_id).",
+    "tags": [
+      "actionability",
+      "cancer",
+      "evidence",
+      "oncogenicity",
+      "somatic",
+      "therapy",
+      "variant",
+      "variants"
+    ],
+    "params": {
+      "variant_id": "CIViC variant ID."
+    }
+  },
+  {
+    "name": "civic_search_assertions",
+    "description": "List CIViC assertions (curated summary calls built on evidence items) matching ALL given filters: molecular_profile_id, disease, therapy, assertion_type, amp_level, status (ACCEPTED by default). Each row keeps actionability (AMP/ASCO/CAP tier and level, FDA companion test, NCCN), oncogenicity (ClinGen/CGC/VICC) and germline_pathogenicity (ACMG) apart. Zero rows says no CIViC evidence found. Signature: search_assertions(molecular_profile_id=, disease=, therapy=, assertion_type=, amp_level=, status=, response_mode=, limit=, offset=).",
+    "tags": [
+      "actionability",
+      "assertions",
+      "cancer",
+      "evidence",
+      "oncogenicity",
+      "somatic",
+      "therapy",
+      "variant"
+    ],
+    "params": {
+      "molecular_profile_id": "Only this molecular profile's assertions.",
+      "disease": "DOID (DOID:1909, exact) or disease name (Melanoma, matches CIViC names containing it); unknown is not_found.",
+      "therapy": "NCIt code (C64768, exact) or therapy name (Vemurafenib, matches CIViC names containing it); unknown is not_found.",
+      "assertion_type": "Assertion type.",
+      "amp_level": "AMP/ASCO/CAP 2017 tier and level.",
+      "status": "Curation status; ACCEPTED (default) excludes unreviewed submissions.",
+      "response_mode": "minimal: IDs + classification | compact (default): + disease, therapies, profile, source | standard/full: + fenced curator text.",
+      "limit": "Max rows (default 10, max 50).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "assertion_type": [
+        "PREDICTIVE",
+        "DIAGNOSTIC",
+        "PROGNOSTIC",
+        "PREDISPOSING",
+        "ONCOGENIC"
+      ],
+      "amp_level": [
+        "TIER_I_LEVEL_A",
+        "TIER_I_LEVEL_B",
+        "TIER_II_LEVEL_C",
+        "TIER_II_LEVEL_D",
+        "TIER_III",
+        "TIER_IV"
+      ],
+      "status": [
+        "ACCEPTED",
+        "SUBMITTED",
+        "NON_REJECTED",
+        "ALL"
+      ],
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "civic_search_evidence_items",
+    "description": "List CIViC evidence items (one publication-backed clinical claim each) matching ALL given filters: molecular_profile_id, disease, therapy, evidence_type, evidence_level (A validated .. E inferential), significance, status (ACCEPTED by default). Rows: type, level, direction, significance, rating, DOID disease, therapies (NCIt), source PMID. `total` is exact and counts_by_level splits it by level; zero rows says no CIViC evidence found. Signature: search_evidence_items(molecular_profile_id=, disease=, therapy=, evidence_type=, evidence_level=, significance=, status=, response_mode=, limit=, offset=).",
+    "tags": [
+      "actionability",
+      "cancer",
+      "evidence",
+      "oncogenicity",
+      "somatic",
+      "therapy",
+      "variant"
+    ],
+    "params": {
+      "molecular_profile_id": "Only this molecular profile's evidence.",
+      "disease": "DOID (DOID:1909, exact) or disease name (Melanoma, matches CIViC names containing it); unknown is not_found.",
+      "therapy": "NCIt code (C64768, exact) or therapy name (Vemurafenib, matches CIViC names containing it); unknown is not_found.",
+      "evidence_type": "Evidence type.",
+      "evidence_level": "CIViC evidence level.",
+      "significance": "Clinical significance as CIViC records it.",
+      "status": "Curation status; ACCEPTED (default) excludes unreviewed submissions.",
+      "response_mode": "minimal: IDs + classification | compact (default): + disease, therapies, profile, source | standard/full: + fenced curator text.",
+      "limit": "Max rows (default 10, max 50).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "evidence_type": [
+        "PREDICTIVE",
+        "DIAGNOSTIC",
+        "PROGNOSTIC",
+        "PREDISPOSING",
+        "ONCOGENIC",
+        "FUNCTIONAL"
+      ],
+      "evidence_level": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ],
+      "significance": [
+        "SENSITIVITYRESPONSE",
+        "RESISTANCE",
+        "REDUCED_SENSITIVITY",
+        "ADVERSE_RESPONSE",
+        "BETTER_OUTCOME",
+        "POOR_OUTCOME",
+        "POSITIVE",
+        "NEGATIVE",
+        "ONCOGENICITY",
+        "LIKELY_ONCOGENIC",
+        "PATHOGENIC",
+        "LIKELY_PATHOGENIC",
+        "UNCERTAIN_SIGNIFICANCE",
+        "BENIGN",
+        "LIKELY_BENIGN",
+        "PREDISPOSITION",
+        "PROTECTIVENESS",
+        "GAIN_OF_FUNCTION",
+        "LOSS_OF_FUNCTION",
+        "UNALTERED_FUNCTION",
+        "NEOMORPHIC",
+        "DOMINANT_NEGATIVE",
+        "UNKNOWN",
+        "NA"
+      ],
+      "status": [
+        "ACCEPTED",
+        "SUBMITTED",
+        "NON_REJECTED",
+        "ALL"
+      ],
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "civic_search_molecular_profiles",
+    "description": "Find CIViC molecular profiles (what evidence attaches to) for a gene + variant name (BRAF V600E), a ClinGen CAID (CA123643), a ClinVar variation ID (376069) or an HGVS string, and return exact_match (the single-variant profile) plus `simple` and `complex` lists kept apart: a complex profile (V600E AND MSI Low) only applies to that combination. Each row: id, name, evidence counts; simple_total and complex_total count the whole result. Start here. Signature: search_molecular_profiles(query, limit=, offset=).",
+    "tags": [
+      "actionability",
+      "cancer",
+      "evidence",
+      "oncogenicity",
+      "profiles",
+      "somatic",
+      "therapy",
+      "variant"
+    ],
+    "params": {
+      "query": "Gene + variant, CAID, ClinVar variation ID or HGVS.",
+      "limit": "Max profiles (default 25, max 100).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    }
+  },
+  {
     "name": "clingen_get_cspec",
     "description": "Use this for one criteria specification in full: its genes/diseases, every ACMG/AMP criterion with strength rules, and the attached guidance files. Resolve a gn_id first with list_cspecs (by gene, affiliation, or status). Returns ~3-30kB depending on the spec.",
     "tags": [
@@ -1178,7 +1646,7 @@
   },
   {
     "name": "clinvar_get_variant",
-    "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, or VariationID; returns its normalized classification, review status and 0-4 star rating plus a recommended_citation. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). Except in minimal mode it also returns the PubMed / PMC / Bookshelf ids its submissions cite: citations lists at most 50, citation_count is the full total; submissions holds OMIM's own SCV text (description, conditions, PMIDs). Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
+    "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, or VariationID; returns its normalized classification, review status and 0-4 star rating plus a recommended_citation. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). minimal keeps up to 5 trait names; every other mode also returns the PubMed / PMC / Bookshelf ids its submissions cite: citations lists at most 50, citation_count is the full total; submissions holds OMIM's own SCV text (description, conditions, PMIDs); a description is capped at 500 characters in compact, 2,000 in standard (description_truncated) and a repeated description or PMID list is sent once (description_same_as, pmids_same_as). classification is the GERMLINE aggregate; somatic_clinical_impact (AMP tier) and oncogenicity are separate blocks (null when ClinVar has none); search_somatic_classifications(identifier=...) gives their per-submission tumour types and drugs without the germline payload. Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
     "tags": [
       "classification",
       "clinical-significance",
@@ -1308,8 +1776,51 @@
     }
   },
   {
+    "name": "clinvar_search_somatic_classifications",
+    "description": "List ClinVar variants that carry a SOMATIC classification: the AMP/ASCO/CAP clinical-impact tier (somatic_clinical_impact) and the ClinGen/CGC/VICC oncogenicity call (oncogenicity), each with review status and date, beside the separate germline_classification (never merged). Tier I first, paginated with total_count / has_more / next_offset. standard/full add per-submission tumour type, therapy and assertion type. Use this for oncology questions (actionable tier, oncogenic call); coverage is ClinVar's somatic submissions only, so an empty page is not evidence a variant lacks clinical impact.",
+    "tags": [
+      "classification",
+      "clinical-significance",
+      "somatic",
+      "variant"
+    ],
+    "params": {
+      "gene_symbol": "Restrict to this HGNC gene symbol (case-insensitive). A symbol with no ClinVar variants is rejected with invalid_input; a known gene with no somatic call returns an empty page.",
+      "tier": "Filter by the aggregate AMP/ASCO/CAP somatic clinical-impact tier: tier_i strong, tier_ii potential, tier_iii unknown, tier_iv benign/likely benign. ClinVar's wording ('Tier I - Strong', 'Tier 1') is accepted; anything else is invalid_input.",
+      "oncogenicity": "Filter by the aggregate ClinGen/CGC/VICC oncogenicity classification (a somatic scale, not germline pathogenicity). ClinVar's wording ('Likely oncogenic') is accepted; anything else is invalid_input.",
+      "tumour_type": "Keep variants with at least one somatic submission naming this tumour type: a case-insensitive substring of ClinVar's MedGen name ('melanoma') or an exact MedGen id ('C0025202'); standard/full then show only that tumour's assertions (other_assertions counts the rest). tier / oncogenicity still filter the variant's aggregate, so that tumour's own submission may carry a lower tier. A value no submission names is rejected with invalid_input, never an empty page.",
+      "identifier": "Narrow to one variant (VCV, VariationID, rsID or HGVS, as get_variant takes): its somatic detail without the germline payload. No somatic call is an empty page.",
+      "limit": "Maximum rows to return in this page (1-100).",
+      "offset": "Rows to skip before this page; use the response's next_offset to paginate. Rows beyond total_count return an empty page, never an error.",
+      "response_mode": "Payload verbosity: minimal = ids + the two somatic aggregates; compact (default) adds the variant name and germline_classification; standard/full add per-submission assertions (submitter, assertion type, tumour types, drugs).",
+      "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
+    },
+    "enums": {
+      "tier": [
+        "tier_i",
+        "tier_ii",
+        "tier_iii",
+        "tier_iv"
+      ],
+      "oncogenicity": [
+        "oncogenic",
+        "likely_oncogenic",
+        "uncertain_significance",
+        "likely_benign",
+        "benign",
+        "conflicting"
+      ],
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
     "name": "clinvar_search_variants",
-    "description": "Free-text search across ClinVar variant names, genes, and traits; returns matching variants (vcv_accession, gene, classification, star rating) as a paginated list. Use this to locate a record when you only have a gene symbol plus a change or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, so results never wander into an unrelated gene, and _meta.search declares what was inferred and whether the match degraded. Pagination: total_count / has_more / next_offset; in minimal/compact mode the citation is hoisted once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
+    "description": "Free-text search across ClinVar variant names, genes, and traits; returns matching variants (vcv_accession, gene, classification, star rating) as a paginated list. Use this to locate a record when you only have a gene symbol plus a change (BRAF V600E reads as p.Val600Glu) or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, so results never wander into an unrelated gene, and _meta.search declares what was inferred and whether the match degraded. Pagination: total_count / has_more / next_offset; in minimal/compact mode the citation is hoisted once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
     "tags": [
       "classification",
       "clinical-significance",
@@ -4664,6 +5175,147 @@
     }
   },
   {
+    "name": "moalmanac_get_diagnostics",
+    "description": "Report runtime state: build, the bundled snapshot's release, commit and sha256, and tool latency metrics. Signature: get_diagnostics().",
+    "tags": [
+      "approval",
+      "biomarker",
+      "cancer",
+      "discovery",
+      "ema",
+      "fda",
+      "somatic",
+      "therapy"
+    ],
+    "params": {}
+  },
+  {
+    "name": "moalmanac_get_indication",
+    "description": "Get one MOAlmanac indication: status, fenced label indication text, agency history (dated approvals, extensions), label documents (brand, generic, company, version date, regulatory ID, URL) and its approval statements. An unknown ID is not_found. Signature: get_indication(indication_id).",
+    "tags": [
+      "approval",
+      "approvals",
+      "biomarker",
+      "cancer",
+      "ema",
+      "fda",
+      "somatic",
+      "therapy"
+    ],
+    "params": {
+      "indication_id": "MOAlmanac indication ID (from search_approvals)."
+    }
+  },
+  {
+    "name": "moalmanac_get_server_capabilities",
+    "description": "Describe this server: identifiers, agencies, limits, data version (release tag, commit, DOI), known upstream defects, licence, citation and error codes. Signature: get_server_capabilities().",
+    "tags": [
+      "approval",
+      "biomarker",
+      "cancer",
+      "discovery",
+      "ema",
+      "fda",
+      "somatic",
+      "therapy"
+    ],
+    "params": {}
+  },
+  {
+    "name": "moalmanac_list_biomarkers",
+    "description": "List MOAlmanac's biomarker vocabulary (e.g. 'EGFR p.L858R', 'HER2-positive', 'ERBB2 amplification') with type, linked genes and active approval count, most approvals first: map a variant onto the biomarker wording search_approvals matches. Signature: list_biomarkers(gene=, biomarker_type=, limit=, offset=).",
+    "tags": [
+      "approval",
+      "biomarker",
+      "biomarkers",
+      "cancer",
+      "ema",
+      "fda",
+      "somatic",
+      "therapy"
+    ],
+    "params": {
+      "gene": "Gene symbol (ERBB2; aliases HER2, PD-L1), HGNC ID, Ensembl or NCBI Gene ID.",
+      "biomarker_type": "Only this biomarker type.",
+      "limit": "Max rows (default 20, max 100).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "biomarker_type": [
+        "Somatic variant",
+        "Germline variant",
+        "Protein expression",
+        "Gene fusion",
+        "Rearrangement",
+        "Translocation",
+        "Copy number",
+        "Copy number (arm level)",
+        "Wild type",
+        "Microsatellite stability",
+        "Mismatch repair",
+        "Homologous recombination",
+        "Tumor mutational burden",
+        "Haplotype genotype"
+      ]
+    }
+  },
+  {
+    "name": "moalmanac_search_approvals",
+    "description": "Search MOAlmanac regulatory approvals of biomarker-directed cancer therapies (FDA, EMA, Health Canada, Ireland HSE/HPRA). One row per agency statement: agency, status (Approved/Accelerated), biomarkers, genes, disease (NCIt, OncoTree), therapies, label document, version date and regulatory ID. Filters combine with AND; an unknown value is not_found naming it, with the closest names. Empty = no MOAlmanac approval found, not 'not approved'. `summary` counts agencies, regimens and biomarkers (co-occurring ones too) over all matches. 'Wild type X' rows are eligibility criteria, not X-targeted drugs. Rows hit by a known upstream error carry `known_defects`. Signature: search_approvals(gene=, biomarker=, disease=, therapy=, agency=, biomarker_type=, response_mode=, limit=, offset=).",
+    "tags": [
+      "approval",
+      "approvals",
+      "biomarker",
+      "cancer",
+      "ema",
+      "fda",
+      "somatic",
+      "therapy"
+    ],
+    "params": {
+      "gene": "Gene symbol (ERBB2; aliases HER2, PD-L1), HGNC ID, Ensembl or NCBI Gene ID.",
+      "biomarker": "Biomarker words, e.g. 'BRAF V600E', 'G12C', 'v::ALK' (fusions are 'v::GENE', any partner; V600 also matches V600E/K); an exact list_biomarkers name matches only that biomarker.",
+      "disease": "Disease name words (melanoma), or an OncoTree (NSCLC) or NCIt code as MOAlmanac records it; subtype codes (LUAD) are not mapped to parents.",
+      "therapy": "Drug or brand name (sotorasib).",
+      "agency": "Only this agency's statements.",
+      "biomarker_type": "Only rows with a biomarker of this type (of `gene`, if given): 'Gene fusion' keeps ALK fusions and drops 'Wild type ALK' rows.",
+      "response_mode": "minimal: ids, agency, biomarkers, therapies, label date | compact (default): + genes, disease codes, label | standard: + label URL, predicate, strength | full: + fenced indication text.",
+      "limit": "Max rows (default 20, max 100); 0 = only total and summary.",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "agency": [
+        "fda",
+        "ema",
+        "hc",
+        "hse",
+        "hpra"
+      ],
+      "biomarker_type": [
+        "Somatic variant",
+        "Germline variant",
+        "Protein expression",
+        "Gene fusion",
+        "Rearrangement",
+        "Translocation",
+        "Copy number",
+        "Copy number (arm level)",
+        "Wild type",
+        "Microsatellite stability",
+        "Mismatch repair",
+        "Homologous recombination",
+        "Tumor mutational burden",
+        "Haplotype genotype"
+      ],
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
     "name": "mondo_get_diagnostics",
     "description": "Report the local Mondo index status: whether the data is built, the loaded Mondo release version, term/obsolete/xref/closure counts, schema version, and when it was built, plus a runtime block (request/error counts and latency percentiles p50/p95/p99). Use this to confirm freshness or diagnose an upstream_unavailable error. Signature: get_diagnostics().",
     "tags": [
@@ -4826,7 +5478,7 @@
   },
   {
     "name": "mondo_map_cross_ontology",
-    "description": "List a Mondo term's cross-references to other ontologies, grouped by target prefix. get_disease surfaces every source; this tool's `prefixes` filter is the first-class set (OMIM/ORPHA/DOID/NCIT/UMLS/MESH/MEDGEN/SCTID/GARD), each with its mapping predicate and origin (obo_xref|sssom). An unrecognised prefix is rejected with invalid_input. Signature: map_cross_ontology(term, prefixes=, response_mode=).",
+    "description": "List a Mondo term's cross-references to other ontologies, grouped by target prefix. get_disease surfaces every source; this tool's `prefixes` filter is the first-class set (OMIM/ORPHA/DOID/NCIT/UMLS/MESH/MEDGEN/SCTID/GARD/ONCOTREE), each with its mapping predicate and origin (obo_xref|sssom). An unrecognised prefix is rejected with invalid_input. Signature: map_cross_ontology(term, prefixes=, response_mode=).",
     "tags": [
       "disease",
       "ontology",
@@ -4834,7 +5486,7 @@
     ],
     "params": {
       "term": "A MONDO id (MONDO:0008426 or 0008426), a disease label/synonym, or an external xref CURIE that resolves to a single Mondo term.",
-      "prefixes": "Restrict to these first-class cross-reference sources (OMIM/ORPHA/DOID/NCIT/UMLS/MESH/MEDGEN/SCTID/GARD). An unrecognised prefix is rejected with invalid_input. Omit to return every source.",
+      "prefixes": "Restrict to these first-class cross-reference sources (OMIM/ORPHA/DOID/NCIT/UMLS/MESH/MEDGEN/SCTID/GARD/ONCOTREE). An unrecognised prefix is rejected with invalid_input. Omit to return every source.",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
     },
     "enums": {
@@ -4891,7 +5543,7 @@
   },
   {
     "name": "mondo_resolve_xref",
-    "description": "Resolve an external cross-reference CURIE (OMIM/Orphanet/DOID/NCIT/UMLS/MeSH/MedGen/SNOMED/GARD) back to the Mondo term(s) that map to it, ranked by mapping predicate (exactMatch > equivalentTo > closeMatch > ...). Returns matches[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step (offset). Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
+    "description": "Resolve an external cross-reference CURIE (OMIM/Orphanet/DOID/NCIT/UMLS/MeSH/MedGen/SNOMED/GARD/ONCOTREE) back to the Mondo term(s) that map to it, ranked by mapping predicate (exactMatch > equivalentTo > closeMatch > ...). Returns matches[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step (offset). Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
     "tags": [
       "disease",
       "ontology",
@@ -4934,6 +5586,182 @@
         "compact",
         "standard",
         "full"
+      ]
+    }
+  },
+  {
+    "name": "opentargets_get_diagnostics",
+    "description": "Report runtime state without calling Open Targets: build, upstream request budget (today's usage vs the daily cap), cache hits and tool latency metrics. Signature: get_diagnostics().",
+    "tags": [
+      "cancer",
+      "discovery",
+      "disease",
+      "driver",
+      "drug",
+      "evidence",
+      "target",
+      "tractability"
+    ],
+    "params": {}
+  },
+  {
+    "name": "opentargets_get_drug_candidates",
+    "description": "Return ChEMBL drugs and clinical candidates acting on a target, most advanced stage first: ChEMBL ID, name, stage for this target, action types, indications. disease= keeps drugs studied in that disease or its descendants. standard adds fenced mechanism text; full adds the top 3 clinical reports. Stages lag regulators; empty is not 'no drug'. Signature: get_drug_candidates(target, disease=, response_mode=, limit=, offset=).",
+    "tags": [
+      "cancer",
+      "disease",
+      "driver",
+      "drug",
+      "drugs",
+      "evidence",
+      "target",
+      "tractability"
+    ],
+    "params": {
+      "target": "Ensembl gene ID (ENSG00000157764), HGNC symbol (BRAF) or HGNC ID.",
+      "disease": "Only this disease and its descendants (MONDO/EFO/HP ID or name).",
+      "response_mode": "Row detail. minimal: IDs, stage or score, disease, variant; compact (default): key fields, floats to 4 significant digits; standard: upstream values verbatim (+ literature, drug mechanism); full: + top 3 drug clinical reports.",
+      "limit": "Max rows (default 10, max 20).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "opentargets_get_server_capabilities",
+    "description": "Describe this server: Open Targets identifiers, limits, data release, licence, classification axes, rate-limit policy and error codes. Signature: get_server_capabilities().",
+    "tags": [
+      "cancer",
+      "discovery",
+      "disease",
+      "driver",
+      "drug",
+      "evidence",
+      "target",
+      "tractability"
+    ],
+    "params": {}
+  },
+  {
+    "name": "opentargets_get_target_disease_evidence",
+    "description": "Return evidence rows linking a target to a disease and its descendants (or, without disease, to every associated disease) from served datasources only: IntOGen drivers (cohort, methods, q-value), ClinVar somatic/germline (GRCh38 variant), clinical precedence, gene burden, GWAS credible sets. Page with next_cursor. Signature: get_target_disease_evidence(target, disease=, datasource=, response_mode=, limit=, cursor=).",
+    "tags": [
+      "cancer",
+      "disease",
+      "driver",
+      "drug",
+      "evidence",
+      "target",
+      "tractability"
+    ],
+    "params": {
+      "target": "Ensembl gene ID (ENSG00000157764), HGNC symbol (BRAF) or HGNC ID.",
+      "disease": "Only this disease and its descendants (MONDO/EFO/HP ID or name).",
+      "datasource": "Only this served datasource (intogen = somatic drivers).",
+      "response_mode": "Row detail. minimal: IDs, stage or score, disease, variant; compact (default): key fields, floats to 4 significant digits; standard: upstream values verbatim (+ literature, drug mechanism); full: + top 3 drug clinical reports.",
+      "limit": "Max rows (default 10, max 50).",
+      "cursor": "The previous call's `next_cursor`."
+    },
+    "enums": {
+      "datasource": [
+        "intogen",
+        "eva_somatic",
+        "eva",
+        "clinical_precedence",
+        "gene_burden",
+        "gwas_credible_sets",
+        "clingen",
+        "orphanet",
+        "gene2phenotype",
+        "uniprot_variants",
+        "uniprot_literature",
+        "reactome",
+        "impc",
+        "expression_atlas"
+      ],
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
+    "name": "opentargets_get_target_tractability",
+    "description": "Return a target's tractability buckets per modality (SM small molecule, AB antibody, PR PROTAC, OC other), split into true/false labels such as 'Approved Drug' or 'High-Quality Pocket', plus its ChEMBL target class. Signature: get_target_tractability(target).",
+    "tags": [
+      "cancer",
+      "disease",
+      "driver",
+      "drug",
+      "evidence",
+      "target",
+      "targets",
+      "tractability"
+    ],
+    "params": {
+      "target": "Ensembl gene ID (ENSG00000157764), HGNC symbol (BRAF) or HGNC ID."
+    }
+  },
+  {
+    "name": "opentargets_resolve_target",
+    "description": "Return one Open Targets target (Ensembl gene ID, symbol, name, biotype, GRCh38 location, synonyms) for a symbol, alias (HER2) or Ensembl ID. Start here. Signature: resolve_target(query).",
+    "tags": [
+      "cancer",
+      "disease",
+      "driver",
+      "drug",
+      "evidence",
+      "target",
+      "targets",
+      "tractability"
+    ],
+    "params": {
+      "query": "HGNC symbol, alias, HGNC ID or Ensembl gene ID."
+    }
+  },
+  {
+    "name": "opentargets_search_disease_targets",
+    "description": "Return targets associated with a disease, ranked by Open Targets association score recomputed from served datasources only, with per-datasource scores. datasource= keeps targets with that source and ranks by its score (ranked_by): 'intogen' somatic cancer drivers; 'gene_burden' or 'gwas_credible_sets' germline signals. `total` is exact. Signature: search_disease_targets(disease, datasource=, limit=, offset=).",
+    "tags": [
+      "associations",
+      "cancer",
+      "disease",
+      "driver",
+      "drug",
+      "evidence",
+      "target",
+      "tractability"
+    ],
+    "params": {
+      "disease": "MONDO/EFO/HP ID (MONDO_0005105) or disease name (melanoma, top match is reported as resolved_from); covers descendants.",
+      "datasource": "Only this served datasource (intogen = somatic drivers).",
+      "limit": "Max rows (default 10, max 50).",
+      "offset": "Rows to skip; use the previous `next_offset`."
+    },
+    "enums": {
+      "datasource": [
+        "intogen",
+        "eva_somatic",
+        "eva",
+        "clinical_precedence",
+        "gene_burden",
+        "gwas_credible_sets",
+        "clingen",
+        "orphanet",
+        "gene2phenotype",
+        "uniprot_variants",
+        "uniprot_literature",
+        "reactome",
+        "impc",
+        "expression_atlas"
       ]
     }
   },
