@@ -8615,7 +8615,8 @@
       },
       "domain": "Gene nomenclature",
       "entrypoints": [
-        "resolve_symbol"
+        "resolve_symbol",
+        "resolve_symbols_batch"
       ],
       "name": "hgnc",
       "namespace": "hgnc",

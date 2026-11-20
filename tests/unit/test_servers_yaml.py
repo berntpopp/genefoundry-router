@@ -44,6 +44,7 @@ def test_real_servers_yaml_parses():
         "get_genes_for_phenotype",
         "score_genes_for_phenotypes",  # #341
     ]
+    assert by_name["hgnc"].entrypoints == ["resolve_symbol", "resolve_symbols_batch"]  # #341
     assert by_name["mavedb"].entrypoints == ["search_score_sets"]
     assert by_name["metadome"].entrypoints == ["resolve_transcript", "get_tolerance_landscape"]
     assert by_name["orphanet"].entrypoints == ["search_diseases"]

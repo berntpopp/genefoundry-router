@@ -52,7 +52,9 @@ servers:
     source_name: HGNC
     source_url: https://www.genenames.org/
     tags: [gene, nomenclature]
-    entrypoints: [resolve_symbol]
+    # resolve_symbols_batch is pinned (#341): with only a pointer in resolve_symbol's
+    # description a model made 928 single and 8 batch calls over 75 samples; listed, 2 and 75.
+    entrypoints: [resolve_symbol, resolve_symbols_batch]
 
   - name: mgi
     repo: berntpopp/mgi-link
