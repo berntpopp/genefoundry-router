@@ -1,0 +1,179 @@
+{
+  "_note": "backends.<serverInfo.name> is the SEED for that backend: params corrects the derived gene parameters ({\"tool.param\": \"gene\" | null}; every null needs an entry in reasons), forms swaps the probe gene, known_failures lists expected-fail keys \"tool.param:form\". This file is vendored byte-identical and owned by the router. A backend that changes its block (a fix deletes a key) writes the block to tests/conformance/identifiers.local.json, which replaces the seed and survives re-vendoring; the router's seed is then pruned at leisure. Seeded 2026-11-20 from router #343: known_failures from the audit (clinvar, gencc, metadome and mgi name the audited tool with the Ensembl form inferred); params, reasons and forms from the pinned tool schemas, not from a run against those backends.",
+  "entities": {
+    "gene": {
+      "param_name": "^(candidate_)?genes?(_symbols?|_ids?)?$",
+      "param_description": "^(an? )?(hgnc |approved |mouse )?(gene|marker) symbols?\\b",
+      "forms": {
+        "symbol": "KRAS",
+        "ensembl": "ENSG00000133703",
+        "hgnc": "HGNC:6407",
+        "ncbigene": "NCBIGene:3845"
+      }
+    }
+  },
+  "backends": {
+    "autopvs1-link": {
+      "params": {
+        "search_variants.query": null
+      },
+      "reasons": {
+        "search_variants.query": "free-text search over variants, not a gene lookup"
+      }
+    },
+    "clingen-link": {
+      "known_failures": [
+        "get_gene_validity.gene_symbol:ensembl",
+        "get_gene_summary.gene_symbol:ensembl",
+        "get_gene_dosage.gene_symbol:ensembl",
+        "get_gene_actionability.gene_symbol:ensembl"
+      ]
+    },
+    "clinvar-link": {
+      "params": {
+        "search_variants.gene_symbol": null
+      },
+      "reasons": {
+        "search_variants.gene_symbol": "another required parameter's example names a different gene, so no KRAS call can resolve"
+      },
+      "known_failures": [
+        "get_gene_clinvar_summary.gene_symbol:ensembl"
+      ]
+    },
+    "gencc-link": {
+      "params": {
+        "resolve_identifier.query": "gene",
+        "get_gene_disease_assertion.gene_symbol": null
+      },
+      "reasons": {
+        "get_gene_disease_assertion.gene_symbol": "the required disease example is not a KRAS disease"
+      },
+      "known_failures": [
+        "resolve_identifier.query:ensembl"
+      ]
+    },
+    "genereviews-link": {
+      "params": {
+        "search_passages.gene": null
+      },
+      "reasons": {
+        "search_passages.gene": "optional filter over a required free-text q whose example is about another gene"
+      },
+      "known_failures": [
+        "search_genereviews.gene_symbol:ensembl"
+      ]
+    },
+    "gnomad-link": {
+      "known_failures": [
+        "search_genes.query:hgnc"
+      ]
+    },
+    "gtex-link": {
+      "params": {
+        "get_median_expression_levels.gencode_id": "gene",
+        "get_individual_expression_data.gencode_id": "gene",
+        "fetch.id": "gene"
+      }
+    },
+    "litvar-link": {
+      "params": {
+        "search_genetic_variants.query": null
+      },
+      "reasons": {
+        "search_genetic_variants.query": "free-text search over variants, not a gene lookup"
+      },
+      "known_failures": [
+        "search_gene_variants.gene_symbol:ensembl"
+      ]
+    },
+    "mavedb-link": {
+      "params": {
+        "find_variant.gene_symbol": null,
+        "search_score_sets.targets": "gene",
+        "search_experiments.targets": "gene"
+      },
+      "reasons": {
+        "find_variant.gene_symbol": "scopes the required variant example, which belongs to another gene"
+      }
+    },
+    "metadome-link": {
+      "known_failures": [
+        "resolve_transcript.query:ensembl"
+      ]
+    },
+    "mgi-link": {
+      "known_failures": [
+        "get_marker_phenotypes.query:ensembl"
+      ]
+    },
+    "mitomap-link": {
+      "params": {
+        "search_variants.locus": "gene"
+      },
+      "forms": {
+        "gene": {
+          "symbol": "MT-ATP6",
+          "ensembl": "ENSG00000198899",
+          "hgnc": "HGNC:7414",
+          "ncbigene": "NCBIGene:4508"
+        }
+      }
+    },
+    "orphanet-link": {
+      "known_failures": [
+        "find_diseases_by_gene.gene_symbol:ensembl",
+        "find_diseases_by_gene.gene_symbol:hgnc"
+      ]
+    },
+    "panelapp-link": {
+      "params": {
+        "get_gene_panels.hgnc_id": "gene"
+      }
+    },
+    "pubtator-link": {
+      "params": {
+        "get_variant_evidence.gene": null
+      },
+      "reasons": {
+        "get_variant_evidence.gene": "the required variant example belongs to another gene"
+      }
+    },
+    "strchive-link": {
+      "params": {
+        "get_locus.locus": "gene",
+        "compare_repeat_length.locus": "gene"
+      },
+      "forms": {
+        "gene": {
+          "symbol": "HTT",
+          "ensembl": "ENSG00000197386",
+          "hgnc": "HGNC:4851",
+          "ncbigene": "NCBIGene:3064"
+        }
+      }
+    },
+    "ucsc-link": {
+      "params": {
+        "search_genome.query": null
+      },
+      "reasons": {
+        "search_genome.query": "free-text genome search over genes, transcripts and terms"
+      }
+    },
+    "uniprot-link": {
+      "params": {
+        "get_protein.accession": "gene",
+        "get_protein_sequence.accession": "gene",
+        "get_protein_features.accession": "gene",
+        "get_protein_variants.accession": "gene",
+        "get_protein_diseases.accession": "gene",
+        "get_protein_cross_references.accession": "gene",
+        "get_protein_go_terms.accession": "gene",
+        "resolve_identifiers.accession": "gene"
+      },
+      "known_failures": [
+        "find_proteins.gene_symbol:ensembl"
+      ]
+    }
+  }
+}

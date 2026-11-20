@@ -1,6 +1,7 @@
 # GeneFoundry Tool-Schema Documentation Standard v1
 
-> **Status: PROPOSED, 2026-07-14; v1.1 (rule 7, description lead) added 2026-11-19.**
+> **Status: PROPOSED, 2026-07-14; v1.1 (rule 7, description lead) added 2026-11-19; v1.2
+> (rule 8, batch pointer) added 2026-11-20.**
 > Tracking issue: `genefoundry-router#75`. A tracking issue
 > titled "Adopt GeneFoundry Tool-Schema Documentation Standard v1" exists in each `-link` repo.
 > Enforced statically by `scripts/check_tool_surface.py` (`make lint-surface`) and empirically by
@@ -138,6 +139,18 @@ and `pattern`. The fix already exists inside the fleet; it just has not been app
    gencc 3/12, hgnc 2/9, mgi 2/13, stringdb 2/10, and one each in clinpgx, clinvar, hpo, mondo,
    orphanet, uniprot, vep. autopvs1, gtex, litvar, mavedb and panelapp pass.
 
+8. **v1.2 — A pinned single-item tool MUST name its batch or set-level sibling in its
+   description.** (`D2`, router #343)
+   Where the same backend has a tool that takes a list or scores a set, the pinned tool says so:
+   *"For 2 or more genes, call `resolve_symbols_batch` once."* Put it in the first sentence where
+   it fits. Siblings are derived from names (`_batch`/`_bulk`, or the plural form); set-level
+   tools that share no name are listed in `SET_LEVEL` in `scripts/check_batch_pointers.py`. Known
+   failures are listed there too and are strict: a listed pair that passes fails the lint.
+   The pointer is required but is not enough alone: on one task a mid-size model made 928
+   single-item calls with the pointer in place and 75 batch calls once the batch tool was pinned.
+   Where a batch tool replaces a per-item loop over a pinned tool, pinning the batch tool
+   (`servers.yaml` `entrypoints`) is the recommended remedy.
+
 > **This standard is fleet policy, not MCP conformance.** The MCP specification says **nothing**
 > about parameter descriptions, examples, or enums on tool inputs; `description` is an optional
 > field the spec calls *"a hint to the model"*. Every rule above is GeneFoundry policy, grounded
@@ -152,6 +165,7 @@ and `pattern`. The fix already exists inside the fleet; it just has not been app
 | `S2` examples on every required property | `scripts/check_tool_surface.py` | static |
 | `S3` examples on every array property | `scripts/check_tool_surface.py` | static |
 | `D1` first sentence says what it returns (v1.1) | `scripts/check_tool_surface.py` | static; warning by default, failure with `--strict-lead` |
+| `D2` a pinned tool names its batch sibling (v1.2) | `scripts/check_batch_pointers.py` | static, offline, against the pinned baseline + `servers.yaml` pins (`make lint-batch-pointers`, part of `ci-local`) |
 | `S4` enum on every closed vocabulary | `docs/conformance/behaviour.py` | **empirical** — sends an unrecognised value and requires rejection, not a silent zero |
 
 Static and dynamic together close the loop. Neither closes it alone: a static gate cannot see an
