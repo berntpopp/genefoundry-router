@@ -2290,7 +2290,14 @@
     "pathogène",
     "patógena",
     "klinische Bedeutung",
-    "signification clinique"
+    "signification clinique",
+    "somatic",
+    "oncogenicity",
+    "oncogenic",
+    "clinical impact tier",
+    "AMP/ASCO/CAP tier",
+    "cancer variant",
+    "actionable"
    ]
   },
   "clinvar_get_variants": {
@@ -11018,6 +11025,13 @@
     "MedGen",
     "obo_xref",
     "prefix mapping"
+   ],
+   "manual_keywords": [
+    "OncoTree",
+    "ONCOTREE",
+    "OncoTree code",
+    "tumour type code",
+    "cancer type code"
    ]
   },
   "mondo_resolve_disease": {
@@ -11199,6 +11213,12 @@
     "skos mapping",
     "external identifier resolver",
     "NCIT code conversion"
+   ],
+   "manual_keywords": [
+    "OncoTree",
+    "ONCOTREE",
+    "OncoTree code",
+    "tumour type code"
    ]
   },
   "mondo_search_diseases": {
