@@ -530,20 +530,24 @@ backends:
     existing_sanitization: n/a
 
   - backend: vep
-    tool: none
-    json_pointers: []
+    tool: annotate_variant
+    json_pointers: [/variants/*/colocated_variants/*/clinvar_somatic_classification]
+    surfaces:
+      - {tool: annotate_variant, pointer: /variants/*/colocated_variants/*/clinvar_somatic_classification}
+      - {tool: annotate_variants_batch, pointer: /results/*/colocated_variants/*/clinvar_somatic_classification}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: n/a-no-untrusted-text
-    test_vector: none
-    classification: no-untrusted-text
+    measured_exceptions:
+      - {tool: annotate_variants_batch, max_objects: 2000, reason: "200 inputs x up to 10 co-located ClinVar somatic entries each (live BRAF/KRAS/TP53 hotspots carry 1-3)"}
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
     evidence: >-
-      vep_link/models/responses.py:TranscriptConsequence (SO enums, HGVS notation, numeric
-      scores; extra=ignore) + regression guard
-      tests/unit/test_no_untrusted_text_surface.py (also empirically clears the raw
-      full-mode colocated_variants passthrough via live Ensembl REST verification, pinning
-      its observed key set as free-text-free)
-    existing_sanitization: n/a
+      vep_link/mcp/untrusted_content.py (full-mode colocated_variants ClinVar somatic
+      classification fenced; COSMIC ids stripped in services/extraction.py) + guards
+      tests/unit/test_no_untrusted_text_surface.py and tests/unit/test_no_cosmic_ids.py
+      (vep-link#131; batch measured exception 200 inputs x <=10 entries)
+    existing_sanitization: v1.1 fence shipped, released v1.2.3
 
   - backend: metadome
     tool: none
