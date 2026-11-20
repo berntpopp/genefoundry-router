@@ -67,7 +67,7 @@ _FIELD_BOOST = 12
 # A skill document (~60-90 tokens) is far shorter than a tool document (~300 without
 # expansions), so BM25 length normalization would rank it above tools on any shared word.
 # A neutral filler token pads it to this floor; tuned on the discoverability benchmark (#336).
-_SKILL_DOC_TOKENS = 300
+_SKILL_DOC_TOKENS = 300  # ponytail: tuned for no-expansion docs (~300); with builtin expansions tools average ~546 tokens; derive from mean doc length if skills crowd tools
 
 # call_tool's default FastMCP description ("Call a tool by name…") doesn't convey the
 # namespaced name format or that a host's "Unknown tool" eviction is recoverable, so we

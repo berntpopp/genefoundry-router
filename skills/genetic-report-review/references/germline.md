@@ -49,7 +49,8 @@ PP3 resting on the same data; PM1 with PP3 above strong; PP5/BP6 used as evidenc
 ## 4. Points (Tavtigian 2020, PMID 32720330)
 
 Add step by step: very strong 8, strong 4, moderate 2, supporting 1; benign codes count
-negative the same way (BA1 counts as very strong benign, −8).
+negative the same way. BA1 is not added: it is stand-alone, so BA1 alone means Benign unless
+a VCEP lists an exception for the variant (Ghosh 2018, PMID 30311383).
 Totals: pathogenic ≥ 10; likely pathogenic 6 to 9; VUS 0 to 5; likely benign −1 to −6;
 benign ≤ −7. Show the sum. If the stated codes do not reach the stated class, that is a
 Major finding; if the class would change the clinical message (e.g. LP → VUS), Critical.
@@ -74,4 +75,6 @@ Major finding; if the class would change the clinical message (e.g. LP → VUS),
   homozygous call (consider a deletion or uniparental disomy for apparent homozygosity);
   X-linked: hemizygous in males, heterozygous in females with variable expression.
 - Recurrence risk: AD 50% per child; AR 25% for a couple who are both carriers; X-linked
-  depends on the transmitting parent's sex. Any stated risk must follow from these.
+  depends on the transmitting parent's sex. A stated risk must follow from these unless the
+  report states why not (de novo with possible parental germline mosaicism, reduced
+  penetrance, mosaicism, imprinting); an unexplained departure is a finding.

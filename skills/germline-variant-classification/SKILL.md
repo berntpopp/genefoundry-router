@@ -32,7 +32,7 @@ Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool
 - mtDNA variant: also read `references/mitochondrial.md`. Repeat expansion: read
   `references/repeat-expansion.md` (sizing, not ACMG points).
 - Somatic variants: use the `somatic-variant-interpretation` skill instead. CNVs: out of scope.
-- ACMG/AMP v4 is not yet published; do not apply v4 rules.
+- ACMG/AMP v4 was not published as of 2026-11; do not apply v4 rules.
 
 ## Step 1: Normalize (2–3 calls)
 
@@ -46,8 +46,10 @@ Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool
 ## Step 2: Gene–disease and mechanism (1–2 calls)
 
 - `clingen_get_gene_validity` (and `gencc_get_gene_curations` if ClinGen has no curation).
-- If validity for the disease is Limited, Disputed, Refuted or absent: say so; a variant
-  cannot be more than VUS for that disease. Continue only on request.
+- If validity for the disease is Limited, Disputed or Refuted: say so; a variant cannot be
+  more than VUS for that disease (ClinGen advice). Continue only on request. If the gene has
+  no curation at all, say so and state that the gene–disease link is unassessed; do not cap
+  the class on that basis alone.
 - Note the mode of inheritance and whether loss of function (LoF) is a known mechanism
   (needed for PVS1). `gnomad_get_gene_summary` constraint is context, never a criterion.
 
@@ -88,7 +90,8 @@ Scores between 0.290 and 0.644 are indeterminate: no PP3, no BP4.
 ## Step 5: Weigh and add up (no tool calls)
 
 Points (Tavtigian 2020, PMID 32720330): Supporting 1, Moderate 2, Strong 4, Very strong 8;
-benign codes count negative. Classes (same paper, Table 3):
+benign codes count negative. BA1 is stand-alone and never added: BA1 met means Benign unless
+the VCEP lists an exception (Ghosh 2018, PMID 30311383). Classes (same paper, Table 3):
 
 | Total points | Class |
 |---|---|

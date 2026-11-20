@@ -85,3 +85,18 @@ def test_repo_skills_pass() -> None:
     errors = check_skills(ROOT / "skills", catalog_names())
     somatic = [e for e in errors if "somatic-variant-interpretation" in e]
     assert somatic == []  # other skills are gated by `make lint-skills`
+
+
+def test_folder_without_skill_md_fails(tmp_path: Path) -> None:
+    _skill(tmp_path)
+    (tmp_path / "typo-skill").mkdir()
+    (tmp_path / "typo-skill" / "Skill.md").write_text("x")
+    assert any("typo-skill: no SKILL.md" in e for e in check_skills(tmp_path, CATALOG))
+
+
+def test_broken_reference_link_fails(tmp_path: Path) -> None:
+    path = _skill(tmp_path, body="Read `references/pvs1.md` and [x](references/gone.md).")
+    (path.parent / "references").mkdir()
+    (path.parent / "references" / "pvs1.md").write_text("ok")
+    errors = check_skills(tmp_path, CATALOG)
+    assert errors == ["demo-skill: broken link `references/gone.md` in demo-skill/SKILL.md"]

@@ -23,6 +23,7 @@ CATALOG = ROOT / "tests" / "discoverability" / "catalog.json"  # refreshed by sn
 MAX_BYTES = 20_000
 NAME_RE = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
 TOOL_RE = re.compile(r"`([a-z0-9]+)_([a-z0-9_]+)[`(]")
+LINK_RE = re.compile(r"`((?:references|scripts|assets)/[^`\s]+\.md)`|\]\(([^)#\s]+\.md)\)")
 BLOCK_RE = re.compile(r"<!-- shared-rules:start -->\n(.*?)\n<!-- shared-rules:end -->", re.S)
 
 
@@ -55,6 +56,9 @@ def check_skills(skills_dir: Path, catalog_names: set[str]) -> list[str]:
     block = canonical_block(skills_dir / "README.md")
     namespaces = _namespaces()
     errors: list[str] = []
+    for folder_path in sorted(p for p in skills_dir.iterdir() if p.is_dir()):
+        if not (folder_path / "SKILL.md").is_file():
+            errors.append(f"{folder_path.name}: no SKILL.md (the server would skip it silently)")
     for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
         folder = skill_md.parent.name
         text = skill_md.read_text(encoding="utf-8")
@@ -81,6 +85,11 @@ def check_skills(skills_dir: Path, catalog_names: set[str]) -> list[str]:
                 if ns in namespaces and tool not in catalog_names:
                     where = md.relative_to(skills_dir).as_posix()
                     errors.append(f"{folder}: unknown tool `{tool}` in {where}")
+            for pair in LINK_RE.findall(md.read_text(encoding="utf-8")):
+                link = pair[0] or pair[1]
+                if not any((base / link).is_file() for base in (skill_md.parent, md.parent)):
+                    where = md.relative_to(skills_dir).as_posix()
+                    errors.append(f"{folder}: broken link `{link}` in {where}")
     return errors
 
 
