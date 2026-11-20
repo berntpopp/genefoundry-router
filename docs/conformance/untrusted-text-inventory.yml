@@ -248,6 +248,11 @@ backends:
       - {tool: search_variants, pointer: /results/*/traits/*/name}
       - {tool: get_variants_by_gene, pointer: /results/*/traits/*/name}
       - {tool: get_gene_clinvar_summary, pointer: /top_traits/*/trait}
+      - {tool: get_variant, pointer: /somatic_clinical_impact/assertions/*/tumour_types/*/name}
+      - {tool: get_variant, pointer: /somatic_clinical_impact/assertions/*/drugs/*}
+      - {tool: get_variant, pointer: /oncogenicity/assertions/*/tumour_types/*/name}
+      - {tool: search_somatic_classifications, pointer: /results/*/somatic_clinical_impact/assertions/*/tumour_types/*/name}
+      - {tool: search_somatic_classifications, pointer: /results/*/somatic_clinical_impact/assertions/*/drugs/*}
     max_text_bytes: 2097152
     max_objects: 128
     measured_exceptions:
@@ -530,20 +535,24 @@ backends:
     existing_sanitization: n/a
 
   - backend: vep
-    tool: none
-    json_pointers: []
+    tool: annotate_variant
+    json_pointers: [/variants/*/colocated_variants/*/clinvar_somatic_classification]
+    surfaces:
+      - {tool: annotate_variant, pointer: /variants/*/colocated_variants/*/clinvar_somatic_classification}
+      - {tool: annotate_variants_batch, pointer: /results/*/colocated_variants/*/clinvar_somatic_classification}
     max_text_bytes: 2097152
     max_objects: 128
-    compatibility: n/a-no-untrusted-text
-    test_vector: none
-    classification: no-untrusted-text
+    measured_exceptions:
+      - {tool: annotate_variants_batch, max_objects: 2000, reason: "200 inputs x up to 10 co-located ClinVar somatic entries each (live BRAF/KRAS/TP53 hotspots carry 1-3)"}
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
     evidence: >-
-      vep_link/models/responses.py:TranscriptConsequence (SO enums, HGVS notation, numeric
-      scores; extra=ignore) + regression guard
-      tests/unit/test_no_untrusted_text_surface.py (also empirically clears the raw
-      full-mode colocated_variants passthrough via live Ensembl REST verification, pinning
-      its observed key set as free-text-free)
-    existing_sanitization: n/a
+      vep_link/mcp/untrusted_content.py (full-mode colocated_variants ClinVar somatic
+      classification fenced; COSMIC ids stripped in services/extraction.py) + guards
+      tests/unit/test_no_untrusted_text_surface.py and tests/unit/test_no_cosmic_ids.py
+      (vep-link#131; batch measured exception 200 inputs x <=10 entries)
+    existing_sanitization: v1.1 fence shipped, released v1.2.3
 
   - backend: metadome
     tool: none
@@ -607,4 +616,78 @@ backends:
       method_params, publication title, and one `reported` block per performance row --
       phenotype, covariates, comments -- with performance pages capped at 50 rows so fenced
       objects stay <=128) + pgscatalog_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
+
+  - backend: civic
+    tool: get_evidence_item
+    json_pointers: [/evidence_item/statement]
+    surfaces:
+      - {tool: get_evidence_item, pointer: /evidence_item/statement}
+      - {tool: get_evidence_item, pointer: /evidence_item/source/title}
+      - {tool: search_evidence_items, pointer: /evidence_items/*/statement}
+      - {tool: get_assertion, pointer: /assertion/summary}
+      - {tool: get_assertion, pointer: /assertion/description}
+      - {tool: search_assertions, pointer: /assertions/*/summary}
+      - {tool: get_molecular_profile, pointer: /molecular_profile/description}
+      - {tool: get_gene, pointer: /gene/description}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      civic_link/shaping.py + civic_link/service.py (fence(): evidence statements, source
+      titles, assertion summaries/descriptions, molecular-profile and gene descriptions; list
+      limit capped at 50 so fenced objects stay <=128) + civic_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
+
+  - backend: cbioportal
+    tool: get_study
+    json_pointers: [/study/description]
+    surfaces:
+      - {tool: get_study, pointer: /study/description}
+      - {tool: search_studies, pointer: /studies/*/description}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      cbioportal_link/shaping.py + cbioportal_link/service.py (fence(): submitter-written
+      study descriptions, full mode only) + cbioportal_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
+
+  - backend: opentargets
+    tool: get_drug_candidates
+    json_pointers: [/drug_candidates/*/mechanism_of_action]
+    surfaces:
+      - {tool: get_drug_candidates, pointer: /drug_candidates/*/mechanism_of_action}
+      - {tool: get_drug_candidates, pointer: /drug_candidates/*/clinical_reports/*/title}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      opentargets_link/shaping.py (fence(): ChEMBL mechanism-of-action strings and
+      clinical-report titles; DRUG_MAX_LIMIT 20 x 4 fences stays <=128) +
+      opentargets_link/mcp/untrusted_content.py
+    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0
+
+  - backend: moalmanac
+    tool: get_indication
+    json_pointers: [/indication/description]
+    surfaces:
+      - {tool: get_indication, pointer: /indication/description}
+      - {tool: get_indication, pointer: /indication/contributions/*/description}
+      - {tool: search_approvals, pointer: /approvals/*/indication}
+    max_text_bytes: 8388608
+    max_objects: 128
+    compatibility: breaking-v1.1
+    test_vector: hostile-upstream-text-v1
+    classification: untrusted-text
+    evidence: >-
+      moalmanac_link/service.py (fence(): regulatory label indication text and contribution
+      descriptions; search_approvals fences the indication in full mode) +
+      moalmanac_link/mcp/untrusted_content.py
     existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released v0.1.0

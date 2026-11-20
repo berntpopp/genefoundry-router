@@ -46,6 +46,8 @@ jobs:
           owner: berntpopp
           repositories: |
             autopvs1-link
+            cbioportal-link
+            civic-link
             clingen-link
             clinpgx-link
             clinvar-link
@@ -61,7 +63,9 @@ jobs:
             metadome-link
             mgi-link
             mitomap-link
+            moalmanac-link
             mondo-link
+            opentargets-link
             orphanet-link
             panelapp-link
             pgscatalog-link
