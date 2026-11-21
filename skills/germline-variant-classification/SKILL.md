@@ -104,13 +104,13 @@ applicable" codes replace the generic rules below. Name the spec (GN id, version
 
 | Evidence | Tool | Codes | Rules |
 |---|---|---|---|
-| Population | `gnomad_get_variant_frequencies` | BA1, BS1, BS2, PM2 | Compare `summary.faf95…grpmax`, not raw max AF; no faf95 (very low AC) → use AC/AN as the VCEP spec says. BA1: allele frequency > 0.05 unless the VCEP sets a lower value (Ghosh 2018, PMID 30311383). BS1: only with a disease-specific threshold (VCEP or stated calculation); otherwise "not evaluated". PM2: Supporting strength only (ClinGen SVI 2020). |
+| Population | `gnomad_get_variant_frequencies` | BA1, BS1, BS2, PM2 | Compare `summary.faf95…grpmax`, not raw max AF; no faf95 (very low AC) → use AC/AN as the VCEP spec says. BA1: allele frequency > 0.05 unless the VCEP sets a lower value (Ghosh 2018, PMID 30311383). BS1: only with a disease-specific threshold (VCEP or stated calculation); otherwise "not evaluated". Check BA1/BS1 against the spec's thresholds before PM2. PM2: Supporting strength only (ClinGen SVI 2020), and only if gnomAD answered and the variant is absent or below the spec's PM2 threshold. A failed or unresolved gnomAD call gives "not evaluated", never "absent". Never PM2 together with BS1 or BA1. |
 | Null variant | `autopvs1_get_variant_pvs1_data` (`genome_build`, `variant_id`) | PVS1 (any strength) | Read `references/pvs1.md`. Only if LoF is a disease mechanism. |
-| Splicing | `spliceai_predict_splicing` | PP3, BP4, BP7, PVS1 (RNA) | Read `references/splicing.md`. |
-| Missense predictor | `vep_annotate_variant` (REVEL) | PP3, BP4 | One tool chosen before seeing the score: REVEL, thresholds below. |
+| Splicing | `spliceai_predict_splicing` | PP3, BP4, BP7, PVS1 (RNA) | Read `references/splicing.md`. SpliceAI answers only the splicing question; it never gives PP3/BP4 for a missense effect. |
+| Missense predictor | `vep_annotate_variant` (REVEL) | PP3, BP4 | One tool chosen before seeing the score: the spec's named predictor, else REVEL with the thresholds below. One PP3 or BP4 per variant. |
 | Functional | `mavedb_find_variant` (`variant`, `gene_symbol`) | PS3, BS3 | Read `references/functional.md`. Only calibrated assays. |
 | Same residue | `clinvar_search_variants` (gene + residue), `clinvar_get_variant` | PS1, PM5 | Name the comparator variant, its class and stars; a comparator that is not itself P/LP gives nothing. |
-| Hotspot/domain | VCEP spec; `metadome_get_tolerance_landscape` as context | PM1 | Without a VCEP definition, apply PM1 only with a stated, cited domain/hotspot rationale. |
+| Hotspot/domain | VCEP spec; `metadome_get_tolerance_landscape` as context | PM1 | If the spec defines PM1 residues or domains (`clingen_get_cspec_criterion`, `code="PM1"`), check the variant's residue against them. Without a VCEP definition, apply PM1 only with a stated, cited domain/hotspot rationale. |
 | Case data | PMIDs cited by `clinvar_get_variant` / `clingen_get_variant_interpretation` first, then `litvar_get_variant_literature`; verify with `pubtator_get_publication_passages` | PS2, PM6, PS4, PM3, PP1, PP4 | A PMID counts only after its passage shows this exact allele and the case data; otherwise "not confirmable". LitVar lists any mention under the rsID (other ALTs included); its top hits are often reviews. Case data the user gives (de novo, phase, segregation) is used as stated. |
 
 ClinVar's aggregate classification is a comparator (Step 6), never an evidence code.
@@ -176,6 +176,9 @@ If the request specifies an answer format, answer in exactly that format; the te
 States: met / not met / not evaluated (why) / not confirmable.
 
 **Sum:** the points line. **Class:** one of the five.
+
+Unless another format is requested, the last line is exactly
+`Class: <Pathogenic | Likely pathogenic | Uncertain significance | Likely benign | Benign>`.
 **ClinVar comparison:** class, stars, review status; reason for any difference.
 **What would change the class:** the one or two missing data points with the largest effect
 (e.g. parental testing for PS2, an RNA study).
