@@ -23,6 +23,7 @@ Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool
 - `clinvar_search_variants`(query, gene_symbol, classification, min_stars, assembly, match_mode, count_mode, limit) — via call_tool
 - `gencc_get_gene_curations`(gene_symbol, limit) — direct
 - `genereviews_search_passages`(q, query, gene, nbk_id, sections, heading_path_contains, mode, limit, exclude, include, snippet_chars, rerank) — direct
+- `gnomad_get_clinvar_variant_details`(variant_id, reference_genome, submissions_limit) — via call_tool
 - `gnomad_get_gene_summary`(gene, dataset, clinvar_limit, include_expression, include_clinvar, include_constraint) — via call_tool
 - `gnomad_get_mitochondrial_variant`(variant_id, dataset, include_heteroplasmy_zeros) — via call_tool
 - `gnomad_get_variant_frequencies`(variant_id, dataset, populations, include_subcohorts, include_sex_split, exclude_zero_populations) — direct
@@ -156,6 +157,8 @@ Write the sum as a line: `PVS1 (8) + PM2_Supporting (1) = 9 → Likely pathogeni
 ## Step 6: Compare and stop
 
 - `clinvar_get_variant`: report ClinVar classification, stars and review status.
+  A 2-star "likely pathogenic" may stand for a "Pathogenic/Likely pathogenic" aggregate:
+  confirm with `gnomad_get_clinvar_variant_details` before treating it as a disagreement.
 - `clingen_get_variant_interpretation` (`variant_id` = ClinVar VariationID, CAID or HGVS): the
   expert panel's own classification and met/not-met codes, if one exists. Look up the one
   variant; do not list a gene's interpretations.

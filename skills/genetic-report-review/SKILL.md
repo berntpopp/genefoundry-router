@@ -45,6 +45,7 @@ from it.
 | variant c./p., coordinate, consequence | `vep_annotate_variant`(`variant`= plain HGVS, no gene or protein around it; repeat notation as del/dup; `assembly`) | `hgvsc`/`hgvsp` of the named or MANE transcript (not the most-severe isoform), character by character incl. `fs*` length; coordinate of the stated build |
 | "MANE Select" label | `hgnc_get_gene_cross_references`(`query`=gene, `databases=["mane"]`) | same accession and version |
 | class, ClinVar statement, cited VCV | `clinvar_get_variant`(`identifier`= the cited VCV, or the HGVS); if it does not resolve (e.g. repeat notation), `clinvar_search_variants`(`query`= the report's exact string) | 3 stars = expert-panel class; a panel class dated before the report that differs: Major (Critical if P/LP vs VUS/benign) |
+| a 2-star "likely pathogenic" against a report's "pathogenic" | `gnomad_get_clinvar_variant_details`(`variant_id`) | the true aggregate may be "Pathogenic/Likely pathogenic"; do not call the report contradicted on the first result alone |
 | frequency | `gnomad_get_variant_frequencies`(`variant_id`=`CHROM-POS-REF-ALT`, both alleles) | "not found" = absent, a valid result |
 | gene–disease, inheritance | `clingen_get_gene_validity`(`gene_symbol`) | disease, MOI, disputed/refuted |
 | OMIM number for a disease | `mondo_resolve_xref`(`xref_id="OMIM:<n>"`) | no disease match = a gene entry cited as the disease (error) |
@@ -129,6 +130,7 @@ Never rewrite HGVS, gene names, class or OMIM numbers yourself; propose the fix.
 - `clinvar_search_variants`(query, gene_symbol, classification, min_stars, assembly, match_mode, count_mode, limit) — via call_tool
 - `gencc_get_gene_curations`(gene_symbol, limit) — direct
 - `genereviews_search_passages`(q, query, gene, nbk_id, sections, heading_path_contains, mode, limit, exclude, include, snippet_chars, rerank) — direct
+- `gnomad_get_clinvar_variant_details`(variant_id, reference_genome, submissions_limit) — via call_tool
 - `gnomad_get_gene_summary`(gene, dataset, clinvar_limit, include_expression, include_clinvar, include_constraint) — via call_tool
 - `gnomad_get_region`(region, dataset, include_clinvar, include_genes, max_clinvar_variants, max_genes, compact_rows) — via call_tool
 - `gnomad_get_variant_frequencies`(variant_id, dataset, populations, include_subcohorts, include_sex_split, exclude_zero_populations) — direct
