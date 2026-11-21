@@ -74,8 +74,14 @@ Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool
    HGVS c./p., consequence, gene, REVEL/AlphaMissense, gnomAD-style id.
 2. An rsID can cover several ALT alleles at one position (VEP returns one entry per ALT).
    Keep only the ALT that matches the stated change; pass `allele` to `vep_annotate_variant`.
-   For loose text, `gnomad_resolve_variant_id`.
 3. Use the MANE Select transcript for every later step and say so.
+4. Write the variant in the form each tool takes, or the call fails:
+   - VEP, ClinVar: one plain HGVS (`NM_000059.4:c.3901_3903del`), no gene name or protein
+     around it; write repeat notation (`c.3901ACT[1]`) as del/dup first.
+   - gnomAD: `CHROM-POS-REF-ALT` with both alleles (from VEP's output) or an rsID. Never pass
+     "GENE c.change" to `gnomad_resolve_variant_id`; recode it with VEP first. "Not found"
+     in gnomAD is a valid result (absent, relevant to PM2), not a failed call.
+   - LitVar: an rsID; an HGVS without rsID or a coordinate usually returns not_found.
 
 ## Step 2: Gene–disease and mechanism (1–2 calls)
 
