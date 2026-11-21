@@ -5,11 +5,58 @@ description: Use when asked to review, summarize or synthesize the published evi
 
 # Literature evidence review
 
-Answer from curated sources first, then from papers whose text a tool returned in this
-session. A PMID is cited only after a tool showed that it is about this exact gene, variant
-or claim.
+Answer only from text a tool returned in this session. A PMID is cited only after a tool
+showed that it is about this exact gene, variant or claim. Names are `<namespace>_<tool>`.
 
-Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool>`.
+## Routing (pick the row, make its calls, compare)
+
+| Request | Call | Compare |
+|---|---|---|
+| does cited PMID X support a claim | `pubtator_get_publication_passages`(`pmids=["X"]`, `mode="abstracts"`, `max_chars=4000`) | the claim against the abstract (rules below) |
+| … and is X a review or retracted | `pubtator_search_literature`(`text="X"`; several: `"X OR Y OR Z"`) | the record's `publication_types` |
+| papers on a variant | `litvar_get_variant_literature`(`variant_id`= rsID) | `resolved_variant` is this allele; `_meta.pagination.total_count` |
+| synthesis or surveillance (what is known / new since a date) | read `references/synthesis.md` | |
+
+Call facts:
+- `pmids` is a list of strings (`["15118073"]`); integers or a bare string fail validation.
+- `max_chars` is the budget for the whole call: an abstract that does not fit is dropped and
+  only the title comes back. Use `max_chars` = 2500 × number of PMIDs, at most 5 PMIDs per
+  call. If `coverage_by_pmid` shows `title_only` for a PMID, fetch that PMID alone.
+- The passages tool returns no publication type; the search record does (default
+  `metadata`). Leave `filters`, `metadata` and `include_citations` at their defaults
+  (`metadata` and `include_citations` take strings, not booleans).
+- LitVar takes an rsID; HGVS without one returns `not_found`. An rsID covers each ALT at the
+  position, so check that a paper names this change.
+
+## Claim check: decide from the two results, then stop
+
+Curated sources (HGNC, ClinGen, GenCC, GeneReviews) are not needed to judge a cited PMID; skip
+them unless the claim is about curated facts.
+
+- `publication_types` has `Retracted Publication` → **unsupported** (a retracted paper supports
+  no claim).
+- The claim calls the paper primary, original, first or new data and `publication_types` has
+  `Review` → **unsupported**.
+- The abstract states the claim's allele, gene, numbers (counts, cohort size, percentages,
+  ratios, p-values) and direction → **supported**.
+- The abstract gives another number, the reverse direction or comparison, another allele or
+  gene, or a different population → **unsupported** (contradicted; quote the abstract).
+- A claim about wording ("the abstract names V599E", "codon 664") is compared character for
+  character; a different numbering is unsupported even if it is the same residue.
+- The abstract is silent on the point → **not confirmable**; if the answer format allows only
+  supported/unsupported, it is unsupported.
+- Several user-supplied PMIDs: judge each; do not search for replacements unless asked.
+
+Budget: at most 6 calls. Done when each claim has a state backed by a quoted abstract
+sentence or a `publication_types` value. A failed or `title_only` fetch that a re-fetch does
+not fix → not confirmable.
+
+## Output
+
+If the request specifies an answer format, use exactly that. Otherwise, for a claim check:
+one line per PMID: PMID, state, the abstract sentence or publication type that decides it.
+For synthesis or surveillance use the template in `references/synthesis.md`. End with the
+tools used and data versions. Research use only; not clinical decision support.
 
 ## Tool calls
 
@@ -46,83 +93,3 @@ Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool
   report the gap. Stop when the skill's stop rule is met.
 - End with: tools used and the data versions their results already report (never make a call
   only to get a version).
-
-## Step 1: Pin down the question (1–2 calls)
-
-- Gene: `hgnc_resolve_symbol` → approved symbol + HGNC id (old symbols find old papers; keep
-  them as search terms).
-- Variant: keep the MANE HGVS and the rsID; `vep_annotate_variant` if only one is known.
-- Disease: `mondo_search_diseases` if a disease is named.
-- Mode: **synthesis** (what is known) or **surveillance** (what is new since a date). If a date
-  or "new" / "recent" / "since" is in the request, it is surveillance.
-
-## Step 2: Curated sources first (2–3 calls)
-
-Use these for facts (mechanism, inheritance, penetrance, frequencies, management). They are
-reviewed; a single paper is not.
-
-- `genereviews_search_passages` (`q`, `gene`; `sections` e.g. `["clinical_features"]`,
-  `["genetic_counseling"]`, `["molecular_genetics"]`). Quote numbers from the passage only.
-- `clingen_get_gene_validity` (`gene_symbol`) and `gencc_get_gene_curations`: classification,
-  inheritance, date.
-- Variant: `clinvar_get_variant` (`identifier`): classification, stars, and the PMIDs its
-  submissions cite (`citations`).
-
-## Step 3: Find papers (1–3 calls)
-
-- Variant: start with the PMIDs curated records cite (`clinvar_get_variant` `citations`,
-  `clingen_get_variant_interpretation`); they were chosen for this allele. Then
-  `litvar_get_variant_literature` (`variant_id` = rsID preferred). Note `resolved_variant`;
-  an rsID covers every ALT at the position, so LitVar papers may describe a different change.
-  Its top hits are often reviews that mention the variant only in the full text.
-  `_meta.pagination.total_count` is the true count.
-- Gene or topic: `pubtator_search_literature` (`text`; optional `entity_ids` from
-  `pubtator_search_biomedical_entities`, `publication_types`, `year_min`).
-  Surveillance: `sort: "date desc"` and `year_min` = the year of the cut-off date; then drop
-  hits published before the exact date.
-- Do not page beyond the first page unless the user asks for completeness; report the total
-  and how many you read.
-
-## Step 4: Verify each PMID before using it (1–2 calls, batched)
-
-`pubtator_get_publication_passages` (`pmids`: up to 25 at once, `mode: "full_abstract"`;
-open-access full text with `full: true` and `sections`). For each PMID decide:
-
-- **confirmed**: the returned text names this allele (HGVS, protein change or rsID) or this
-  gene–disease link and supports the claim.
-- **contradicted**: the text says the opposite, or describes a different allele, gene or
-  disease.
-- **not confirmable**: abstract only and silent on the point, or the text could not be fetched.
-
-A paper that mentions the gene but not the variant does not support a variant claim. A
-legacy variant name must be mapped to HGVS before it counts; say how you mapped it.
-
-When checking PMIDs the user supplied, verify each one; do not search for replacements unless
-asked.
-
-## Step 5: Stop
-
-Stop when each claim in the question has its sources and states. Budget: about 10 tool calls.
-More papers do not make a stronger answer; contradictions and gaps do.
-
-## Output
-
-If the request specifies an answer format, answer in exactly that format; the template below is the default.
-
-**Question** as understood (gene, variant, disease, mode, cut-off date).
-
-**Curated summary**: 3–6 sentences from GeneReviews / ClinGen / GenCC / ClinVar, each with its
-record id (NBK id + section, ClinGen permalink, VCV).
-
-**Evidence table**
-
-| PMID | Year | Claim it is used for | What the text shows (short quote or paraphrase) | State |
-|---|---|---|---|---|
-
-**New since <date>** (surveillance mode): only papers on or after the date; "none found in
-PubTator for <query>" if empty, with the query.
-
-**Conflicts and gaps**: contradictions between sources; questions no source answered.
-
-**Coverage**: queries run, total hits per source, how many papers were read.
-**Tools used and data versions.** Research use only; not clinical decision support.
