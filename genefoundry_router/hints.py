@@ -89,7 +89,9 @@ def _wrap_unpinned(step: Any, namespaces: set[str], pinned: Collection[str]) -> 
     A client that only exposes the listed tools rejects an unpinned name before the router
     sees it, so the step a model follows must already be the call that works.
     """
-    tool = step.get("tool") if isinstance(step, dict) else None
+    if not isinstance(step, dict) or step.get("kind") == "untrusted_text":
+        return 0
+    tool = step.get("tool")
     if not isinstance(tool, str) or tool in pinned or tool.split("_", 1)[0] not in namespaces:
         return 0
     key = "args" if "args" in step and "arguments" not in step else "arguments"
