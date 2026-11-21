@@ -34,6 +34,19 @@ def _canonical_oauth_issuer(base_url: str) -> str:
     return str(AnyHttpUrl(base_url)).rstrip("/")
 
 
+class SlashlessIssuerUrl(AnyHttpUrl):
+    """An AnyHttpUrl whose bare-origin form renders without the trailing ``/``.
+
+    FastMCP writes the RFC 9207 ``iss`` on every client redirect as ``str(issuer_url)``;
+    a plain AnyHttpUrl renders ``https://genefoundry.org/``, which strict clients reject
+    because the metadata ``issuer`` is the slashless canonical value.
+    """
+
+    def __str__(self) -> str:
+        text = super().__str__()
+        return text[:-1] if self.path == "/" and text.endswith("/") else text
+
+
 def _validate_oauth_legacy_issuers(
     canonical: str, legacy_issuers: Sequence[str]
 ) -> tuple[str, ...]:
