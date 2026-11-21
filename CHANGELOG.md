@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.15] - 2026-11-21
+
+### Fixed
+
+- **OAuth RFC 9207 `iss` mismatch broke fresh claude.ai sign-ins** ("Claude could not confirm the identity of the GeneFoundry sign-in service"). FastMCP appended `iss=str(issuer_url)`, which a plain `AnyHttpUrl` renders as `https://genefoundry.org/`, while the authorization-server metadata publishes the slashless canonical `https://genefoundry.org`. The proxy now passes a `SlashlessIssuerUrl`, so every redirect carries the metadata issuer exactly. Existing grants and the bounded legacy slash-form token issuer are unchanged.
+
 ## [0.13.14] - 2026-11-20
 
 ### Added
