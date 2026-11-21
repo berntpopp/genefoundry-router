@@ -13,7 +13,8 @@ qualified reviewer; it does not replace the signing geneticist.
 - De-identified input only: a real name, full date of birth, address or record number →
   stop and ask for a de-identified copy.
 - Note the report date (a re-issue date counts as the report date). Read the ONE reference
-  for the report type; a mixed report may need two:
+  for the report type (if it is already in your context, use that copy); a mixed report may
+  need two:
 
   | Type | Reference |
   |---|---|
@@ -43,7 +44,7 @@ from it.
 |---|---|---|
 | variant c./p., coordinate, consequence | `vep_annotate_variant`(`variant`= plain HGVS, no gene or protein around it; repeat notation as del/dup; `assembly`) | `hgvsc`/`hgvsp` of the named or MANE transcript (not the most-severe isoform), character by character incl. `fs*` length; coordinate of the stated build |
 | "MANE Select" label | `hgnc_get_gene_cross_references`(`query`=gene, `databases=["mane"]`) | same accession and version |
-| class, ClinVar statement, cited VCV | `clinvar_search_variants`(`query`= the report's exact HGVS or rsID) | 3 stars = expert-panel class; a panel class dated before the report that differs: Major (Critical if P/LP vs VUS/benign) |
+| class, ClinVar statement, cited VCV | `clinvar_get_variant`(`identifier`= the cited VCV, or the HGVS); if it does not resolve (e.g. repeat notation), `clinvar_search_variants`(`query`= the report's exact string) | 3 stars = expert-panel class; a panel class dated before the report that differs: Major (Critical if P/LP vs VUS/benign) |
 | frequency | `gnomad_get_variant_frequencies`(`variant_id`=`CHROM-POS-REF-ALT`, both alleles) | "not found" = absent, a valid result |
 | gene–disease, inheritance | `clingen_get_gene_validity`(`gene_symbol`) | disease, MOI, disputed/refuted |
 | OMIM number for a disease | `mondo_resolve_xref`(`xref_id="OMIM:<n>"`) | no disease match = a gene entry cited as the disease (error) |
@@ -52,9 +53,9 @@ from it.
 | penetrance, risks, de novo rates | `genereviews_search_passages`(`q`, `gene`) | the number in the chapter |
 | named panel | `panelapp_search_panels`(`query`) → `panelapp_get_panel_genes`(`panel_id`, `min_confidence="green"`) | expected genes present |
 | PGx phenotype and drug advice | `clinpgx_get_api_data`(`operation="GET /data/guidelineAnnotation/{id}"`, `path_parameters={"id": "PA..."}`, `pointers=["/data/summaryMarkdown/html"]`) | the guideline's recommendation for the phenotype |
-| somatic tier, therapy | `moalmanac_search_approvals`(`gene`, `biomarker`, `disease`, `agency` lowercase) | approval in this tumour type |
+| somatic tier, therapy | `moalmanac_search_approvals`(`gene`, `biomarker` in short form such as `KRAS p.G12C`, `disease`, `agency` lowercase) | approval in this tumour type |
 
-Budget: at most 8 calls, in this order: identity and class of each reported variant, the
+Skip rows that do not apply. Budget: a cap, not a target: at most 8 calls, in this order: identity and class of each reported variant, the
 MANE label, gene–disease, each cited PMID and OMIM number, then the rest. What the budget
 does not reach is "not checked", not a finding. A failed call: mark "not confirmable",
 never repeat it identically. For a full audit with budget left, see
@@ -84,7 +85,10 @@ never repeat it identically. For a full audit with budget left, see
   pronoun or sex error, benign variant listed as a result).
 - **Minor**: wording, formatting, a non-decisive omission.
 
-Test: if fixed, does the result, class, a risk or a recommendation change? No → Minor,
+The table holds problems only: a statement you checked and found correct goes under Checks
+out, never in the table. A stated limitation that is false (it contradicts the method) is an
+error; an accurate one is not. A short protein form that matches ClinVar's own name (e.g.
+`p.(Gln1756fs)`) is Minor. Test: if fixed, does the result, class, a risk or a recommendation change? No → Minor,
 unless a required element is wrong. A limitation the report itself states, a correct
 conclusion you would word differently, and procedure details the result does not depend on
 are never Major. A wrong recommendation or risk that follows from another error keeps its
@@ -93,7 +97,8 @@ question, not an accusation.
 
 ## 6. Output
 
-If the request specifies an answer format, use exactly that. Otherwise:
+If the request specifies an answer format, use exactly that; put confirmed checks in one
+"Checks out:" line after it, never as table rows. Otherwise:
 
 **Verdict:** concur (no Critical/Major) / concur with comments (Minor to fix) / do not sign
 out yet — one sentence why.
