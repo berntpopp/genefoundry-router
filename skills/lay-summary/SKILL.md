@@ -64,6 +64,16 @@ If the request specifies an answer format, answer in exactly that format; the te
 A closing line: "This summary is for information. Please discuss it with your doctor or
 genetic counsellor."
 
+## Tool calls
+
+<!-- tool-calls:start -->
+- `clinvar_get_variant`(identifier, id_type) — direct
+- `genereviews_search_passages`(q, query, gene, nbk_id, sections, heading_path_contains, mode, limit, exclude, include, snippet_chars, rerank) — direct
+- `hgnc_resolve_symbol`(query) — direct
+- `mondo_resolve_disease`(query) — direct
+- `orphanet_search_diseases`(query; optional: limit, include_obsolete) — direct
+<!-- tool-calls:end -->
+
 ## Evidence rules (all GeneFoundry skills)
 
 - Research use only. Not clinical decision support. Use de-identified input only; if the input
@@ -74,7 +84,11 @@ genetic counsellor."
   show the evidence), **not confirmable** (tool returned nothing or failed), **not checked**.
   "Not found in source X" never means "negative" or "benign".
 - State genome build and transcript before any variant lookup. Resolve identifiers once, in batch.
+- Tools marked "via call_tool" below are not in your tool list: call them as
+  `call_tool(name="<tool>", arguments={...})` straight away, with the argument names given,
+  without trying the bare name or searching for them first.
 - Scores, points and risks are added up step by step by the stated rule, never estimated.
 - If a call errors or is rate limited, do not repeat the identical call: use another source or
   report the gap. Stop when the skill's stop rule is met.
-- End with: tools used and the data versions they report.
+- End with: tools used and the data versions their results already report (never make a call
+  only to get a version).

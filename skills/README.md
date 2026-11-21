@@ -39,8 +39,12 @@ Copy this block unchanged into every `SKILL.md`:
   show the evidence), **not confirmable** (tool returned nothing or failed), **not checked**.
   "Not found in source X" never means "negative" or "benign".
 - State genome build and transcript before any variant lookup. Resolve identifiers once, in batch.
+- Tools marked "via call_tool" below are not in your tool list: call them as
+  `call_tool(name="<tool>", arguments={...})` straight away, with the argument names given,
+  without trying the bare name or searching for them first.
 - Scores, points and risks are added up step by step by the stated rule, never estimated.
 - If a call errors or is rate limited, do not repeat the identical call: use another source or
   report the gap. Stop when the skill's stop rule is met.
-- End with: tools used and the data versions they report.
+- End with: tools used and the data versions their results already report (never make a call
+  only to get a version).
 <!-- shared-rules:end -->

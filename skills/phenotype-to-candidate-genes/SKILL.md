@@ -61,6 +61,16 @@ If the request specifies an answer format, answer in exactly that format; the te
 - **Runner-up(s):** gene and why it lost
 - **Not found / not used:** ignored or replaced HPO ids, unranked candidates, failed sources
 
+## Tool calls
+
+<!-- tool-calls:start -->
+- `gencc_get_genes_curations`(genes, limit_per_gene) — via call_tool
+- `hgnc_resolve_gene_by_xref`(source, value) — via call_tool
+- `hgnc_resolve_symbols_batch`(queries) — direct
+- `hpo_score_genes_for_phenotypes`(hpo_ids; optional: excluded_hpo_ids, candidate_genes, limit) — direct
+- `hpo_search_terms`(query; optional: limit, include_obsolete) — direct
+<!-- tool-calls:end -->
+
 ## Evidence rules (all GeneFoundry skills)
 
 - Research use only. Not clinical decision support. Use de-identified input only; if the input
@@ -71,7 +81,11 @@ If the request specifies an answer format, answer in exactly that format; the te
   show the evidence), **not confirmable** (tool returned nothing or failed), **not checked**.
   "Not found in source X" never means "negative" or "benign".
 - State genome build and transcript before any variant lookup. Resolve identifiers once, in batch.
+- Tools marked "via call_tool" below are not in your tool list: call them as
+  `call_tool(name="<tool>", arguments={...})` straight away, with the argument names given,
+  without trying the bare name or searching for them first.
 - Scores, points and risks are added up step by step by the stated rule, never estimated.
 - If a call errors or is rate limited, do not repeat the identical call: use another source or
   report the gap. Stop when the skill's stop rule is met.
-- End with: tools used and the data versions they report.
+- End with: tools used and the data versions their results already report (never make a call
+  only to get a version).

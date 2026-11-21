@@ -34,7 +34,8 @@ up front). Tool names are `<namespace>_<tool>`.
 
 ## Passes (in this order)
 
-**Pass 0: Form your own expectation first (anti-anchoring).** Read only the indication,
+**Pass 0: Form your own expectation first (anti-anchoring).** Read the report only up to
+the result section: the indication,
 phenotype, age, sex and family history. Write down, before reading the result: the genes or
 mechanisms you would expect (SNV, CNV, repeat expansion, imprinting/methylation, mtDNA,
 mosaicism), the expected mode of inheritance, and what a good answer to this question would
@@ -58,13 +59,18 @@ checked: Major, state "not confirmable".
   finding).
 
 **Pass 3: Nomenclature (each variant).** Genome build and reference transcript stated
-(MANE Select preferred, PMID 35388217). c. and p. agree with each other and with the
+(MANE Select preferred, PMID 35388217). A "MANE Select" label is checked with
+`hgnc_get_gene_cross_references` (`databases=["mane"]`); a non-MANE transcript labelled
+MANE is Major. c. and p. agree with each other and with the
 transcript; the genomic coordinate belongs to the stated build. Use
 `vep_annotate_variant` (HGVS, MANE, consequence; `assembly` matters) and
 `gnomad_resolve_variant_id`. Gene symbols current: `hgnc_resolve_symbols_batch`.
 HGVS rules: PMID 39702242. Flag, never rewrite: give the corrected form as the fix.
 
-**Pass 4: Classification (each variant).** Re-derive, do not re-read. Follow
+**Pass 4: Classification (each variant).** Re-derive, do not re-read. First look for an
+expert-panel (VCEP) classification of the variant: `clingen_get_variant_interpretations`
+(`gene_symbol`), or `clingen_get_variant_interpretation` for one variant. A VCEP class published
+before the report date that differs from the report is Major (Critical if it changes P/LP vs VUS). Follow
 `references/germline.md`: current ClinVar class, stars and review status
 (`clinvar_get_variant`); frequency (`gnomad_get_variant_frequencies`); each asserted ACMG
 code met at the stated strength; points added step by step; double counting; gene-specific
@@ -81,7 +87,10 @@ stated claim), checked with `litvar_get_variant_literature` (rsID) or
 `pubtator_get_publication_passages` (the PMID itself). A PMID that cannot be tied to the
 allele is flagged "not confirmable", a PMID about something else is "contradicted". Every
 clinical number, mechanism, inheritance mode, de novo rate and OMIM number is checked
-against the source chapter with `genereviews_search_passages`.
+against the source chapter with `genereviews_search_passages`. An OMIM number given for a disease must be a phenotype entry: check it with
+`mondo_resolve_xref` (`xref_id="OMIM:<n>"`) or `hpo_get_genes_for_disease`
+(`disease_id="OMIM:<n>"`). A gene entry (as in `hgnc_get_gene_cross_references` with
+`databases=["omim"]`) cited as the disease number is an error, even if ClinVar shows it.
 
 **Pass 6: Gene–disease and inheritance math.** Gene–disease validity for the disease
 named (`clingen_get_gene_validity`, `gencc_get_gene_curations`; flag disputed or refuted).
@@ -133,7 +142,11 @@ tool fails, mark the claim "not confirmable" and move on. Stop when every pass h
 - **Minor**: wording, formatting, a non-decisive omission.
 
 Only Critical and Major findings need tool evidence or a quoted contradiction; a finding
-you cannot back is a question, not an accusation.
+you cannot back is a question, not an accusation. Major needs either an error or a missing
+element that reporting standards require (method, limitations, nomenclature, class,
+recommendations). Information that is merely absent and not required (ACMG codes not listed
+when the class is confirmed, QC details, sample-identity procedure) is Minor or goes under
+"Not checked". Do not raise findings that only follow from another finding; fold them in.
 
 ## Output
 
@@ -157,6 +170,43 @@ or lab judgement (sample identity, coverage files, consent records).
 Do not rewrite the report. Never change HGVS, gene names, ACMG class or OMIM numbers
 yourself; propose the fix in the table. Be concise.
 
+## Tool calls
+
+<!-- tool-calls:start -->
+- `autopvs1_get_variant_pvs1_data`(genome_build, variant_id, meta_mode, include_unmet) — direct
+- `civic_search_assertions`(; optional: molecular_profile_id, disease, therapy, assertion_type, amp_level, status, limit) — via call_tool
+- `clingen_get_gene_dosage`(gene_symbol) — via call_tool
+- `clingen_get_gene_summary`(gene_symbol) — via call_tool
+- `clingen_get_gene_validity`(gene_symbol, classification, moi) — direct
+- `clingen_get_variant_interpretation`(variant_id, refresh) — via call_tool
+- `clingen_get_variant_interpretations`(gene_symbol, disease, expert_panel, classification, page, size) — via call_tool
+- `clingen_search_dosage`(query, region, cytoband, haplo_score, triplo_score, record_type, page, size) — via call_tool
+- `clinpgx_get_website_data`(operation, path_parameters, query_parameters, pointer, pointers, limit) — via call_tool
+- `clinpgx_search_dataset`(dataset_id, member, query, filters, match, limit, include_fields, parent_fields) — via call_tool
+- `clinvar_get_variant`(identifier, id_type) — direct
+- `gencc_get_gene_curations`(gene_symbol, limit) — direct
+- `genereviews_search_passages`(q, query, gene, nbk_id, sections, heading_path_contains, mode, limit, exclude, include, snippet_chars, rerank) — direct
+- `gnomad_get_gene_summary`(gene, dataset, clinvar_limit, include_expression, include_clinvar, include_constraint) — via call_tool
+- `gnomad_get_region`(region, dataset, include_clinvar, include_genes, max_clinvar_variants, max_genes, compact_rows) — via call_tool
+- `gnomad_get_variant_frequencies`(variant_id, dataset, populations, include_subcohorts, include_sex_split, exclude_zero_populations) — direct
+- `gnomad_resolve_variant_id`(query, dataset, limit, enrich) — direct
+- `hgnc_get_gene_cross_references`(query; optional: databases) — via call_tool
+- `hgnc_resolve_symbols_batch`(queries) — direct
+- `hpo_get_genes_for_disease`(disease_id; optional: limit) — via call_tool
+- `hpo_get_phenotypes_for_gene`(gene; optional: limit) — direct
+- `litvar_get_variant_literature`(variant_id, limit) — direct
+- `mavedb_search_score_sets`(; optional: text, targets, target_organism_names, target_types, authors, facet_mode, published, limit) — direct
+- `metadome_get_tolerance_landscape`(transcript_id, position_start, position_stop, limit) — direct
+- `moalmanac_search_approvals`(; optional: gene, biomarker, disease, therapy, agency, biomarker_type, limit) — via call_tool
+- `mondo_resolve_xref`(xref_id; optional: limit) — via call_tool
+- `panelapp_get_panel_genes`(panel_id, region, entity_type, min_confidence, limit) — via call_tool
+- `panelapp_search_panels`(query, region, limit) — direct
+- `pubtator_get_publication_passages`(pmids, sections, mode, full, max_passages_per_pmid, max_chars, include_tables, include_references, dry_run, verbosity) — via call_tool
+- `spliceai_predict_splicing`(variant_id, genome_build, max_distance, mask, gene_set, transcripts, cross_build_check, include_hints, include_see_also, correlation_id) — direct
+- `ucsc_get_region_annotations`(assembly, chrom, start, end, track; optional: limit) — via call_tool
+- `vep_annotate_variant`(variant, assembly, transcripts, allele, vep_options) — direct
+<!-- tool-calls:end -->
+
 ## Evidence rules (all GeneFoundry skills)
 
 - Research use only. Not clinical decision support. Use de-identified input only; if the input
@@ -167,7 +217,11 @@ yourself; propose the fix in the table. Be concise.
   show the evidence), **not confirmable** (tool returned nothing or failed), **not checked**.
   "Not found in source X" never means "negative" or "benign".
 - State genome build and transcript before any variant lookup. Resolve identifiers once, in batch.
+- Tools marked "via call_tool" below are not in your tool list: call them as
+  `call_tool(name="<tool>", arguments={...})` straight away, with the argument names given,
+  without trying the bare name or searching for them first.
 - Scores, points and risks are added up step by step by the stated rule, never estimated.
 - If a call errors or is rate limited, do not repeat the identical call: use another source or
   report the gap. Stop when the skill's stop rule is met.
-- End with: tools used and the data versions they report.
+- End with: tools used and the data versions their results already report (never make a call
+  only to get a version).

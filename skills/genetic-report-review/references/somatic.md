@@ -6,7 +6,8 @@ Standards: AMP/ASCO/CAP tiers (Li 2017, PMID 27993330); ClinGen/CGC/VICC oncogen
 
 1. **Three axes kept apart.** Oncogenicity (Horak), clinical actionability (AMP tier) and
    germline pathogenicity (ACMG) are separate statements. A report that uses one for the
-   other (e.g. "Tier I, therefore pathogenic germline") is Major.
+   other (e.g. "Tier I, therefore pathogenic germline") is Critical: it can trigger wrong
+   germline or family testing.
 2. **Pre-analytics.** Tumour type, tumour cell content, sample type and, for liquid
    biopsy, the amount of cell-free DNA; variant allele fraction (VAF) per variant;
    the limit of detection. Missing VAF or tumour content is Major.

@@ -11,6 +11,23 @@ or claim.
 
 Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool>`.
 
+## Tool calls
+
+<!-- tool-calls:start -->
+- `clingen_get_gene_validity`(gene_symbol, classification, moi) — direct
+- `clingen_get_variant_interpretation`(variant_id, refresh) — via call_tool
+- `clinvar_get_variant`(identifier, id_type) — direct
+- `gencc_get_gene_curations`(gene_symbol, limit) — direct
+- `genereviews_search_passages`(q, query, gene, nbk_id, sections, heading_path_contains, mode, limit, exclude, include, snippet_chars, rerank) — direct
+- `hgnc_resolve_symbol`(query) — direct
+- `litvar_get_variant_literature`(variant_id, limit) — direct
+- `mondo_search_diseases`(query; optional: limit, include_obsolete) — direct
+- `pubtator_get_publication_passages`(pmids, sections, mode, full, max_passages_per_pmid, max_chars, include_tables, include_references, dry_run, verbosity) — via call_tool
+- `pubtator_search_biomedical_entities`(query, concept, limit) — via call_tool
+- `pubtator_search_literature`(text, page, sort, filters, publication_types, year_min, year_max, sections, include_citations, text_hl_format, limit, entity_ids, guideline_boost, coverage, metadata, include_meta) — direct
+- `vep_annotate_variant`(variant, assembly, transcripts, allele, vep_options) — direct
+<!-- tool-calls:end -->
+
 ## Evidence rules (all GeneFoundry skills)
 
 - Research use only. Not clinical decision support. Use de-identified input only; if the input
@@ -21,10 +38,14 @@ Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool
   show the evidence), **not confirmable** (tool returned nothing or failed), **not checked**.
   "Not found in source X" never means "negative" or "benign".
 - State genome build and transcript before any variant lookup. Resolve identifiers once, in batch.
+- Tools marked "via call_tool" below are not in your tool list: call them as
+  `call_tool(name="<tool>", arguments={...})` straight away, with the argument names given,
+  without trying the bare name or searching for them first.
 - Scores, points and risks are added up step by step by the stated rule, never estimated.
 - If a call errors or is rate limited, do not repeat the identical call: use another source or
   report the gap. Stop when the skill's stop rule is met.
-- End with: tools used and the data versions they report.
+- End with: tools used and the data versions their results already report (never make a call
+  only to get a version).
 
 ## Step 1: Pin down the question (1–2 calls)
 

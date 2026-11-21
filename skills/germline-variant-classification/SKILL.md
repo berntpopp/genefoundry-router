@@ -10,6 +10,36 @@ is decided from a tool result, weighted by the rules below, and summed as points
 
 Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool>`.
 
+## Tool calls
+
+<!-- tool-calls:start -->
+- `autopvs1_get_variant_pvs1_data`(genome_build, variant_id, meta_mode, include_unmet) — direct
+- `clingen_get_cspec`(gn_id) — via call_tool
+- `clingen_get_cspec_criterion`(gn_id, code, rule_set_id) — via call_tool
+- `clingen_get_gene_validity`(gene_symbol, classification, moi) — direct
+- `clingen_get_variant_interpretation`(variant_id, refresh) — via call_tool
+- `clingen_list_cspecs`(gene_symbol, affiliation, status, page, size) — via call_tool
+- `clinvar_get_variant`(identifier, id_type) — direct
+- `clinvar_search_variants`(query, gene_symbol, classification, min_stars, assembly, match_mode, count_mode, limit) — via call_tool
+- `gencc_get_gene_curations`(gene_symbol, limit) — direct
+- `genereviews_search_passages`(q, query, gene, nbk_id, sections, heading_path_contains, mode, limit, exclude, include, snippet_chars, rerank) — direct
+- `gnomad_get_gene_summary`(gene, dataset, clinvar_limit, include_expression, include_clinvar, include_constraint) — via call_tool
+- `gnomad_get_mitochondrial_variant`(variant_id, dataset, include_heteroplasmy_zeros) — via call_tool
+- `gnomad_get_variant_frequencies`(variant_id, dataset, populations, include_subcohorts, include_sex_split, exclude_zero_populations) — direct
+- `gnomad_resolve_variant_id`(query, dataset, limit, enrich) — direct
+- `litvar_get_variant_literature`(variant_id, limit) — direct
+- `mavedb_find_variant`(variant; optional: gene_symbol, only_current, enrich, limit) — via call_tool
+- `mavedb_get_variant_score`(urn; optional: hgvs) — via call_tool
+- `mavedb_search_score_sets`(; optional: text, targets, target_organism_names, target_types, authors, facet_mode, published, limit) — direct
+- `metadome_get_tolerance_landscape`(transcript_id, position_start, position_stop, limit) — direct
+- `mitomap_get_variant`(variant) — via call_tool
+- `pubtator_get_publication_passages`(pmids, sections, mode, full, max_passages_per_pmid, max_chars, include_tables, include_references, dry_run, verbosity) — via call_tool
+- `spliceai_predict_splicing`(variant_id, genome_build, max_distance, mask, gene_set, transcripts, cross_build_check, include_hints, include_see_also, correlation_id) — direct
+- `strchive_get_locus`(locus) — via call_tool
+- `strchive_search_loci`(; optional: query, limit) — via call_tool
+- `vep_annotate_variant`(variant, assembly, transcripts, allele, vep_options) — direct
+<!-- tool-calls:end -->
+
 ## Evidence rules (all GeneFoundry skills)
 
 - Research use only. Not clinical decision support. Use de-identified input only; if the input
@@ -20,10 +50,14 @@ Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool
   show the evidence), **not confirmable** (tool returned nothing or failed), **not checked**.
   "Not found in source X" never means "negative" or "benign".
 - State genome build and transcript before any variant lookup. Resolve identifiers once, in batch.
+- Tools marked "via call_tool" below are not in your tool list: call them as
+  `call_tool(name="<tool>", arguments={...})` straight away, with the argument names given,
+  without trying the bare name or searching for them first.
 - Scores, points and risks are added up step by step by the stated rule, never estimated.
 - If a call errors or is rate limited, do not repeat the identical call: use another source or
   report the gap. Stop when the skill's stop rule is met.
-- End with: tools used and the data versions they report.
+- End with: tools used and the data versions their results already report (never make a call
+  only to get a version).
 
 ## Scope
 

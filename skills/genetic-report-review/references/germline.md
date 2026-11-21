@@ -7,7 +7,7 @@ Use with Passes 3 to 6 of `SKILL.md`. One block per reported variant.
 - `vep_annotate_variant` with the report's HGVS and the stated `assembly`: does the tool's
   `hgvsc`/`hgvsp` match the report? Is the transcript MANE Select (PMID 35388217)? If the
   report uses another transcript, it should say why.
-- Genomic coordinate: `gnomad_resolve_variant_id` (or ClinVar `coordinates`) gives the
+- Genomic coordinate: `gnomad_resolve_variant_id` (or the coordinates field of `clinvar_get_variant`) gives the
   position per build. A GRCh37 coordinate labelled GRCh38 (or the reverse) is a Major error.
 - rsID: resolve once; use it for LitVar.
 - Mechanism vs variant type: "truncating" or "loss of function" said of a missense or

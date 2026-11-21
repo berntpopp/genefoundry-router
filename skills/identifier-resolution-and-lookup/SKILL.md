@@ -13,7 +13,9 @@ times. Reach tools through `search_tools` → `call_tool`; pinned entry points
 ## 1. Plan the hops before the first call
 
 Write the chain in one line, e.g. `disease name → OMIM id → genes → HGNC record → band`.
-Set a budget: hops × 2 calls, at most 10. Each hop uses the first tool in its row below.
+Budget: one call per hop plus one spare, at most 6. Each hop uses the first tool in its row
+below. Skip any hop whose answer an earlier result already contains (e.g. `hgnc_resolve_symbol`
+already returns the band).
 
 | Have | Tool | Notes |
 |---|---|---|
@@ -35,8 +37,9 @@ Set a budget: hops × 2 calls, at most 10. Each hop uses the first tool in its r
 
 ## 2. Rules
 
-- **Batch first.** Resolve every gene once, in one batch, to symbol + HGNC id before any
-  other lookup. Reuse those ids for every later hop.
+- **Batch when there are several genes.** Two or more genes: one `hgnc_resolve_symbols_batch`
+  call, then reuse those ids. A single gene needs no separate resolution step if the next
+  tool accepts its symbol.
 - **Transcript ids are not gene ids.** ENST…/NM_… go through `hgnc_resolve_gene_by_xref`
   (`source="mane_select"`) or VEP, never into gene-only parameters.
 - **State the assembly** (GRCh37 or GRCh38) for every coordinate, rsID result and region,
@@ -46,15 +49,20 @@ Set a budget: hops × 2 calls, at most 10. Each hop uses the first tool in its r
 - **Rate limit:** continue with the other sources; do not loop on the limited one.
 - **Curated before free text.** For facts (band, Ensembl id, inheritance) prefer HGNC,
   Mondo, Orphanet and HPO records over literature search results.
+- **Disease groups:** for a group term (e.g. "B-cell immunodeficiency"), query the group
+  id once (`hpo_get_genes_for_disease` or `orphanet_get_disease_genes` on the parent). Never
+  call once per child disorder.
+- **Name does not resolve:** after two failed attempts (resolve, then one search), stop that
+  hop and say the name was not found; do not reword it again.
 - **Known gaps:** NCBI `LOC` ids and legacy clone-based gene names have no resolver in the
   fleet; report them as not resolvable rather than guessing.
 
 ## 3. Stop rule
 
-Answer as soon as **one curated source gives the requested field for the resolved id**, or
-**two sources agree** when the first was ambiguous. When the budget is spent, stop and
-answer with what you have, naming the missing hop. Do not re-verify an answer that a
-curated record already states.
+Answer as soon as **one curated source gives the requested field for the resolved id**. Use a
+second source only when the first was ambiguous or failed. When the budget is spent, stop and
+answer with what you have, naming the missing hop. Never re-verify an answer a curated record
+already states, and never call a tool only to confirm the assembly or a version.
 
 ## Output
 
@@ -64,6 +72,29 @@ If the request specifies an answer format, answer in exactly that format; the te
 - **Chain:** each hop as `input → id (tool)`, with the assembly for any coordinate
 - **Not found:** each input or hop that failed, as "not found in <source>" (never "does
   not exist")
+
+## Tool calls
+
+<!-- tool-calls:start -->
+- `gnomad_compute_variant_liftover`(source_variant_id, source_genome) — via call_tool
+- `gnomad_get_region`(region, dataset, include_clinvar, include_genes, max_clinvar_variants, max_genes, compact_rows) — via call_tool
+- `gnomad_resolve_variant_id`(query, dataset, limit, enrich) — direct
+- `hgnc_get_gene_cross_references`(query; optional: databases) — via call_tool
+- `hgnc_resolve_gene_by_xref`(source, value) — via call_tool
+- `hgnc_resolve_symbol`(query) — direct
+- `hgnc_resolve_symbols_batch`(queries) — direct
+- `hpo_get_genes_for_disease`(disease_id; optional: limit) — via call_tool
+- `hpo_search_terms`(query; optional: limit, include_obsolete) — direct
+- `mondo_map_cross_ontology`(term; optional: prefixes) — via call_tool
+- `mondo_resolve_disease`(query) — direct
+- `mondo_search_diseases`(query; optional: limit, include_obsolete) — direct
+- `orphanet_get_disease_genes`(term) — via call_tool
+- `orphanet_search_diseases`(query; optional: limit, include_obsolete) — direct
+- `uniprot_find_proteins`(gene_symbol; optional: organism_taxon, reviewed, keyword, ec_number, mnemonic, name_contains, limit) — direct
+- `vep_annotate_variant`(variant, assembly, transcripts, allele, vep_options) — direct
+- `vep_annotate_variants_batch`(variants, assembly, transcripts, vep_options) — via call_tool
+- `vep_liftover_variant`(variant, from_assembly, to_assembly) — via call_tool
+<!-- tool-calls:end -->
 
 ## Evidence rules (all GeneFoundry skills)
 
@@ -75,7 +106,11 @@ If the request specifies an answer format, answer in exactly that format; the te
   show the evidence), **not confirmable** (tool returned nothing or failed), **not checked**.
   "Not found in source X" never means "negative" or "benign".
 - State genome build and transcript before any variant lookup. Resolve identifiers once, in batch.
+- Tools marked "via call_tool" below are not in your tool list: call them as
+  `call_tool(name="<tool>", arguments={...})` straight away, with the argument names given,
+  without trying the bare name or searching for them first.
 - Scores, points and risks are added up step by step by the stated rule, never estimated.
 - If a call errors or is rate limited, do not repeat the identical call: use another source or
   report the gap. Stop when the skill's stop rule is met.
-- End with: tools used and the data versions they report.
+- End with: tools used and the data versions their results already report (never make a call
+  only to get a version).

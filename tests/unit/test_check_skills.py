@@ -100,3 +100,24 @@ def test_broken_reference_link_fails(tmp_path: Path) -> None:
     (path.parent / "references" / "pvs1.md").write_text("ok")
     errors = check_skills(tmp_path, CATALOG)
     assert errors == ["demo-skill: broken link `references/gone.md` in demo-skill/SKILL.md"]
+
+
+def test_tool_calls_block_generated_and_checked(tmp_path: Path) -> None:
+    entries = {
+        "gnomad_get_variant_frequencies": {
+            "description": "x. Signature: get_variant_frequencies(variant_id, dataset=).",
+            "params": {"variant_id": "", "dataset": ""},
+        }
+    }
+    marker = "<!-- tool-calls:start -->\n<!-- tool-calls:end -->"
+    path = _skill(tmp_path, body=f"Use `gnomad_get_variant_frequencies`.\n\n{marker}")
+    names = set(entries)
+    assert check_skills(tmp_path, names, entries, set()) == [
+        "demo-skill: tool-calls block is stale (run check_skills.py --write)"
+    ]
+    assert check_skills(tmp_path, names, entries, set(), write=True) == []
+    assert (
+        "- `gnomad_get_variant_frequencies`(variant_id; optional: dataset) — via call_tool"
+        in path.read_text()
+    )
+    assert check_skills(tmp_path, names, entries, set()) == []

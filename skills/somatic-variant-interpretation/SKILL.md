@@ -76,6 +76,36 @@ says nothing about its somatic Tier I status.
 - OncoKB, COSMIC, AACR GENIE and JAX CKB are not in the fleet (licence). You may suggest the
   user check them directly; never present their content.
 
+## Tool calls
+
+<!-- tool-calls:start -->
+- `autopvs1_get_variant_pvs1_data`(genome_build, variant_id, meta_mode, include_unmet) — direct
+- `cbioportal_get_gene_alteration_frequency`(gene; optional: cancer_type, study_ids, protein_change, include_restricted, max_studies) — via call_tool
+- `cbioportal_get_gene_mutations`(gene, study_id; optional: protein_change, include_restricted, limit) — via call_tool
+- `cbioportal_get_mutation_hotspots`(gene; optional: residue, assembly) — via call_tool
+- `civic_search_assertions`(; optional: molecular_profile_id, disease, therapy, assertion_type, amp_level, status, limit) — via call_tool
+- `civic_search_evidence_items`(; optional: molecular_profile_id, disease, therapy, evidence_type, evidence_level, significance, status, limit) — via call_tool
+- `civic_search_molecular_profiles`(query; optional: limit) — via call_tool
+- `clinvar_get_variant`(identifier, id_type) — direct
+- `clinvar_search_somatic_classifications`(gene_symbol, tier, oncogenicity, tumour_type, identifier, limit) — via call_tool
+- `gnomad_get_variant_frequencies`(variant_id, dataset, populations, include_subcohorts, include_sex_split, exclude_zero_populations) — direct
+- `gnomad_resolve_variant_id`(query, dataset, limit, enrich) — direct
+- `litvar_get_variant_literature`(variant_id, limit) — direct
+- `mavedb_search_score_sets`(; optional: text, targets, target_organism_names, target_types, authors, facet_mode, published, limit) — direct
+- `metadome_get_tolerance_landscape`(transcript_id, position_start, position_stop, limit) — direct
+- `moalmanac_search_approvals`(; optional: gene, biomarker, disease, therapy, agency, biomarker_type, limit) — via call_tool
+- `mondo_map_cross_ontology`(term; optional: prefixes) — via call_tool
+- `mondo_resolve_xref`(xref_id; optional: limit) — via call_tool
+- `mondo_search_diseases`(query; optional: limit, include_obsolete) — direct
+- `opentargets_get_drug_candidates`(target; optional: disease, limit) — via call_tool
+- `opentargets_get_target_disease_evidence`(target; optional: disease, datasource, limit) — via call_tool
+- `opentargets_get_target_tractability`(target) — via call_tool
+- `opentargets_resolve_target`(query) — via call_tool
+- `pubtator_search_literature`(text, page, sort, filters, publication_types, year_min, year_max, sections, include_citations, text_hl_format, limit, entity_ids, guideline_boost, coverage, metadata, include_meta) — direct
+- `spliceai_predict_splicing`(variant_id, genome_build, max_distance, mask, gene_set, transcripts, cross_build_check, include_hints, include_see_also, correlation_id) — direct
+- `vep_annotate_variant`(variant, assembly, transcripts, allele, vep_options) — direct
+<!-- tool-calls:end -->
+
 ## Evidence rules (all GeneFoundry skills)
 
 - Research use only. Not clinical decision support. Use de-identified input only; if the input
@@ -86,7 +116,11 @@ says nothing about its somatic Tier I status.
   show the evidence), **not confirmable** (tool returned nothing or failed), **not checked**.
   "Not found in source X" never means "negative" or "benign".
 - State genome build and transcript before any variant lookup. Resolve identifiers once, in batch.
+- Tools marked "via call_tool" below are not in your tool list: call them as
+  `call_tool(name="<tool>", arguments={...})` straight away, with the argument names given,
+  without trying the bare name or searching for them first.
 - Scores, points and risks are added up step by step by the stated rule, never estimated.
 - If a call errors or is rate limited, do not repeat the identical call: use another source or
   report the gap. Stop when the skill's stop rule is met.
-- End with: tools used and the data versions they report.
+- End with: tools used and the data versions their results already report (never make a call
+  only to get a version).

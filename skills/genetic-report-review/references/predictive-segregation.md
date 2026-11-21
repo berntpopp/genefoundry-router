@@ -13,7 +13,10 @@
    reason why not; a positive control (the index sample) where the lab's policy requires it.
 5. **Segregation reports.** State which relatives were tested, their affected status and
    the result for each, and what this means for the classification (co-segregation or
-   de novo evidence). Phase (cis/trans) for two variants follows from the parents' results.
+   de novo evidence). Phase (cis/trans) for two variants follows from the parents' results: one variant in each
+   parent means trans; one parent carrying both means cis in that parent (and, for a recessive
+   disease, an unaffected double carrier argues for cis). With only one parent tested, phase is
+   not established; a report that claims trans from that is Critical.
 6. **Counselling and age.** Predictive testing of minors only for conditions with
    preventive or treatment options in childhood. In Germany a genetic counselling offer
    is required (GenDG §10), and prenatal testing must not report conditions that start in
