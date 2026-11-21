@@ -11,7 +11,7 @@ For variant interpretation the paper's calibration uses SpliceAI; Pangolin agree
 |---|---|---|
 | ≥ 0.2 | predicted spliceogenic | PP3 (supporting) |
 | > 0.1 and < 0.2 | uninformative | none |
-| ≤ 0.1 | predicted not spliceogenic | BP4 (supporting) |
+| ≤ 0.1 | predicted not spliceogenic | BP4 (supporting); for a missense or in-frame variant only if the missense predictor is also in its BP4 range. SpliceAI ≤ 0.1 never cancels a REVEL PP3. |
 
 - PP3 is used once per variant. If PP3 is already used for a splicing prediction, do not
   add it again for a missense predictor, and vice versa (pick the stronger, state why).

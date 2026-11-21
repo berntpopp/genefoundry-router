@@ -131,9 +131,10 @@ States: met / not met / not evaluated (why) / not confirmable.
 final class is the panel class (fast path: no table and no sum; if you derived, show your sum
 beside it as "own derivation").
 
-Unless another format is requested, the last line is exactly
-`Class: <Pathogenic | Likely pathogenic | Uncertain significance | Likely benign | Benign>`.
 **ClinVar comparison:** class, stars, review status; reason for any difference.
 **What would change the class:** the one or two missing data points with the largest effect
 (e.g. parental testing for PS2, an RNA study).
 **Tools used and data versions.** Research use only; not clinical decision support.
+
+Unless another format is requested, the last line is exactly
+`Class: <Pathogenic | Likely pathogenic | Uncertain significance | Likely benign | Benign>`.

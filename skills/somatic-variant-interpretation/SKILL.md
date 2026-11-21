@@ -34,7 +34,8 @@ says nothing about its somatic Tier I status.
 Order and budget: identity → ClinVar → approvals (this tumour type, then "solid") →
 CIViC → hotspot. At most 8 calls. Stop as soon as the tier is settled:
 - an approval or level A/B evidence for this variant (or its class) in this tumour type →
-  Tier I; the same only in another tumour type → Tier II;
+  Tier I; the same only in another tumour type, or level C/D evidence (trials, case reports,
+  preclinical) in any tumour type → Tier II;
 - no approval and no curated evidence: oncogenic driver or hotspot → Tier III; benign or
   common in gnomAD → Tier IV.
 Prevalence, biology, literature and a full oncogenicity work-up only if asked or still

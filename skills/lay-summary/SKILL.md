@@ -13,8 +13,7 @@ replaces, a conversation with a genetic counsellor or physician.
 - **Verified findings** (a signed report, or the output of `genetic-report-review` or
   `germline-variant-classification`): write from them alone, with no tool calls, no record
   ids beyond those given, and no "tools used" line. Keep their class and certainty.
-- **Only a name** (gene, variant, condition): at most 5 calls through `search_tools` →
-  `call_tool`: `hgnc_resolve_symbol`, `clinvar_get_variant`, `mondo_resolve_disease` or
+- **Only a name** (gene, variant, condition): at most 5 calls, made as the tool list below says (direct or via `call_tool`; no search): `hgnc_resolve_symbol`, `clinvar_get_variant`, `mondo_resolve_disease` or
   `orphanet_search_diseases`, `genereviews_search_passages` with `sections` `["summary"]` or
   `["genetic_counseling"]`. Anything still missing: say it is not known.
 - De-identified input only.
@@ -67,13 +66,14 @@ be in another language: translate their meaning, never their wording word by wor
 | Carrier | does not have the condition, carriers are usually healthy; the chances only if the partner is a carrier too; the partner test or options in the facts | "you have / will get it", "your child will have it" |
 | CNV | explains the problem; effects differ, the course cannot be predicted; parents' test | how the child will develop |
 | Medicine (PGx) | which medicine it concerns, and only that; not a disease, no effect on health by itself; the doctor or pharmacist chooses the medicine | any dose; the patient starting, stopping or lowering a medicine |
-| Predictive | exactly the certainty the facts give (will develop / raised chance); when it starts is unknown if so stated; children are tested as adults | "test your children now", a date or age not in the facts |
+| Predictive | exactly the certainty the facts give (will develop / raised chance); when it starts is unknown if so stated; whether and when children can be tested, only as the facts state | "test your children now" or "children are tested as adults" unless the facts say so; a date or age not in the facts |
 | Secondary finding | it has nothing to do with the reason for the test; what it means as stated; the next check | that it explains the original problem; illness as certain |
 
 ## Output
 
 If the request specifies an answer format, use exactly that. Then add no headings, lists,
-closing disclaimer or "tools used" line; put "ask your genetics team" in the prose.
+closing disclaimer or "tools used" line; put "ask your genetics team" in the prose. This
+overrides the shared rule's "End with: tools used" line.
 
 Default: three or four short paragraphs (what was found; what it means and does not mean;
 what it means for the family; next step and who to ask), then one line "For your doctor:"
