@@ -19,7 +19,7 @@ Classification: pathogenic (class 5).
 
 ## Interpretation
 
-The variant c.5266dup is a frameshift variant predicted to cause nonsense-mediated mRNA decay (PVS1).
+The variant c.5266dup is a frameshift variant that truncates the C-terminal BRCT domain.
 It has been reported in many families with hereditary breast and ovarian cancer, including a functional study demonstrating loss of BRCA1 function (PMID: 26931183).
 Pathogenic BRCA1 variants cause hereditary breast and ovarian cancer syndrome, which is inherited in an autosomal recessive manner.
 

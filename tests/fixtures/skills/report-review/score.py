@@ -10,7 +10,7 @@ import sys
 
 def _norm(text: str) -> str:
     text = text.lower().replace("…", " ").replace("...", " ")
-    text = re.sub(r"[\"'\u201c\u201d\u2018\u2019`]", "", text)
+    text = re.sub(r"[\"'\u201c\u201d\u2018\u2019`*]", "", text)
     return re.sub(r"\s+", " ", text).strip(" .")
 
 
@@ -31,15 +31,17 @@ def _hit(planted: str, quote: str) -> bool:
 
 def score(findings_path: str, key_path: str, fixture: str) -> tuple[float, list[str], list[str]]:
     key = [r for r in _rows(key_path) if len(r) >= 5 and r[1] == fixture]
-    planted = {r[0]: _norm(r[2]) for r in key}
+    planted: dict[str, list[str]] = {}  # an id may have several accepted quotes (rows)
+    for r in key:
+        planted.setdefault(r[0], []).append(_norm(r[2]))
     found = [r for r in _rows(findings_path) if len(r) >= 2 and r[0].lower() != "severity"]
-    hits = {pid for pid, p in planted.items() for r in found if _hit(p, _norm(r[1]))}
+    hits = {pid for pid, ps in planted.items() for r in found for p in ps if _hit(p, _norm(r[1]))}
     missed = sorted(set(planted) - hits, key=lambda x: int(x[1:]))
     unplanted = [
         f"{r[0]}: {r[1]}"
         for r in found
         if r[0].strip("* ").lower() in {"critical", "major"}
-        and not any(_hit(p, _norm(r[1])) for p in planted.values())
+        and not any(_hit(p, _norm(r[1])) for ps in planted.values() for p in ps)
     ]
     return (len(hits) / len(planted) if planted else 0.0), missed, unplanted
 
