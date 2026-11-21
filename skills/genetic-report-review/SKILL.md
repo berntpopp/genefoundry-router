@@ -123,7 +123,7 @@ segregation or parental testing where it would change the class; RNA or function
 follow-up where relevant; reanalysis or recontact statement (PMID 31015575). Secondary
 findings are reported only in line with the documented consent and the lab's stated
 policy. In Germany: a genetic counselling offer (GenDG §10), the report goes to the
-ordering physician (§11), prenatal reports contain no adult-onset findings (§15).
+ordering physician (§11), prenatal reports contain no adult-onset findings (§15). Cite no other legal clause numbers.
 
 **Pass 10: Freshness.** If ClinVar, ClinGen or the literature changed after the report
 date, say what changed and whether it would change the class. That is a reclassification
@@ -167,6 +167,14 @@ element that reporting standards require (method, limitations, nomenclature, cla
 recommendations). Information that is merely absent and not required (ACMG codes not listed
 when the class is confirmed, QC details, sample-identity procedure) is Minor or goes under
 "Not checked". Do not raise findings that only follow from another finding; fold them in.
+These are not Major:
+- a limitation the report itself states (e.g. "CNV analysis was not performed" or "identity
+  not verified by markers"): stating it is correct reporting;
+- an unverified parentage or sample procedure when the report's result does not depend on it;
+- a correct conclusion that you would word more softly;
+- genes you would add to a named, targeted panel whose negative is worded within its scope;
+- a typo or count slip in a gene list that does not change what was tested.
+These are Minor, or a suggestion under "Not checked".
 
 ## Output
 
