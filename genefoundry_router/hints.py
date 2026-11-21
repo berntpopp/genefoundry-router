@@ -49,12 +49,15 @@ PROSE_KEYS = {
 _PROSE_TOOL_RE = re.compile(
     r"\b(?:get|search|list|resolve|find|compare|compute|map|predict|annotate|recode|liftover"
     r"|analyze|score|submit|export|generate|download)_[a-z0-9_]+\b"
+    r"(?:\((?P<args>[^()]*)\))?"
 )
+# One ``name`` or ``name=value`` item; matched per comma-split part so it stays linear (ReDoS).
+_ARG_RE = re.compile(r"\s*([A-Za-z_]\w*)\s*(?:=(.*))?")
 
 
 def _is_rewritable(value: str, namespaces: set[str]) -> bool:
     """True when ``value`` is a bare leaf name not already carrying a known namespace."""
-    if not _BARE_NAME_RE.match(value):
+    if value in _SYNTHETIC or not _BARE_NAME_RE.match(value):
         return False
     return value.split("_", 1)[0] not in namespaces  # already-namespaced -> leave as-is
 
@@ -67,10 +70,36 @@ def _rewrite_prose(text: str, ns: str, pinned: Collection[str]) -> str:
     """Name each bare sibling tool in prose the way it must be called (#299)."""
 
     def ref(match: re.Match[str]) -> str:
-        name = f"{ns}_{match.group(0)}"
-        return name if name in pinned else f'call_tool(name="{name}")'
+        leaf, paren, rest = match.group(0).partition("(")
+        name = f"{ns}_{leaf}"
+        if name in pinned:
+            return f"{name}{paren}{rest}"
+        args = match.group("args")
+        items = [_ARG_RE.fullmatch(p) for p in args.split(",")] if args and args.strip() else []
+        if args is None or not all(items):  # no argument list ("(e.g. ...)" is prose)
+            return f'call_tool(name="{name}"){paren}{rest}'
+        # "(symbol, page=2)" -> {"symbol": ..., "page": 2}: keep a value the backend gave (#354).
+        keys = ", ".join(f'"{m[1]}": {(m[2] or "").strip() or "..."}' for m in items if m)
+        return f'call_tool(name="{name}", arguments={{{keys}}})'
 
     return _PROSE_TOOL_RE.sub(ref, text)
+
+
+def _wrap_unpinned(step: Any, namespaces: set[str], pinned: Collection[str]) -> int:
+    """Turn a ``next_commands`` step to an unlisted fleet tool into its ``call_tool`` form (#354).
+
+    A client that only exposes the listed tools rejects an unpinned name before the router
+    sees it, so the step a model follows must already be the call that works.
+    """
+    if not isinstance(step, dict) or step.get("kind") == "untrusted_text":
+        return 0
+    tool = step.get("tool")
+    if not isinstance(tool, str) or tool in pinned or tool.split("_", 1)[0] not in namespaces:
+        return 0
+    key = "args" if "args" in step and "arguments" not in step else "arguments"
+    step[key] = {"name": tool, "arguments": step.get(key) or {}}
+    step["tool"] = "call_tool"
+    return 1
 
 
 def rewrite_tool_refs(obj: Any, ns: str, namespaces: set[str], pinned: Collection[str] = ()) -> int:
@@ -105,6 +134,8 @@ def rewrite_tool_refs(obj: Any, ns: str, namespaces: set[str], pinned: Collectio
                         count += rewrite_tool_refs(item, ns, namespaces, pinned)
             else:
                 count += rewrite_tool_refs(value, ns, namespaces, pinned)
+                if key == "next_commands" and isinstance(value, list):
+                    count += sum(_wrap_unpinned(step, namespaces, pinned) for step in value)
     elif isinstance(obj, list):
         for item in obj:
             count += rewrite_tool_refs(item, ns, namespaces, pinned)

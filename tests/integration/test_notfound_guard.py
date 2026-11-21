@@ -208,6 +208,8 @@ async def test_unknown_tool_name_is_not_reflected(capture_logs) -> None:
     assert res.is_error is True
     structured = res.structured_content
     assert structured["error_code"] == "not_found"
+    # #354: the recovery names the ready call form, not just the name format
+    assert 'call_tool(name="<namespace>_<tool>", arguments={...})' in structured["suggestions"][0]
     # never echo the requested name back in _meta.tool (or anywhere)
     assert "tool" not in (structured.get("_meta") or {})
     mirror = res.content[0].text

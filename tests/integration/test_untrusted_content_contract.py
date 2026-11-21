@@ -44,7 +44,11 @@ def _backend() -> FastMCP:
 
 def _gateway() -> FastMCP:
     settings = RouterSettings(_env_file=None, GF_REWRITE_HINTS=True)
-    registry = [BackendDef(name="pubtator", url_env="X", namespace="pubtator")]
+    registry = [
+        BackendDef(
+            name="pubtator", url_env="X", namespace="pubtator", entrypoints=["search_literature"]
+        )
+    ]
     return build_server(settings, registry, proxy_targets={"pubtator": _backend()})
 
 
