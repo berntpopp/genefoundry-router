@@ -5,55 +5,38 @@ description: Use when asked whether a somatic (tumour, cancer) variant is oncoge
 
 # Somatic variant interpretation
 
-Research use only. Not clinical decision support. Do not use for diagnosis, treatment,
-triage, or patient management. The output is **not a clinical actionability report** and never
-a clinical tier for a patient.
+Research use only. Not clinical decision support. The output is never a clinical tier for a patient.
 
-## Three axes — never merge them
+## Three axes — report each separately, never merge
 
-| Axis | Question | Sources |
-|---|---|---|
-| Oncogenicity (ClinGen/CGC/VICC, Horak 2022) | Does the variant drive cancer? | ClinVar `oncogenicity`, CIViC oncogenic assertions, hotspots, population frequency, functional/predictor evidence |
-| Actionability (AMP/ASCO/CAP 2017 tier) | Which therapy, at what evidence level, in which tumour type? | ClinVar `somatic_clinical_impact`, CIViC assertions/evidence, MOAlmanac approvals, Open Targets drugs |
-| Germline pathogenicity (ACMG/AMP) | Is it a heritable disease variant? | ClinVar germline classification (other skills) |
+- **Oncogenicity** (does it drive cancer): ClinVar `oncogenicity`, CIViC, hotspots.
+- **Actionability** (AMP/ASCO/CAP 2017 tier): ClinVar `somatic_clinical_impact`, MOAlmanac approvals, CIViC.
+- **Germline pathogenicity** (ACMG): not this skill. ClinVar's germline class says nothing about the somatic tier.
 
-Report each axis separately with its source. ClinVar's germline "Conflicting" for BRAF V600E
-says nothing about its somatic Tier I status.
+## Calls, in this order (at most 7)
 
-## Routing (one call per question, then answer)
+1. `vep_annotate_variant`(`variant`= HGVS or `GENE:p.X` with a colon). Use the allele whose `hgvsp` is the asked change.
+2. `clinvar_search_variants`(`query`= "GENE X123Y") → `clinvar_get_variant`(`identifier`= its VCV): read `somatic_clinical_impact` and `oncogenicity`.
+3. `moalmanac_search_approvals`(`gene`): read `summary.biomarkers` and `summary.diseases`. A row counts only for this alteration type (RET fusion ≠ RET M918T; HER2 amplification ≠ ERBB2 S310F). A class "<GENE> activating/oncogenic variants" covers an oncogenic or hotspot variant; for its diseases call again with `biomarker`= that class name.
+4. `civic_search_molecular_profiles`(`query`= "GENE X123Y") → `civic_search_assertions`(`molecular_profile_id`).
+5. `cbioportal_get_mutation_hotspots`(`gene`, `residue`= "V600").
 
-| Question | Call | Notes |
-|---|---|---|
-| variant identity, GRCh38 coordinate | `vep_annotate_variant`(`variant`= plain HGVS or `GENE p.X`) | take c./p. from the MANE transcript; frequency later via `gnomad_get_variant_frequencies`(`variant_id`=`CHROM-POS-REF-ALT` from VEP). Never send HGVS to `gnomad_resolve_variant_id` |
-| ClinVar tier and oncogenicity | `clinvar_get_variant`(`identifier`= HGVS, VCV or rsID) | `somatic_clinical_impact` and `oncogenicity` blocks; `clinvar_search_somatic_classifications` takes a VCV/rsID or `gene_symbol`, never a protein string |
-| approval in THIS tumour type | `moalmanac_search_approvals`(`gene`, `disease`= a word of the tumour type) | leave `biomarker` and `agency` out: labels are class names ("ERBB2 activating variants"); keep rows whose `biomarkers` cover this exact alteration |
-| approval elsewhere | none above: `moalmanac_search_approvals`(`gene`), then read `summary.biomarkers` and `summary.diseases` (complete even when rows are truncated); a class covering this variant → `moalmanac_search_approvals`(`gene`, `biomarker`= that class name) for its diseases | "Any solid tumor" counts for every solid tumour. A row counts only for its alteration type: RET fusion ≠ RET M918T, HER2-positive (amplification) ≠ ERBB2 S310F. A class "<GENE> activating (or oncogenic) variants" covers a variant that ClinVar or CIViC calls oncogenic or that is a hotspot |
-| curated evidence | `civic_search_molecular_profiles`(gene + variant) → `civic_search_assertions`(`molecular_profile_id`, `disease`) | use the simple profile; level A/B in this tumour type |
-| hotspot | `cbioportal_get_mutation_hotspots`(`gene`, `residue`= string such as `"V600"`) | `is_hotspot` |
+"Not found" from a search is an answer (no record), not an error: go on to the next call. An empty search never lowers a tier that another source already supports.
 
-Order and budget: identity → ClinVar → approvals (this tumour type, then elsewhere) →
-CIViC → hotspot. At most 8 calls. Stop as soon as the tier is settled:
-- an approval or level A/B evidence for this variant (or its class) in this tumour type, or an
-  "Any solid tumor" approval for a solid tumour → Tier I, including evidence of resistance to an approved therapy (KRAS/NRAS-mutant
-  colorectal: no anti-EGFR antibody); the same only in another tumour type, or level C/D evidence (trials, case reports,
-  preclinical) in any tumour type → Tier II;
-- no approval and no curated evidence: oncogenic driver or hotspot → Tier III; benign or
-  common in gnomAD → Tier IV.
-Prevalence, biology, literature and a full oncogenicity work-up only if asked or still
-open: read `references/full-workflow.md`.
+## Tier
 
-## Reporting rules
+- Approval or level A/B evidence for this variant or its class in this tumour type, an "Any solid tumor" approval for a solid tumour, or resistance to an approved therapy here (KRAS/NRAS-mutant colorectal: no anti-EGFR antibody) → **Tier I**.
+- The same only in another tumour type, or level C/D evidence anywhere → **Tier II**.
+- None of that → **Tier III** (unknown clinical significance), even when oncogenic or a hotspot. Benign or likely benign, or common in the population → **Tier IV**.
 
-- If the request specifies an answer format, use exactly that.
-- Every prevalence number carries source, numerator / profiled denominator, cohort/study
-  and genome build.
-- Every coordinate carries its assembly (GRCh37 vs GRCh38); join on MANE HGVS or VEP
-  liftover, never on raw positions across builds.
-- An empty result means "no CIViC evidence found" / "no MOAlmanac approval found" — never
-  "not actionable" or "not approved". Coverage is limited to these open sources.
-- Cite the source record ids (CIViC EID/AID, ClinVar VCV, MOAlmanac indication id, study id).
-- OncoKB, COSMIC, AACR GENIE and JAX CKB are not in the fleet (licence). You may suggest the
-  user check them directly; never present their content.
+Stop when the tier is settled. Prevalence, biology or literature only if asked: read `references/full-workflow.md`.
+
+## Report
+
+- Use the requested format exactly, if one is given.
+- Cite record ids (ClinVar VCV, CIViC AID/EID, MOAlmanac id). Every coordinate carries its build.
+- Empty means "no approval/evidence found in these open sources", never "not actionable".
+- OncoKB, COSMIC, GENIE and CKB are not available here; never present their content.
 
 ## Tool calls
 
@@ -67,6 +50,7 @@ open: read `references/full-workflow.md`.
 - `civic_search_molecular_profiles`(query; optional: limit) — via call_tool
 - `clinvar_get_variant`(identifier, id_type) — direct
 - `clinvar_search_somatic_classifications`(gene_symbol, tier, oncogenicity, tumour_type, identifier, limit) — via call_tool
+- `clinvar_search_variants`(query, gene_symbol, classification, min_stars, assembly, match_mode, count_mode, limit) — via call_tool
 - `gnomad_get_variant_frequencies`(variant_id, dataset, populations, include_subcohorts, include_sex_split, exclude_zero_populations) — direct
 - `gnomad_resolve_variant_id`(query, dataset, limit, enrich) — direct
 - `litvar_get_variant_literature`(variant_id, limit) — direct
