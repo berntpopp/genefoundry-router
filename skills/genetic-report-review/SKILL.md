@@ -73,6 +73,11 @@ transcript; the genomic coordinate belongs to the stated build. Use
 `vep_annotate_variant` (HGVS, MANE, consequence; `assembly` matters) and
 `gnomad_resolve_variant_id`. Gene symbols current: `hgnc_resolve_symbols_batch`.
 HGVS rules: PMID 39702242. Flag, never rewrite: give the corrected form as the fix.
+One `vep_annotate_variant` call per variant already returns what to compare, so compare
+before moving on: the report's transcript against the MANE Select transcript VEP flags
+(a different transcript labelled "MANE Select" is Major), and the report's c. and p.
+against VEP's `hgvsc` / `hgvsp` character by character, including the frameshift length
+(`fs*2` vs `fs*12`).
 
 **Pass 4: Classification (each variant).** Re-derive, do not re-read. First look for an
 expert-panel (VCEP) classification of the variant: `clingen_get_variant_interpretations`
@@ -144,7 +149,9 @@ There is one clear sentence for the referrer that answers the clinical question.
 
 **Budget and stop rule.** At most 8 tool calls. Spend them on the claims that carry the
 result, in this order: identity and class of each reported variant (Passes 3–4), then
-gene–disease and inheritance (Pass 6), then the rest. A pass the budget does not reach is
+gene–disease and inheritance (Pass 6), then one check for each PMID and each OMIM number
+the report cites (Pass 5; a wrong PMID or a gene entry cited as the disease number is a
+common reporting error), then the rest. A pass the budget does not reach is
 "not checked", not a finding. Do not repeat a check that already has a state. When a tool
 fails, mark the claim "not confirmable" and move on.
 
