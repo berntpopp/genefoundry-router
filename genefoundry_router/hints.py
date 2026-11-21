@@ -49,9 +49,10 @@ PROSE_KEYS = {
 _PROSE_TOOL_RE = re.compile(
     r"\b(?:get|search|list|resolve|find|compare|compute|map|predict|annotate|recode|liftover"
     r"|analyze|score|submit|export|generate|download)_[a-z0-9_]+\b"
-    r"(?:\((?P<args>\s*|\s*[A-Za-z_]\w*(?:\s*=[^,()]*)?(?:\s*,\s*[A-Za-z_]\w*(?:\s*=[^,()]*)?)*\s*)\))?"
+    r"(?:\((?P<args>[^()]*)\))?"
 )
-_ARG_RE = re.compile(r"(?:^|,)\s*([A-Za-z_]\w*)(?:\s*=\s*([^,()]*))?")
+# One ``name`` or ``name=value`` item; matched per comma-split part so it stays linear (ReDoS).
+_ARG_RE = re.compile(r"\s*([A-Za-z_]\w*)\s*(?:=(.*))?")
 
 
 def _is_rewritable(value: str, namespaces: set[str]) -> bool:
@@ -69,15 +70,16 @@ def _rewrite_prose(text: str, ns: str, pinned: Collection[str]) -> str:
     """Name each bare sibling tool in prose the way it must be called (#299)."""
 
     def ref(match: re.Match[str]) -> str:
-        args = match.group("args")
-        leaf = match.group(0) if args is None else match.group(0).partition("(")[0]
+        leaf, paren, rest = match.group(0).partition("(")
         name = f"{ns}_{leaf}"
         if name in pinned:
-            return f"{name}{match.group(0)[len(leaf) :]}"
-        if args is None:  # no argument list follows: the bare call form
-            return f'call_tool(name="{name}")'
+            return f"{name}{paren}{rest}"
+        args = match.group("args")
+        items = [_ARG_RE.fullmatch(p) for p in args.split(",")] if args and args.strip() else []
+        if args is None or not all(items):  # no argument list ("(e.g. ...)" is prose)
+            return f'call_tool(name="{name}"){paren}{rest}'
         # "(symbol, page=2)" -> {"symbol": ..., "page": 2}: keep a value the backend gave (#354).
-        keys = ", ".join(f'"{k}": {v.strip() or "..."}' for k, v in _ARG_RE.findall(args))
+        keys = ", ".join(f'"{m[1]}": {(m[2] or "").strip() or "..."}' for m in items if m)
         return f'call_tool(name="{name}", arguments={{{keys}}})'
 
     return _PROSE_TOOL_RE.sub(ref, text)

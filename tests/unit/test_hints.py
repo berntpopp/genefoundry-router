@@ -183,3 +183,14 @@ def test_next_command_to_an_unpinned_tool_is_wrapped_in_call_tool():
     ]
     # idempotent: a second pass leaves the wrapped steps alone
     assert rewrite_tool_refs(payload, "hpo", {"hpo", "mondo"}, pinned) == 0
+
+
+def test_prose_argument_parsing_is_linear_on_hostile_input():
+    # CodeQL py/redos: "(" + " ,A=" * n once backtracked exponentially.
+    import time
+
+    payload = {"hint": "get_x(" + " ,A=" * 5000}
+    start = time.perf_counter()
+    rewrite_tool_refs(payload, "clinvar", {"clinvar"})
+    assert time.perf_counter() - start < 1.0
+    assert payload["hint"].startswith('call_tool(name="clinvar_get_x")(')
