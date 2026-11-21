@@ -51,7 +51,7 @@ _PROSE_TOOL_RE = re.compile(
     r"|analyze|score|submit|export|generate|download)_[a-z0-9_]+\b"
     r"(?:\((?P<args>\s*|\s*[A-Za-z_]\w*(?:\s*=[^,()]*)?(?:\s*,\s*[A-Za-z_]\w*(?:\s*=[^,()]*)?)*\s*)\))?"
 )
-_ARG_NAME_RE = re.compile(r"(?:^|,)\s*([A-Za-z_]\w*)")
+_ARG_RE = re.compile(r"(?:^|,)\s*([A-Za-z_]\w*)(?:\s*=\s*([^,()]*))?")
 
 
 def _is_rewritable(value: str, namespaces: set[str]) -> bool:
@@ -76,8 +76,8 @@ def _rewrite_prose(text: str, ns: str, pinned: Collection[str]) -> str:
             return f"{name}{match.group(0)[len(leaf) :]}"
         if args is None:  # no argument list follows: the bare call form
             return f'call_tool(name="{name}")'
-        # An argument list "(symbol, page=2)" becomes keys with ... values (#354).
-        keys = ", ".join(f'"{k}": ...' for k in _ARG_NAME_RE.findall(args))
+        # "(symbol, page=2)" -> {"symbol": ..., "page": 2}: keep a value the backend gave (#354).
+        keys = ", ".join(f'"{k}": {v.strip() or "..."}' for k, v in _ARG_RE.findall(args))
         return f'call_tool(name="{name}", arguments={{{keys}}})'
 
     return _PROSE_TOOL_RE.sub(ref, text)

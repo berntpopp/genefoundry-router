@@ -123,7 +123,7 @@ def test_prose_call_with_argument_list_becomes_call_tool_with_arguments():
     rewrite_tool_refs(payload, "mavedb", {"mavedb"}, pinned={"mavedb_resolve_symbol"})
     assert payload["message"] == (
         'No match; call call_tool(name="mavedb_get_gene_score_sets", arguments={"symbol": ...})'
-        ' or call_tool(name="mavedb_list_score_sets", arguments={"gene": ..., "page": ...}).'
+        ' or call_tool(name="mavedb_list_score_sets", arguments={"gene": ..., "page": 2}).'
     )
     # a pinned tool keeps its direct name and its own argument list
     assert payload["hint"] == (
@@ -140,4 +140,13 @@ def test_prose_parenthetical_that_is_not_an_argument_list_is_left_alone():
     assert payload["note"] == (
         'Use call_tool(name="clinvar_get_variant") (the HGVS form) or '
         'call_tool(name="clinvar_get_variant")(e.g. NM_000.1:c.1A>G).'
+    )
+
+
+def test_prose_call_keeps_the_argument_values_the_backend_gave():
+    payload = {"hint": 'Retry get_variant(assembly="GRCh37", page=2, symbol).'}
+    rewrite_tool_refs(payload, "clinvar", {"clinvar"})
+    assert payload["hint"] == (
+        'Retry call_tool(name="clinvar_get_variant", '
+        'arguments={"assembly": "GRCh37", "page": 2, "symbol": ...}).'
     )
