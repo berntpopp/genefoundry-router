@@ -69,6 +69,16 @@ Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool
 - Somatic variants: use the `somatic-variant-interpretation` skill instead. CNVs: out of scope.
 - ACMG/AMP v4 was not published as of 2026-11; do not apply v4 rules.
 
+## Step 0: Is there already an expert-panel class? (1–2 calls)
+
+`clinvar_get_variant` (`identifier` = the HGVS, rsID or VCV). If it returns 3 or 4 stars
+(expert panel or practice guideline), that class is the class of record. Unless the user
+asks for a full derivation: confirm the variant identity with one `vep_annotate_variant`
+call, report the panel class with its date and review status, list what would change it,
+and stop. This is the fast path; it needs no evidence gathering. A 2-star "likely
+pathogenic" is not a panel class (and may hide a "Pathogenic/Likely pathogenic" aggregate:
+check with `gnomad_get_clinvar_variant_details`). Otherwise go on with Step 1.
+
 ## Step 1: Normalize (2–3 calls)
 
 1. Ask for or confirm the genome build. `vep_annotate_variant` (`assembly`) → MANE Select
