@@ -26,15 +26,16 @@ says nothing about its somatic Tier I status.
 |---|---|---|
 | variant identity, GRCh38 coordinate | `vep_annotate_variant`(`variant`= plain HGVS or `GENE p.X`) | take c./p. from the MANE transcript; frequency later via `gnomad_get_variant_frequencies`(`variant_id`=`CHROM-POS-REF-ALT` from VEP). Never send HGVS to `gnomad_resolve_variant_id` |
 | ClinVar tier and oncogenicity | `clinvar_get_variant`(`identifier`= HGVS, VCV or rsID) | `somatic_clinical_impact` and `oncogenicity` blocks; `clinvar_search_somatic_classifications` takes a VCV/rsID or `gene_symbol`, never a protein string |
-| approval in THIS tumour type | `moalmanac_search_approvals`(`gene`, `disease`= a word of the tumour type, `agency`= lowercase `fda`/`ema`) | leave `biomarker` out: labels are class names ("ERBB2 activating variants"); read the returned `biomarkers` and keep rows that cover this variant. `moalmanac_list_biomarkers`(`gene`) lists the names |
-| tumour-agnostic approval | `moalmanac_search_approvals`(`gene`, `disease="solid"`) | "Any solid tumor" rows count for every solid tumour; FDA-only rows stay FDA-only |
+| approval in THIS tumour type | `moalmanac_search_approvals`(`gene`, `disease`= a word of the tumour type) | leave `biomarker` and `agency` out: labels are class names ("ERBB2 activating variants"); keep rows whose `biomarkers` cover this exact alteration |
+| approval elsewhere | none above: `moalmanac_search_approvals`(`gene`), then read `summary.biomarkers` and `summary.diseases` (complete even when rows are truncated); a class covering this variant → `moalmanac_search_approvals`(`gene`, `biomarker`= that class name) for its diseases | "Any solid tumor" counts for every solid tumour. A row counts only for its alteration type: RET fusion ≠ RET M918T, HER2-positive (amplification) ≠ ERBB2 S310F. A class "<GENE> activating (or oncogenic) variants" covers a variant that ClinVar or CIViC calls oncogenic or that is a hotspot |
 | curated evidence | `civic_search_molecular_profiles`(gene + variant) → `civic_search_assertions`(`molecular_profile_id`, `disease`) | use the simple profile; level A/B in this tumour type |
 | hotspot | `cbioportal_get_mutation_hotspots`(`gene`, `residue`= string such as `"V600"`) | `is_hotspot` |
 
-Order and budget: identity → ClinVar → approvals (this tumour type, then "solid") →
+Order and budget: identity → ClinVar → approvals (this tumour type, then elsewhere) →
 CIViC → hotspot. At most 8 calls. Stop as soon as the tier is settled:
-- an approval or level A/B evidence for this variant (or its class) in this tumour type →
-  Tier I; the same only in another tumour type, or level C/D evidence (trials, case reports,
+- an approval or level A/B evidence for this variant (or its class) in this tumour type, or an
+  "Any solid tumor" approval for a solid tumour → Tier I, including evidence of resistance to an approved therapy (KRAS/NRAS-mutant
+  colorectal: no anti-EGFR antibody); the same only in another tumour type, or level C/D evidence (trials, case reports,
   preclinical) in any tumour type → Tier II;
 - no approval and no curated evidence: oncogenic driver or hotspot → Tier III; benign or
   common in gnomAD → Tier IV.
