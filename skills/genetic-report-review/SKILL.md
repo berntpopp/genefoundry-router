@@ -42,6 +42,13 @@ mosaicism), the expected mode of inheritance, and what a good answer to this que
 look like. Then read the result. Disagreement between your expectation and the report is
 where to look hardest; it is not itself an error.
 
+**Read-through (no tools yet).** Read the whole report once and list every problem you can
+see from the text alone: conclusions stronger than the result ("ruled out", "excludes",
+"causal" for a VUS), a coordinate labelled with the wrong build, zygosity × inheritance × sex
+that does not add up, a recurrence risk that does not follow, sentences that contradict
+each other, missing limitations. These usually are most of the findings. Keep every item:
+later passes confirm or add to this list, they never drop an item from it.
+
 **Pass 1: Does the test answer the question?** Was the test able to detect the suspected
 mechanism? Does the panel or analysed gene list contain the expected genes (verify a named
 panel with `panelapp_search_panels` / `panelapp_get_panel_genes` when the report names one)?
@@ -125,8 +132,21 @@ flag, not an error of the original report.
 **Pass 11: Communication.** A VUS is never worded as a cause. Uncertainty is stated.
 There is one clear sentence for the referrer that answers the clinical question.
 
-**Stop rule.** One pass per item; do not repeat a check that already has a state. When a
-tool fails, mark the claim "not confirmable" and move on. Stop when every pass has a state.
+**Variant inputs.** Write the variant in the form each tool takes, or the call fails:
+- gnomAD: `CHROM-POS-REF-ALT` with both alleles (indels left-anchored, e.g. `1-55051215-G-GA`,
+  never an empty allele) or an rsID; a multi-allelic rsID needs the full id. "Not found" in
+  gnomAD is a valid result (absent), not a failed call.
+- VEP, ClinVar: one plain HGVS expression (`NM_000059.4:c.3901_3903del`), no gene name or
+  protein around it; write repeat notation (`c.3901ACT[1]`) as del/dup first.
+- ClinPGx: guideline filters take PA accessions; get them with `clinpgx_search_records`
+  (`entity_type="gene"` or `"chemical"`) first.
+- UCSC: `track` is a name from the track list (e.g. `genomicSuperDups`), never a generic word such as "genes".
+
+**Budget and stop rule.** At most 8 tool calls. Spend them on the claims that carry the
+result, in this order: identity and class of each reported variant (Passes 3–4), then
+gene–disease and inheritance (Pass 6), then the rest. A pass the budget does not reach is
+"not checked", not a finding. Do not repeat a check that already has a state. When a tool
+fails, mark the claim "not confirmable" and move on.
 
 ## Severity
 
@@ -183,6 +203,7 @@ yourself; propose the fix in the table. Be concise.
 - `clingen_search_dosage`(query, region, cytoband, haplo_score, triplo_score, record_type, page, size) — via call_tool
 - `clinpgx_get_website_data`(operation, path_parameters, query_parameters, pointer, pointers, limit) — via call_tool
 - `clinpgx_search_dataset`(dataset_id, member, query, filters, match, limit, include_fields, parent_fields) — via call_tool
+- `clinpgx_search_records`(entity_type, query, filters, source, view, limit, shape) — via call_tool
 - `clinvar_get_variant`(identifier, id_type) — direct
 - `gencc_get_gene_curations`(gene_symbol, limit) — direct
 - `genereviews_search_passages`(q, query, gene, nbk_id, sections, heading_path_contains, mode, limit, exclude, include, snippet_chars, rerank) — direct
