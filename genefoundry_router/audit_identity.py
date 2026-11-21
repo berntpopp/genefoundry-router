@@ -11,6 +11,7 @@ import hashlib
 from typing import Any
 
 from genefoundry_router.registry import is_client_safe_name
+from genefoundry_router.skill_search import SKILL_PREFIX
 
 _UNKNOWN_IDENTITY = ("_unknown", "_unknown")
 
@@ -127,10 +128,17 @@ async def resolve_search_hits(context: Any, result: Any) -> dict[str, Any]:
         resolved = False
         if server is not None and isinstance(name, str) and name:
             try:
-                resolved = await server.get_tool(name) is not None
+                if name.startswith(SKILL_PREFIX):  # a skill pointer: confirm the served resource
+                    uri = f"skill://{name.removeprefix(SKILL_PREFIX)}/SKILL.md"
+                    resolved = await server.get_resource(uri) is not None
+                else:
+                    resolved = await server.get_tool(name) is not None
             except Exception:
                 resolved = False
-        top.append(safe_log_identity(name if isinstance(name, str) else "", resolved)[0])
+        logged = name if isinstance(name, str) else ""
+        if resolved and logged.startswith(SKILL_PREFIX):
+            logged = logged.replace("-", "_")  # skill names are hyphenated; the log guard is not
+        top.append(safe_log_identity(logged, resolved)[0])
     return {
         "hit_count": len(hits),
         "zero_results": not hits,  # zero-result rate = the discovery-gap metric
