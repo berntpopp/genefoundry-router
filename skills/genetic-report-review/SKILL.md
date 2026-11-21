@@ -5,217 +5,105 @@ description: Use when asked to review, second-check, audit or sign out a genetic
 
 # Genetic report review (second look)
 
-Research use only. Not clinical decision support. This is a structured second look that
-helps a qualified reviewer. It does not replace the signing geneticist or the lab's own
-release process.
+Research use only. Not clinical decision support. A structured second look that helps a
+qualified reviewer; it does not replace the signing geneticist.
 
-Reach every tool through `search_tools` → `call_tool` (only pinned entry points are listed
-up front). Tool names are `<namespace>_<tool>`.
+## 1. Before you start
 
-## Before you start
+- De-identified input only: a real name, full date of birth, address or record number →
+  stop and ask for a de-identified copy.
+- Note the report date (a re-issue date counts as the report date). Read the ONE reference
+  for the report type; a mixed report may need two:
 
-1. **De-identified input only.** If the report contains a real name, full date of birth,
-   address or record number, stop and ask for a de-identified copy. Age, sex and dates
-   relative to the report are enough.
-2. **Report type.** Identify it and read the matching reference before the passes below:
+  | Type | Reference |
+  |---|---|
+  | Germline SNV/indel (panel, exome, genome) | `references/germline.md` |
+  | CNV / array | `references/cnv.md` |
+  | Negative / no finding | `references/negative.md` |
+  | Somatic / tumour | `references/somatic.md` |
+  | Pharmacogenomic | `references/pgx.md` |
+  | Predictive, cascade, segregation | `references/predictive-segregation.md` |
 
-   | Report type | Reference |
-   |---|---|
-   | Germline SNV/indel (panel, exome, genome) | `references/germline.md` |
-   | CNV, array, exome/genome CNV calls | `references/cnv.md` |
-   | Negative or no-finding report (any type) | `references/negative.md` |
-   | Somatic / tumour | `references/somatic.md` |
-   | Pharmacogenomic | `references/pgx.md` |
-   | Predictive, carrier-cascade or segregation test | `references/predictive-segregation.md` |
+## 2. Read first (no tools)
 
-   A report can need more than one (e.g. an exome with a CNV and a negative SNV part).
-3. **Report date.** Note it. Evidence newer than the report date is a reclassification
-   flag, not a reporting error.
+Before reading the result, note what you would expect from the indication (genes,
+mechanism, inheritance). Then read the whole report and list every problem visible from the
+text: conclusions stronger than the result ("ruled out", "causal" for a VUS, "confirms"),
+method vs conclusion (panel called exome), zygosity × inheritance × sex, recurrence risks,
+age vs year of birth and dates, read counts vs stated fraction, "de novo"/"inherited"
+without parental results, somatic VAF far from half the tumour content, a gene, pronoun or
+paragraph from another case, sentences that contradict each other, missing limitations,
+recommendations that do not follow from the class (predictive testing for a VUS, relatives
+excluded by sex). Most findings come from here. Tool checks add to this list, never drop
+from it.
 
-## Passes (in this order)
+## 3. Check with tools (one call per claim, then compare)
 
-**Pass 0: Form your own expectation first (anti-anchoring).** Read the report only up to
-the result section: the indication,
-phenotype, age, sex and family history. Write down, before reading the result: the genes or
-mechanisms you would expect (SNV, CNV, repeat expansion, imprinting/methylation, mtDNA,
-mosaicism), the expected mode of inheritance, and what a good answer to this question would
-look like. Then read the result. Disagreement between your expectation and the report is
-where to look hardest; it is not itself an error.
+| Claim in the report | Call | Compare |
+|---|---|---|
+| variant c./p., coordinate, consequence | `vep_annotate_variant`(`variant`= plain HGVS, no gene or protein around it; repeat notation as del/dup; `assembly`) | `hgvsc`/`hgvsp` of the named or MANE transcript (not the most-severe isoform), character by character incl. `fs*` length; coordinate of the stated build |
+| "MANE Select" label | `hgnc_get_gene_cross_references`(`query`=gene, `databases=["mane"]`) | same accession and version |
+| class, ClinVar statement, cited VCV | `clinvar_search_variants`(`query`= the report's exact HGVS or rsID) | 3 stars = expert-panel class; a panel class dated before the report that differs: Major (Critical if P/LP vs VUS/benign) |
+| frequency | `gnomad_get_variant_frequencies`(`variant_id`=`CHROM-POS-REF-ALT`, both alleles) | "not found" = absent, a valid result |
+| gene–disease, inheritance | `clingen_get_gene_validity`(`gene_symbol`) | disease, MOI, disputed/refuted |
+| OMIM number for a disease | `mondo_resolve_xref`(`xref_id="OMIM:<n>"`) | no disease match = a gene entry cited as the disease (error) |
+| cited PMID | `pubtator_get_publication_passages`(`pmids=[...]`, `mode="abstracts"`, `max_chars=4000`) | the paper is about this allele or claim |
+| CNV interval and gene content | `clingen_search_dosage`(`cytoband=...`); `ucsc_get_region_annotations`(`assembly`, `chrom`, `start`, `end`, `track="mane"`) | genes named are inside the interval; HI/TS scores |
+| penetrance, risks, de novo rates | `genereviews_search_passages`(`q`, `gene`) | the number in the chapter |
+| named panel | `panelapp_search_panels`(`query`) → `panelapp_get_panel_genes`(`panel_id`, `min_confidence="green"`) | expected genes present |
+| PGx phenotype and drug advice | `clinpgx_get_api_data`(`operation="GET /data/guidelineAnnotation/{id}"`, `path_parameters={"id": "PA..."}`, `pointers=["/data/summaryMarkdown/html"]`) | the guideline's recommendation for the phenotype |
+| somatic tier, therapy | `moalmanac_search_approvals`(`gene`, `biomarker`, `disease`, `agency` lowercase) | approval in this tumour type |
 
-**Read-through (no tools yet).** Read the whole report once and list every problem you can
-see from the text alone: conclusions stronger than the result ("ruled out", "excludes",
-"causal" for a VUS), a coordinate labelled with the wrong build, zygosity × inheritance × sex
-that does not add up, a recurrence risk that does not follow, an age that does not match
-the year of birth and the dates, read counts that do not match the stated fraction, a
-"de novo" or "inherited" claim without parental results in the report, a somatic VAF far
-from half the tumour cell content (heterozygous) without an explanation,
-sentences that contradict each other, missing limitations. These usually are most of the findings. Keep every item:
-later passes confirm or add to this list, they never drop an item from it.
+Budget: at most 8 calls, in this order: identity and class of each reported variant, the
+MANE label, gene–disease, each cited PMID and OMIM number, then the rest. What the budget
+does not reach is "not checked", not a finding. A failed call: mark "not confirmable",
+never repeat it identically. For a full audit with budget left, see
+`references/checklist.md`.
 
-**Pass 1: Does the test answer the question?** Was the test able to detect the suspected
-mechanism? Does the panel or analysed gene list contain the expected genes (verify a named
-panel with `panelapp_search_panels` / `panelapp_get_panel_genes` when the report names one)?
-Does the method described match the test that the conclusion talks about (a targeted panel
-must not be concluded as "exome")? A panel without a name, version or gene list cannot be
-checked: Major, state "not confirmable".
+## 4. Rules models get wrong
 
-**Pass 2: Identity and internal consistency.** Check, quoting the report:
-- sex vs every pronoun, every sex-specific statement and X-linked reasoning;
-- age or date of birth vs age-dependent claims (onset, penetrance, screening advice);
-- the same gene, transcript, HGVS, zygosity and class everywhere (summary, table, text);
-- no paragraph that belongs to another case (a gene, variant or name not in this case);
-- no duplicated or contradicting paragraphs; verdict vs findings (a report with a P/LP or
-  VUS finding is not worded as "no finding", and a "no finding" report lists no primary
-  finding).
+- A VUS is never a cause and never a reason for predictive testing of relatives.
+- An expert-panel class outranks a generic predictor and the report's own codes.
+- Phase: one variant per parent = trans; one parent carrying both = cis in that parent
+  (an unaffected double carrier argues for cis); one parent tested = phase open.
+- A single heterozygous variant in an autosomal recessive gene is not diagnostic.
+- A negative result never "rules out" or "excludes"; it lowers the probability within the
+  stated scope.
+- Secondary findings only in line with the documented consent and lab policy. Germany:
+  counselling offer (GenDG §10), report to the ordering physician (§11), no adult-onset
+  findings in prenatal reports (§15). Cite no other legal clause numbers.
+- Evidence newer than the report date is a reclassification flag, not a reporting error.
 
-**Pass 3: Nomenclature (each variant).** Genome build and reference transcript stated
-(MANE Select preferred, PMID 35388217). A "MANE Select" label is checked with
-`hgnc_get_gene_cross_references` (`databases=["mane"]`); a non-MANE transcript labelled
-MANE is Major. c. and p. agree with each other and with the
-transcript; the genomic coordinate belongs to the stated build. Use
-`vep_annotate_variant` (HGVS, MANE, consequence; `assembly` matters) and
-`gnomad_resolve_variant_id`. Gene symbols current: `hgnc_resolve_symbols_batch`.
-HGVS rules: PMID 39702242. Flag, never rewrite: give the corrected form as the fix.
-VEP's default `most_severe_consequence` / representative transcript can come from another isoform: take the consequence, c. and p. from the transcript named in the input or the MANE Select entry in the transcript list.
-One `vep_annotate_variant` call per variant already returns what to compare, so compare
-before moving on: the report's transcript against the MANE Select transcript VEP flags
-(a different transcript labelled "MANE Select" is Major), and the report's c. and p.
-against VEP's `hgvsc` / `hgvsp` character by character, including the frameshift length
-(`fs*2` vs `fs*12`).
+## 5. Severity
 
-**Pass 4: Classification (each variant).** Re-derive, do not re-read. First look for an
-expert-panel (VCEP) classification of the variant: `clingen_get_variant_interpretations`
-(`gene_symbol`), or `clingen_get_variant_interpretation` for one variant; a ClinVar record
-with 3 stars (reviewed by expert panel) already is the panel class, no extra call. A VCEP class published
-before the report date that differs from the report is Major (Critical if it changes P/LP vs VUS). Follow
-`references/germline.md`: current ClinVar class, stars and review status
-(`clinvar_get_variant`); frequency (`gnomad_get_variant_frequencies`); each asserted ACMG
-code met at the stated strength; points added step by step; double counting; gene-specific
-(VCEP) rules over generic ones. Report over-called and under-called codes and whether the
-code combination yields the stated class. If the stated codes do not reach the stated class
-but the class itself is confirmed (e.g. an expert-panel ClinVar record), that is Major
-("code support"), with the class listed under Checks out. An expert-panel (VCEP) ClinVar
-classification outranks a generic predictor such as `autopvs1_get_variant_pvs1_data`
-(arguments `variant_id`, `genome_build`); report the disagreement, don't let the predictor
-overrule the panel.
-
-**Pass 5: Literature and numbers.** Every cited PMID must describe this variant (or the
-stated claim), checked with `litvar_get_variant_literature` (rsID) or
-`pubtator_get_publication_passages` (the PMID itself). A PMID that cannot be tied to the
-allele is flagged "not confirmable", a PMID about something else is "contradicted". Every
-clinical number, mechanism, inheritance mode, de novo rate and OMIM number is checked
-against the source chapter with `genereviews_search_passages`. An OMIM number given for a disease must be a phenotype entry: check it with
-`mondo_resolve_xref` (`xref_id="OMIM:<n>"`) or `hpo_get_genes_for_disease`
-(`disease_id="OMIM:<n>"`). A gene entry (as in `hgnc_get_gene_cross_references` with
-`databases=["omim"]`) cited as the disease number is an error, even if ClinVar shows it.
-
-**Pass 6: Gene–disease and inheritance math.** Gene–disease validity for the disease
-named (`clingen_get_gene_validity`, `gencc_get_gene_curations`; flag disputed or refuted).
-The stated inheritance matches the curated one. Then the math: zygosity × inheritance × sex
-must explain the conclusion. Classic misses: a single heterozygous variant in an autosomal
-recessive gene called diagnostic; two variants called compound heterozygous without phase;
-a hemizygous call in a female; mosaic allele fraction ignored; recurrence risks that do not
-follow from the inheritance mode.
-
-**Pass 7: Phenotype fit.** Does the disease spectrum, onset and penetrance fit the patient
-(`hpo_get_phenotypes_for_gene`, GeneReviews)? Features left unexplained suggest a second
-diagnosis; say so as a suggestion.
-
-**Pass 8: What was not tested.** Limitations must name what the method cannot see:
-coverage gaps in reported genes, CNVs/SVs, repeat expansions, deep-intronic, mtDNA,
-mosaicism below the detection limit, pseudogene or homology regions (check a region with
-`ucsc_get_region_annotations`, tracks `genomicSuperDups` / `alllowmapandsegdupregions`).
-A "detects all relevant variants" claim is an error.
-
-**Pass 9: Recommendations.** They follow from the class and inheritance: counselling
-referral; cascade testing only for P/LP (never predictive testing of relatives for a VUS);
-segregation or parental testing where it would change the class; RNA or functional
-follow-up where relevant; reanalysis or recontact statement (PMID 31015575). Secondary
-findings are reported only in line with the documented consent and the lab's stated
-policy. In Germany: a genetic counselling offer (GenDG §10), the report goes to the
-ordering physician (§11), prenatal reports contain no adult-onset findings (§15). Cite no other legal clause numbers.
-
-**Pass 10: Freshness.** If ClinVar, ClinGen or the literature changed after the report
-date, say what changed and whether it would change the class. That is a reclassification
-flag, not an error of the original report.
-
-**Pass 11: Communication.** A VUS is never worded as a cause. Uncertainty is stated.
-There is one clear sentence for the referrer that answers the clinical question.
-
-**Variant inputs.** Write the variant in the form each tool takes, or the call fails:
-- gnomAD: `CHROM-POS-REF-ALT` with both alleles (indels left-anchored, e.g. `1-55051215-G-GA`,
-  never an empty allele) or an rsID; a multi-allelic rsID needs the full id. "Not found" in
-  gnomAD is a valid result (absent), not a failed call.
-- VEP: one plain HGVS expression (`NM_000059.4:c.3901_3903del`), no gene name or protein
-  around it; write repeat notation (`c.3901ACT[1]`) as del/dup first.
-- ClinVar: `clinvar_search_variants` with the report's exact HGVS (repeat notation included)
-  or the rsID; this also checks that a cited VCV belongs to the reported variant.
-- ClinPGx: a guideline's recommendation text comes from `clinpgx_get_api_data`
-  (`operation="GET /data/guidelineAnnotation/{id}"`, `path_parameters={"id": "PA..."}`,
-  `pointers=["/data/summaryMarkdown/html"]`). Guideline filters take PA accessions; get
-  them with `clinpgx_search_records` (`entity_type="gene"` or `"chemical"`) first.
-- UCSC: `track` is a name from the track list (e.g. `genomicSuperDups`), never a generic word such as "genes".
-
-**Budget and stop rule.** At most 8 tool calls. Spend them on the claims that carry the
-result, in this order: identity and class of each reported variant (Passes 3–4; a
-transcript the report labels "MANE Select" gets its one `hgnc_get_gene_cross_references`
-call here), then
-gene–disease and inheritance (Pass 6), then one check for each PMID and each OMIM number
-the report cites (Pass 5; a wrong PMID or a gene entry cited as the disease number is a
-common reporting error), then the rest. A pass the budget does not reach is
-"not checked", not a finding. Do not repeat a check that already has a state. When a tool
-fails, mark the claim "not confirmable" and move on.
-
-## Severity
-
-- **Critical**: would change the diagnosis, the management, or family testing if released
-  (wrong inheritance or risk, VUS treated as causal, AR single het called diagnostic,
-  consent violated, overstated negative, wrong patient). An identity mismatch that could mean
-  a wrong patient or sample (age vs year of birth, a name or variant from another case) is
-  Critical until a human rules it out.
-- **Major**: a required element is wrong or missing, or a classification code is wrong
-  without changing the final class (HGVS or build error, citation not about the variant,
-  missing limitations, method/conclusion mismatch, sex/pronoun error, a correctly classified
-  benign variant listed in the result section).
+- **Critical**: would change diagnosis, management or family testing (wrong inheritance or
+  risk, VUS as cause, consent violated, overstated negative, possible wrong patient or
+  sample, a sentence from another case).
+- **Major**: a required element is wrong or missing (HGVS, build, MANE label, class, disease
+  id, citation not about the variant, missing limitations, method/conclusion mismatch,
+  pronoun or sex error, benign variant listed as a result).
 - **Minor**: wording, formatting, a non-decisive omission.
 
-Only Critical and Major findings need tool evidence or a quoted contradiction; a finding
-you cannot back is a question, not an accusation. Major needs either an error or a missing
-element that reporting standards require (method, limitations, nomenclature, class,
-recommendations). Information that is merely absent and not required (ACMG codes not listed
-when the class is confirmed, QC details, sample-identity procedure) is Minor or goes under
-"Not checked". Do not raise findings that only repeat another finding; fold them in. A
-wrong recommendation, risk figure or management statement that follows from an error still
-gets its own row: it is the sentence that would cause harm.
-Severity test for every finding: if this is fixed, does the result, the class, a risk
-figure or a recommendation change? Yes: Critical or Major by the lists above. No: Minor
-or "Not checked", whatever the wording. Exception: a required element that is wrong
-(HGVS, build, coordinate, class, sex or pronoun, disease id, a sentence from another case)
-stays at least Major even if the result stands. So a limitation the report itself states, a
-procedure the result does not depend on, a correct conclusion you would word differently,
-and a slip that does not change what was tested are never Major.
+Test: if fixed, does the result, class, a risk or a recommendation change? No → Minor,
+unless a required element is wrong. A limitation the report itself states, a correct
+conclusion you would word differently, and procedure details the result does not depend on
+are never Major. A wrong recommendation or risk that follows from another error keeps its
+own row; a finding that only repeats another is folded in. A finding you cannot back is a
+question, not an accusation.
 
-## Output
+## 6. Output
 
-If the request specifies an answer format, answer in exactly that format; the template below is the default.
+If the request specifies an answer format, use exactly that. Otherwise:
 
-**Expectation (Pass 0):** one or two lines, written before reading the result.
-
-**Verdict:** concur / concur with comments / do not sign out yet — one sentence why.
-
-**Findings** (most severe first; one row per finding; quote the report verbatim, copied character for character, never paraphrased):
+**Verdict:** concur (no Critical/Major) / concur with comments (Minor to fix) / do not sign
+out yet — one sentence why.
 
 | Severity | Quote from report | Problem | Fix | Tool evidence | State |
 |---|---|---|---|---|---|
-| Critical | "…exact sentence or field…" | … | … | `tool` → record id / value | contradicted |
 
-**Checks out:** short list of what was verified and is correct (with tool and record id).
-
-**Not checked / needs a human:** items no tool could confirm, and items that need clinical
-or lab judgement (sample identity, coverage files, consent records).
-
-Do not rewrite the report. Never change HGVS, gene names, ACMG class or OMIM numbers
-yourself; propose the fix in the table. Be concise.
+Quotes are copied character for character. One row per finding, most severe first. Then
+**Checks out** (verified, with tool and record id) and **Not checked / needs a human**.
+Never rewrite HGVS, gene names, class or OMIM numbers yourself; propose the fix.
 
 ## Tool calls
 
