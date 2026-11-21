@@ -8,7 +8,9 @@ description: Use when asked to classify a germline sequence variant (SNV or smal
 Re-derive the class from evidence; never copy a class from ClinVar or a report. Every criterion
 is decided from a tool result, weighted by the rules below, and summed as points step by step.
 
-Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool>`.
+Use the tools as listed below (direct, or through `call_tool`); never search for them. A tool
+that is missing (not in your list, or "unknown tool") is unavailable for this session: never call it again under any name;
+its codes are "not evaluated".
 
 ## Tool calls
 
@@ -80,7 +82,7 @@ confirm the variant identity with one `vep_annotate_variant`
 call, report the panel class with its date and review status, list what would change it,
 and stop. This is the fast path: no code table, no gnomAD, REVEL, AutoPVS1 or SpliceAI. A 2-star "likely
 pathogenic" is not a panel class (and may hide a "Pathogenic/Likely pathogenic" aggregate:
-check with `gnomad_get_clinvar_variant_details`). Otherwise go on with Steps 1–5 below.
+check with `gnomad_get_clinvar_variant_details`). Otherwise, or if ClinVar is unavailable or has no record, go on with Steps 1–5 below.
 
 ## Steps 1–5: Derive (only when Step 0 did not settle it)
 
@@ -103,7 +105,8 @@ validity → cspecs only if ClinGen names a VCEP for the gene. At the limit, or 
 remaining codes need data no tool gives (segregation, de novo, functional, case counts):
 stop. Every code you did not check is "not evaluated" and adds 0 points; never keep calling
 to fill rows. Points by the reference's table, step by step; BA1 stands alone. A VUS for
-lack of evidence is a valid answer.
+lack of evidence is a valid answer. Ten calls in total, or two errors in a row ("not found" is a result, not an error): stop
+calling now and write the answer, ending with the Class line.
 
 ## Step 6: Compare and stop
 
