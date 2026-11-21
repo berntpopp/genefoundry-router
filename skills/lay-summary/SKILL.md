@@ -8,61 +8,59 @@ description: Use when asked to explain a genetic result, gene, variant or geneti
 Research use only. Not clinical decision support. A lay summary supports, and never
 replaces, a conversation with a genetic counsellor or physician.
 
-Reach every tool through `search_tools` → `call_tool`. Tool names are
-`<namespace>_<tool>`.
-
 ## Input
 
-- **Best:** findings that are already verified (the output of `genetic-report-review`,
-  `germline-variant-classification`, or a signed report). Keep their class and wording of
-  certainty exactly.
-- **Otherwise:** a gene, variant or condition name. Then collect only what you need:
-  `hgnc_resolve_symbol` (gene), `clinvar_get_variant` (class, stars), `mondo_resolve_disease`
-  or `orphanet_search_diseases` (condition), `genereviews_search_passages` with `sections`
-  `["summary"]`, `["clinical_features"]` or `["genetic_counseling"]` (what the condition is,
-  how it is inherited, what care looks like).
-- De-identified input only. Language: the language of the request (German or English) unless
-  asked otherwise.
+- **Verified findings** (a signed report, or the output of `genetic-report-review` or
+  `germline-variant-classification`): write from them alone, with no tool calls, no record
+  ids beyond those given, and no "tools used" line. Keep their class and certainty.
+- **Only a name** (gene, variant, condition): at most 5 calls through `search_tools` →
+  `call_tool`: `hgnc_resolve_symbol`, `clinvar_get_variant`, `mondo_resolve_disease` or
+  `orphanet_search_diseases`, `genereviews_search_passages` with `sections` `["summary"]` or
+  `["genetic_counseling"]`. Anything still missing: say it is not known.
+- De-identified input only. Write in the language of the request.
 
-## Rules
+## Gate: check the draft before you send it
 
-1. **No new facts.** Every statement comes from the verified input or a tool result in this
-   session. If a number (risk, frequency, penetrance) is not in a source, leave it out.
-2. **Keep the certainty.** Pathogenic / likely pathogenic: "explains" or "is very likely to
-   explain". VUS: "we do not yet know whether this change matters; it is not used to make
-   medical decisions". Never write a VUS as a cause, and never write "negative" as "healthy"
-   or "ruled out".
-3. **Plain words.** Aim for a grade-8 reading level: short sentences (about 15 words), common
-   words, one idea per sentence. Explain each needed term once in brackets ("variant (a
-   change in the genetic code)"). No HGVS in the main text; put it in a short "for your
-   doctor" line at the end.
-4. **Inheritance in pictures of chance.** AD: "each child has a 1 in 2 chance". AR: "when
-   both parents carry a change, each child has a 1 in 4 chance". Only state what follows
-   from the verified inheritance mode.
-5. **Respect and hope without false comfort.** Neutral, non-blaming words ("change" not
-   "mutation"; "has the condition" not "suffers from"). Name what can be done, only if a
-   source says so.
-6. **Stop rule.** At most about 5 tool calls when starting from scratch; if something
-   important is missing, say it is not known rather than searching on.
+1. **No new facts.** Each sentence restates a verified fact. Add nothing about symptoms,
+   course, treatment, tests or chances that the facts do not state.
+2. **Number rule.** Use only the figures in the facts. The same figure in another form is
+   fine (25% = 1 in 4). No other percentage, "N in M", fraction, "twice" or "times as
+   likely", and no dose.
+3. **Reading level: grade 8.** Sentences under 15 words; everyday words. Replace the facts'
+   jargon, do not copy it: "autosomal dominant" → "one changed copy is enough"; "autosomal
+   recessive" → "a child needs a changed copy from each parent"; heterozygous → "one copy";
+   pathogenic → "harmful". A term you keep (variant, carrier) gets a plain meaning in
+   brackets right after it, the first time.
+4. **Technical names** (c./p. names, NM_ or rs numbers) appear only in the last line,
+   "For your doctor:".
+5. **Length** 120 to 300 words of prose, the "For your doctor:" line not counted.
+6. **Chances as chances.** Write "a 1 in 4 chance of a child with the condition", never
+   "the child will have it".
+7. **Who to ask** comes from the facts: the genetics team, or for a medicine result the
+   doctor or pharmacist.
+
+## Required and forbidden, by result type
+
+| Result | Must say | Never say |
+|---|---|---|
+| Pathogenic | the change is harmful and explains the problem or a raised (higher) chance; not a certainty; relatives' chance as given; the next step in the facts | "you will get (another) cancer", "no risk", "test your children now" |
+| VUS | we do not yet know whether this change matters; it does not explain the problem and is not a diagnosis; it is not used to test relatives or change care; it may be reviewed later | cause, "explains", "linked to your illness", "relatives should be tested" |
+| Negative, no family variant known | lowers the chance but does not rule out an inherited cause; screening follows the family history | "healthy", "all clear", "ruled out", "no risk" |
+| Negative for the known family variant | not inherited; her chance is not raised by it (the same as other people); usual screening for everyone | that other genes or causes were checked |
+| Carrier | does not have the condition, carriers are usually healthy; the chances only if the partner is a carrier too; the partner test or options in the facts | "you have / will get it", "your child will have it" |
+| CNV | explains the problem; effects differ, the course cannot be predicted; parents' test | how the child will develop |
+| Medicine (PGx) | which medicine it concerns, and only that; not a disease, no effect on health by itself; the doctor or pharmacist chooses the medicine | any dose; the patient starting, stopping or lowering a medicine |
+| Predictive | exactly the certainty the facts give (will develop / raised chance); when it starts is unknown if so stated; children are tested as adults | "test your children now", a date or age not in the facts |
+| Secondary finding | it has nothing to do with the reason for the test; what it means as stated; the next check | that it explains the original problem; illness as certain |
 
 ## Output
 
-If the request specifies an answer format, answer in exactly that format; the template below is the default.
+If the request specifies an answer format, use exactly that. Then add no headings, lists,
+closing disclaimer or "tools used" line; put "ask your genetics team" in the prose.
 
-**What was found** (2–3 sentences)
-
-**What this means, and what it does not mean**
-
-**What is still uncertain**
-
-**What this may mean for your family** (only if inheritance is verified)
-
-**Questions you may want to ask your doctor or genetic counsellor** (3–5 questions)
-
-**For your doctor:** gene, variant (HGVS), class, sources with record ids.
-
-A closing line: "This summary is for information. Please discuss it with your doctor or
-genetic counsellor."
+Default: three or four short paragraphs (what was found; what it means and does not mean;
+what it means for the family; next step and who to ask), then one line "For your doctor:"
+with gene, variant, class and source (record ids, or "as given in the verified input").
 
 ## Tool calls
 
