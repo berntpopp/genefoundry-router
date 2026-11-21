@@ -28,9 +28,11 @@ def _backend() -> FastMCP:
     return server
 
 
-def _build(rewrite: bool = True) -> FastMCP:
+def _build(rewrite: bool = True, entrypoints: tuple[str, ...] = ("search_genes",)) -> FastMCP:
     settings = RouterSettings(_env_file=None, GF_REWRITE_HINTS=rewrite)
-    registry = [BackendDef(name="clingen", url_env="X", namespace="clingen")]
+    registry = [
+        BackendDef(name="clingen", url_env="X", namespace="clingen", entrypoints=list(entrypoints))
+    ]
     return build_server(settings, registry, proxy_targets={"clingen": _backend()})
 
 
@@ -83,3 +85,19 @@ async def test_prose_hint_names_call_tool_for_unpinned_and_bare_for_pinned():
         'No gene. Try clingen_search_genes or call_tool(name="clingen_get_gene_info").'
     )
     assert json.loads(result.content[0].text)["message"] == result.structured_content["message"]
+
+
+async def test_next_command_to_unpinned_tool_is_the_call_tool_form_and_direct_name_routes():
+    # #354: a model calls an unlisted next_commands target by name and its client rejects it.
+    async with Client(_build(entrypoints=())) as client:
+        listed = {t.name for t in await client.list_tools()}
+        result = await client.call_tool("clingen_get_gene_validity", {"gene_symbol": "BRCA1"})
+        step = result.structured_content["next_commands"][0]
+        assert step == {
+            "tool": "call_tool",
+            "args": {"name": "clingen_search_genes", "arguments": {"q": "BRCA1"}},
+        }
+        assert json.loads(result.content[0].text)["next_commands"][0] == step
+        # a client that does send the unlisted full name to the router is routed to the backend
+        assert "clingen_get_gene_validity" not in listed
+        assert result.is_error is False

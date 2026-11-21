@@ -34,7 +34,7 @@ def test_rewrites_fallback_tool_and_next_commands():
         "fallback_tool": "search_genes",
         "next_commands": [{"tool": "search_genes", "args": {"q": "BRCA1"}}],
     }
-    n = rewrite_tool_refs(payload, "clingen", _NS)
+    n = rewrite_tool_refs(payload, "clingen", _NS, pinned={"clingen_search_genes"})
     assert n == 2
     assert payload["fallback_tool"] == "clingen_search_genes"
     assert payload["next_commands"][0]["tool"] == "clingen_search_genes"
@@ -82,7 +82,7 @@ def test_untrusted_text_is_opaque_to_tool_reference_rewriting():
             "nested": {"fallback_tool": "search_genes"},
         },
     }
-    count = rewrite_tool_refs(payload, "clingen", {"clingen"})
+    count = rewrite_tool_refs(payload, "clingen", {"clingen"}, pinned={"clingen_search_genes"})
     assert count == 1
     assert payload["next_commands"][0]["tool"] == "clingen_search_genes"
     assert payload["evidence"]["tool"] == "delete_everything"
@@ -150,3 +150,36 @@ def test_prose_call_keeps_the_argument_values_the_backend_gave():
         'Retry call_tool(name="clinvar_get_variant", '
         'arguments={"assembly": "GRCh37", "page": 2, "symbol": ...}).'
     )
+
+
+def test_next_command_to_an_unpinned_tool_is_wrapped_in_call_tool():
+    # #354: a model follows next_commands[].tool by calling the name directly; a client that
+    # only exposes the listed tools rejects an unpinned name before it reaches the router.
+    payload = {
+        "_meta": {
+            "next_commands": [
+                {"tool": "get_genes_for_disease", "arguments": {"disease_id": "OMIM:1"}},
+                {"tool": "mondo_resolve_disease", "arguments": {"query": "x"}},
+                {"tool": "hpo_search_terms", "args": {"q": "y"}},
+                {"tool": "search_tools", "arguments": {"query": "z"}},
+                {"tool": "hpo_get_term"},
+            ]
+        }
+    }
+    pinned = {"mondo_resolve_disease"}
+    assert rewrite_tool_refs(payload, "hpo", {"hpo", "mondo"}, pinned) == 4
+    assert payload["_meta"]["next_commands"] == [
+        {
+            "tool": "call_tool",
+            "arguments": {
+                "name": "hpo_get_genes_for_disease",
+                "arguments": {"disease_id": "OMIM:1"},
+            },
+        },
+        {"tool": "mondo_resolve_disease", "arguments": {"query": "x"}},  # pinned: direct
+        {"tool": "call_tool", "args": {"name": "hpo_search_terms", "arguments": {"q": "y"}}},
+        {"tool": "search_tools", "arguments": {"query": "z"}},  # synthetic: direct
+        {"tool": "call_tool", "arguments": {"name": "hpo_get_term", "arguments": {}}},
+    ]
+    # idempotent: a second pass leaves the wrapped steps alone
+    assert rewrite_tool_refs(payload, "hpo", {"hpo", "mondo"}, pinned) == 0

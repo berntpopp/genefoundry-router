@@ -4,6 +4,14 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.16] - 2026-11-21
+
+### Fixed
+
+- **A followed hint no longer names a tool the client cannot call** (#354). `_meta.next_commands` steps whose target is a fleet tool that is not pinned (listed) for the request are rewritten to `{"tool": "call_tool", "arguments": {"name": "<ns>_<tool>", "arguments": {...}}}`, so a model that follows the step never makes the direct call a listed-tools-only client rejects with "Tool not found". Pinned targets and the meta-tools stay direct; a bare `search_tools`/`call_tool` reference is no longer namespace-prefixed.
+- **Prose calls with an argument list** (`get_gene_score_sets(symbol)`) become `call_tool(name="mavedb_get_gene_score_sets", arguments={"symbol": ...})`, keeping any value the backend gave, instead of the uncallable `call_tool(name=...)(symbol)`.
+- **The unknown-tool error names the ready call form**: `call_tool(name="<namespace>_<tool>", arguments={...})` from the `search_tools` hit's `call` field. A client that sends an unlisted full name to the router is routed to the backend (now covered by an integration test); the rejection by a listed-tools-only client happens before the router and cannot be changed here.
+
 ## [0.13.15] - 2026-11-21
 
 ### Fixed

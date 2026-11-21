@@ -99,8 +99,8 @@ _UNKNOWN_TOOL_MESSAGE = "The requested tool is not available."
 _UNKNOWN_RESOURCE_MESSAGE = "The requested resource is not available."
 _UNKNOWN_PROMPT_MESSAGE = "The requested prompt is not available."
 _UNKNOWN_TOOL_SUGGESTION = (
-    "Call search_tools to discover federated tools, then call_tool with the exact "
-    "`<namespace>_<tool>` name."
+    "Call search_tools(query=...), then copy the hit's `call` field: "
+    'call_tool(name="<namespace>_<tool>", arguments={...}).'
 )
 
 # The synthetic meta-tools re-enter the middleware chain for their real target, so the
