@@ -46,7 +46,9 @@ where to look hardest; it is not itself an error.
 see from the text alone: conclusions stronger than the result ("ruled out", "excludes",
 "causal" for a VUS), a coordinate labelled with the wrong build, zygosity × inheritance × sex
 that does not add up, a recurrence risk that does not follow, an age that does not match
-the year of birth and the dates, read counts that do not match the stated fraction,
+the year of birth and the dates, read counts that do not match the stated fraction, a
+"de novo" or "inherited" claim without parental results in the report, a somatic VAF far
+from half the tumour cell content (heterozygous) without an explanation,
 sentences that contradict each other, missing limitations. These usually are most of the findings. Keep every item:
 later passes confirm or add to this list, they never drop an item from it.
 
@@ -83,7 +85,8 @@ against VEP's `hgvsc` / `hgvsp` character by character, including the frameshift
 
 **Pass 4: Classification (each variant).** Re-derive, do not re-read. First look for an
 expert-panel (VCEP) classification of the variant: `clingen_get_variant_interpretations`
-(`gene_symbol`), or `clingen_get_variant_interpretation` for one variant. A VCEP class published
+(`gene_symbol`), or `clingen_get_variant_interpretation` for one variant; a ClinVar record
+with 3 stars (reviewed by expert panel) already is the panel class, no extra call. A VCEP class published
 before the report date that differs from the report is Major (Critical if it changes P/LP vs VUS). Follow
 `references/germline.md`: current ClinVar class, stars and review status
 (`clinvar_get_variant`); frequency (`gnomad_get_variant_frequencies`); each asserted ACMG
@@ -143,14 +146,20 @@ There is one clear sentence for the referrer that answers the clinical question.
 - gnomAD: `CHROM-POS-REF-ALT` with both alleles (indels left-anchored, e.g. `1-55051215-G-GA`,
   never an empty allele) or an rsID; a multi-allelic rsID needs the full id. "Not found" in
   gnomAD is a valid result (absent), not a failed call.
-- VEP, ClinVar: one plain HGVS expression (`NM_000059.4:c.3901_3903del`), no gene name or
-  protein around it; write repeat notation (`c.3901ACT[1]`) as del/dup first.
-- ClinPGx: guideline filters take PA accessions; get them with `clinpgx_search_records`
-  (`entity_type="gene"` or `"chemical"`) first.
+- VEP: one plain HGVS expression (`NM_000059.4:c.3901_3903del`), no gene name or protein
+  around it; write repeat notation (`c.3901ACT[1]`) as del/dup first.
+- ClinVar: `clinvar_search_variants` with the report's exact HGVS (repeat notation included)
+  or the rsID; this also checks that a cited VCV belongs to the reported variant.
+- ClinPGx: a guideline's recommendation text comes from `clinpgx_get_api_data`
+  (`operation="GET /data/guidelineAnnotation/{id}"`, `path_parameters={"id": "PA..."}`,
+  `pointers=["/data/summaryMarkdown/html"]`). Guideline filters take PA accessions; get
+  them with `clinpgx_search_records` (`entity_type="gene"` or `"chemical"`) first.
 - UCSC: `track` is a name from the track list (e.g. `genomicSuperDups`), never a generic word such as "genes".
 
 **Budget and stop rule.** At most 8 tool calls. Spend them on the claims that carry the
-result, in this order: identity and class of each reported variant (Passes 3–4), then
+result, in this order: identity and class of each reported variant (Passes 3–4; a
+transcript the report labels "MANE Select" gets its one `hgnc_get_gene_cross_references`
+call here), then
 gene–disease and inheritance (Pass 6), then one check for each PMID and each OMIM number
 the report cites (Pass 5; a wrong PMID or a gene entry cited as the disease number is a
 common reporting error), then the rest. A pass the budget does not reach is
@@ -175,7 +184,9 @@ you cannot back is a question, not an accusation. Major needs either an error or
 element that reporting standards require (method, limitations, nomenclature, class,
 recommendations). Information that is merely absent and not required (ACMG codes not listed
 when the class is confirmed, QC details, sample-identity procedure) is Minor or goes under
-"Not checked". Do not raise findings that only follow from another finding; fold them in.
+"Not checked". Do not raise findings that only repeat another finding; fold them in. A
+wrong recommendation, risk figure or management statement that follows from an error still
+gets its own row: it is the sentence that would cause harm.
 Severity test for every finding: if this is fixed, does the result, the class, a risk
 figure or a recommendation change? Yes: Critical or Major by the lists above. No: Minor
 or "Not checked", whatever the wording. Exception: a required element that is wrong
@@ -217,10 +228,12 @@ yourself; propose the fix in the table. Be concise.
 - `clingen_get_variant_interpretation`(variant_id, refresh) — via call_tool
 - `clingen_get_variant_interpretations`(gene_symbol, disease, expert_panel, classification, page, size) — via call_tool
 - `clingen_search_dosage`(query, region, cytoband, haplo_score, triplo_score, record_type, page, size) — via call_tool
+- `clinpgx_get_api_data`(operation, path_parameters, query_parameters, form_parameters, representation, pointer, pointers, limit) — via call_tool
 - `clinpgx_get_website_data`(operation, path_parameters, query_parameters, pointer, pointers, limit) — via call_tool
 - `clinpgx_search_dataset`(dataset_id, member, query, filters, match, limit, include_fields, parent_fields) — via call_tool
 - `clinpgx_search_records`(entity_type, query, filters, source, view, limit, shape) — via call_tool
 - `clinvar_get_variant`(identifier, id_type) — direct
+- `clinvar_search_variants`(query, gene_symbol, classification, min_stars, assembly, match_mode, count_mode, limit) — via call_tool
 - `gencc_get_gene_curations`(gene_symbol, limit) — direct
 - `genereviews_search_passages`(q, query, gene, nbk_id, sections, heading_path_contains, mode, limit, exclude, include, snippet_chars, rerank) — direct
 - `gnomad_get_gene_summary`(gene, dataset, clinvar_limit, include_expression, include_clinvar, include_constraint) — via call_tool
