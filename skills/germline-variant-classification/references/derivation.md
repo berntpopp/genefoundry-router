@@ -3,6 +3,9 @@
 Read this only when Step 0 found no 3- or 4-star (expert panel or practice guideline)
 class, or when the user asks for a code-by-code derivation.
 
+The hard limit in `SKILL.md` (8 calls after Step 0, then stop and answer with what you have)
+wins over the step budgets below.
+
 ## Step 1: Normalize (2–3 calls)
 
 1. Ask for or confirm the genome build. `vep_annotate_variant` (`assembly`) → MANE Select

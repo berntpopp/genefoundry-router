@@ -96,7 +96,14 @@ and follow it. In short:
 | null variant | `autopvs1_get_variant_pvs1_data`(`variant_id`, `genome_build`) | PVS1 strength |
 | splicing | `spliceai_predict_splicing`(`variant_id`, `genome_build`) | splicing only |
 
-Budget about 12 calls. Points by the reference's table, step by step; BA1 stands alone.
+Hard limit: 8 calls after Step 0, in this order, skipping rows that do not apply: VEP →
+gnomAD (BA1 or BS1 met: stop, the variant is benign or likely benign) → AutoPVS1 only for a
+null variant → SpliceAI only for an intronic, synonymous or splice-region variant → ClinGen
+validity → cspecs only if ClinGen names a VCEP for the gene. At the limit, or when the
+remaining codes need data no tool gives (segregation, de novo, functional, case counts):
+stop. Every code you did not check is "not evaluated" and adds 0 points; never keep calling
+to fill rows. Points by the reference's table, step by step; BA1 stands alone. A VUS for
+lack of evidence is a valid answer.
 
 ## Step 6: Compare and stop
 
@@ -112,8 +119,7 @@ Budget about 12 calls. Points by the reference's table, step by step; BA1 stands
   is a reclassification flag for a human, not something you override).
 - Otherwise the final class is your own. If ClinVar's aggregate differs, list which codes
   explain the difference.
-- Stop when every code row has a state. Do not page literature beyond the first page unless a
-  code you would apply depends on it. Budget: about 15 tool calls.
+- Stop at the limit above (Step 6 adds at most 2 calls). Do not page literature.
 
 ## Output
 
