@@ -28,6 +28,12 @@ LINK_RE = re.compile(r"`((?:references|scripts|assets)/[^`\s]+\.md)`|\]\(([^)#\s
 CALLS_RE = re.compile(r"<!-- tool-calls:start -->\n.*?<!-- tool-calls:end -->", re.S)
 SIG_RE = re.compile(r"Signature: [a-z0-9_]+\(([^)]*)\)")
 BLOCK_RE = re.compile(r"<!-- shared-rules:start -->\n(.*?)\n<!-- shared-rules:end -->", re.S)
+# Thoroughness wording makes strong models over-call tools (Anthropic/OpenAI prompting guides).
+THOROUGH_RE = re.compile(
+    r"\b(if in doubt|check all|check every|always call|always check|be thorough|exhaustive"
+    r"|every source|all sources)\b",
+    re.I,
+)
 
 
 def canonical_block(readme: Path) -> str:
@@ -151,12 +157,29 @@ def check_skills(
     return errors
 
 
+def thoroughness_warnings(skills_dir: Path) -> list[str]:
+    """Warnings for over-eager wording in SKILL.md, outside the shared and generated blocks."""
+    block = canonical_block(skills_dir / "README.md")
+    warnings: list[str] = []
+    for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+        text = skill_md.read_text(encoding="utf-8").replace(block, "\n" * block.count("\n"))
+        for region in (BLOCK_RE, CALLS_RE):  # blank out, keeping newlines so line numbers hold
+            text = region.sub(lambda m: "\n" * m.group(0).count("\n"), text)
+        for number, line in enumerate(text.splitlines(), 1):
+            for match in THOROUGH_RE.finditer(line):
+                warnings.append(
+                    f"warning: {skill_md.parent.name}:{number}: thoroughness wording "
+                    f"{match.group(0)!r} invites tool over-use"
+                )
+    return warnings
+
+
 def main() -> int:
     entries = catalog_entries()
     write = "--write" in sys.argv[1:]
     errors = check_skills(ROOT / "skills", set(entries), entries, pinned_tools(), write)
-    for error in errors:
-        print(error, file=sys.stderr)
+    for message in thoroughness_warnings(ROOT / "skills") + errors:
+        print(message, file=sys.stderr)
     return 1 if errors else 0
 
 

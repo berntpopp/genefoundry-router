@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.check_skills import ROOT, canonical_block, check_skills
+from scripts.check_skills import ROOT, canonical_block, check_skills, thoroughness_warnings
 
 BLOCK = canonical_block(ROOT / "skills" / "README.md")
 CATALOG = {"gnomad_get_variant_frequencies", "hgnc_resolve_symbol"}
@@ -121,3 +121,17 @@ def test_tool_calls_block_generated_and_checked(tmp_path: Path) -> None:
         in path.read_text()
     )
     assert check_skills(tmp_path, names, entries, set()) == []
+
+
+def test_thoroughness_phrase_in_body_warns(tmp_path: Path) -> None:
+    _skill(tmp_path, body="Intro.\nIf in doubt, Check All sources.")
+    found = thoroughness_warnings(tmp_path)
+    assert any("demo-skill" in w and "'If in doubt'" in w and ":7:" in w for w in found)
+    assert any("'Check All'" in w for w in found)
+    assert check_skills(tmp_path, CATALOG) == []  # a warning is never an error
+
+
+def test_thoroughness_phrase_in_shared_block_ignored(tmp_path: Path) -> None:
+    block = f"<!-- shared-rules:start -->\nBe thorough.\n<!-- shared-rules:end -->\n{BLOCK}"
+    _skill(tmp_path, body="Plain body.", block=block)
+    assert thoroughness_warnings(tmp_path) == []
