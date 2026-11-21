@@ -74,6 +74,7 @@ transcript; the genomic coordinate belongs to the stated build. Use
 `vep_annotate_variant` (HGVS, MANE, consequence; `assembly` matters) and
 `gnomad_resolve_variant_id`. Gene symbols current: `hgnc_resolve_symbols_batch`.
 HGVS rules: PMID 39702242. Flag, never rewrite: give the corrected form as the fix.
+VEP's default `most_severe_consequence` / representative transcript can come from another isoform: take the consequence, c. and p. from the transcript named in the input or the MANE Select entry in the transcript list.
 One `vep_annotate_variant` call per variant already returns what to compare, so compare
 before moving on: the report's transcript against the MANE Select transcript VEP flags
 (a different transcript labelled "MANE Select" is Major), and the report's c. and p.
