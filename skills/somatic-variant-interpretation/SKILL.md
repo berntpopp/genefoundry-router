@@ -15,11 +15,13 @@ Research use only. Not clinical decision support. The output is never a clinical
 
 ## Calls, in this order (at most 7)
 
+VEP and ClinVar `get_variant` are in your tool list; the others exist only through `call_tool`, exactly as written.
+
 1. `vep_annotate_variant`(`variant`= HGVS or `GENE:p.X` with a colon). Use the allele whose `hgvsp` is the asked change.
-2. `clinvar_search_variants`(`query`= "GENE X123Y") → `clinvar_get_variant`(`identifier`= its VCV): read `somatic_clinical_impact` and `oncogenicity`.
-3. `moalmanac_search_approvals`(`gene`): read `summary.biomarkers` and `summary.diseases`. A row counts only for this alteration type (RET fusion ≠ RET M918T; HER2 amplification ≠ ERBB2 S310F). A class "<GENE> activating/oncogenic variants" covers an oncogenic or hotspot variant; for its diseases call again with `biomarker`= that class name.
-4. `civic_search_molecular_profiles`(`query`= "GENE X123Y") → `civic_search_assertions`(`molecular_profile_id`).
-5. `cbioportal_get_mutation_hotspots`(`gene`, `residue`= "V600").
+2. `call_tool(name="clinvar_search_variants", arguments={"query": "GENE X123Y"})` → `clinvar_get_variant`(`identifier`= its VCV): read `somatic_clinical_impact` and `oncogenicity`.
+3. `call_tool(name="moalmanac_search_approvals", arguments={"gene": "GENE"})`: read `summary.biomarkers` and `summary.diseases`. A row counts only for this alteration type (RET fusion ≠ RET M918T; HER2 amplification ≠ ERBB2 S310F). A class "<GENE> activating/oncogenic variants" covers an oncogenic or hotspot variant; for its diseases call again with `biomarker`= that class name.
+4. `call_tool(name="civic_search_molecular_profiles", arguments={"query": "GENE X123Y"})` → `call_tool(name="civic_search_assertions", arguments={"molecular_profile_id": <integer>})`.
+5. `call_tool(name="cbioportal_get_mutation_hotspots", arguments={"gene": "GENE", "residue": "V600"})`.
 
 "Not found" from a search is an answer (no record), not an error: go on to the next call. An empty search never lowers a tier that another source already supports.
 
