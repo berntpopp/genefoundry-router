@@ -1,6 +1,6 @@
 ---
 name: identifier-resolution-and-lookup
-description: Use when a question needs identifiers resolved or chained across databases before it can be answered — gene symbols, aliases, Ensembl/RefSeq/UniProt/NCBI ids, rsIDs, HGVS or coordinates on GRCh37/GRCh38, disease names or OMIM/Orphanet/MONDO ids, HPO terms — e.g. "which gene is rs6025 in", "Ensembl id of the gene causing Dravet syndrome", "what chromosome band is the gene for OMIM:154700", "convert these 50 ENSG ids to symbols". Research use only.
+description: Use when a question needs identifiers chained across two or more databases, or resolved in batch, before it can be answered (a single direct lookup does not need this skill) — gene symbols, aliases, Ensembl/RefSeq/UniProt/NCBI ids, rsIDs, HGVS or coordinates on GRCh37/GRCh38, disease names or OMIM/Orphanet/MONDO ids, HPO terms — e.g. "Ensembl id of the gene causing Dravet syndrome", "what chromosome band is the gene for OMIM:154700", "convert these 50 ENSG ids to symbols". Research use only.
 ---
 
 # Identifier resolution and multi-hop lookup
