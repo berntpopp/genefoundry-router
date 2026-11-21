@@ -74,10 +74,11 @@ Reach tools through `search_tools` → `call_tool`; names are `<namespace>_<tool
 `clinvar_get_variant` (`identifier` = the HGVS, rsID or VCV). If it returns 3 or 4 stars
 (expert panel or practice guideline), that class is the class of record. It is not an ACMG
 code: it replaces your own derivation as the final class, even when your points add up to
-something else. Unless the user
-asks for a full derivation: confirm the variant identity with one `vep_annotate_variant`
+something else. "Classify this variant" or "classify with ACMG/AMP" is not a request for a
+derivation; only an explicit ask for the codes ("derive", "show each criterion") is. Otherwise:
+confirm the variant identity with one `vep_annotate_variant`
 call, report the panel class with its date and review status, list what would change it,
-and stop. This is the fast path; it needs no evidence gathering. A 2-star "likely
+and stop. This is the fast path: no code table, no gnomAD, REVEL, AutoPVS1 or SpliceAI. A 2-star "likely
 pathogenic" is not a panel class (and may hide a "Pathogenic/Likely pathogenic" aggregate:
 check with `gnomad_get_clinvar_variant_details`). Otherwise go on with Steps 1–5 below.
 
@@ -127,7 +128,8 @@ If the request specifies an answer format, answer in exactly that format; the te
 States: met / not met / not evaluated (why) / not confirmable.
 
 **Sum:** the points line. **Class:** one of the five; when an expert-panel class exists, the
-final class is the panel class and your own sum is shown beside it as "own derivation".
+final class is the panel class (fast path: no table and no sum; if you derived, show your sum
+beside it as "own derivation").
 
 Unless another format is requested, the last line is exactly
 `Class: <Pathogenic | Likely pathogenic | Uncertain significance | Likely benign | Benign>`.
