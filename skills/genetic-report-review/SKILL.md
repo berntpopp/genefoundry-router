@@ -167,14 +167,11 @@ element that reporting standards require (method, limitations, nomenclature, cla
 recommendations). Information that is merely absent and not required (ACMG codes not listed
 when the class is confirmed, QC details, sample-identity procedure) is Minor or goes under
 "Not checked". Do not raise findings that only follow from another finding; fold them in.
-These are not Major:
-- a limitation the report itself states (e.g. "CNV analysis was not performed" or "identity
-  not verified by markers"): stating it is correct reporting;
-- an unverified parentage or sample procedure when the report's result does not depend on it;
-- a correct conclusion that you would word more softly;
-- genes you would add to a named, targeted panel whose negative is worded within its scope;
-- a typo or count slip in a gene list that does not change what was tested.
-These are Minor, or a suggestion under "Not checked".
+Severity test for every finding: if this is fixed, does the result, the class, a risk
+figure or a recommendation change? Yes: Critical or Major by the lists above. No: Minor
+or "Not checked", whatever the wording. So a limitation the report itself states, a
+procedure the result does not depend on, a correct conclusion you would word differently,
+and a slip that does not change what was tested are never Major.
 
 ## Output
 
