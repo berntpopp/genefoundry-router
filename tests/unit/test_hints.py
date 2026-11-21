@@ -112,3 +112,32 @@ def test_rewrites_tool_names_in_every_prose_field_but_not_data_or_enums():
     assert payload["recovery_action"] == "search_genes"
     assert payload["reason"] == "search_failed"
     assert payload["results"] == [{"label": "get_x is data"}]
+
+
+def test_prose_call_with_argument_list_becomes_call_tool_with_arguments():
+    # #354: "call get_gene_score_sets(symbol)" must not become call_tool(name=...)(symbol)
+    payload = {
+        "message": "No match; call get_gene_score_sets(symbol) or list_score_sets(gene, page=2).",
+        "hint": "Then search_genes() and resolve_symbol(symbol).",
+    }
+    rewrite_tool_refs(payload, "mavedb", {"mavedb"}, pinned={"mavedb_resolve_symbol"})
+    assert payload["message"] == (
+        'No match; call call_tool(name="mavedb_get_gene_score_sets", arguments={"symbol": ...})'
+        ' or call_tool(name="mavedb_list_score_sets", arguments={"gene": ..., "page": ...}).'
+    )
+    # a pinned tool keeps its direct name and its own argument list
+    assert payload["hint"] == (
+        'Then call_tool(name="mavedb_search_genes", arguments={}) and '
+        "mavedb_resolve_symbol(symbol)."
+    )
+
+
+def test_prose_parenthetical_that_is_not_an_argument_list_is_left_alone():
+    payload = {
+        "note": "Use get_variant (the HGVS form) or get_variant(e.g. NM_000.1:c.1A>G).",
+    }
+    rewrite_tool_refs(payload, "clinvar", {"clinvar"})
+    assert payload["note"] == (
+        'Use call_tool(name="clinvar_get_variant") (the HGVS form) or '
+        'call_tool(name="clinvar_get_variant")(e.g. NM_000.1:c.1A>G).'
+    )

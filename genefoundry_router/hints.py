@@ -49,7 +49,9 @@ PROSE_KEYS = {
 _PROSE_TOOL_RE = re.compile(
     r"\b(?:get|search|list|resolve|find|compare|compute|map|predict|annotate|recode|liftover"
     r"|analyze|score|submit|export|generate|download)_[a-z0-9_]+\b"
+    r"(?:\((?P<args>\s*|\s*[A-Za-z_]\w*(?:\s*=[^,()]*)?(?:\s*,\s*[A-Za-z_]\w*(?:\s*=[^,()]*)?)*\s*)\))?"
 )
+_ARG_NAME_RE = re.compile(r"(?:^|,)\s*([A-Za-z_]\w*)")
 
 
 def _is_rewritable(value: str, namespaces: set[str]) -> bool:
@@ -67,8 +69,16 @@ def _rewrite_prose(text: str, ns: str, pinned: Collection[str]) -> str:
     """Name each bare sibling tool in prose the way it must be called (#299)."""
 
     def ref(match: re.Match[str]) -> str:
-        name = f"{ns}_{match.group(0)}"
-        return name if name in pinned else f'call_tool(name="{name}")'
+        args = match.group("args")
+        leaf = match.group(0) if args is None else match.group(0).partition("(")[0]
+        name = f"{ns}_{leaf}"
+        if name in pinned:
+            return f"{name}{match.group(0)[len(leaf) :]}"
+        if args is None:  # no argument list follows: the bare call form
+            return f'call_tool(name="{name}")'
+        # An argument list "(symbol, page=2)" becomes keys with ... values (#354).
+        keys = ", ".join(f'"{k}": ...' for k in _ARG_NAME_RE.findall(args))
+        return f'call_tool(name="{name}", arguments={{{keys}}})'
 
     return _PROSE_TOOL_RE.sub(ref, text)
 
