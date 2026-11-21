@@ -30,15 +30,19 @@ say which evidence decided it. Reach tools through `search_tools` → `call_tool
    because it is first. Break the tie in this order and stop at the first that separates:
    1. ONE `gencc_get_genes_curations` call with those genes: a gene with no Definitive /
       Strong / Moderate curation for a disease matching the phenotype loses
-      (Disputed/Refuted always lose). Do not page the curations.
-   2. Hallmark fit, from the ranking you already have: the gene whose best disease matches
-      the most specific input term at the higher frequency (`f=` in `top_matches`) and
-      matches more input terms (`matched_count`).
+      (Disputed/Refuted always lose). Do not page the curations. If every gene has such a
+      curation, curation does not separate them: go to 2.
+   2. Hallmark fit: the gene whose best disease matches the most specific input term at the
+      higher frequency (`f=` in `top_matches`) and matches more input terms
+      (`matched_count`). If `top_matches` does not separate them, call
+      `hpo_get_phenotypes_for_gene` once per tied gene and count which list covers more of
+      the patient's terms.
    3. Inheritance and sex fit, if the patient's sex or family history is given (e.g. an
       X-linked gene that affects mainly females, in a male patient).
    If still tied, say so: name the tied genes in order and what would separate them
    (variant data, segregation, sex, onset age). If the request needs a single gene, give
-   the first tied gene after these tie-breaks and say it was a close call.
+   the first tied gene after these tie-breaks and say it was a close call. The answer is
+   always one of the genes you compared, never a gene outside `close_call_genes`.
 5. **Stop.** Answer after step 3 (clear winner) or step 4 (close call). Do not re-rank with
    other term subsets, do not page, do not re-check the winner with more sources.
 
@@ -67,6 +71,7 @@ If the request specifies an answer format, answer in exactly that format; the te
 - `gencc_get_genes_curations`(genes, limit_per_gene) — via call_tool
 - `hgnc_resolve_gene_by_xref`(source, value) — via call_tool
 - `hgnc_resolve_symbols_batch`(queries) — direct
+- `hpo_get_phenotypes_for_gene`(gene; optional: limit) — direct
 - `hpo_score_genes_for_phenotypes`(hpo_ids; optional: excluded_hpo_ids, candidate_genes, limit) — direct
 - `hpo_search_terms`(query; optional: limit, include_obsolete) — direct
 <!-- tool-calls:end -->
