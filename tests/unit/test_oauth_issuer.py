@@ -304,3 +304,24 @@ def test_register_still_validates_a_json_body_downstream() -> None:
 
     assert response.status_code == 400
     assert response.json()["error"] == "invalid_client_metadata"
+
+
+def test_authorization_response_iss_matches_the_metadata_issuer() -> None:
+    """RFC 9207: the `iss` FastMCP appends to client redirects must equal metadata `issuer`.
+
+    FastMCP builds it as ``str(self.issuer_url)``; a plain AnyHttpUrl renders the bare
+    origin with a trailing slash, which strict clients (claude.ai) reject as a mismatch.
+    """
+    from urllib.parse import parse_qs, urlparse
+
+    from fastmcp.server.auth.redirect_validation import build_client_redirect
+
+    proxy = _proxy()
+    client = TestClient(Starlette(routes=proxy.get_routes("")))
+    issuer = client.get("/.well-known/oauth-authorization-server").json()["issuer"]
+
+    redirect = build_client_redirect(
+        "https://claude.ai/api/mcp/auth_callback", {"code": "c"}, iss=str(proxy.issuer_url)
+    )
+
+    assert parse_qs(urlparse(redirect).query)["iss"] == [issuer] == [BASE_URL]

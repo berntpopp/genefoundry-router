@@ -42,6 +42,7 @@ from starlette.routing import Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from genefoundry_router.config import (
+    SlashlessIssuerUrl,
     _canonical_oauth_issuer,
     _validate_oauth_legacy_issuers,
 )
@@ -125,9 +126,7 @@ class _RefreshCleanupEndpoint:
             await self._cleanup()
 
 
-def canonical_issuer(base_url: str) -> str:
-    """Return the validated issuer URL without a trailing root slash."""
-    return _canonical_oauth_issuer(base_url)
+canonical_issuer = _canonical_oauth_issuer  # validated issuer, trailing root slash removed
 
 
 class CanonicalOAuthMetadata(OAuthMetadata):
@@ -218,7 +217,7 @@ class GeneFoundryOAuthProxy(OAuthProxy):
         if refresh_ledger is not None:
             validate_fastmcp_refresh_contract()
         install_oauth_proxy_privacy_filter()
-        super().__init__(**kwargs)
+        super().__init__(issuer_url=SlashlessIssuerUrl(self._canonical_issuer_url), **kwargs)
 
     def _begin_refresh_attempt(
         self, client: OAuthClientInformationFull, refresh_token: str
