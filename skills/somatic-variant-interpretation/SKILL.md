@@ -9,9 +9,6 @@ Research use only. Not clinical decision support. Do not use for diagnosis, trea
 triage, or patient management. The output is **not a clinical actionability report** and never
 a clinical tier for a patient.
 
-Reach every tool below through `search_tools` → `call_tool` (only pinned entry points are
-listed up front). Tool names are `<namespace>_<tool>`.
-
 ## Three axes — never merge them
 
 | Axis | Question | Sources |
@@ -23,49 +20,29 @@ listed up front). Tool names are `<namespace>_<tool>`.
 Report each axis separately with its source. ClinVar's germline "Conflicting" for BRAF V600E
 says nothing about its somatic Tier I status.
 
-## Workflow
+## Routing (one call per question, then answer)
 
-1. **Normalize the variant.** `vep_annotate_variant` (MANE transcript HGVS, GRCh38) and
-   `gnomad_resolve_variant_id`. Keep the gene symbol + protein change (e.g. `BRAF` `V600E`)
-   for the cancer sources. Normalize the tumour type: `mondo_search_diseases`, and
-   `mondo_map_cross_ontology` with `prefixes: ["ONCOTREE"]` to get the OncoTree code
-   (e.g. ONCOTREE:SKCM ↔ MONDO:0005012) that cBioPortal uses.
-2. **ClinVar somatic.** `clinvar_get_variant` returns `somatic_clinical_impact` (tier) and
-   `oncogenicity` as their own blocks beside the germline classification;
-   `clinvar_search_somatic_classifications` lists a gene's tiered / oncogenic variants
-   (filters `gene_symbol`, `tier`, `oncogenicity`, `tumour_type`).
-3. **CIViC evidence.** `civic_search_molecular_profiles` (gene + variant, HGVS, CAID or
-   ClinVar id) → use the `simple` profile; complex profiles (combinations) are listed
-   separately — never fold them into the single-variant answer. Then
-   `civic_search_assertions` / `civic_search_evidence_items` with `molecular_profile_id`
-   and `disease` (accepted evidence by default). CIViC diseases are DOID; crosswalk to MONDO
-   with `mondo_resolve_xref` when joining. CIViC coordinates are GRCh37-first: read the
-   `assembly` label.
-4. **Regulatory approvals.** `moalmanac_search_approvals` (`gene`, `biomarker`, `disease`,
-   `therapy`, `agency`) — FDA/EMA/Health Canada/HSE/HPRA label versions and dates. It fills
-   CIViC gaps (e.g. KRAS G12C NSCLC). HER2 and ERBB2 are expanded to each other.
-5. **Prevalence.** `cbioportal_get_gene_alteration_frequency` (`gene`, `cancer_type`,
-   `protein_change`) and `cbioportal_get_gene_mutations`. Always quote numerator,
-   **profiled** denominator, study id and cohort; restricted-licence studies are excluded
-   unless asked for, and stay flagged. Hotspot status: `cbioportal_get_mutation_hotspots`
-   (Cancer Hotspots v2 + 3D snapshot; `residue`, `assembly`).
-6. **Gene-level biology and drugs.** `opentargets_resolve_target` →
-   `opentargets_get_target_tractability`, `opentargets_get_drug_candidates` (`disease`
-   narrows), `opentargets_get_target_disease_evidence`. Drug stages lag regulators — prefer
-   MOAlmanac for approval status.
-7. **Oncogenicity evidence (Horak 2022 criteria), assembled:** hotspot recurrence
-   (cBioPortal hotspots), population frequency (`gnomad_get_variant_frequencies`; common in
-   gnomAD argues against a somatic driver), null variant in a tumour suppressor
-   (`autopvs1_get_variant_pvs1_data`, VEP consequence), functional data
-   (`mavedb_search_score_sets`), predictors (`spliceai_predict_splicing`,
-   `metadome_get_tolerance_landscape`), plus ClinVar `oncogenicity` and CIViC oncogenic
-   assertions. List the criteria you can support and the ones you cannot; do not compute a
-   final classification.
-8. **Literature.** `pubtator_search_literature` / `litvar_get_variant_literature` for
-   primary sources behind a claim.
+| Question | Call | Notes |
+|---|---|---|
+| variant identity, GRCh38 coordinate | `vep_annotate_variant`(`variant`= plain HGVS or `GENE p.X`) | take c./p. from the MANE transcript; frequency later via `gnomad_get_variant_frequencies`(`variant_id`=`CHROM-POS-REF-ALT` from VEP). Never send HGVS to `gnomad_resolve_variant_id` |
+| ClinVar tier and oncogenicity | `clinvar_get_variant`(`identifier`= HGVS, VCV or rsID) | `somatic_clinical_impact` and `oncogenicity` blocks; `clinvar_search_somatic_classifications` takes a VCV/rsID or `gene_symbol`, never a protein string |
+| approval in THIS tumour type | `moalmanac_search_approvals`(`gene`, `disease`= a word of the tumour type, `agency`= lowercase `fda`/`ema`) | leave `biomarker` out: labels are class names ("ERBB2 activating variants"); read the returned `biomarkers` and keep rows that cover this variant. `moalmanac_list_biomarkers`(`gene`) lists the names |
+| tumour-agnostic approval | `moalmanac_search_approvals`(`gene`, `disease="solid"`) | "Any solid tumor" rows count for every solid tumour; FDA-only rows stay FDA-only |
+| curated evidence | `civic_search_molecular_profiles`(gene + variant) → `civic_search_assertions`(`molecular_profile_id`, `disease`) | use the simple profile; level A/B in this tumour type |
+| hotspot | `cbioportal_get_mutation_hotspots`(`gene`, `residue`= string such as `"V600"`) | `is_hotspot` |
+
+Order and budget: identity → ClinVar → approvals (this tumour type, then "solid") →
+CIViC → hotspot. At most 8 calls. Stop as soon as the tier is settled:
+- an approval or level A/B evidence for this variant (or its class) in this tumour type →
+  Tier I; the same only in another tumour type → Tier II;
+- no approval and no curated evidence: oncogenic driver or hotspot → Tier III; benign or
+  common in gnomAD → Tier IV.
+Prevalence, biology, literature and a full oncogenicity work-up only if asked or still
+open: read `references/full-workflow.md`.
 
 ## Reporting rules
 
+- If the request specifies an answer format, use exactly that.
 - Every prevalence number carries source, numerator / profiled denominator, cohort/study
   and genome build.
 - Every coordinate carries its assembly (GRCh37 vs GRCh38); join on MANE HGVS or VEP
@@ -93,6 +70,7 @@ says nothing about its somatic Tier I status.
 - `litvar_get_variant_literature`(variant_id, limit) — direct
 - `mavedb_search_score_sets`(; optional: text, targets, target_organism_names, target_types, authors, facet_mode, published, limit) — direct
 - `metadome_get_tolerance_landscape`(transcript_id, position_start, position_stop, limit) — direct
+- `moalmanac_list_biomarkers`(; optional: gene, biomarker_type, limit) — via call_tool
 - `moalmanac_search_approvals`(; optional: gene, biomarker, disease, therapy, agency, biomarker_type, limit) — via call_tool
 - `mondo_map_cross_ontology`(term; optional: prefixes) — via call_tool
 - `mondo_resolve_xref`(xref_id; optional: limit) — via call_tool
