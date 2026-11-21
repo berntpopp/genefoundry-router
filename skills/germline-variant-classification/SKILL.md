@@ -158,8 +158,12 @@ Write the sum as a line: `PVS1 (8) + PM2_Supporting (1) = 9 → Likely pathogeni
 - `clingen_get_variant_interpretation` (`variant_id` = ClinVar VariationID, CAID or HGVS): the
   expert panel's own classification and met/not-met codes, if one exists. Look up the one
   variant; do not list a gene's interpretations.
-- If either differs from your class, list which codes explain the difference. An expert-panel
-  classification that disagrees is a finding for a human, not something to override.
+- If an expert panel (VCEP, ClinVar 3 or 4 stars) has classified this variant, its class is
+  the class of record: report it as the final class, with your own derivation beside it and
+  the codes that explain any difference (a panel class older than newer evidence you found
+  is a reclassification flag for a human, not something you override).
+- Otherwise the final class is your own. If ClinVar's aggregate differs, list which codes
+  explain the difference.
 - Stop when every code row has a state. Do not page literature beyond the first page unless a
   code you would apply depends on it. Budget: about 15 tool calls.
 
