@@ -45,8 +45,9 @@ where to look hardest; it is not itself an error.
 **Read-through (no tools yet).** Read the whole report once and list every problem you can
 see from the text alone: conclusions stronger than the result ("ruled out", "excludes",
 "causal" for a VUS), a coordinate labelled with the wrong build, zygosity × inheritance × sex
-that does not add up, a recurrence risk that does not follow, sentences that contradict
-each other, missing limitations. These usually are most of the findings. Keep every item:
+that does not add up, a recurrence risk that does not follow, an age that does not match
+the year of birth and the dates, read counts that do not match the stated fraction,
+sentences that contradict each other, missing limitations. These usually are most of the findings. Keep every item:
 later passes confirm or add to this list, they never drop an item from it.
 
 **Pass 1: Does the test answer the question?** Was the test able to detect the suspected
@@ -190,7 +191,7 @@ If the request specifies an answer format, answer in exactly that format; the te
 
 **Verdict:** concur / concur with comments / do not sign out yet — one sentence why.
 
-**Findings** (most severe first; one row per finding; quote the report verbatim):
+**Findings** (most severe first; one row per finding; quote the report verbatim, copied character for character, never paraphrased):
 
 | Severity | Quote from report | Problem | Fix | Tool evidence | State |
 |---|---|---|---|---|---|
