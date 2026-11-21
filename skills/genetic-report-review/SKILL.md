@@ -169,7 +169,9 @@ when the class is confirmed, QC details, sample-identity procedure) is Minor or 
 "Not checked". Do not raise findings that only follow from another finding; fold them in.
 Severity test for every finding: if this is fixed, does the result, the class, a risk
 figure or a recommendation change? Yes: Critical or Major by the lists above. No: Minor
-or "Not checked", whatever the wording. So a limitation the report itself states, a
+or "Not checked", whatever the wording. Exception: a required element that is wrong
+(HGVS, build, coordinate, class, sex or pronoun, disease id, a sentence from another case)
+stays at least Major even if the result stands. So a limitation the report itself states, a
 procedure the result does not depend on, a correct conclusion you would word differently,
 and a slip that does not change what was tested are never Major.
 
