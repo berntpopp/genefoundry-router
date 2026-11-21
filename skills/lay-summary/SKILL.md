@@ -28,8 +28,8 @@ be in another language: translate their meaning, never their wording word by wor
 - Use the everyday word a patient in that language uses, not a calque of the English term
   ("Träger" for carrier, "Veränderung" rather than "Variante" in German; "portador" in
   Spanish). Explain a kept term in brackets the first time, as in English.
-- Reading level: short sentences (under 15 words) and common words in that language; the
-  grade-8 target means the same plainness, whatever the formula.
+- Reading level: the same plainness as the grade-8 target, in words a native speaker would use
+  with a patient; it should read as written in that language, not translated.
 - The required and forbidden claims below apply in every language; translate "never say"
   items by meaning ("ausgeschlossen", "descartado", "exclu" are all "ruled out").
 - The "For your doctor:" line may stay in the language of the report it came from.
@@ -41,7 +41,9 @@ be in another language: translate their meaning, never their wording word by wor
 2. **Number rule.** Use only the figures in the facts. The same figure in another form is
    fine (25% = 1 in 4). No other percentage, "N in M", fraction, "twice" or "times as
    likely", and no dose.
-3. **Reading level: grade 8.** Sentences under 15 words; everyday words. Replace the facts'
+3. **Reading level: grade 8.** Most sentences 8–15 words, none over 20; everyday words. Join
+   two short related facts with "and", "because" or "but" rather than a string of very short
+   sentences. Replace the facts'
    jargon, do not copy it: "autosomal dominant" → "one changed copy is enough"; "autosomal
    recessive" → "a child needs a changed copy from each parent"; heterozygous → "one copy";
    pathogenic → "harmful". A term you keep (variant, carrier) gets a plain meaning in
