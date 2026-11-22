@@ -40,15 +40,19 @@ def skill_uri(name: str) -> str:
     return f"skill://{name.removeprefix(SKILL_PREFIX)}/SKILL.md"
 
 
-def skill_hit(tool: Tool) -> dict[str, Any]:
-    """The pointer a skill hit serializes to in every detail mode (no inputSchema)."""
+def skill_hit(tool: Tool, strict: bool = False) -> dict[str, Any]:
+    """The pointer a skill hit serializes to in every detail mode (no inputSchema); the
+    ``call`` form matches the listed ``call_tool`` schema (strict: ``arguments`` a string)."""
     uri = skill_uri(tool.name)
     return {
         "name": tool.name,
         "skill": uri,
         "description": tool.description or "",
         "read": {"method": "resources/read", "uri": uri},
-        "call": {"tool": "call_tool", "arguments": {"name": tool.name}},
+        "call": {
+            "tool": "call_tool",
+            "arguments": {"name": tool.name, "arguments": "{}" if strict else {}},
+        },
     }
 
 

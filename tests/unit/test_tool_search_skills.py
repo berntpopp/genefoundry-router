@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import jsonschema
 import pytest
 from fastmcp import Client
 
@@ -22,10 +23,12 @@ URI = "skill://somatic-variant-interpretation/SKILL.md"
 POINTER_KEYS = {"name", "skill", "description", "read", "call"}
 
 
-def _server():
+def _server(schema_mode: str = "standard"):
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
     fake = make_fake_backend("gnomad-link", ["get_variant_details", "search_genes"])
-    settings = RouterSettings(_env_file=None, GF_SKILLS_DIR=str(ROOT / "skills"))
+    settings = RouterSettings(
+        _env_file=None, GF_SKILLS_DIR=str(ROOT / "skills"), GF_SCHEMA_MODE=schema_mode
+    )
     return build_server(settings, registry, proxy_targets={"gnomad": fake})
 
 
@@ -40,7 +43,7 @@ async def test_query_returns_skill_pointer() -> None:
     hit = next(h for h in hits if h["name"] == NAME)
     assert hit["skill"] == URI
     assert hit["read"] == {"method": "resources/read", "uri": URI}
-    assert hit["call"] == {"tool": "call_tool", "arguments": {"name": NAME}}
+    assert hit["call"] == {"tool": "call_tool", "arguments": {"name": NAME, "arguments": {}}}
     assert hit["description"].startswith("Use when")
     assert set(hit) == POINTER_KEYS  # no call, no inputSchema
 
@@ -59,6 +62,16 @@ async def test_call_tool_reads_skill_for_tools_only_clients() -> None:
         served = (await client.read_resource(URI))[0].text  # type: ignore[union-attr]
     assert not result.is_error
     assert result.content[0].text == served  # type: ignore[union-attr]
+
+
+async def test_skill_call_validates_against_strict_listing() -> None:
+    async with Client(_server("strict")) as client:
+        listed = {t.name: t.input_schema for t in await client.list_tools()}
+        hits = await _search(client, "somatic variant interpretation oncogenic")
+        call = next(h["call"] for h in hits if h["name"] == NAME)
+        jsonschema.validate(call["arguments"], listed["call_tool"])
+        result = await client.call_tool("call_tool", call["arguments"])
+    assert not result.is_error
 
 
 async def test_call_tool_rejects_unknown_skill_name() -> None:

@@ -342,17 +342,17 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             results, relevance, low = await transform._ranked(catalog, query, limit)
             skills = {t.name for t in transform.skills}
             tools = [t for t in results if t.name not in skills]
+            strict = request_schema_mode(transform.schema_mode) == "strict"
             if detail == "full":
                 serialized = serialize_tools_for_output_json(tools)
             elif detail == "strict":
                 serialized = serialize_tools_strict(tools)
             else:
-                strict = request_schema_mode(transform.schema_mode) == "strict"
                 serialized = serialize_tools_compact(
                     tools, relevance, transform.policy.listed(), strict
                 )
             rest = iter(serialized)  # skill hits keep their rank as resource pointers
-            hits = [skill_hit(t) if t.name in skills else next(rest) for t in results]
+            hits = [skill_hit(t, strict) if t.name in skills else next(rest) for t in results]
             for hit in hits if low else ():
                 hit["low_confidence"] = True
             return hits
