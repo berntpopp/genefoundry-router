@@ -22,7 +22,7 @@ from genefoundry_router.release.compose_deployed import (
 
 DIGEST = "sha256:" + "a" * 64
 IMAGE = f"ghcr.io/example/placeholder@{DIGEST}"
-TEMPLATE = "${GF_IMAGE:-${EXAMPLE_LINK_IMAGE:?Set GF_IMAGE to ghcr.io/x/y@sha256:<digest>}}"
+TEMPLATE = "${GF_IMAGE:-${EXAMPLE_LINK_IMAGE}}"
 
 
 def _application(**overrides: Any) -> dict[str, Any]:
@@ -182,12 +182,22 @@ def test_init_service_must_not_be_restarted() -> None:
         "${EXAMPLE_LINK_IMAGE:?set}",
         "${GF_IMAGE:-ghcr.io/x/y:latest}",
         "${OTHER:-${EXAMPLE_LINK_IMAGE:?set}}",
+        # Compose evaluates a nested `:?` eagerly, so this fails when only GF_IMAGE is set.
+        "${GF_IMAGE:-${EXAMPLE_LINK_IMAGE:?set}}",
+        "${GF_IMAGE:-$EXAMPLE_LINK_IMAGE}",
     ],
 )
 def test_application_image_must_be_a_required_variable(template: str) -> None:
     raw = {"name": "example-link-npm", "services": {"app": {"image": template}}}
 
     assert "application-image" in _rules(validate_deployed_overlay(_rendered(), raw))
+
+
+def test_application_service_must_not_build() -> None:
+    # With a build context, an unset `${GF_IMAGE:-${<REPO>_IMAGE}}` builds instead of failing.
+    rendered = _rendered(app=_application(build={"context": "."}))
+
+    assert "application-image" in _rules(validate_deployed_overlay(rendered, _raw()))
 
 
 def test_second_application_image_is_refused_as_a_two_image_stack() -> None:

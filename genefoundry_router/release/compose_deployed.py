@@ -28,8 +28,9 @@ __all__ = [
 ]
 
 _NUMERIC_USER = re.compile(r"^[1-9][0-9]*:[1-9][0-9]*$")
-# `${GF_IMAGE:?...}`, or `${GF_IMAGE:-${<OLD>_IMAGE:?...}}` while the old name is a fallback.
-_IMAGE_TEMPLATE = re.compile(r"^\$\{GF_IMAGE(?::-\$\{[A-Z][A-Z0-9_]*:\?[^}]+\}|:\?[^}]+)\}$")
+# `${GF_IMAGE:?...}`, or `${GF_IMAGE:-${<OLD>_IMAGE}}` while the old name is a fallback. The
+# fallback carries no `:?`: Compose evaluates a nested `:?` even when GF_IMAGE is set.
+_IMAGE_TEMPLATE = re.compile(r"^\$\{GF_IMAGE(?::-\$\{[A-Z][A-Z0-9_]*\}|:\?[^}]+)\}$")
 _CONTAINER_PORT = re.compile(r"^([1-9][0-9]{0,4})(?:/(?:tcp|udp))?$")
 _DOCUMENT_SCOPE = "compose"
 
@@ -249,14 +250,21 @@ def _check_image(
             )
         return None
     template = raw_service.get("image")
+    # Without `build`, an empty image (neither variable set) fails every Compose command.
+    if "build" in service:
+        violations.append(
+            _violation(name, "application-image", "remove build; deploy pulls the pinned image")
+        )
+        return None
     if not isinstance(template, str) or not _IMAGE_TEMPLATE.fullmatch(template):
         violations.append(
             _violation(
                 name,
                 "application-image",
                 "reference the release image as "
-                "${GF_IMAGE:-${<PROJECT>_IMAGE:?Set GF_IMAGE to ghcr.io/<owner>/<repo>@sha256:"
-                "<digest>}} so deploy must supply a pinned digest — or, if this service "
+                "${GF_IMAGE:-${<PROJECT>_IMAGE}} (or ${GF_IMAGE:?Set GF_IMAGE to "
+                "ghcr.io/<owner>/<repo>@sha256:<digest>}) so deploy must supply a pinned "
+                "digest — or, if this service "
                 "runs a third-party image, declare it in service.deployed_sidecars",
             )
         )
@@ -494,7 +502,7 @@ def validate_deployed_overlay(
 
     `rendered` is `docker compose config --format json` with every required variable
     resolved to a placeholder; `raw` is the same render with `--no-interpolate`, which is
-    the only place the `${<PROJECT>_IMAGE:?...}` template survives.
+    the only place the `${GF_IMAGE...}` image template survives.
     """
     policy = policy or DeployedOverlayPolicy()
     violations: list[str] = []

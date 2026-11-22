@@ -119,3 +119,10 @@ def test_release_compose_files_omit_user():
                 f"{rel_path} service {name} must not declare user "
                 "(release gate forbids it; the fleet deploy overlay owns it)"
             )
+
+
+def test_npm_overlay_image_works_with_either_variable_alone():
+    # A nested `:?` fails when only GF_IMAGE is set: Compose evaluates the default eagerly.
+    service = _load("docker-compose.npm.yml")["services"]["genefoundry-router"]
+    assert service["image"] == "${GF_IMAGE:-${GENEFOUNDRY_IMAGE}}"
+    assert "build" not in service  # an empty image must fail, not build locally

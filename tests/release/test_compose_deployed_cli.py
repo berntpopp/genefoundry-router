@@ -21,7 +21,7 @@ from genefoundry_router.release.vulnerabilities import ReleaseExitCode
 
 runner = CliRunner()
 DIGEST = "sha256:" + "a" * 64
-TEMPLATE = "${GF_IMAGE:-${EXAMPLE_LINK_IMAGE:?Set GF_IMAGE to ghcr.io/x/y@sha256:<digest>}}"
+TEMPLATE = "${GF_IMAGE:-${EXAMPLE_LINK_IMAGE}}"
 OVERLAY = "docker/docker-compose.npm.yml"
 
 
@@ -232,3 +232,21 @@ def test_required_variables_reads_only_the_required_column(
 def test_a_missing_overlay_file_is_a_render_error(tmp_path: Path) -> None:
     with pytest.raises(ComposeRenderError):
         compose_render.render_deployed_overlay(tmp_path, [OVERLAY])
+
+
+def test_render_supplies_gf_image_although_the_fallback_form_requires_nothing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # `${GF_IMAGE:-${<REPO>_IMAGE}}` has no `:?`, so `config --variables` lists no image.
+    (tmp_path / "docker").mkdir()
+    (tmp_path / OVERLAY).write_text("services: {}\n", encoding="utf-8")
+    seen: list[Mapping[str, str]] = []
+
+    def fake_run(_dir: Path, args: Sequence[str], extra_env: Mapping[str, str] | None = None):
+        seen.append(extra_env or {})
+        return "NAME REQUIRED\n" if "--variables" in args else "{}"
+
+    monkeypatch.setattr(compose_render, "_run", fake_run)
+    compose_render.render_deployed_overlay(tmp_path, [OVERLAY])
+
+    assert seen[-1]["GF_IMAGE"] == placeholder_value("GF_IMAGE")

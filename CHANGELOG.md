@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.20] - 2026-11-22
+
+### Fixed
+
+- **Deploy Contract C3 image form works with `GF_IMAGE` alone** (#365). Compose v2 evaluates a nested `:?` even when the outer default is not used, so `${GF_IMAGE:-${<REPO>_IMAGE:?…}}` failed whenever only `GF_IMAGE` was set. The transitional form is now `${GF_IMAGE:-${<REPO>_IMAGE}}` (end state `${GF_IMAGE:?…}` unchanged): either variable alone renders, and with neither set the image is empty and every Compose command fails. `validate-deployed-overlay` accepts only these two forms, rejects the nested-`:?` form, and refuses `build:` on the application service (with a build context an empty image would build instead of failing). The gate's render now always supplies a `GF_IMAGE` placeholder, since the new form marks no variable required. The router's `docker/docker-compose.npm.yml` uses the new form.
+
 ## [0.13.19] - 2026-11-22
 
 ### Fixed

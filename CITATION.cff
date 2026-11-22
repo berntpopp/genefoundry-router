@@ -14,7 +14,7 @@ authors:
   given-names: Bernt
   email: bernt.popp@charite.de
   affiliation: Charité – Universitätsmedizin Berlin
-version: 0.13.19
+version: 0.13.20
 license: MIT
 repository-code: https://github.com/berntpopp/genefoundry-router
 url: https://genefoundry.org
