@@ -44,7 +44,14 @@ from genefoundry_router.schema_slim import slim_tool
 from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_strict_schema
 from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.search_rerank import Reranker, build_reranker
-from genefoundry_router.skill_search import SKILL_PREFIX, serve, skill_hit, skill_tools, skill_uri
+from genefoundry_router.skill_search import (
+    SKILL_PREFIX,
+    serve,
+    skill_call_uri,
+    skill_hit,
+    skill_tools,
+    skill_uri,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -414,8 +421,9 @@ class CompactBM25SearchTransform(BM25SearchTransform):
                 arguments: Annotated[dict[str, Any] | None, "Arguments to pass to the tool"] = None,
                 ctx: Context = None,  # type: ignore[assignment]
             ) -> Any:
-                if name in {t.name for t in transform.skills}:  # tools-only clients (#368)
-                    return (await ctx.read_resource(skill_uri(name))).contents[0].content
+                uri = skill_call_uri(name, arguments)  # tools-only clients (#368)
+                if uri in {skill_uri(t.name) for t in transform.skills}:
+                    return (await ctx.read_resource(uri)).contents[0].content
                 if arguments and any(v is None or isinstance(v, dict) for v in arguments.values()):
                     catalog = await transform.get_tool_catalog(ctx)
                     target = next((t for t in catalog if t.name == name), None)

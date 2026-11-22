@@ -82,7 +82,7 @@ from mcp_types import INVALID_PARAMS, METHOD_NOT_FOUND
 
 from genefoundry_router.audit_identity import unknown_name_fields
 from genefoundry_router.registry import NAMESPACE_RE
-from genefoundry_router.skill_search import SKILL_PREFIX, skill_uri
+from genefoundry_router.skill_search import skill_call_uri
 from genefoundry_router.tool_error_taxonomy import (
     UNCLASSIFIED_ERROR_CODE,
     error_code,
@@ -218,16 +218,16 @@ class NotFoundGuard(Middleware):
         fctx = getattr(context, "fastmcp_context", None)
         message = getattr(context, "message", None)
         name = getattr(message, "name", None)
-        # fastmcp 4's call_tool meta-tool rejects (and echoes) an unknown target first.
         target = name
-        if name == "call_tool":
+        if name == "call_tool":  # fastmcp 4's meta-tool rejects (and echoes) unknown targets
             arguments = getattr(message, "arguments", None)
             target = arguments.get("name") if isinstance(arguments, dict) else None
         if fctx is not None and isinstance(target, str) and target not in _SYNTHETIC:
             try:
                 tool = await fctx.fastmcp.get_tool(target)
-                if tool is None and name == "call_tool" and target.startswith(SKILL_PREFIX):
-                    tool = await fctx.fastmcp.get_resource(skill_uri(target))  # #368
+                if tool is None and name == "call_tool":  # a served skill passes (#368)
+                    uri = skill_call_uri(target, arguments.get("arguments"))  # type: ignore[union-attr]
+                    tool = await fctx.fastmcp.get_resource(uri) if uri else None
             except Exception:
                 tool = object()
             if tool is None:

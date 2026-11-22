@@ -56,9 +56,18 @@ async def test_skill_pointer_shape_in_full_and_strict(detail: str) -> None:
     assert set(hit) == POINTER_KEYS and hit["skill"] == URI
 
 
-async def test_call_tool_reads_skill_for_tools_only_clients() -> None:
+@pytest.mark.parametrize(
+    "call",
+    [
+        {"name": NAME, "arguments": {}},
+        {"name": "read_resource", "arguments": {"uri": URI}},
+        {"name": "resources/read", "arguments": {"uri": URI}},
+    ],
+    ids=["skill_name", "read_resource", "resources_read"],
+)
+async def test_call_tool_reads_skill_for_tools_only_clients(call: dict) -> None:
     async with Client(_server()) as client:
-        result = await client.call_tool("call_tool", {"name": NAME})
+        result = await client.call_tool("call_tool", call)
         served = (await client.read_resource(URI))[0].text  # type: ignore[union-attr]
     assert not result.is_error
     assert result.content[0].text == served  # type: ignore[union-attr]
@@ -74,13 +83,21 @@ async def test_skill_call_validates_against_strict_listing() -> None:
     assert not result.is_error
 
 
-async def test_call_tool_rejects_unknown_skill_name() -> None:
+@pytest.mark.parametrize(
+    "call",
+    [
+        {"name": "skill_no-such-skill", "arguments": {}},
+        {"name": "read_resource", "arguments": {"uri": "skill://no-such-skill/SKILL.md"}},
+        {"name": "read_resource", "arguments": {"uri": "file:///etc/passwd"}},
+        {"name": "resources/read", "arguments": {"uri": "skill://x/../../SKILL.md"}},
+    ],
+    ids=["unknown_skill", "unknown_skill_uri", "non_skill_uri", "traversal"],
+)
+async def test_call_tool_rejects_unknown_skill_or_non_skill_uri(call: dict) -> None:
     async with Client(_server()) as client:
-        result = await client.call_tool(
-            "call_tool", {"name": "skill_no-such-skill", "arguments": {}}, raise_on_error=False
-        )
+        result = await client.call_tool("call_tool", call, raise_on_error=False)
     assert result.is_error
-    assert "search_tools" in result.content[0].text  # type: ignore[union-attr]
+    assert '"not_found"' in result.content[0].text  # type: ignore[union-attr]
 
 
 async def test_skill_hit_does_not_consume_limit() -> None:
