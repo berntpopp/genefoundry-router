@@ -10,6 +10,7 @@ from genefoundry_router.config import RouterSettings
 from genefoundry_router.exceptions import RouterError
 from genefoundry_router.instructions import build_instructions
 from genefoundry_router.registry import BackendDef
+from genefoundry_router.security import MCP_CORS_ALLOW_HEADERS
 from genefoundry_router.server import build_app, build_server
 
 SOMATIC = "skill://somatic-variant-interpretation/SKILL.md"
@@ -58,3 +59,25 @@ def test_missing_skills_dir_fails() -> None:
 
 def test_instructions_mention_skills() -> None:
     assert "skill://" in build_instructions(_REGISTRY)[:600]
+
+
+def test_skills_header_off_hides_skill_hits(gnomad_fake: FastMCP) -> None:
+    assert "x-gf-skills" in MCP_CORS_ALLOW_HEADERS  # browser clients can send it
+    app = build_app(
+        RouterSettings(_env_file=None), _REGISTRY, proxy_targets={"gnomad": gnomad_fake}
+    )
+    query = {"name": "search_tools", "arguments": {"query": "somatic variant interpretation"}}
+    body = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": query}
+
+    def names(skills: str | None) -> list[str]:
+        headers = {"accept": "application/json, text/event-stream"}
+        if skills is not None:
+            headers["x-gf-skills"] = skills
+        resp = client.post("/mcp", headers=headers, json=body)
+        assert resp.status_code == 200, resp.text
+        return [h["name"] for h in resp.json()["result"]["structuredContent"]["result"]]
+
+    with TestClient(app) as client:
+        assert "skill_somatic-variant-interpretation" in names(None)
+        assert not [n for n in names(" OFF ") if n.startswith("skill_")]
+        assert "skill_somatic-variant-interpretation" in names(None)  # no cross-request state

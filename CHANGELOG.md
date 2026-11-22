@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-11-22
+
+### Fixed
+
+- **Skill hits no longer take tool slots, open for tools-only clients, and can be hidden** (#368). `search_tools` returns up to `limit` tool hits plus at most one skill hit (the best, if it ranks within the top `limit`), so tool recall at a given `limit` matches 0.13.x. `call_tool(name="skill_<name>")` returns the SKILL.md text (same as `resources/read`) for clients without resources support, and so do the names tools-only agents guess, `read_resource` / `resources/read` with a `skill://<name>/SKILL.md` `uri` (skill URIs only: no general resource proxy). An unknown skill or any other URI stays `not_found`. Skill hits carry a `call` field shaped like a tool hit's, and the instructions say: read its `read.uri`, or call its `call` if you cannot read resources. The `X-GF-Skills: off` request header hides skill hits for that request (a gateway convenience for no-skill baselines; host policy remains the SEP-2640 opt-out). Pinned listing unchanged; no backend change, drift baseline still `fleet-2026-11-22b`.
+
 ## [0.14.1] - 2026-11-22
 
 ### Changed

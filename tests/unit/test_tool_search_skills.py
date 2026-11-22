@@ -1,10 +1,11 @@
-"""#336: search_tools returns skill:// pointers for workflow skills, never callable tools."""
+"""#336/#368: search_tools returns skill:// pointers for workflow skills; call_tool reads them."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
+import jsonschema
 import pytest
 from fastmcp import Client
 
@@ -19,13 +20,15 @@ from genefoundry_router.tool_search import CompactBM25SearchTransform
 ROOT = Path(__file__).resolve().parents[2]
 NAME = "skill_somatic-variant-interpretation"
 URI = "skill://somatic-variant-interpretation/SKILL.md"
-POINTER_KEYS = {"name", "skill", "description", "read"}
+POINTER_KEYS = {"name", "skill", "description", "read", "call"}
 
 
-def _server():
+def _server(schema_mode: str = "standard"):
     registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
     fake = make_fake_backend("gnomad-link", ["get_variant_details", "search_genes"])
-    settings = RouterSettings(_env_file=None, GF_SKILLS_DIR=str(ROOT / "skills"))
+    settings = RouterSettings(
+        _env_file=None, GF_SKILLS_DIR=str(ROOT / "skills"), GF_SCHEMA_MODE=schema_mode
+    )
     return build_server(settings, registry, proxy_targets={"gnomad": fake})
 
 
@@ -40,6 +43,7 @@ async def test_query_returns_skill_pointer() -> None:
     hit = next(h for h in hits if h["name"] == NAME)
     assert hit["skill"] == URI
     assert hit["read"] == {"method": "resources/read", "uri": URI}
+    assert hit["call"] == {"tool": "call_tool", "arguments": {"name": NAME, "arguments": {}}}
     assert hit["description"].startswith("Use when")
     assert set(hit) == POINTER_KEYS  # no call, no inputSchema
 
@@ -52,13 +56,60 @@ async def test_skill_pointer_shape_in_full_and_strict(detail: str) -> None:
     assert set(hit) == POINTER_KEYS and hit["skill"] == URI
 
 
-async def test_call_tool_rejects_skill_name() -> None:
+@pytest.mark.parametrize(
+    "call",
+    [
+        {"name": NAME, "arguments": {}},
+        {"name": "read_resource", "arguments": {"uri": URI}},
+        {"name": "resources/read", "arguments": {"uri": URI}},
+    ],
+    ids=["skill_name", "read_resource", "resources_read"],
+)
+async def test_call_tool_reads_skill_for_tools_only_clients(call: dict) -> None:
     async with Client(_server()) as client:
-        result = await client.call_tool(
-            "call_tool", {"name": NAME, "arguments": {}}, raise_on_error=False
-        )
+        result = await client.call_tool("call_tool", call)
+        served = (await client.read_resource(URI))[0].text  # type: ignore[union-attr]
+    assert not result.is_error
+    assert result.content[0].text == served  # type: ignore[union-attr]
+
+
+async def test_skill_call_validates_against_strict_listing() -> None:
+    async with Client(_server("strict")) as client:
+        listed = {t.name: t.input_schema for t in await client.list_tools()}
+        hits = await _search(client, "somatic variant interpretation oncogenic")
+        call = next(h["call"] for h in hits if h["name"] == NAME)
+        jsonschema.validate(call["arguments"], listed["call_tool"])
+        result = await client.call_tool("call_tool", call["arguments"])
+    assert not result.is_error
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        {"name": "skill_no-such-skill", "arguments": {}},
+        {"name": "read_resource", "arguments": {"uri": "skill://no-such-skill/SKILL.md"}},
+        {"name": "read_resource", "arguments": {"uri": "file:///etc/passwd"}},
+        {"name": "resources/read", "arguments": {"uri": "skill://x/../../SKILL.md"}},
+    ],
+    ids=["unknown_skill", "unknown_skill_uri", "non_skill_uri", "traversal"],
+)
+async def test_call_tool_rejects_unknown_skill_or_non_skill_uri(call: dict) -> None:
+    async with Client(_server()) as client:
+        result = await client.call_tool("call_tool", call, raise_on_error=False)
     assert result.is_error
-    assert "search_tools" in result.content[0].text  # type: ignore[union-attr]
+    assert '"not_found"' in result.content[0].text  # type: ignore[union-attr]
+
+
+async def test_skill_hit_does_not_consume_limit() -> None:
+    tools = [t for t in load_catalog() if not t.name.startswith("skill_")]
+    transform = CompactBM25SearchTransform(skills=skill_tools(ROOT / "skills"))
+    query = "candidate genes from patient phenotype"
+    plain, _, _ = await CompactBM25SearchTransform()._ranked(tools, query, 3)
+    hits, _, _ = await transform._ranked(tools, query, 3)
+    assert [t.name for t in hits if not t.name.startswith("skill_")] == [t.name for t in plain]
+    assert [t.name for t in hits if t.name.startswith("skill_")] == [
+        "skill_phenotype-to-candidate-genes"
+    ]
 
 
 async def test_unrelated_query_unchanged() -> None:
