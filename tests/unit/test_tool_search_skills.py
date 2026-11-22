@@ -192,3 +192,33 @@ def test_skill_tools_skips_dot_folders_like_the_provider(tmp_path: Path) -> None
             "---\nname: demo-skill\ndescription: Use when demo.\n---\n"
         )
     assert [t.name for t in skill_tools(tmp_path)] == ["skill_demo-skill"]
+
+
+_SKILL_MISS = (
+    "No skill file at that URI; only skill:// files listed in a skill's router note "
+    "can be read via call_tool."
+)
+
+
+@pytest.mark.parametrize(
+    ("call", "message"),
+    [
+        (
+            {"name": "read_resource", "arguments": {"uri": "clinvar://clinvar/version"}},
+            _SKILL_MISS,
+        ),
+        ({"name": "skill_no-such-skill", "arguments": {}}, _SKILL_MISS),
+        ({"name": "gnomad_no_such_tool", "arguments": {}}, "The requested tool is not available."),
+    ],
+    ids=["read_resource_bad_uri", "unknown_skill", "ordinary_unknown_tool"],
+)
+async def test_call_tool_miss_message_names_what_is_missing(call: dict, message: str) -> None:
+    """#372: a skill-read miss must not say the read_resource tool is missing; the
+    message is fixed text and never echoes the caller's URI or name."""
+    async with Client(_server()) as client:
+        result = await client.call_tool("call_tool", call, raise_on_error=False)
+    body = json.loads(result.content[0].text)  # type: ignore[union-attr]
+    assert result.is_error
+    assert (body["error_code"], body["message"]) == ("not_found", message)
+    assert "clinvar://" not in result.content[0].text  # type: ignore[union-attr]
+    assert "no-such" not in result.content[0].text  # type: ignore[union-attr]

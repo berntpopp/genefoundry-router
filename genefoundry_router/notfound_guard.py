@@ -82,7 +82,7 @@ from mcp_types import INVALID_PARAMS, METHOD_NOT_FOUND
 
 from genefoundry_router.audit_identity import unknown_name_fields
 from genefoundry_router.registry import NAMESPACE_RE
-from genefoundry_router.skill_search import skill_call_uri
+from genefoundry_router.skill_search import SKILL_MISS_MESSAGE, is_skill_name, skill_call_uri
 from genefoundry_router.tool_error_taxonomy import (
     UNCLASSIFIED_ERROR_CODE,
     error_code,
@@ -109,12 +109,12 @@ _UNKNOWN_TOOL_SUGGESTION = (
 _SYNTHETIC = frozenset({"search_tools", "call_tool"})
 
 
-def _not_found_payload() -> dict[str, Any]:
+def _not_found_payload(requested: object = None) -> dict[str, Any]:
     """The fixed, name-free ``not_found`` envelope body (constants only, no ``_meta.tool``)."""
     return {
         "success": False,
         "error_code": "not_found",
-        "message": _UNKNOWN_TOOL_MESSAGE,
+        "message": SKILL_MISS_MESSAGE if is_skill_name(requested) else _UNKNOWN_TOOL_MESSAGE,
         "retryable": False,
         "suggestions": [_UNKNOWN_TOOL_SUGGESTION],
     }
@@ -178,7 +178,7 @@ def unknown_tool_result(requested: object = None) -> ToolResult:
     (caller-controlled) name is never reflected back; the log gets only its hash (#325).
     """
     log.warning("mcp_unknown_tool", **unknown_name_fields(requested))
-    return _envelope(_not_found_payload())
+    return _envelope(_not_found_payload(requested))
 
 
 def _caused_by_not_found(exc: BaseException) -> bool:
