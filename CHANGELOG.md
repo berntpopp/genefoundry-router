@@ -4,7 +4,7 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
-## [0.14.0] - 2026-11-21
+## [0.14.0] - 2026-11-22
 
 ### Added
 
