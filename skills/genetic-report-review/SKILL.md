@@ -1,6 +1,6 @@
 ---
 name: genetic-report-review
-description: Use when asked to review, second-check, audit or sign out a genetic test report (germline panel, exome or genome, CNV/array, somatic tumour, pharmacogenomic, predictive or segregation report), or to find errors in a lab report before it is released or acted on, e.g. "review this exome report", "second look at this BRCA1 report", "is this report ready to sign out".
+description: Use when asked to review, second-check, audit or sign out a genetic test report (germline panel, exome or genome, CNV/array, somatic tumour, pharmacogenomic, predictive or segregation report), or to find errors in a lab report, e.g. "review this exome report", "second look at this BRCA1 report", "is this report ready to sign out".
 ---
 
 # Genetic report review (second look)

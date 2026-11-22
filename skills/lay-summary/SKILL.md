@@ -54,6 +54,8 @@ be in another language: translate their meaning, never their wording word by wor
    "the child will have it".
 7. **Who to ask** comes from the facts: the genetics team, or for a medicine result the
    doctor or pharmacist.
+8. **Closing line**, just before "For your doctor:": "This summary was made with a research
+   tool. Please talk it through with your genetics team." (translated by meaning).
 
 ## Required and forbidden, by result type
 
