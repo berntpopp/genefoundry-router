@@ -4,7 +4,8 @@ Each ``skills/<name>/SKILL.md`` becomes a synthetic BM25 document named ``skill_
 (text = name + description). It is ranked with the tools but serializes as a pointer to
 the ``skill://`` resource, never in the listing or the call catalog. ``call_tool`` with its
 name (or ``read_resource`` with its URI) returns the same SKILL.md text, for clients
-that cannot read resources (#368).
+that cannot read resources (#368), plus a footer naming its supporting files, which
+``read_resource`` opens the same way (#370).
 """
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ def skill_tools(skills_dir: Path) -> list[Tool]:
             name=f"{SKILL_PREFIX}{s.name}",
             description=s.description,
             parameters={"type": "object", "properties": {}},
+            meta={"files": [f for f in s.files if f != "SKILL.md"]},  # supporting files (#370)
         )
         for s in skills
     ]
@@ -44,9 +46,33 @@ def skill_uri(name: str) -> str:
     return f"skill://{name.removeprefix(SKILL_PREFIX)}/SKILL.md"
 
 
+def skill_file_uris(tool: Tool) -> list[str]:
+    """Every file the provider serves for this skill: SKILL.md first, then its supporting
+    files. The only URIs ``call_tool`` reads (#370)."""
+    base = skill_uri(tool.name).removesuffix("SKILL.md")
+    return [base + f for f in ["SKILL.md", *(tool.meta or {}).get("files", [])]]
+
+
+def skill_footer(tool: Tool) -> str:
+    """Router note appended to a SKILL.md read through ``call_tool``: how to open each
+    supporting file; empty when the skill has none (#370)."""
+    calls = [
+        f'- call_tool(name="read_resource", arguments={{"uri": "{uri}"}})'
+        for uri in skill_file_uris(tool)[1:]
+    ]
+    if not calls:
+        return ""
+    return (
+        "\n\n---\nRouter note: this skill's supporting files (open one when the steps above say to read it):\n"
+        + "\n".join(calls)
+        + "\n"
+    )
+
+
 def skill_call_uri(name: str, arguments: Any) -> str | None:
     """The ``skill://`` URI a ``call_tool`` target asks for: ``skill_<name>``, or a read
-    alias with a ``skill://<name>/SKILL.md`` ``uri``; ``None`` for anything else."""
+    alias with a ``skill://`` ``uri``; ``None`` for anything else. Callers still check the
+    URI against :func:`skill_file_uris`."""
     if name.startswith(SKILL_PREFIX):
         return skill_uri(name)
     if name not in READ_ALIASES:
@@ -57,7 +83,7 @@ def skill_call_uri(name: str, arguments: Any) -> str | None:
         except ValueError:
             return None
     uri = arguments.get("uri") if isinstance(arguments, dict) else None
-    if isinstance(uri, str) and uri.startswith("skill://") and uri.endswith("/SKILL.md"):
+    if isinstance(uri, str) and uri.startswith("skill://"):
         return uri
     return None
 

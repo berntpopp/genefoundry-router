@@ -48,6 +48,8 @@ from genefoundry_router.skill_search import (
     SKILL_PREFIX,
     serve,
     skill_call_uri,
+    skill_file_uris,
+    skill_footer,
     skill_hit,
     skill_tools,
     skill_uri,
@@ -421,9 +423,13 @@ class CompactBM25SearchTransform(BM25SearchTransform):
                 arguments: Annotated[dict[str, Any] | None, "Arguments to pass to the tool"] = None,
                 ctx: Context = None,  # type: ignore[assignment]
             ) -> Any:
-                uri = skill_call_uri(name, arguments)  # tools-only clients (#368)
-                if uri in {skill_uri(t.name) for t in transform.skills}:
-                    return (await ctx.read_resource(uri)).contents[0].content
+                uri = skill_call_uri(name, arguments)  # tools-only clients (#368, #370)
+                skill = next((t for t in transform.skills if uri in skill_file_uris(t)), None)
+                if skill is not None and uri is not None:
+                    text = (await ctx.read_resource(uri)).contents[0].content
+                    if uri == skill_uri(skill.name) and isinstance(text, str):
+                        text += skill_footer(skill)
+                    return text
                 if arguments and any(v is None or isinstance(v, dict) for v in arguments.values()):
                     catalog = await transform.get_tool_catalog(ctx)
                     target = next((t for t in catalog if t.name == name), None)
