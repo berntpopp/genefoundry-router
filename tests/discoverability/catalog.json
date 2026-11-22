@@ -998,14 +998,14 @@
   },
   {
     "name": "clingen_search_dosage",
-    "description": "Search ClinGen dosage-sensitivity curations of genes and recurrent CNV regions (ISCA) by text, ISCA region id, cytoband, or haplo/triplo score; returns per record its haploinsufficiency + triplosensitivity scores with interpretation, cytoband, GRCh37/GRCh38 coordinates and permalink. Optionally restrict to gene or region records. Paginated; a `truncated` block appears when more matches exist. Returns ~2-10kB.",
+    "description": "Search ClinGen dosage-sensitivity curations of genes and recurrent CNV regions (ISCA) by gene, ISCA region id, MONDO id, cytoband, or haplo/triplo score; returns per record its haploinsufficiency + triplosensitivity scores with interpretation, cytoband, GRCh37/GRCh38 coordinates and permalink. Optionally restrict to gene or region records. Paginated; a `truncated` block appears when more matches exist. Returns ~2-10kB.",
     "tags": [
       "curation",
       "dosage",
       "gene-disease"
     ],
     "params": {
-      "query": "Free-text gene / disease / ISCA text (FTS).",
+      "query": "Gene symbol / HGNC id, ISCA region id, MONDO id, or cytoband prefix. Disease and syndrome names are not indexed: pass their MONDO id.",
       "region": "ISCA region id.",
       "cytoband": "Cytoband prefix (e.g. 17q21).",
       "haplo_score": "Exact ClinGen haploinsufficiency score CODE (not its description): 0 no evidence, 1 little, 2 some, 3 sufficient evidence; 30 gene associated with an autosomal-recessive phenotype; 40 dosage sensitivity unlikely; -1 will not be evaluated. -1, 30 and 40 are flags, not evidence levels.",
@@ -1549,7 +1549,7 @@
   },
   {
     "name": "clinpgx_search_records",
-    "description": "Find pharmacogenomic gene-drug (PharmGKB/ClinPGx) records (genes, drugs (chemical), variants, alleles/haplotypes, clinical (summary)/variant annotations, guidelines, labels) by exact live filters or installed dataset memberships; returns PA accessions for get_record/get_related_records. Not drug-drug interactions. Filter keys are per entity_type (see filters); summary_annotation accepts level_of_evidence. Star alleles: get_record(entity_type='haplotype', source='website').",
+    "description": "Find pharmacogenomic gene-drug (PharmGKB/ClinPGx) records (genes, drugs (chemical), variants, alleles/haplotypes, clinical (summary)/variant annotations, guidelines, labels) by exact live filters or installed dataset memberships; returns PA accessions for get_record/get_related_records. Not drug-drug interactions. Filter keys are per entity_type (see filters); summary_annotation accepts level_of_evidence. Star alleles: query='CYP2D6*10' (allele) or get_record(entity_type='haplotype', source='website').",
     "tags": [
       "dosing",
       "drug",
@@ -1646,14 +1646,14 @@
   },
   {
     "name": "clinvar_get_variant",
-    "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, or VariationID; returns its normalized classification, review status and 0-4 star rating plus a recommended_citation. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). minimal keeps up to 5 trait names; every other mode also returns the PubMed / PMC / Bookshelf ids its submissions cite: citations lists at most 50, citation_count is the full total; submissions holds OMIM's own SCV text (description, conditions, PMIDs); a description is capped at 500 characters in compact, 2,000 in standard (description_truncated) and a repeated description or PMID list is sent once (description_same_as, pmids_same_as). classification is the GERMLINE aggregate; somatic_clinical_impact (AMP tier) and oncogenicity are separate blocks (null when ClinVar has none); search_somatic_classifications(identifier=...) gives their per-submission tumour types and drugs without the germline payload. Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
+    "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, VariationID, or GRCh38 CHROM-POS-REF-ALT (13-28018505-C-A, as VEP returns it); returns its normalized classification, review status and 0-4 star rating plus a recommended_citation. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). minimal keeps up to 5 trait names; every other mode also returns the PubMed / PMC / Bookshelf ids its submissions cite: citations lists at most 50, citation_count is the full total; submissions holds OMIM's own SCV text (description, conditions, PMIDs); a description is capped at 500 characters in compact, 2,000 in standard (description_truncated) and a repeated description or PMID list is sent once (description_same_as, pmids_same_as). classification is the GERMLINE aggregate (a combined ClinVar term such as Pathogenic/Likely pathogenic folds to its weaker tier and clinical_significance then carries ClinVar's own words); somatic_clinical_impact (AMP tier) and oncogenicity are separate blocks (null when ClinVar has none); search_somatic_classifications(identifier=...) gives their per-submission tumour types and drugs without the germline payload. An identifier held by several records (a multi-allelic rsID or coordinate, one name under several VCVs) is ambiguous_query with the candidate VCVs, never one picked for you. Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
     "tags": [
       "classification",
       "clinical-significance",
       "variant"
     ],
     "params": {
-      "identifier": "A single ClinVar variant identifier. Accepts a VCV accession (VCV000007105), a dbSNP rsID (rs334), an HGVS expression (NM_000059.3:c.1234A>G \u2014 the (GENE) qualifier is optional), a ClinVar AlleleID, or a VariationID. Use id_type to force one interpretation; the default 'auto' detects the shape.",
+      "identifier": "A single ClinVar variant identifier. Accepts a VCV accession (VCV000007105), a dbSNP rsID (rs80357906), an HGVS expression (NM_000059.3:c.1234A>G \u2014 the (GENE) qualifier is optional), a ClinVar AlleleID, a VariationID, or a GRCh38 VCF-style CHROM-POS-REF-ALT as VEP prints it (13-28018505-C-A; chr prefix and ':' accepted). Use id_type to force one interpretation; the default 'auto' detects the shape.",
       "id_type": "How to interpret `identifier`. 'auto' (default) detects the shape from the value; the explicit types force one lookup and reject a value of the wrong shape.",
       "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Citations and submissions appear from compact up; minimal drops submission text. Start compact, widen if needed.",
       "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
@@ -1665,7 +1665,8 @@
         "variation_id",
         "rsid",
         "hgvs",
-        "allele_id"
+        "allele_id",
+        "coordinate"
       ],
       "response_mode": [
         "minimal",
@@ -1684,7 +1685,7 @@
       "variant"
     ],
     "params": {
-      "identifiers": "A LIST of ClinVar variant identifiers resolved in one call (the batch form of get_variant). Shapes may be mixed (VCV / rsID / HGVS / AlleleID / VariationID). Each WELL-FORMED input yields one result row echoing its identifier and a `found` flag, so an absent record is an explicit miss, never silently dropped; a MALFORMED element fails the whole call with invalid_input naming its position. Capped at 100 per call.",
+      "identifiers": "A LIST of ClinVar variant identifiers resolved in one call (the batch form of get_variant). Shapes may be mixed (VCV / rsID / HGVS / AlleleID / VariationID / GRCh38 CHROM-POS-REF-ALT). Each WELL-FORMED input yields one result row echoing its identifier and a `found` flag, so an absent record is an explicit miss, never silently dropped; a MALFORMED element fails the whole call with invalid_input naming its position. Capped at 100 per call.",
       "id_type": "How to interpret `identifier`. 'auto' (default) detects the shape from the value; the explicit types force one lookup and reject a value of the wrong shape.",
       "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Citations and submissions appear from compact up; minimal drops submission text. Start compact, widen if needed.",
       "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
@@ -1696,7 +1697,8 @@
         "variation_id",
         "rsid",
         "hgvs",
-        "allele_id"
+        "allele_id",
+        "coordinate"
       ],
       "response_mode": [
         "minimal",
@@ -2284,7 +2286,7 @@
   },
   {
     "name": "genereviews_search_genereviews",
-    "description": "Search GeneReviews by gene symbol; returns the PubMed IDs (ids, count) of matching GeneReviews chapters, from the indexed corpus first when available, then live NCBI E-utils. If resolver links are unavailable or no PubMed ID is found, use search_passages(gene=<symbol>) for indexed chapter evidence. Pass fresh=true to bypass the corpus and query live NCBI.",
+    "description": "Search GeneReviews by gene symbol; returns the PubMed IDs (ids, count) of matching GeneReviews chapters, from the indexed corpus first when available, then live NCBI E-utils. If resolver links are unavailable or no PubMed ID is found, use search_passages(gene=<symbol>) for indexed chapter evidence. For a disease name or other free text, use search_passages(q=<text>). Pass fresh=true to bypass the corpus and query live NCBI.",
     "tags": [
       "Search",
       "gene",
@@ -2848,7 +2850,7 @@
   },
   {
     "name": "gnomad_resolve_variant_id",
-    "description": "Use this when the caller only has an rsID, partial coordinates, or text fragment; returns candidate canonical gnomAD variant ids. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent).",
+    "description": "Use this when the caller only has an rsID, a CHROM-POS-REF-ALT id to confirm, or text fragment; returns candidate canonical gnomAD variant ids. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent).",
     "tags": [
       "frequency",
       "gene",
@@ -2857,7 +2859,7 @@
       "variant"
     ],
     "params": {
-      "query": "rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
+      "query": "rsID, CHROM-POS-REF-ALT, or a chrM id (M-POS-REF-ALT).",
       "dataset": "gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
       "limit": "Max candidate variant ids returned.",
       "enrich": "Second-pass fetch gene_symbol, major_consequence, and AF for the top 5 hits."
@@ -2938,7 +2940,7 @@
       "variant"
     ],
     "params": {
-      "query": "rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
+      "query": "rsID, CHROM-POS-REF-ALT, or a chrM id (M-POS-REF-ALT).",
       "dataset": "gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
       "limit": "Max candidate variant ids returned.",
       "enrich": "Second-pass fetch gene_symbol, major_consequence, and AF for the top 5 hits."
@@ -4133,7 +4135,7 @@
     "params": {
       "variant": "The variant to look up, in ANY of three forms (auto-detected): a GA4GH VRS allele id ('ga4gh:VA\u2026'), a full variant URN ('urn:mavedb:00000001-a-1#2'), or a bare HGVS string ('p.Asp2723His', 'NM_000059.4:c.8167G>A' \u2014 pass gene_symbol= alongside so it can resolve). vrs_id/variant_urn/hgvs are accepted as aliases.",
       "gene_symbol": "HGNC gene symbol that scopes an hgvs= lookup (required when the HGVS is not in the mirror and must be resolved live). Ignored unless hgvs= is set. `gene` is accepted as a compatibility alias.",
-      "only_current": "Keep only current genome mappings (default true).",
+      "only_current": "No effect: MaveDB serves only current genome mappings, so false returns the same hits (kept for compatibility).",
       "enrich": "Attach each hit's score + classifications (default true).",
       "limit": "Max cross-dataset hits (default 25).",
       "offset": "Rows to skip for forward paging (default 0).",
@@ -4298,7 +4300,7 @@
   },
   {
     "name": "mavedb_get_mapped_variants",
-    "description": "Return the genome-mapped GA4GH VRS alleles for a score set's variants (urn:mavedb:...-a-1), each with its source variant URN, variant_index, VRS allele id, ClinGen Allele ID, and current flag \u2014 the bridge from assay coordinates to reference-genome/clinical coordinates. Rows are ordered numerically by variant_index to match get_variant_scores, but JOIN on variant_urn/variant_index (do not zip by row \u2014 some variants are unmapped). current_only (default true) collapses the current/superseded pair to one row per variant. Paged via offset/limit. Signature: get_mapped_variants(urn, current_only=, limit=, offset=, response_mode=).",
+    "description": "Return the genome-mapped GA4GH VRS alleles for a score set's variants (urn:mavedb:...-a-1), each with its source variant URN, variant_index, VRS allele id, ClinGen Allele ID, and current flag \u2014 the bridge from assay coordinates to reference-genome/clinical coordinates. Rows are ordered numerically by variant_index to match get_variant_scores, but JOIN on variant_urn/variant_index (do not zip by row \u2014 some variants are unmapped). MaveDB serves only each variant's current mapping, so current_only=false returns the same rows (kept for compatibility). Paged via offset/limit. Signature: get_mapped_variants(urn, current_only=, limit=, offset=, response_mode=).",
     "tags": [
       "functional-assay",
       "mapping",
@@ -4310,7 +4312,7 @@
     ],
     "params": {
       "urn": "A MaveDB score-set URN ('urn:mavedb:00000001-a-1'). Find one via search_score_sets or get_gene_score_sets.",
-      "current_only": "Keep only the current mapping per variant (default true).",
+      "current_only": "No effect: MaveDB serves only the current mapping per variant, so false returns the same rows (kept for compatibility).",
       "limit": "Max mapped variants (default 50).",
       "offset": "Rows to skip for forward paging (default 0).",
       "response_mode": "Verbosity: minimal|compact|standard|full (default compact)."
@@ -5223,7 +5225,7 @@
   },
   {
     "name": "moalmanac_list_biomarkers",
-    "description": "List MOAlmanac's biomarker vocabulary (e.g. 'EGFR p.L858R', 'HER2-positive', 'ERBB2 amplification') with type, linked genes and active approval count, most approvals first: map a variant onto the biomarker wording search_approvals matches. Signature: list_biomarkers(gene=, biomarker_type=, limit=, offset=).",
+    "description": "List MOAlmanac's biomarker vocabulary (e.g. 'EGFR p.L858R', 'HER2-positive', 'ERBB2 amplification') with type, linked genes and active approval count (`approvals_when_absent`: approvals that require its absence), most approvals first: map a variant onto the biomarker wording search_approvals matches. Signature: list_biomarkers(gene=, biomarker_type=, limit=, offset=).",
     "tags": [
       "approval",
       "biomarker",
@@ -5274,7 +5276,7 @@
     ],
     "params": {
       "gene": "Gene symbol (ERBB2; aliases HER2, PD-L1), HGNC ID, Ensembl or NCBI Gene ID.",
-      "biomarker": "Biomarker words, e.g. 'BRAF V600E', 'G12C', 'v::ALK' (fusions are 'v::GENE', any partner; V600 also matches V600E/K); an exact list_biomarkers name matches only that biomarker.",
+      "biomarker": "Biomarker words, e.g. 'BRAF V600E', 'G12C', 'v::ALK' (fusions are 'v::GENE', any partner; V600 also matches V600E/K); an exact list_biomarkers name matches only that biomarker, and 'NOT <name>' the rows that require its absence.",
       "disease": "Disease name words (melanoma), or an OncoTree (NSCLC) or NCIt code as MOAlmanac records it; subtype codes (LUAD) are not mapped to parents.",
       "therapy": "Drug or brand name (sotorasib).",
       "agency": "Only this agency's statements.",
@@ -6898,7 +6900,8 @@
         "Observational Study",
         "Multicenter Study",
         "Clinical Study",
-        "Validation Study"
+        "Validation Study",
+        "Retracted Publication"
       ]
     }
   },
@@ -7457,7 +7460,7 @@
       "page": "1-based PubTator3 result page (10 hits each). To continue, use `next_page`/`next_offset` from the previous response.",
       "offset": "0-based start position inside `page`; set it from `next_offset`.",
       "sort": "Sort order. Accepts 'date desc' (newest first), 'score desc' (relevance, default), or '_id desc'. Synonyms such as 'date' or 'relevance' are normalized; PubTator3 sorts descending only.",
-      "filters": "Advanced PubTator3 filter as a JSON object string, e.g. '{\"journal\":[\"Nature\"]}'. Prefer the flat publication_types / year_min / year_max parameters; do not also set a JSON `type`/`year` key.",
+      "filters": "Filter object (or JSON string), e.g. {\"type\":[\"Retracted Publication\"]}; keys type/journal/year. Prefer publication_types/year_min/year_max.",
       "publication_types": "Restrict to these PubMed publication types (case-sensitive, Title-Case), AND-combined with the query.",
       "year_min": "Earliest publication year, inclusive.",
       "year_max": "Latest publication year, inclusive.",
@@ -7489,7 +7492,8 @@
         "Observational Study",
         "Multicenter Study",
         "Clinical Study",
-        "Validation Study"
+        "Validation Study",
+        "Retracted Publication"
       ],
       "sections": [
         "title",
@@ -7585,7 +7589,7 @@
     ],
     "params": {
       "variant_id": "CHROM-POS-REF-ALT, HGVS, or rsID (HGVS/rsIDs are auto-resolved).",
-      "genome_build": "Reference build. GRCh38 default.",
+      "genome_build": "Reference build. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
       "max_distance": "nt window scanned (default 500; larger = slower).",
       "mask": "raw (default) or masked.",
       "gene_set": "basic (default) or comprehensive GENCODE (much slower).",
@@ -7599,7 +7603,9 @@
     "enums": {
       "genome_build": [
         "GRCh37",
-        "GRCh38"
+        "GRCh38",
+        "hg19",
+        "hg38"
       ],
       "mask": [
         "raw",
@@ -7632,7 +7638,7 @@
     ],
     "params": {
       "variant_id": "CHROM-POS-REF-ALT, HGVS, or rsID (HGVS/rsIDs are auto-resolved).",
-      "genome_build": "Reference build. GRCh38 default.",
+      "genome_build": "Reference build. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
       "max_distance": "nt window scanned (default 500; larger = slower).",
       "mask": "raw (default; alt-splicing) or masked (variant interpretation).",
       "gene_set": "basic (default) or comprehensive GENCODE (much slower; may 503).",
@@ -7647,7 +7653,9 @@
     "enums": {
       "genome_build": [
         "GRCh37",
-        "GRCh38"
+        "GRCh38",
+        "hg19",
+        "hg38"
       ],
       "mask": [
         "raw",
@@ -7679,7 +7687,7 @@
     ],
     "params": {
       "variant_id": "CHROM-POS-REF-ALT, HGVS, or rsID (HGVS/rsIDs are auto-resolved).",
-      "genome_build": "Reference build. GRCh38 default.",
+      "genome_build": "Reference build. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
       "max_distance": "nt window scanned (default 500; larger = slower).",
       "mask": "raw (default; alt-splicing) or masked (variant interpretation).",
       "gene_set": "basic (default) or comprehensive GENCODE (much slower; may 503).",
@@ -7693,7 +7701,9 @@
     "enums": {
       "genome_build": [
         "GRCh37",
-        "GRCh38"
+        "GRCh38",
+        "hg19",
+        "hg38"
       ],
       "mask": [
         "raw",
@@ -7725,7 +7735,7 @@
     ],
     "params": {
       "variant_ids": "A LIST of 1-25 variants, each CHROM-POS-REF-ALT / HGVS / rsID (HGVS/rsIDs are auto-resolved). Pass an array even for a single variant.",
-      "genome_build": "Reference build applied to every variant. GRCh38 default.",
+      "genome_build": "Reference build applied to every variant. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
       "max_distance": "nt window scanned per variant (default 500).",
       "mask": "raw (default; alt-splicing) or masked (variant interpretation).",
       "gene_set": "basic (default) or comprehensive GENCODE (much slower; may 503).",
@@ -7737,7 +7747,9 @@
     "enums": {
       "genome_build": [
         "GRCh37",
-        "GRCh38"
+        "GRCh38",
+        "hg19",
+        "hg38"
       ],
       "mask": [
         "raw",
@@ -7770,7 +7782,7 @@
     ],
     "params": {
       "variant_id": "A variant in any supported form: CHROM-POS-REF-ALT (chr optional; dash/colon/space delimited), transcript or genomic HGVS (e.g. NM_000123.4:c.10A>T or 17:g.43044295G>A), or an rsID (e.g. rs6025).",
-      "genome_build": "Reference build for resolution and scoring. GRCh38 default.",
+      "genome_build": "Reference build for resolution and scoring. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
       "check_ref": "Validate a coordinate REF against the requested build (one Ensembl lookup) and return a ref_warning on mismatch (default true; set false to skip).",
       "include_hints": "Include _meta.next_commands (default true; set false to trim tokens).",
       "correlation_id": "Optional client trace id echoed into _meta.correlation_id (on success and error) so a multi-step workflow is traceable as one unit."
@@ -7778,7 +7790,9 @@
     "enums": {
       "genome_build": [
         "GRCh37",
-        "GRCh38"
+        "GRCh38",
+        "hg19",
+        "hg38"
       ]
     }
   },
@@ -7792,13 +7806,15 @@
       "variant"
     ],
     "params": {
-      "genome_build": "Build whose scoring containers to warm. GRCh38 default.",
+      "genome_build": "Build whose scoring containers to warm. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
       "mask": "Which mask path(s) to warm: raw (default), masked, or both (warms raw and masked per model in one call)."
     },
     "enums": {
       "genome_build": [
         "GRCh37",
-        "GRCh38"
+        "GRCh38",
+        "hg19",
+        "hg38"
       ],
       "mask": [
         "raw",

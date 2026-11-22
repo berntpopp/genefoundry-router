@@ -21,7 +21,10 @@ ROOT = Path(__file__).resolve().parents[2]
 BASELINE = ROOT / "genefoundry_router" / "data" / "fleet-baseline.json"
 # ~4 chars/token, same estimator as scripts/surface.py. Ceiling for the advertised listing;
 # lower it as pinned schemas are trimmed (#293), never raise it to admit growth.
-PINNED_LISTING_TOKEN_BUDGET = 18_000  # measured 17,809 on 2026-11-20: 191 tokens of headroom
+# fleet-2026-11-22: measured 18,098 (was 17,930 on fleet-2026-11-20b; 17,809 on 2026-11-20).
+# +168 tokens, mostly clinvar_get_variant's coordinate id_type (+529 chars, clinvar-link#154, a
+# real capability); 18,000 -> 18,200 approved by the owner's delegate on 2026-11-22.
+PINNED_LISTING_TOKEN_BUDGET = 18_200
 # The opt-in strict listing (GF_SCHEMA_MODE=strict) has its own ceiling since 2026-11-20:
 # measured 18,669. Cause: the fleet-2026-11-20 backend releases added ~3,000 chars of
 # description to pinned tools, plus the two #341 pins (hpo_score_genes_for_phenotypes,
@@ -29,7 +32,9 @@ PINNED_LISTING_TOKEN_BUDGET = 18_000  # measured 17,809 on 2026-11-20: 191 token
 # the default listing keeps 18,000. Same rule: lower it, never raise it to admit growth.
 # fleet-2026-11-20b: measured 18,790. clinvar-link 0.10.0 added ~480 chars to clinvar_get_variant
 # (somatic_clinical_impact / oncogenicity pointers); the owner approved 18,800 on 2026-11-20.
-STRICT_LISTING_TOKEN_BUDGET = 18_800
+# fleet-2026-11-22: measured 18,955 (+165), same cause as the default listing above
+# (clinvar-link#154 coordinate id_type); 18,800 -> 19,000 approved by the owner's delegate.
+STRICT_LISTING_TOKEN_BUDGET = 19_000
 STRICT = RouterSettings(_env_file=None, GF_SCHEMA_MODE="strict")
 
 

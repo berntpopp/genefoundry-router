@@ -13,18 +13,20 @@ RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 
-# fleet-2026-11-20b: strict capture of 30 verified signed backend releases (clinvar, vep, mondo,
-# hpo, ucsc re-released; civic, cbioportal, opentargets, moalmanac added). Previous: fleet-2026-11-20
+# fleet-2026-11-22: strict capture of 30 verified signed backend releases (autopvs1, civic, clingen,
+# clinpgx, clinvar, genereviews, gnomad, litvar, mavedb, moalmanac, pubtator, spliceai, vep
+# re-released). Previous: fleet-2026-11-20b (clinvar, vep, mondo, hpo, ucsc re-released; civic,
+# cbioportal, opentargets, moalmanac added); fleet-2026-11-20
 # (nine re-released for
 # foreign-identifier handling and batch pointers: hgnc, hpo, clingen, orphanet, uniprot, gnomad,
 # litvar, stringdb, genereviews).
 # Updating these four hashes adopts the reviewed fleet atomically with its captured evidence;
 # they must never move independently merely to make a failing check pass.
 HISTORICAL_EVIDENCE_SHA256 = {
-    APPLICATION_RELEASES: "5117a6c6cc6719d331c9f15536c2db294b3013e9dee04483d61d77253ac8cfdf",
-    RELEASE_INVENTORY: "56590b6819f1914b2c6dc6c92e20629bc9f2a06c5d6eb6a8cfa8ce475915b726",
-    RELEASE_CANDIDATE: "92dcd5d9ac64e1ab1a1e5899fc264b5abec1241c48efe431b323bfcde5a75aa9",
-    BASELINE: "92dcd5d9ac64e1ab1a1e5899fc264b5abec1241c48efe431b323bfcde5a75aa9",
+    APPLICATION_RELEASES: "d4fd5dd7e6b47ef70016ef428293f4e9863f8571a09dd64527a1b61e36297f68",
+    RELEASE_INVENTORY: "748c4a858fdab39f0b40ae11e7a88f014e229d702711fd185372bd9fc455d60a",
+    RELEASE_CANDIDATE: "a78f31f1d88cdcd7db043a8807605e3624138b2ccd66d802bb0ea537ae301f24",
+    BASELINE: "a78f31f1d88cdcd7db043a8807605e3624138b2ccd66d802bb0ea537ae301f24",
 }
 
 
