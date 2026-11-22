@@ -8,7 +8,9 @@ name: genefoundry-router
 services:
   genefoundry-router:
     # C3: one fleet-wide image variable; GENEFOUNDRY_IMAGE stays a fallback for one release.
-    image: ${GF_IMAGE:-${GENEFOUNDRY_IMAGE:?set GF_IMAGE to a verified digest-addressed image}}
+    # No `:?` in the fallback (Compose would require GENEFOUNDRY_IMAGE even with GF_IMAGE set);
+    # with neither set the image is empty and every Compose command fails.
+    image: ${GF_IMAGE:-${GENEFOUNDRY_IMAGE}}
     pull_policy: missing
     # NPM resolves its upstream by container name (`proxy_pass http://genefoundry_router:8000`),
     # so this file must pin it. Without it Compose auto-names the container

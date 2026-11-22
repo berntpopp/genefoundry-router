@@ -1,7 +1,7 @@
 """Render the deployed Compose overlay the way the fleet controller deploys it.
 
-The deployed overlay names its image through a required `${<PROJECT>_IMAGE:?...}`
-variable, so it cannot be rendered at all without values. This module supplies inert,
+The deployed overlay names its image through `GF_IMAGE` (Deploy Contract C3) and may
+require other variables, so it cannot be rendered at all without values. This module supplies inert,
 shape-correct placeholders for every required variable, and returns both the interpolated
 model (what the rules are checked against) and the `--no-interpolate` model (the only
 place the image *template* survives).
@@ -100,7 +100,8 @@ def render_deployed_overlay(
             raise ComposeRenderError(f"{name} is not a regular file in this repository")
     files = _file_args(compose_files)
     raw = _load(_run(project_dir, [*files, "config", "--no-interpolate", "--format", "json"]))
-    placeholders = {
+    # GF_IMAGE is what deploy sets; `${GF_IMAGE:-${<REPO>_IMAGE}}` does not mark it required.
+    placeholders = {"GF_IMAGE": placeholder_value("GF_IMAGE")} | {
         variable: placeholder_value(variable)
         for variable in required_variables(project_dir, compose_files)
     }
