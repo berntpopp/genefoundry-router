@@ -4,6 +4,15 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-22
+
+### Added
+
+- **Research workflow skills over MCP** (SEP-2640, closes #336). The router serves `skills/` as `skill://<name>/SKILL.md` resources and, on the 2026-07-28 protocol, through `skills/list` / `skills/get` (`fastmcp.skills.provider.SkillsDirectoryProvider`; `GF_SKILLS_DIR`, default `skills`; a missing directory fails at startup). `search_tools` returns a matching skill as a pointer (`skill`, `read.uri`, no `call`), never a callable tool; the pinned listing is unchanged.
+- Six new skills next to `somatic-variant-interpretation`: `phenotype-to-candidate-genes`, `identifier-resolution-and-lookup`, `germline-variant-classification`, `literature-evidence-review`, `genetic-report-review`, `lay-summary`. Every skill carries one shared evidence-rules block (tool-returned ids only; confirmed / contradicted / not confirmable / not checked; build and transcript first; stop rules; research use only).
+- `make lint-skills` (in `ci-local`): agentskills.io frontmatter, size cap, shared block identical, every `<namespace>_<tool>` a skill names exists in the catalog.
+- The Docker image ships `skills/` and fails the build if no `SKILL.md` is present.
+
 ## [0.13.20] - 2026-11-22
 
 ### Fixed

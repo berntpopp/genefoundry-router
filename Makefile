@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme lint-description-lead lint-batch-pointers readme-inventory provenance lint-provenance lint-actions lint-action-versions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog bench-rerank expansions ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-skills lint-readme lint-description-lead lint-batch-pointers readme-inventory provenance lint-provenance lint-actions lint-action-versions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog bench-rerank expansions ci-full
 
 .DEFAULT_GOAL := help
 
@@ -36,6 +36,9 @@ lint-fix: ## Lint and apply safe fixes
 
 lint-loc: ## Enforce per-file line budget
 	uv run python scripts/check_file_size.py
+
+lint-skills: ## Lint skills/ (frontmatter, size, tool names, shared rules block)
+	uv run python scripts/check_skills.py
 
 lint-readme: ## Enforce the GeneFoundry README Standard v1
 	uv run python scripts/check_readme.py
@@ -117,7 +120,7 @@ http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption 
 
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-readme lint-description-lead lint-batch-pointers lint-metadata lint-server-json lint-provenance lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-skills lint-readme lint-description-lead lint-batch-pointers lint-metadata lint-server-json lint-provenance lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
 # NB: `lint-surface` is deliberately NOT in ci-local yet. It currently reports 595 real
 # violations across 20 of the 21 backends — that is the point of it, and it is the failing test
 # the fleet sweep exists to turn green. It joins ci-local in the same change that drives it to

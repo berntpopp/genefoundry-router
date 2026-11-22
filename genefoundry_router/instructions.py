@@ -75,7 +75,9 @@ def build_instructions(registry: list[BackendDef], listed: Collection[str] | Non
     return f"""\
 genefoundry is a META-ROUTER (a gateway), not a data server. It federates the \
 GeneFoundry "-link" fleet — {breadth} — behind ONE MCP endpoint and exposes a \
-SEARCH SURFACE instead of listing its whole ~200-tool catalog at once.
+SEARCH SURFACE instead of listing its whole ~200-tool catalog at once. Research \
+workflow skills (step order, stop rules, output template) are `skill://` resources \
+and also show up as `search_tools` hits; read one before a multi-step job.
 
 WHAT IS LISTED vs WHAT EXISTS. {listing} \
 Every other capability — across {catalog} — is present and callable, but it is \
@@ -92,8 +94,9 @@ of every backend; returns matching tool definitions (name, inputSchema, one-line
 Hits flagged `low_confidence` (or none) mean no clear match: rephrase in domain terms. \
 Search ONE intent per call: a multi-part question (e.g. a disease's genes AND where those \
 genes sit on the chromosome) needs one search per part, chained on the first result.
-  2. Read a hit's `name`; it is always `<namespace>_<tool>` \
-(e.g. `spliceai_predict_splicing`, `vep_annotate_variant`).
+  2. Read a hit's `name`; a tool is always `<namespace>_<tool>` \
+(e.g. `spliceai_predict_splicing`, `vep_annotate_variant`). A hit with `skill` instead \
+of `call` is a workflow skill: read its `read.uri`, never call it.
   3. `call_tool(name="<namespace>_<tool>", arguments={{…}})` to invoke it — each hit's \
 `call` field is that call, ready to fill. A tool that is NOT in your client's tool list \
 is invoked ONLY through `call_tool`: calling its name directly fails in clients that \

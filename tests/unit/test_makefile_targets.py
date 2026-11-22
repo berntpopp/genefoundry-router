@@ -20,3 +20,9 @@ def test_ci_local_includes_release_control_plane_tests() -> None:
 
     assert "uv run pytest tests/release -q" in release_target
     assert "test-release" in ci_local_target
+
+
+def test_ci_local_gates_skills() -> None:
+    text = Path("Makefile").read_text(encoding="utf-8")
+    assert "lint-skills" in text.split("ci-local:", 1)[1].split("##", 1)[0]
+    assert "scripts/check_skills.py" in text.split("lint-skills:", 1)[1].split("\n\n", 1)[0]

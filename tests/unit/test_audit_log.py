@@ -29,6 +29,9 @@ class _FakeServer:
     async def get_tool(self, name: str, version: Any = None) -> Any:
         return object() if name in _KNOWN_TOOLS else None
 
+    async def get_resource(self, uri: str, version: Any = None) -> Any:
+        return object() if uri == "skill://lay-summary/SKILL.md" else None
+
 
 class _FastMCPCtx:
     def __init__(self) -> None:
@@ -442,3 +445,20 @@ def test_unknown_tool_is_logged_as_a_hash_never_raw() -> None:
     assert first["requested_sha256"] == hashlib.sha256(b"gnomad_get_variant").hexdigest()[:16]
     assert len(second["requested_sha256"]) == 16
     assert "evil" not in str(second) and "IGNORE" not in str(second)
+
+
+async def test_search_tools_audit_names_a_served_skill_hit_and_buckets_a_fake_one() -> None:
+    """#336: a skill pointer hit is logged by name when the server serves that skill://
+    resource (hyphens as underscores, to pass the log-name guard); a skill_-shaped name with no such resource still buckets to _unknown."""
+    from fastmcp.tools.base import ToolResult
+
+    hits = [{"name": "skill_lay-summary"}, {"name": "skill_not-served"}, {"name": "skill_../x"}]
+
+    async def _ok(_ctx):
+        return ToolResult(structured_content={"result": hits})
+
+    with structlog.testing.capture_logs() as logs:
+        await AuditLogMiddleware().on_call_tool(_Ctx("search_tools", {"query": "q"}), _ok)
+
+    e = next(entry for entry in logs if entry.get("event") == "tool_call")
+    assert e["top_hits"] == ["skill_lay_summary", "_unknown", "_unknown"]
