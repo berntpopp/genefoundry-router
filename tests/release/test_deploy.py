@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -76,9 +77,11 @@ class RecordingRunner:
         *,
         version: str = "2.93.0",
         verification_output: str = '[{"verified":true}]',
+        attestation_output: str | None = None,
     ) -> None:
         self.version = version
         self.verification_output = verification_output
+        self.attestation_output = attestation_output
         self.calls: list[tuple[str, ...]] = []
 
     def __call__(self, args: Sequence[str]) -> CommandResult:
@@ -86,6 +89,10 @@ class RecordingRunner:
         self.calls.append(call)
         if call == ("gh", "--version"):
             return CommandResult(0, f"gh version {self.version} (2026-05-27)\n", "")
+        if call[1] == "attestation":
+            # What the --jq selector prints for a verified attestation of the requested type.
+            predicate = call[call.index("--predicate-type") + 1]
+            return CommandResult(0, self.attestation_output or json.dumps([predicate]), "")
         return CommandResult(0, self.verification_output, "")
 
 
@@ -108,6 +115,8 @@ def _required_policy(manifest: ApplicationReleaseManifest, predicate_type: str) 
         "--deny-self-hosted-runners",
         "--format",
         "json",
+        "--jq",
+        "[.[].verificationResult.statement.predicateType]",
     )
 
 
@@ -333,3 +342,20 @@ def test_partial_offline_evidence_is_rejected_before_attestation_command(
 
     assert caught.value.exit_code is ReleaseExitCode.INVALID_EVIDENCE
     assert runner.calls == [("gh", "--version")]
+
+
+@pytest.mark.parametrize(
+    "attestation_output",
+    ["[null]", '["https://slsa.dev/provenance/v1"]', '[{"verified":true}]'],
+)
+def test_attestation_verdict_must_name_the_requested_predicate_type(
+    deployment_manifest: ApplicationReleaseManifest,
+    attestation_output: str,
+) -> None:
+    # The SLSA check would pass with the wrong type, so the SPDX call must be the one that fails.
+    runner = RecordingRunner(attestation_output=attestation_output)
+
+    with pytest.raises(DeploymentVerificationError, match="predicate type") as caught:
+        verify_deployment(deployment_manifest, runner=runner)
+
+    assert caught.value.exit_code is ReleaseExitCode.POLICY_VIOLATION
