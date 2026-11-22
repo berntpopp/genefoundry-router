@@ -23,7 +23,7 @@ VEP and ClinVar `get_variant` are in your tool list; the others exist only throu
 4. `call_tool(name="civic_search_molecular_profiles", arguments={"query": "GENE X123Y"})` → `call_tool(name="civic_search_assertions", arguments={"molecular_profile_id": <integer>})`.
 5. `call_tool(name="cbioportal_get_mutation_hotspots", arguments={"gene": "GENE", "residue": "V600"})`.
 
-"Not found" from a search is an answer (no record), not an error: go on to the next call. An empty search never lowers a tier that another source already supports.
+"Not found" from a search is an answer (no record), not an error: do not search that source again with other words; go on to the next call. An empty search never lowers a tier that another source already supports.
 
 ## Tier
 
