@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
+import tempfile
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -249,36 +251,47 @@ def verify_deployment(
     if offline:
         assert image_manifest is not None and bundle is not None and trusted_root is not None
         _verify_file_digest(image_manifest, manifest.image.digest, "image manifest")
-        _verify_file_digest(
-            bundle,
-            f"sha256:{manifest.security_evidence.attestation_bundle_sha256}",
-            "attestation bundle",
-        )
+        _regular_file(bundle, "attestation bundle")
         _verify_file_digest(
             trusted_root,
             f"sha256:{manifest.security_evidence.trusted_root_sha256}",
             "trusted root",
         )
-        for predicate_type, label in (
-            (SLSA_PROVENANCE_V1, "offline GitHub provenance attestation verification"),
-            (SPDX_DOCUMENT_V2_3, "offline GitHub SPDX SBOM attestation verification"),
-        ):
-            _require_command(
-                (
-                    "gh",
-                    "attestation",
-                    "verify",
-                    str(image_manifest),
-                    *_attestation_policy(manifest, predicate_type),
-                    "--bundle",
-                    str(bundle),
-                    "--custom-trusted-root",
-                    str(trusted_root),
-                ),
-                runner,
-                label,
-                predicate_type,
+        # The asset is JSONL (one sigstore bundle per line) but named .json; gh picks its
+        # parser by extension, so hand it a private .jsonl copy and hash the copy gh reads.
+        with tempfile.TemporaryDirectory(prefix="gf-attestation-") as private_dir:
+            gh_bundle = Path(private_dir) / "attestation-bundle.jsonl"
+            try:
+                shutil.copyfile(bundle, gh_bundle)
+            except OSError as exc:
+                raise DeploymentVerificationError(
+                    "unable to read attestation bundle", ReleaseExitCode.INVALID_EVIDENCE
+                ) from exc
+            _verify_file_digest(
+                gh_bundle,
+                f"sha256:{manifest.security_evidence.attestation_bundle_sha256}",
+                "attestation bundle",
             )
+            for predicate_type, label in (
+                (SLSA_PROVENANCE_V1, "offline GitHub provenance attestation verification"),
+                (SPDX_DOCUMENT_V2_3, "offline GitHub SPDX SBOM attestation verification"),
+            ):
+                _require_command(
+                    (
+                        "gh",
+                        "attestation",
+                        "verify",
+                        str(image_manifest),
+                        *_attestation_policy(manifest, predicate_type),
+                        "--bundle",
+                        str(gh_bundle),
+                        "--custom-trusted-root",
+                        str(trusted_root),
+                    ),
+                    runner,
+                    label,
+                    predicate_type,
+                )
         mode: Literal["online", "offline"] = "offline"
     else:
         _require_command(
