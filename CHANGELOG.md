@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.19] - 2026-11-22
+
+### Fixed
+
+- **Offline deploy verification (`verify-deployment --bundle`) works on real release assets** (#362). The `attestation-bundle.json` asset holds one sigstore bundle per line (JSONL), but `gh attestation verify --bundle` picks its parser by file extension and reads a `.json` file as a single bundle, so every offline check failed with `proto: syntax error`. The verifier now copies the bundle into a private temp directory as `attestation-bundle.jsonl`, checks the release-manifest digest on that copy (the exact bytes gh reads) and removes it afterwards. A tampered or truncated bundle still fails the digest check before gh runs, and gh rejects any line that does not parse. Existing releases verify without being re-cut.
+
 ## [0.13.18] - 2026-11-22
 
 ### Fixed

@@ -188,7 +188,15 @@ def test_offline_verification_hashes_local_manifest_and_uses_saved_trust_materia
         f"sha256:{hashlib.sha256(trusted_root.read_bytes()).hexdigest()}"
     )
     reviewed = ApplicationReleaseManifest.model_validate(payload)
-    runner = RecordingRunner()
+    bundle_bytes_seen: list[bytes] = []
+
+    class BundleCapturingRunner(RecordingRunner):
+        def __call__(self, args: Sequence[str]) -> CommandResult:
+            if "--bundle" in args:
+                bundle_bytes_seen.append(Path(args[list(args).index("--bundle") + 1]).read_bytes())
+            return super().__call__(args)
+
+    runner = BundleCapturingRunner()
 
     result = verify_deployment(
         reviewed,
@@ -199,6 +207,13 @@ def test_offline_verification_hashes_local_manifest_and_uses_saved_trust_materia
     )
 
     assert result.mode == "offline"
+    # gh parses a .json bundle as ONE bundle; the release asset is JSONL, so gh gets a
+    # private .jsonl copy of the digest-checked bytes, removed afterwards.
+    gh_bundle = Path(runner.calls[1][runner.calls[1].index("--bundle") + 1])
+    assert gh_bundle.suffix == ".jsonl"
+    assert gh_bundle.parent != bundle.parent
+    assert not gh_bundle.exists()
+    assert bundle_bytes_seen == [bundle.read_bytes()] * 2
     assert runner.calls == [
         ("gh", "--version"),
         (
@@ -208,7 +223,7 @@ def test_offline_verification_hashes_local_manifest_and_uses_saved_trust_materia
             str(image_manifest),
             *_required_policy(reviewed, "https://slsa.dev/provenance/v1"),
             "--bundle",
-            str(bundle),
+            str(gh_bundle),
             "--custom-trusted-root",
             str(trusted_root),
         ),
@@ -219,7 +234,7 @@ def test_offline_verification_hashes_local_manifest_and_uses_saved_trust_materia
             str(image_manifest),
             *_required_policy(reviewed, "https://spdx.dev/Document/v2.3"),
             "--bundle",
-            str(bundle),
+            str(gh_bundle),
             "--custom-trusted-root",
             str(trusted_root),
         ),
@@ -241,6 +256,39 @@ def test_offline_verification_rejects_manifest_digest_mismatch_before_gh(
     with pytest.raises(DeploymentVerificationError) as caught:
         verify_deployment(
             deployment_manifest,
+            runner=runner,
+            image_manifest=image_manifest,
+            bundle=bundle,
+            trusted_root=trusted_root,
+        )
+
+    assert caught.value.exit_code is ReleaseExitCode.INVALID_EVIDENCE
+    assert runner.calls == [("gh", "--version")]
+
+
+def test_offline_verification_rejects_bundle_digest_mismatch_before_gh(
+    tmp_path: Path,
+    deployment_manifest: ApplicationReleaseManifest,
+) -> None:
+    image_manifest = tmp_path / "image-manifest.json"
+    bundle = tmp_path / "attestation-bundle.json"
+    trusted_root = tmp_path / "trusted-root.json"
+    image_manifest.write_bytes(b"manifest")
+    bundle.write_bytes(b'{"partial":')
+    trusted_root.write_bytes(b"{}\n")
+    payload = deployment_manifest.model_dump(mode="json")
+    image_digest = f"sha256:{hashlib.sha256(b'manifest').hexdigest()}"
+    root_hex = hashlib.sha256(b"{}\n").hexdigest()
+    payload["image"]["digest"] = image_digest  # type: ignore[index]
+    payload["image"]["platforms"][0]["digest"] = image_digest  # type: ignore[index]
+    payload["release_assets"]["image-manifest.json"] = image_digest  # type: ignore[index]
+    payload["security_evidence"]["trusted_root_sha256"] = root_hex  # type: ignore[index]
+    payload["release_assets"]["trusted-root.json"] = f"sha256:{root_hex}"  # type: ignore[index]
+    runner = RecordingRunner()
+
+    with pytest.raises(DeploymentVerificationError, match="attestation bundle digest") as caught:
+        verify_deployment(
+            ApplicationReleaseManifest.model_validate(payload),
             runner=runner,
             image_manifest=image_manifest,
             bundle=bundle,
