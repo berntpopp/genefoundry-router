@@ -146,7 +146,12 @@ def _gh_version(runner: DeploymentCommandRunner) -> str:
     return ".".join(match.groups())
 
 
-def _require_command(args: tuple[str, ...], runner: DeploymentCommandRunner, label: str) -> None:
+def _require_command(
+    args: tuple[str, ...],
+    runner: DeploymentCommandRunner,
+    label: str,
+    predicate_type: str | None = None,
+) -> None:
     result = runner(args)
     _bounded_output(result, label)
     if result.returncode != 0:
@@ -163,6 +168,13 @@ def _require_command(args: tuple[str, ...], runner: DeploymentCommandRunner, lab
         raise DeploymentVerificationError(
             f"{label} did not return nonempty structured JSON",
             ReleaseExitCode.INFRASTRUCTURE_FAILURE,
+        )
+    if predicate_type is not None and not (
+        isinstance(output, list) and all(item == predicate_type for item in output)
+    ):
+        raise DeploymentVerificationError(
+            f"{label} did not verify the requested predicate type",
+            ReleaseExitCode.POLICY_VIOLATION,
         )
 
 
@@ -210,6 +222,10 @@ def _attestation_policy(
         "--deny-self-hosted-runners",
         "--format",
         "json",
+        # The full output embeds the whole SBOM (~7 MB, over the output cap); keep only the
+        # verified predicate types. A nonzero exit is still the failed-verification signal.
+        "--jq",
+        "[.[].verificationResult.statement.predicateType]",
     )
 
 
@@ -261,6 +277,7 @@ def verify_deployment(
                 ),
                 runner,
                 label,
+                predicate_type,
             )
         mode: Literal["online", "offline"] = "offline"
     else:
@@ -292,6 +309,7 @@ def verify_deployment(
                 ),
                 runner,
                 label,
+                predicate_type,
             )
         mode = "online"
     return DeploymentVerification(

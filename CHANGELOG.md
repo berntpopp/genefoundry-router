@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.18] - 2026-11-22
+
+### Fixed
+
+- **The deploy verifier no longer reports a valid SPDX SBOM attestation as failed** (#359). `gh attestation verify --format json` prints the whole SBOM statement (~6.8 MB for a `-link` image), more than the 1 MiB command-output cap, and the capped result was read as a failed verification. Attestation checks now pass `--jq '[.[].verificationResult.statement.predicateType]'`, so gh prints only the verified predicate types; the verifier requires a nonempty list naming exactly the requested type. The output cap is unchanged, and a nonzero `gh` exit still fails closed as a policy violation. Online and offline (`--bundle`) modes.
+
 ## [0.13.17] - 2026-11-22
 
 ### Changed

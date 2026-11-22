@@ -377,6 +377,9 @@ class _VerifierRunner:
     def __call__(self, args: Sequence[str]) -> CommandResult:
         if tuple(args) == ("gh", "--version"):
             return CommandResult(0, "gh version 2.93.0\n", "")
+        if args[1] == "attestation":
+            predicate = args[list(args).index("--predicate-type") + 1]
+            return CommandResult(0, json.dumps([predicate]), "")
         return CommandResult(0, '{"verified":true}\n', "")
 
 
