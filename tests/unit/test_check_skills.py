@@ -63,6 +63,12 @@ def test_unknown_tool_in_known_namespace(tmp_path: Path) -> None:
     assert "demo-skill" in error and "gnomad_get_frequency" in error
 
 
+def test_unknown_tool_inside_call_tool_name(tmp_path: Path) -> None:
+    _skill(tmp_path, body='Then `call_tool(name="gnomad_get_frequency", arguments={})`.')
+    [error] = check_skills(tmp_path, CATALOG)
+    assert "gnomad_get_frequency" in error
+
+
 def test_unknown_tool_in_references(tmp_path: Path) -> None:
     _skill(tmp_path)
     ref = tmp_path / "demo-skill" / "references" / "pvs1.md"

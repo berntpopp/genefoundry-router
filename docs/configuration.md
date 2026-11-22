@@ -15,6 +15,7 @@ starts.
 |----------|---------|---------|
 | `GF_HOST` / `GF_PORT` | `127.0.0.1` / `8000` | Bind address |
 | `GF_MCP_PATH` | `/mcp` | MCP mount path |
+| `GF_SKILLS_DIR` | `skills` | Folder of research workflow skills served at `skill://<name>/SKILL.md`; must exist, or the router refuses to start |
 | `GF_SERVERS_FILE` | `servers.yaml` | Backend registry |
 | `GF_AUTH_MODE` | `none` | `none` \| `jwt` \| `oauth` (use jwt/oauth in production) |
 | `GF_DEPLOYMENT_MODE` | `development` | `development` \| `production`; explicit reachability policy, because a loopback listener can still be published by a reverse proxy |

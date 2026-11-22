@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CATALOG = ROOT / "tests" / "discoverability" / "catalog.json"  # refreshed by snapshot-catalog
 MAX_BYTES = 20_000
 NAME_RE = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
-TOOL_RE = re.compile(r"`([a-z0-9]+)_([a-z0-9_]+)[`(]")
+TOOL_RE = re.compile(r'(?:`|name=")([a-z0-9]+)_([a-z0-9_]+)[`("]')  # `tool` or call_tool(name="tool")
 LINK_RE = re.compile(r"`((?:references|scripts|assets)/[^`\s]+\.md)`|\]\(([^)#\s]+\.md)\)")
 CALLS_RE = re.compile(r"<!-- tool-calls:start -->\n.*?<!-- tool-calls:end -->", re.S)
 SIG_RE = re.compile(r"Signature: [a-z0-9_]+\(([^)]*)\)")

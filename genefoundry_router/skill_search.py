@@ -18,7 +18,11 @@ SKILL_PREFIX = "skill_"
 
 def skill_tools(skills_dir: Path) -> list[Tool]:
     """One synthetic search document per ``<skills_dir>/<name>/SKILL.md``."""
-    skills = [Skill.from_directory(p.parent) for p in sorted(skills_dir.glob("*/SKILL.md"))]
+    skills = [
+        Skill.from_directory(p.parent)
+        for p in sorted(skills_dir.glob("*/SKILL.md"))
+        if not p.parent.name.startswith(".")  # the provider skips dot-folders too
+    ]
     return [
         Tool(
             name=f"{SKILL_PREFIX}{s.name}",

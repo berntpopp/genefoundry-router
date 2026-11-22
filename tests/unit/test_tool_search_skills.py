@@ -77,3 +77,12 @@ def test_skill_tools_reads_every_folder(tmp_path: Path) -> None:
     (tmp_path / "README.md").write_text("not a skill")
     [tool] = skill_tools(tmp_path)
     assert (tool.name, tool.description) == ("skill_demo-skill", "Use when demo.")
+
+
+def test_skill_tools_skips_dot_folders_like_the_provider(tmp_path: Path) -> None:
+    for name in ("demo-skill", ".old-copy"):
+        (tmp_path / name).mkdir()
+        (tmp_path / name / "SKILL.md").write_text(
+            "---\nname: demo-skill\ndescription: Use when demo.\n---\n"
+        )
+    assert [t.name for t in skill_tools(tmp_path)] == ["skill_demo-skill"]

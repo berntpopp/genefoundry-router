@@ -303,3 +303,19 @@ def test_preflight_precedes_auth_and_is_not_challenged(gnomad_fake: FastMCP) -> 
 
     assert response.status_code in (200, 204)
     assert response.headers["access-control-allow-origin"] == ALLOWED
+
+
+@pytest.mark.parametrize("method", ["skills/list", "resources/list", "resources/read"])
+def test_skills_sit_behind_edge_auth(gnomad_fake: FastMCP, method: str) -> None:
+    """#336: skills are served on the same /mcp as tools, so the same edge auth gates them."""
+    params = {"uri": "skill://lay-summary/SKILL.md"} if method == "resources/read" else {}
+    with TestClient(_jwt_app(gnomad_fake, [ALLOWED]), follow_redirects=False) as client:
+        response = client.post(
+            "/mcp",
+            headers={
+                "content-type": "application/json",
+                "accept": "application/json, text/event-stream",
+            },
+            json={"jsonrpc": "2.0", "id": 1, "method": method, "params": params},
+        )
+    assert response.status_code == 401
