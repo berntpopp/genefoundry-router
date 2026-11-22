@@ -4,7 +4,9 @@ This folder holds **research workflow skills** in the [agentskills.io](https://a
 format (`<name>/SKILL.md`, `name` + `description` frontmatter, optional `references/`). The router
 serves every folder here to MCP clients as a `skill://<name>/SKILL.md` resource (MCP Skills,
 SEP-2640: `skills/list`, `skills/get`) via FastMCP's `SkillsDirectoryProvider`, and `search_tools`
-returns a `skill_<name>` hit that points at it. `GF_SKILLS_DIR` (default `skills`) must exist or
+returns a `skill_<name>` hit that points at it (at most one, on top of `limit`; `X-GF-Skills: off`
+hides them). Clients that cannot read resources get the same text from
+`call_tool(name="skill_<name>")`. `GF_SKILLS_DIR` (default `skills`) must exist or
 the router refuses to start.
 
 These are **product content** for agents using the GeneFoundry fleet (e.g. how to chain tools for

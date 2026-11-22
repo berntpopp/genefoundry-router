@@ -95,8 +95,8 @@ Hits flagged `low_confidence` (or none) mean no clear match: rephrase in domain 
 Search ONE intent per call: a multi-part question (e.g. a disease's genes AND where those \
 genes sit on the chromosome) needs one search per part, chained on the first result.
   2. Read a hit's `name`; a tool is always `<namespace>_<tool>` \
-(e.g. `spliceai_predict_splicing`, `vep_annotate_variant`). A hit with `skill` instead \
-of `call` is a workflow skill: read its `read.uri`, never call it.
+(e.g. `spliceai_predict_splicing`, `vep_annotate_variant`). A hit with `skill` is a \
+workflow skill: read its `read.uri`, or if you cannot read resources, `call_tool` with its name.
   3. `call_tool(name="<namespace>_<tool>", arguments={{…}})` to invoke it — each hit's \
 `call` field is that call, ready to fill. A tool that is NOT in your client's tool list \
 is invoked ONLY through `call_tool`: calling its name directly fails in clients that \

@@ -2,11 +2,13 @@
 
 Each ``skills/<name>/SKILL.md`` becomes a synthetic BM25 document named ``skill_<name>``
 (text = name + description). It is ranked with the tools but serializes as a pointer to
-the ``skill://`` resource: never callable, never in the listing or the call catalog.
+the ``skill://`` resource, never in the listing or the call catalog. ``call_tool`` with its
+name returns the same SKILL.md text, for clients that cannot read resources (#368).
 """
 
 from __future__ import annotations
 
+from collections.abc import Collection, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -33,12 +35,26 @@ def skill_tools(skills_dir: Path) -> list[Tool]:
     ]
 
 
+def skill_uri(name: str) -> str:
+    """The ``skill://`` resource behind the ``skill_<name>`` search document."""
+    return f"skill://{name.removeprefix(SKILL_PREFIX)}/SKILL.md"
+
+
 def skill_hit(tool: Tool) -> dict[str, Any]:
-    """The pointer a skill hit serializes to in every detail mode (no call, no inputSchema)."""
-    uri = f"skill://{tool.name.removeprefix(SKILL_PREFIX)}/SKILL.md"
+    """The pointer a skill hit serializes to in every detail mode (no inputSchema)."""
+    uri = skill_uri(tool.name)
     return {
         "name": tool.name,
         "skill": uri,
         "description": tool.description or "",
         "read": {"method": "resources/read", "uri": uri},
+        "call": {"tool": "call_tool", "arguments": {"name": tool.name}},
     }
+
+
+def serve(ranked: Sequence[Tool], served: int, skills: Collection[str]) -> list[Tool]:
+    """The top ``served`` tools plus the best skill ranked within the top ``served`` (#368):
+    a skill hit rides along instead of taking a tool's slot."""
+    best = next((t.name for t in ranked[:served] if t.name in skills), None)
+    keep = {best, *[t.name for t in ranked if t.name not in skills][:served]}
+    return [t for t in ranked if t.name in keep]

@@ -15,7 +15,7 @@ starts.
 |----------|---------|---------|
 | `GF_HOST` / `GF_PORT` | `127.0.0.1` / `8000` | Bind address |
 | `GF_MCP_PATH` | `/mcp` | MCP mount path |
-| `GF_SKILLS_DIR` | `skills` | Folder of research workflow skills served at `skill://<name>/SKILL.md`; must exist, or the router refuses to start |
+| `GF_SKILLS_DIR` | `skills` | Folder of research workflow skills served at `skill://<name>/SKILL.md`; must exist, or the router refuses to start. `search_tools` adds at most one skill hit on top of `limit`; `call_tool(name="skill_<name>")` returns the SKILL.md text for clients without resources support. The `X-GF-Skills: off` request header hides skill hits from `search_tools` for that request |
 | `GF_SERVERS_FILE` | `servers.yaml` | Backend registry |
 | `GF_AUTH_MODE` | `none` | `none` \| `jwt` \| `oauth` (use jwt/oauth in production) |
 | `GF_DEPLOYMENT_MODE` | `development` | `development` \| `production`; explicit reachability policy, because a loopback listener can still be published by a reverse proxy |

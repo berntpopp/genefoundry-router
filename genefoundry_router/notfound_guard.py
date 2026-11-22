@@ -82,6 +82,7 @@ from mcp_types import INVALID_PARAMS, METHOD_NOT_FOUND
 
 from genefoundry_router.audit_identity import unknown_name_fields
 from genefoundry_router.registry import NAMESPACE_RE
+from genefoundry_router.skill_search import SKILL_PREFIX, skill_uri
 from genefoundry_router.tool_error_taxonomy import (
     UNCLASSIFIED_ERROR_CODE,
     error_code,
@@ -209,12 +210,10 @@ class NotFoundGuard(Middleware):
     ) -> ToolResult:
         """Preflight the tool NAME so an unknown name never reaches core dispatch.
 
-        ``get_tool`` resolves mounted-proxy tool names (from mount-cached metadata,
-        no blocking remote round-trip) and the synthetic meta-tools, and returns
-        ``None`` — it does not raise — for an unknown name. An unknown name is
-        answered here with a fixed, name-free envelope. The ``call_tool`` meta-tool's
-        target is preflighted the same way (fastmcp 4 checks it before re-entering). On any resolution failure we defer to core rather than mask a
-        legitimate call (the Layer-3 backstop still covers a reflected return).
+        ``get_tool`` resolves mounted-proxy tool names (from mount-cached metadata, no
+        remote round-trip) and the meta-tools, and returns ``None`` for an unknown name,
+        answered here with a fixed, name-free envelope; so is the ``call_tool`` target (a
+        served skill passes, #368). A resolution failure defers to core (Layer 3 backstop).
         """
         fctx = getattr(context, "fastmcp_context", None)
         message = getattr(context, "message", None)
@@ -227,6 +226,8 @@ class NotFoundGuard(Middleware):
         if fctx is not None and isinstance(target, str) and target not in _SYNTHETIC:
             try:
                 tool = await fctx.fastmcp.get_tool(target)
+                if tool is None and name == "call_tool" and target.startswith(SKILL_PREFIX):
+                    tool = await fctx.fastmcp.get_resource(skill_uri(target))  # #368
             except Exception:
                 tool = object()
             if tool is None:

@@ -33,13 +33,18 @@ from fastmcp.tools.base import Tool
 from pydantic import Field
 
 from genefoundry_router.config import RouterSettings
-from genefoundry_router.pinned_mode import PinPolicy, SchemaMode, request_schema_mode
+from genefoundry_router.pinned_mode import (
+    PinPolicy,
+    SchemaMode,
+    request_schema_mode,
+    request_skills,
+)
 from genefoundry_router.registry import BackendDef, qualified_name
 from genefoundry_router.schema_slim import slim_tool
 from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_strict_schema
 from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.search_rerank import Reranker, build_reranker
-from genefoundry_router.skill_search import SKILL_PREFIX, skill_hit, skill_tools
+from genefoundry_router.skill_search import SKILL_PREFIX, serve, skill_hit, skill_tools, skill_uri
 
 log = structlog.get_logger(__name__)
 
@@ -279,22 +284,23 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         """Served hits, reranker scores (``None`` when the BM25 order stands), and whether
         the hits are a low-confidence fallback because the floor dropped every candidate."""
         served = limit or self.served_results
-        candidates = [*tools, *self.skills]
-        shortlist = list(
-            await self._search(candidates, query, depth=max(served, self._max_results))
-        )
+        skills = self.skills if request_skills() else []  # X-GF-Skills: off (#368)
+        names = {t.name for t in skills}
+        depth = max(served, self._max_results) + len(skills)  # skills ride on top of tools
+        shortlist = list(await self._search([*tools, *skills], query, depth=depth))
         if self.reranker is not None:
             ranked = await self.reranker.rerank(query, shortlist)
             if ranked is not None:
                 scores = {t.name: score for t, score in ranked}
-                kept = [t for t, score in ranked if score >= self.reranker.min_score][:served]
+                above = [t for t, score in ranked if score >= self.reranker.min_score]
+                kept = serve(above, served, names)
                 if kept or not shortlist:
                     return kept, {t.name: scores[t.name] for t in kept}, False
                 # Floor dropped all: serve the BM25 top ``served`` flagged ``low_confidence``,
                 # not a bare [] that reads as "the fleet cannot do this" (#303).
-                fallback = shortlist[:served]
+                fallback = serve(shortlist, served, names)
                 return fallback, {t.name: scores[t.name] for t in fallback}, True
-        return shortlist[:served], None, False
+        return serve(shortlist, served, names), None, False
 
     def _make_search_tool(self) -> Tool:
         if self._search_tool is not None:
@@ -408,6 +414,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
                 arguments: Annotated[dict[str, Any] | None, "Arguments to pass to the tool"] = None,
                 ctx: Context = None,  # type: ignore[assignment]
             ) -> Any:
+                if name in {t.name for t in transform.skills}:  # tools-only clients (#368)
+                    return (await ctx.read_resource(skill_uri(name))).contents[0].content
                 if arguments and any(v is None or isinstance(v, dict) for v in arguments.values()):
                     catalog = await transform.get_tool_catalog(ctx)
                     target = next((t for t in catalog if t.name == name), None)

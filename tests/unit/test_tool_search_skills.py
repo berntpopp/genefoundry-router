@@ -1,4 +1,4 @@
-"""#336: search_tools returns skill:// pointers for workflow skills, never callable tools."""
+"""#336/#368: search_tools returns skill:// pointers for workflow skills; call_tool reads them."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from genefoundry_router.tool_search import CompactBM25SearchTransform
 ROOT = Path(__file__).resolve().parents[2]
 NAME = "skill_somatic-variant-interpretation"
 URI = "skill://somatic-variant-interpretation/SKILL.md"
-POINTER_KEYS = {"name", "skill", "description", "read"}
+POINTER_KEYS = {"name", "skill", "description", "read", "call"}
 
 
 def _server():
@@ -40,6 +40,7 @@ async def test_query_returns_skill_pointer() -> None:
     hit = next(h for h in hits if h["name"] == NAME)
     assert hit["skill"] == URI
     assert hit["read"] == {"method": "resources/read", "uri": URI}
+    assert hit["call"] == {"tool": "call_tool", "arguments": {"name": NAME}}
     assert hit["description"].startswith("Use when")
     assert set(hit) == POINTER_KEYS  # no call, no inputSchema
 
@@ -52,13 +53,33 @@ async def test_skill_pointer_shape_in_full_and_strict(detail: str) -> None:
     assert set(hit) == POINTER_KEYS and hit["skill"] == URI
 
 
-async def test_call_tool_rejects_skill_name() -> None:
+async def test_call_tool_reads_skill_for_tools_only_clients() -> None:
+    async with Client(_server()) as client:
+        result = await client.call_tool("call_tool", {"name": NAME})
+        served = (await client.read_resource(URI))[0].text  # type: ignore[union-attr]
+    assert not result.is_error
+    assert result.content[0].text == served  # type: ignore[union-attr]
+
+
+async def test_call_tool_rejects_unknown_skill_name() -> None:
     async with Client(_server()) as client:
         result = await client.call_tool(
-            "call_tool", {"name": NAME, "arguments": {}}, raise_on_error=False
+            "call_tool", {"name": "skill_no-such-skill", "arguments": {}}, raise_on_error=False
         )
     assert result.is_error
     assert "search_tools" in result.content[0].text  # type: ignore[union-attr]
+
+
+async def test_skill_hit_does_not_consume_limit() -> None:
+    tools = [t for t in load_catalog() if not t.name.startswith("skill_")]
+    transform = CompactBM25SearchTransform(skills=skill_tools(ROOT / "skills"))
+    query = "candidate genes from patient phenotype"
+    plain, _, _ = await CompactBM25SearchTransform()._ranked(tools, query, 3)
+    hits, _, _ = await transform._ranked(tools, query, 3)
+    assert [t.name for t in hits if not t.name.startswith("skill_")] == [t.name for t in plain]
+    assert [t.name for t in hits if t.name.startswith("skill_")] == [
+        "skill_phenotype-to-candidate-genes"
+    ]
 
 
 async def test_unrelated_query_unchanged() -> None:

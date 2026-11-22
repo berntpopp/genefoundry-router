@@ -10,7 +10,8 @@ it reaches authorization, call routing or rate limits, and every tool stays call
 
 ``GF_SCHEMA_MODE`` / ``X-GF-Schema-Mode`` pick the listed schema form the same way: the
 backends' standard schemas, the OpenAI-strict projection (#293) for clients that need it, or
-the token-lean slim projection (``schema_slim``).
+the token-lean slim projection (``schema_slim``). ``X-GF-Skills: off`` hides workflow-skill
+hits from ``search_tools`` (no-skill baselines, #368); a skill stays readable by name.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ PINNED_MODE_HEADER = "x-gf-pinned-mode"
 _MODES: tuple[str, ...] = get_args(PinnedMode)
 SchemaMode = Literal["standard", "strict", "slim"]
 SCHEMA_MODE_HEADER = "x-gf-schema-mode"
+SKILLS_HEADER = "x-gf-skills"
 
 
 def _header_mode[M: str](header: str, modes: tuple[str, ...], default: M) -> M:
@@ -45,6 +47,11 @@ def request_mode(default: PinnedMode) -> PinnedMode:
 def request_schema_mode(default: SchemaMode) -> SchemaMode:
     """The caller's valid ``X-GF-Schema-Mode``, else ``default`` (also off-HTTP)."""
     return _header_mode(SCHEMA_MODE_HEADER, get_args(SchemaMode), default)
+
+
+def request_skills() -> bool:
+    """False when the caller sent ``X-GF-Skills: off`` (no skill hits in ``search_tools``)."""
+    return _header_mode(SKILLS_HEADER, ("on", "off"), "on") == "on"
 
 
 @dataclass(frozen=True)
