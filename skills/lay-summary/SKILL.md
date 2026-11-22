@@ -62,7 +62,7 @@ be in another language: translate their meaning, never their wording word by wor
 | Pathogenic | the change is harmful and explains the problem or a raised (higher) chance; not a certainty; relatives' chance as given; the next step in the facts | "you will get (another) cancer", "no risk", "test your children now" |
 | VUS | we do not yet know whether this change matters; it does not explain the problem and is not a diagnosis; it is not used to test relatives or change care; it may be reviewed later | cause, "explains", "linked to your illness", "relatives should be tested" |
 | Negative, no family variant known | lowers the chance but does not rule out an inherited cause; screening follows the family history | "healthy", "all clear", "ruled out", "no risk" |
-| Negative for the known family variant | not inherited; her chance is not raised by it (the same as other people); usual screening for everyone | that other genes or causes were checked |
+| Negative for the known family variant | not inherited; their chance is not raised by it (the same as other people); usual screening for everyone | that other genes or causes were checked |
 | Carrier | does not have the condition, carriers are usually healthy; the chances only if the partner is a carrier too; the partner test or options in the facts | "you have / will get it", "your child will have it" |
 | CNV | explains the problem; effects differ, the course cannot be predicted; parents' test | how the child will develop |
 | Medicine (PGx) | which medicine it concerns, and only that; not a disease, no effect on health by itself; the doctor or pharmacist chooses the medicine | any dose; the patient starting, stopping or lowering a medicine |

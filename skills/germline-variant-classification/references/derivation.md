@@ -70,7 +70,8 @@ Scores between 0.290 and 0.644 are indeterminate: no PP3, no BP4.
 
 Points (Tavtigian 2020, PMID 32720330): Supporting 1, Moderate 2, Strong 4, Very strong 8;
 benign codes count negative. BA1 is stand-alone and never added: BA1 met means Benign unless
-the VCEP lists an exception (Ghosh 2018, PMID 30311383). Classes (same paper, Table 3):
+the variant is on the ClinGen SVI BA1 exception list (Ghosh 2018, PMID 30311383) or a VCEP
+exempts it. Classes (same paper, Table 3):
 
 | Total points | Class |
 |---|---|

@@ -1,6 +1,6 @@
 # Full somatic workflow (optional)
 
-Read only when the routing table in SKILL.md leaves a question open (no approval and no
+Read only when the call steps in SKILL.md leaves a question open (no approval and no
 curated evidence, conflicting sources, or the user asks for prevalence, biology or a full
 oncogenicity work-up).
 

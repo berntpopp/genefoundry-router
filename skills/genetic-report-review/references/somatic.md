@@ -20,5 +20,5 @@ Standards: AMP/ASCO/CAP tiers (Li 2017, PMID 27993330); ClinGen/CGC/VICC oncogen
 5. **Possible germline origin.** A VAF near 50% or 100% in a cancer-predisposition gene
    (`clinvar_get_variant` germline class, `gnomad_get_variant_frequencies`) should prompt a
    recommendation for germline testing with counselling.
-6. **Nomenclature** as for germline (Pass 3), with the build stated; many cancer sources
+6. **Nomenclature** as for germline (Pass 3 in `references/checklist.md`), with the build stated; many cancer sources
    are GRCh37-first.

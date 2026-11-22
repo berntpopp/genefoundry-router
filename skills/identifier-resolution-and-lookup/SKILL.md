@@ -7,8 +7,7 @@ description: Use when a question needs identifiers chained across two or more da
 
 Goal: answer "X → Y → property" questions with the fewest calls, and stop. Most lookup
 errors are identifier errors: the wrong id type, the wrong build, or one id resolved many
-times. Reach tools through `search_tools` → `call_tool`; pinned entry points
-(`hgnc_*`, `mondo_*`, `gnomad_*`, `hpo_*`, `vep_annotate_variant`) are also callable directly.
+times. Call tools as the tool list below says (direct, or through `call_tool`); no search first.
 
 ## 1. Plan the hops before the first call
 

@@ -5,7 +5,8 @@ description: Use when asked to classify a germline sequence variant (SNV or smal
 
 # Germline variant classification (ACMG/AMP)
 
-Re-derive the class from evidence; never copy a class from ClinVar or a report. Every criterion
+Re-derive the class from evidence unless Step 0 finds an expert-panel class; never copy a
+ClinVar aggregate or a report's class. Every criterion
 is decided from a tool result, weighted by the rules below, and summed as points step by step.
 
 Use the tools as listed below (direct, or through `call_tool`); never search for them. A tool
@@ -99,7 +100,7 @@ and follow it. In short:
 | splicing | `spliceai_predict_splicing`(`variant_id`, `genome_build`) | splicing only |
 
 Hard limit: 8 calls after Step 0, in this order, skipping rows that do not apply: VEP →
-gnomAD (BA1 or BS1 met: stop, the variant is benign or likely benign) → AutoPVS1 only for a
+gnomAD (BA1 met: stop, the variant is benign; BS1 is −4 points in the sum, not a class) → AutoPVS1 only for a
 null variant → SpliceAI only for an intronic, synonymous or splice-region variant → ClinGen
 validity → cspecs only if ClinGen names a VCEP for the gene. At the limit, or when the
 remaining codes need data no tool gives (segregation, de novo, functional, case counts):

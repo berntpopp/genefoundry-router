@@ -1,6 +1,6 @@
 # Germline SNV/indel report: per-variant checks
 
-Use with Passes 3 to 6 of `SKILL.md`. One block per reported variant.
+Use with Passes 3 to 6 of `references/checklist.md`. One block per reported variant.
 
 ## 1. Identity of the variant
 
@@ -50,7 +50,8 @@ PP3 resting on the same data; PM1 with PP3 above strong; PP5/BP6 used as evidenc
 
 Add step by step: very strong 8, strong 4, moderate 2, supporting 1; benign codes count
 negative the same way. BA1 is not added: it is stand-alone, so BA1 alone means Benign unless
-a VCEP lists an exception for the variant (Ghosh 2018, PMID 30311383).
+the variant is on the ClinGen SVI BA1 exception list (Ghosh 2018, PMID 30311383) or a VCEP
+exempts it.
 Totals: pathogenic ≥ 10; likely pathogenic 6 to 9; VUS 0 to 5; likely benign −1 to −6;
 benign ≤ −7. Show the sum. If the stated codes do not reach the stated class, that is a
 Major finding; if the class would change the clinical message (e.g. LP → VUS), Critical.

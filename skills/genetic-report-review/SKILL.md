@@ -124,6 +124,7 @@ Never rewrite HGVS, gene names, class or OMIM numbers yourself; propose the fix.
 - `clingen_search_dosage`(query, region, cytoband, haplo_score, triplo_score, record_type, page, size) — via call_tool
 - `clinpgx_get_api_data`(operation, path_parameters, query_parameters, form_parameters, representation, pointer, pointers, limit) — via call_tool
 - `clinpgx_get_website_data`(operation, path_parameters, query_parameters, pointer, pointers, limit) — via call_tool
+- `clinpgx_list_datasets`(query, include_legacy, limit) — via call_tool
 - `clinpgx_search_dataset`(dataset_id, member, query, filters, match, limit, include_fields, parent_fields) — via call_tool
 - `clinpgx_search_records`(entity_type, query, filters, source, view, limit, shape) — via call_tool
 - `clinvar_get_variant`(identifier, id_type) — direct

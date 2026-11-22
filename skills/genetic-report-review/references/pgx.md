@@ -9,7 +9,7 @@ Standard terms: CPIC (Caudle 2017, PMID 27441996). Sources: ClinPGx/PharmGKB, CP
    metabolizer", "intermediate metabolizer", "decreased function"). Check the diplotype's
    phenotype against CPIC data via `clinpgx_search_dataset` (CPIC allele / diplotype tables)
    or `clinpgx_get_website_data` (CPIC routes); find the right dataset id first with
-   `search_tools`. If no table is reachable, apply the CPIC standard-term rule itself: two
+   `clinpgx_list_datasets`. If no table is reachable, apply the CPIC standard-term rule itself: two
    no-function alleles = poor metabolizer; one no-function plus one normal-function allele =
    intermediate metabolizer (Caudle 2017). A phenotype that contradicts the diplotype is Critical
    when it changes the drug recommendation.
