@@ -11,7 +11,7 @@ import hashlib
 from typing import Any
 
 from genefoundry_router.registry import is_client_safe_name
-from genefoundry_router.skill_search import SKILL_PREFIX
+from genefoundry_router.skill_search import SKILL_PREFIX, skill_call_uri
 
 _UNKNOWN_IDENTITY = ("_unknown", "_unknown")
 
@@ -94,6 +94,9 @@ async def resolve_dispatch_namespace(context: Any) -> str | None:
     target = arguments.get("name") if isinstance(arguments, dict) else None
     if not isinstance(target, str) or not target:
         return _UNKNOWN_IDENTITY[1]
+    # a skill read (#370): a fixed label, never the caller-supplied name
+    if skill_call_uri(target, (arguments or {}).get("arguments")):
+        return "skill"
     resolved = False
     server = getattr(getattr(context, "fastmcp_context", None), "fastmcp", None)
     if server is not None:

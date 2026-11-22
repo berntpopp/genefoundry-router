@@ -20,6 +20,7 @@ from genefoundry_router.tool_search import CompactBM25SearchTransform
 ROOT = Path(__file__).resolve().parents[2]
 NAME = "skill_somatic-variant-interpretation"
 URI = "skill://somatic-variant-interpretation/SKILL.md"
+GERMLINE = "skill://germline-variant-classification"
 POINTER_KEYS = {"name", "skill", "description", "read", "call"}
 
 
@@ -70,7 +71,48 @@ async def test_call_tool_reads_skill_for_tools_only_clients(call: dict) -> None:
         result = await client.call_tool("call_tool", call)
         served = (await client.read_resource(URI))[0].text  # type: ignore[union-attr]
     assert not result.is_error
+    text = result.content[0].text  # type: ignore[union-attr]
+    assert text.startswith(served) and len(text) > len(served)  # SKILL.md + router footer
+
+
+async def test_call_tool_reads_a_skill_reference_file_verbatim() -> None:
+    """#370: a supporting file opens through call_tool, byte-identical to resources/read."""
+    uri = f"{GERMLINE}/references/derivation.md"
+    async with Client(_server()) as client:
+        result = await client.call_tool(
+            "call_tool", {"name": "read_resource", "arguments": {"uri": uri}}
+        )
+        served = (await client.read_resource(uri))[0].text  # type: ignore[union-attr]
+    assert not result.is_error
     assert result.content[0].text == served  # type: ignore[union-attr]
+
+
+async def test_skill_md_footer_lists_supporting_files_on_call_tool_path_only() -> None:
+    """#370: the footer names every supporting file with its exact call; resources/read
+    stays the file itself."""
+    async with Client(_server()) as client:
+        result = await client.call_tool(
+            "call_tool", {"name": "skill_germline-variant-classification"}
+        )
+        served = (await client.read_resource(f"{GERMLINE}/SKILL.md"))[0].text  # type: ignore[union-attr]
+        plain = await client.call_tool("call_tool", {"name": "skill_lay-summary"})
+        lay = (await client.read_resource("skill://lay-summary/SKILL.md"))[0].text  # type: ignore[union-attr]
+    text = result.content[0].text  # type: ignore[union-attr]
+    raw = (ROOT / "skills/germline-variant-classification/SKILL.md").read_text()
+    assert served == raw and text.startswith(served)
+    footer = text[len(served) :]
+    for ref in [
+        "derivation",
+        "functional",
+        "mitochondrial",
+        "pvs1",
+        "repeat-expansion",
+        "splicing",
+    ]:
+        call = f'call_tool(name="read_resource", arguments={{"uri": "{GERMLINE}/references/{ref}.md"}})'
+        assert call in footer
+    assert "_manifest" not in footer
+    assert plain.content[0].text == lay  # type: ignore[union-attr]  # no supporting files, no footer
 
 
 async def test_skill_call_validates_against_strict_listing() -> None:
@@ -90,8 +132,21 @@ async def test_skill_call_validates_against_strict_listing() -> None:
         {"name": "read_resource", "arguments": {"uri": "skill://no-such-skill/SKILL.md"}},
         {"name": "read_resource", "arguments": {"uri": "file:///etc/passwd"}},
         {"name": "resources/read", "arguments": {"uri": "skill://x/../../SKILL.md"}},
+        {"name": "read_resource", "arguments": {"uri": f"{GERMLINE}/references/../SKILL.md"}},
+        {"name": "read_resource", "arguments": {"uri": f"{GERMLINE}/references/nope.md"}},
+        {"name": "read_resource", "arguments": {"uri": f"{GERMLINE}/../lay-summary/SKILL.md"}},
+        {"name": "read_resource", "arguments": {"uri": f"{GERMLINE}/_manifest"}},
     ],
-    ids=["unknown_skill", "unknown_skill_uri", "non_skill_uri", "traversal"],
+    ids=[
+        "unknown_skill",
+        "unknown_skill_uri",
+        "non_skill_uri",
+        "traversal",
+        "ref_traversal",
+        "unknown_file",
+        "skill_traversal",
+        "manifest",
+    ],
 )
 async def test_call_tool_rejects_unknown_skill_or_non_skill_uri(call: dict) -> None:
     async with Client(_server()) as client:

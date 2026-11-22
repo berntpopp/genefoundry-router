@@ -5,6 +5,7 @@ import json
 from typing import Any
 
 import httpx
+import pytest
 import structlog
 from asgi_correlation_id import correlation_id
 from fastmcp.exceptions import ToolError
@@ -271,6 +272,18 @@ async def test_call_tool_dispatch_target_is_bucketed_when_unresolved() -> None:
 
     assert entry["upstream_namespace"] == "_unknown"
     assert "IGNORE" not in str(entry)
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        {"name": "skill_lay-summary"},
+        {"name": "read_resource", "arguments": {"uri": "skill://lay-summary/references/x.md"}},
+    ],
+)
+async def test_call_tool_skill_read_is_audited_under_skill_namespace(call: dict) -> None:
+    """#370: a skill read through call_tool is attributed to "skill", not "_unknown"."""
+    assert (await _record(_Ctx("call_tool", call)))["upstream_namespace"] == "skill"
 
 
 async def test_plain_tool_call_has_no_upstream_namespace() -> None:

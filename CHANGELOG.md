@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.3] - 2026-11-22
+
+### Fixed
+
+- **Tools-only clients can open a skill's supporting files** (#370). `call_tool(name="read_resource", arguments={"uri": "skill://<name>/references/<file>"})` (or `resources/read`) now returns any file the skills provider serves for a known skill, byte-identical to `resources/read`; before, only `SKILL.md` opened, so tools-only models ran e.g. `germline-variant-classification` without the references it says to read. A `SKILL.md` returned through `call_tool` ends with a short router note listing each supporting file's exact `call_tool` call (only for skills that have supporting files); `resources/read` output and the SKILL.md texts are unchanged. Traversal, unknown files, `_manifest` and other schemes stay `not_found`. `call_tool` skill reads are audited under `upstream_namespace="skill"` instead of `_unknown`. No tool schema or description change; drift baseline still `fleet-2026-11-22b`.
+
 ## [0.14.2] - 2026-11-22
 
 ### Fixed
