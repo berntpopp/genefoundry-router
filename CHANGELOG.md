@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.4] - 2026-11-22
+
+### Fixed
+
+- **A missed skill read no longer says the tool is missing** (#372). `call_tool(name="read_resource" | "resources/read", ...)` with a URI that is not a served skill file, or `call_tool(name="skill_<unknown>")`, returned `not_found` "The requested tool is not available.", so a model concluded `read_resource` did not exist and searched for another tool. It now returns `not_found` with the fixed message "No skill file at that URI; only skill:// files listed in a skill's router note can be read via call_tool." The message never echoes the caller's URI or name; an ordinary unknown tool keeps the old message. No tool schema or description change; drift baseline still `fleet-2026-11-22b`.
+
 ## [0.14.3] - 2026-11-22
 
 ### Fixed

@@ -21,6 +21,17 @@ from fastmcp.tools.base import Tool
 SKILL_PREFIX = "skill_"
 # The names tools-only agents guess for reading a resource (#368); skill:// URIs only.
 READ_ALIASES = frozenset({"read_resource", "resources/read"})
+# Fixed text for a missed skill read (#372): read_resource EXISTS, so "tool is not
+# available" sends models hunting for another tool. Never echoes the caller's URI/name.
+SKILL_MISS_MESSAGE = (
+    "No skill file at that URI; only skill:// files listed in a skill's router note "
+    "can be read via call_tool."
+)
+
+
+def is_skill_name(name: object) -> bool:
+    """True for a ``call_tool`` target that asks for a skill file (#372)."""
+    return isinstance(name, str) and (name in READ_ALIASES or name.startswith(SKILL_PREFIX))
 
 
 def skill_tools(skills_dir: Path) -> list[Tool]:
