@@ -13,9 +13,10 @@ RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 
-# fleet-2026-11-22: strict capture of 30 verified signed backend releases (autopvs1, civic, clingen,
-# clinpgx, clinvar, genereviews, gnomad, litvar, mavedb, moalmanac, pubtator, spliceai, vep
-# re-released). Previous: fleet-2026-11-20b (clinvar, vep, mondo, hpo, ucsc re-released; civic,
+# fleet-2026-11-22b: strict capture of 30 verified signed backend releases (ucsc, gtex, stringdb,
+# clinvar, spliceai, gnomad, vep, mondo re-released). Previous: fleet-2026-11-22 (autopvs1, civic,
+# clingen, clinpgx, clinvar, genereviews, gnomad, litvar, mavedb, moalmanac, pubtator, spliceai,
+# vep re-released); fleet-2026-11-20b (clinvar, vep, mondo, hpo, ucsc re-released; civic,
 # cbioportal, opentargets, moalmanac added); fleet-2026-11-20
 # (nine re-released for
 # foreign-identifier handling and batch pointers: hgnc, hpo, clingen, orphanet, uniprot, gnomad,
@@ -23,10 +24,10 @@ APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 # Updating these four hashes adopts the reviewed fleet atomically with its captured evidence;
 # they must never move independently merely to make a failing check pass.
 HISTORICAL_EVIDENCE_SHA256 = {
-    APPLICATION_RELEASES: "d4fd5dd7e6b47ef70016ef428293f4e9863f8571a09dd64527a1b61e36297f68",
-    RELEASE_INVENTORY: "748c4a858fdab39f0b40ae11e7a88f014e229d702711fd185372bd9fc455d60a",
-    RELEASE_CANDIDATE: "a78f31f1d88cdcd7db043a8807605e3624138b2ccd66d802bb0ea537ae301f24",
-    BASELINE: "a78f31f1d88cdcd7db043a8807605e3624138b2ccd66d802bb0ea537ae301f24",
+    APPLICATION_RELEASES: "7b681e41ca812f407cbf3ab69ba6a24cbcf4c86bbbbd007812a4ce66e6f8c1db",
+    RELEASE_INVENTORY: "df2a882caed813d5b244c9c5b02994ae7406c9bbc9201d8bb6e75df2be0bfe1c",
+    RELEASE_CANDIDATE: "343174c7c13f439d7c7f3a2f31de594f923598bf7f26a5a4f484bb9911a2a45a",
+    BASELINE: "343174c7c13f439d7c7f3a2f31de594f923598bf7f26a5a4f484bb9911a2a45a",
 }
 
 

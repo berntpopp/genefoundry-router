@@ -4,6 +4,14 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-11-22
+
+### Changed
+
+- **Drift baseline re-pinned to `fleet-2026-11-22b`** from the deployed fleet (strict release-candidate capture; every live definition digest equals its signed release manifest): ucsc-link 0.6.3, gtex-link 3.2.5, stringdb-link 4.5.2, clinvar-link 0.10.6 (data `bundle-2026-11-16-r2`), spliceailookup-link 4.3.4, gnomad-link 9.3.6, vep-link 1.2.7, mondo-link 0.11.3. Still 30 backends and 345 tools: 6 tools changed, none added or removed. Router v0.14.0 must not be deployed against this fleet: its baseline pins the earlier definitions and `GF_DRIFT_MODE=enforce` refuses to boot.
+- Definition changes (description only): gtex `get_gene_information` names its `not_found` list and both `get_gene_information`/`get_transcript_information` say `genome_build` GRCh37 returns no rows; gnomad `resolve_variant_id`/`search_variants` enrich the top 3 hits (was 5); mondo `resolve_disease`/`get_disease` say an umbrella term lists its descendants' genes. ucsc, stringdb, clinvar, spliceai and vep changed behaviour only.
+- BM25 expansions regenerated for the 6 changed tools. Regenerated catalog snapshot, fleet provenance and `server.json`.
+
 ## [0.14.0] - 2026-11-22
 
 ### Added

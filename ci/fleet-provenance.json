@@ -4835,11 +4835,11 @@
       "name": "clinvar",
       "namespace": "clinvar",
       "release": {
-        "commit": "98639f18c49ad9a139f47d4d98d8d5d6a8ba48cd",
+        "commit": "e7c5fca8ada4f395a7c5a075f6898b7505879e2b",
         "definitions_sha256": "941feafa6cf3465b35addb01609573e807abfc899dbe673fadfd61d132da923a",
-        "image": "ghcr.io/berntpopp/clinvar-link@sha256:c3a568a372e219034f06059e9151d99315339368a3ca421d09711f1ed29bc825",
-        "tag": "v0.10.5",
-        "version": "0.10.5"
+        "image": "ghcr.io/berntpopp/clinvar-link@sha256:f4bc31e1a0b6dfd166a90b9e72afc6608a91a3f780319fa24732af86cb043dac",
+        "tag": "v0.10.6",
+        "version": "0.10.6"
       },
       "repository": "berntpopp/clinvar-link",
       "repository_url": "https://github.com/berntpopp/clinvar-link",
@@ -7639,11 +7639,11 @@
       "name": "gnomad",
       "namespace": "gnomad",
       "release": {
-        "commit": "d806a8c65f6709ee5e1ea54931abec5b325cd583",
-        "definitions_sha256": "ed5453bce30bb94a2a5c36e9641bbf9cdb75c22726df685dededc2143fcb16e5",
-        "image": "ghcr.io/berntpopp/gnomad-link@sha256:375673fddf71d7bc20d8550fb29a9cab1f5680a0402213713c92562bebe47f57",
-        "tag": "v9.3.5",
-        "version": "9.3.5"
+        "commit": "d9c403ff162dfa684dcc9071e916fc01d3f1a6c5",
+        "definitions_sha256": "1bba7b648e79cca6fd940c3dd4957052ea9f4d998b49ccde454bfc6ea0c5393e",
+        "image": "ghcr.io/berntpopp/gnomad-link@sha256:11fe00f7dfc4a1541043f896912e884f039d85090fe20d4456c86aced984e57c",
+        "tag": "v9.3.6",
+        "version": "9.3.6"
       },
       "repository": "berntpopp/gnomad-link",
       "repository_url": "https://github.com/berntpopp/gnomad-link",
@@ -9143,7 +9143,7 @@
               },
               "enrich": {
                 "default": true,
-                "description": "Second-pass fetch gene_symbol, major_consequence, and AF for the top 5 hits.",
+                "description": "Second-pass fetch gene_symbol, major_consequence, and AF for the top 3 hits.",
                 "type": "boolean"
               },
               "limit": {
@@ -9206,7 +9206,7 @@
               },
               "enrich": {
                 "default": true,
-                "description": "Second-pass fetch gene_symbol, major_consequence, and AF for the top 5 hits.",
+                "description": "Second-pass fetch gene_symbol, major_consequence, and AF for the top 3 hits.",
                 "type": "boolean"
               },
               "limit": {
@@ -9286,11 +9286,11 @@
       "name": "gtex",
       "namespace": "gtex",
       "release": {
-        "commit": "1e95079be24920a1a23a6930a901c5a22f308d98",
-        "definitions_sha256": "10f34b7e71e87bfbc603621b776558bc1f78c8ebd70d3caab9318af69bcf8c4c",
-        "image": "ghcr.io/berntpopp/gtex-link@sha256:d451034703219d0bf1289b7766d1e83ab5cafc01c8ac5a59177ab355284bce03",
-        "tag": "v3.2.1",
-        "version": "3.2.1"
+        "commit": "5a2985e2c29b34898ab044b9727952e33f0aff64",
+        "definitions_sha256": "c328df5e70200be0915b22d23feb827b0bf5eeac6ba752f062b7c0a1cecd82c5",
+        "image": "ghcr.io/berntpopp/gtex-link@sha256:89a2a95ff5467af9b7b9fd4e9b21974ca608136658a69909db67dcb50681ceff",
+        "tag": "v3.2.5",
+        "version": "3.2.5"
       },
       "repository": "berntpopp/gtex-link",
       "repository_url": "https://github.com/berntpopp/gtex-link",
@@ -9427,7 +9427,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Retrieve detailed gene information from GTEx Portal for one or more GENCODE IDs or gene symbols. Returns chromosome, coordinates, gene type, Entrez ID, and description. Use when you already know the gene identifier.",
+          "description": "Retrieve detailed gene information from GTEx Portal for one or more GENCODE IDs or gene symbols. Returns chromosome, coordinates, gene type, Entrez ID, and description. Use when you already know the gene identifier. Inputs that match no gene are listed in `not_found` (`not_returned` when `truncated`).",
           "federated_name": "gtex_get_gene_information",
           "inputSchema": {
             "additionalProperties": false,
@@ -9478,7 +9478,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Genome assembly build; omit for the server default."
+                "description": "Genome assembly build; omit for the server default. GTEx reference annotations are GRCh38-only, so GRCh37 returns no rows."
               }
             },
             "required": [
@@ -9547,7 +9547,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Genome assembly build; omit for the server default."
+                "description": "Genome assembly build; omit for the server default. GTEx reference annotations are GRCh38-only, so GRCh37 returns no rows."
               },
               "limit": {
                 "default": 250,
@@ -15376,7 +15376,7 @@
           "4"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-20T13:11:33.075919Z"
+        "updated_at": "2026-11-22T12:38:44.472703Z"
       },
       "domain": "Disease ontology / cross-references",
       "entrypoints": [
@@ -15386,11 +15386,11 @@
       "name": "mondo",
       "namespace": "mondo",
       "release": {
-        "commit": "28cbd641f1a84ad0a02ef650106085dd01b03a8a",
-        "definitions_sha256": "e9a4257c4452d59b7061e904a5f9c53006aec2c0d487a207817375a0e30c534f",
-        "image": "ghcr.io/berntpopp/mondo-link@sha256:ea6eff72966163396b9e5416ce3f67a004e36185e9102cabc95c208355c999b2",
-        "tag": "v0.11.2",
-        "version": "0.11.2"
+        "commit": "5526f1b04f147d2aa2c9877afd171ee03ac18f73",
+        "definitions_sha256": "c80a97d29693626c50cae22040fb58c2208f72500c5d22d12322448ce351cb08",
+        "image": "ghcr.io/berntpopp/mondo-link@sha256:741aaa96e0469854a673c100b4bd3ace626b6df96692f2255e49dbff6c150730",
+        "tag": "v0.11.3",
+        "version": "0.11.3"
       },
       "repository": "berntpopp/mondo-link",
       "repository_url": "https://github.com/berntpopp/mondo-link",
@@ -15465,7 +15465,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Resolve a disease label, synonym, MONDO id, or external cross-reference CURIE (OMIM/Orphanet/DOID/...) to the canonical Mondo term {mondo_id, name, match_type} and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. causal_genes: [] means Mondo asserts none; the field is absent only when the loaded data predates the gene table. A near-miss or acronym-like label falls back to a conservative fuzzy match (match_type='fuzzy'). The strongest match type wins (primary label > exact synonym > related synonym); only a tie returns ambiguous_query with candidates, each carrying match_type and score; an obsolete id returns not_found with its successor. Signature: resolve_disease(query, response_mode=).",
+          "description": "Resolve a disease label, synonym, MONDO id, or external cross-reference CURIE (OMIM/Orphanet/DOID/...) to the canonical Mondo term {mondo_id, name, match_type} and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. A term with no gene of its own lists its descendants' genes (at most 20), each with from_descendant=<child MONDO id>. causal_genes: [] means Mondo asserts none; the field is absent only when the loaded data predates the gene table. A near-miss or acronym-like label falls back to a conservative fuzzy match (match_type='fuzzy'). The strongest match type wins (primary label > exact synonym > related synonym); only a tie returns ambiguous_query with candidates, each carrying match_type and score; an obsolete id returns not_found with its successor. Signature: resolve_disease(query, response_mode=).",
           "federated_name": "mondo_resolve_disease",
           "inputSchema": {
             "additionalProperties": false,
@@ -15577,7 +15577,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Return a Mondo disease term: definition, synonyms, grouped cross-references, direct parents and children, top-level groupings, subsets, obsolescence (replaced_by/consider), and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. causal_genes: [] means Mondo asserts none; the field is absent only when the loaded data predates the gene table. The term accepts a MONDO id, a label/synonym, or an external xref CURIE (resolved first). Pass fields=['xrefs.OMIM', ...] for a sparse projection. Signature: get_disease(term, response_mode=, fields=).",
+          "description": "Return a Mondo disease term: definition, synonyms, grouped cross-references, direct parents and children, top-level groupings, subsets, obsolescence (replaced_by/consider), and germline causal genes (Mondo assertion). causal_genes [{hgnc_id, symbol}] are Mondo's has_material_basis_in_germline_mutation_in assertions for mostly monogenic diseases, not a gene-disease validity curation (use GenCC/ClinGen for that); next_commands chain to hgnc_resolve_symbol for the gene's band and details. A term with no gene of its own lists its descendants' genes (at most 20), each with from_descendant=<child MONDO id>. causal_genes: [] means Mondo asserts none; the field is absent only when the loaded data predates the gene table. The term accepts a MONDO id, a label/synonym, or an external xref CURIE (resolved first). Pass fields=['xrefs.OMIM', ...] for a sparse projection. Signature: get_disease(term, response_mode=, fields=).",
           "federated_name": "mondo_get_disease",
           "inputSchema": {
             "additionalProperties": false,
@@ -22021,11 +22021,11 @@
       "name": "spliceai",
       "namespace": "spliceai",
       "release": {
-        "commit": "942f198f4b1a3da41a8c4824031c85227c98b5be",
+        "commit": "194eb2abfa85e76a10aeada8317aa80a8f7052fd",
         "definitions_sha256": "491bfa94d559ef28ab4d74b30db934414edd10cd2063d2ecf16453f83c24ea9c",
-        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:f313af615f62e73704e48e173d52e974931c3a7a2c254c2ba170b57f5544f8e7",
-        "tag": "v4.3.3",
-        "version": "4.3.3"
+        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:964a4fb90b90f0fd17e4dac128872397cf392b9538d6281f5276401c592fa3b6",
+        "tag": "v4.3.4",
+        "version": "4.3.4"
       },
       "repository": "berntpopp/spliceailookup-link",
       "repository_url": "https://github.com/berntpopp/spliceailookup-link",
@@ -22973,11 +22973,11 @@
       "name": "stringdb",
       "namespace": "stringdb",
       "release": {
-        "commit": "229ee1a5222838ecd21afdcc04757a12599c46f7",
+        "commit": "38fbe0e1a07dd0ce9fb7d08374e4be10910d6413",
         "definitions_sha256": "e7eb83412332702dded220bc915f14f80276deb94526230b1530331dd636153f",
-        "image": "ghcr.io/berntpopp/stringdb-link@sha256:d73a05daf72af86f357caac46e87192101a69f8665fb6f07cfe9765fdeab9c70",
-        "tag": "v4.5.0",
-        "version": "4.5.0"
+        "image": "ghcr.io/berntpopp/stringdb-link@sha256:b042a9a6777073867b52437fb5b809c8b6f5a88903f830d880153d032eccea5b",
+        "tag": "v4.5.2",
+        "version": "4.5.2"
       },
       "repository": "berntpopp/stringdb-link",
       "repository_url": "https://github.com/berntpopp/stringdb-link",
@@ -23959,11 +23959,11 @@
       "name": "ucsc",
       "namespace": "ucsc",
       "release": {
-        "commit": "aa4e2cd0cea3d2786dcd70782928b6ac8df975af",
+        "commit": "e0dd159e9a3bfc45087990cbe2818cec114b9627",
         "definitions_sha256": "9f5ef426852e70e25c4e159770ed2f0ac11e3648587bd3c4a42ab67e172326e7",
-        "image": "ghcr.io/berntpopp/ucsc-link@sha256:9c230bf78f7284b45f2194366bca76455d3816d9f1a9ccf22085393f3be96155",
-        "tag": "v0.6.0",
-        "version": "0.6.0"
+        "image": "ghcr.io/berntpopp/ucsc-link@sha256:e2b42fd4611f838bb866bf90828efe319ce9a0b3c941c2880ab1e04bf2990ba2",
+        "tag": "v0.6.3",
+        "version": "0.6.3"
       },
       "repository": "berntpopp/ucsc-link",
       "repository_url": "https://github.com/berntpopp/ucsc-link",
@@ -25504,11 +25504,11 @@
       "name": "vep",
       "namespace": "vep",
       "release": {
-        "commit": "844e906a93719b3668db0104835a702086aa951a",
+        "commit": "a774d20df059164488c281a1751be4bf0c6a5c75",
         "definitions_sha256": "092e4b2c2f3a5a903b58242f79ddf020fe92d00b23fc959a4cd34b4b316a714e",
-        "image": "ghcr.io/berntpopp/vep-link@sha256:eec9a508e58b187cdfa0789b9163644c575bc2174ff5685f19f626aeb69826e8",
-        "tag": "v1.2.6",
-        "version": "1.2.6"
+        "image": "ghcr.io/berntpopp/vep-link@sha256:f21aae204b1f8b2042b11a0b8db1f7fbfddf8abc486b5ebaf56181900adb15b3",
+        "tag": "v1.2.7",
+        "version": "1.2.7"
       },
       "repository": "berntpopp/vep-link",
       "repository_url": "https://github.com/berntpopp/vep-link",
