@@ -16,11 +16,11 @@
       "name": "autopvs1",
       "namespace": "autopvs1",
       "release": {
-        "commit": "ac17687d90240ba818071915a81c02fbff68f729",
+        "commit": "f1384f5afe0db0be9c591d67a6ca5c2dbda8328f",
         "definitions_sha256": "778255b227295db4e572a1cb322f62424edd0a0e712aba7c8cf4090405cb2881",
-        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:a3b71d5c572658a6a6547634c5122f403b07f1fdeced1c3d696dd0559ebf1958",
-        "tag": "v4.2.2",
-        "version": "4.2.2"
+        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:4102681857d8872659fb06b1a051be11b8caf09b70b17986e1de25662ab7373a",
+        "tag": "v4.2.3",
+        "version": "4.2.3"
       },
       "repository": "berntpopp/autopvs1-link",
       "repository_url": "https://github.com/berntpopp/autopvs1-link",
@@ -1139,11 +1139,11 @@
       "name": "civic",
       "namespace": "civic",
       "release": {
-        "commit": "a9c7acaf0662e49436f202a7ffe9c9d454c1db3f",
+        "commit": "f9a34d08c2ec67d3bb5c4423133e4532fd9fe349",
         "definitions_sha256": "28b48ddd4ad0d282f579e7755444ab5e6f66b4d96b3da04a492d8d1ea25cad7a",
-        "image": "ghcr.io/berntpopp/civic-link@sha256:59eabd6a1dbb1c4322b8b5603a97213fed3a8f36aa21cc92bb56da5ed53172b7",
-        "tag": "v0.1.1",
-        "version": "0.1.1"
+        "image": "ghcr.io/berntpopp/civic-link@sha256:ae9f107076030f5b5c6241b2fd420478a584eec09bf9b0e457bb17abd0db6596",
+        "tag": "v0.1.2",
+        "version": "0.1.2"
       },
       "repository": "berntpopp/civic-link",
       "repository_url": "https://github.com/berntpopp/civic-link",
@@ -1815,7 +1815,7 @@
           "2"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-19T19:04:59.970326Z"
+        "updated_at": "2026-11-22T07:05:02.616712Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -1824,11 +1824,11 @@
       "name": "clingen",
       "namespace": "clingen",
       "release": {
-        "commit": "892d5ea5c6caf8468a022fba67f12555a0f7289c",
-        "definitions_sha256": "9cc4a4f5667aa4e36d857f27c92ec2f7126dc9b8a726eb400ee514ba1619d08a",
-        "image": "ghcr.io/berntpopp/clingen-link@sha256:561406191295431022e70648a9846e699d8539efffbfd5daa572510fadacea00",
-        "tag": "v4.2.0",
-        "version": "4.2.0"
+        "commit": "d777a50ef526ae35b2041b1aa051c0ca3a9b47ab",
+        "definitions_sha256": "5a953edee3977068ee95a0a683ed4ed2daef27e7483fdeada282a9c7d08414ae",
+        "image": "ghcr.io/berntpopp/clingen-link@sha256:3d61fee8fe1f4b5b5dbab238555423ccd5597e173936121a8d0038ce09409423",
+        "tag": "v4.2.2",
+        "version": "4.2.2"
       },
       "repository": "berntpopp/clingen-link",
       "repository_url": "https://github.com/berntpopp/clingen-link",
@@ -2264,7 +2264,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Search ClinGen dosage-sensitivity curations of genes and recurrent CNV regions (ISCA) by text, ISCA region id, cytoband, or haplo/triplo score; returns per record its haploinsufficiency + triplosensitivity scores with interpretation, cytoband, GRCh37/GRCh38 coordinates and permalink. Optionally restrict to gene or region records. Paginated; a `truncated` block appears when more matches exist. Returns ~2-10kB.",
+          "description": "Search ClinGen dosage-sensitivity curations of genes and recurrent CNV regions (ISCA) by gene, ISCA region id, MONDO id, cytoband, or haplo/triplo score; returns per record its haploinsufficiency + triplosensitivity scores with interpretation, cytoband, GRCh37/GRCh38 coordinates and permalink. Optionally restrict to gene or region records. Paginated; a `truncated` block appears when more matches exist. Returns ~2-10kB.",
           "federated_name": "clingen_search_dosage",
           "inputSchema": {
             "additionalProperties": false,
@@ -2326,7 +2326,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Free-text gene / disease / ISCA text (FTS).",
+                "description": "Gene symbol / HGNC id, ISCA region id, MONDO id, or cytoband prefix. Disease and syndrome names are not indexed: pass their MONDO id.",
                 "examples": [
                   "1p36"
                 ]
@@ -3119,18 +3119,18 @@
           "1.0.0"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-18T19:07:09.820302Z"
+        "updated_at": "2026-11-22T07:05:02.616712Z"
       },
       "domain": "Pharmacogenomics / gene-drug guidelines",
       "entrypoints": [],
       "name": "clinpgx",
       "namespace": "clinpgx",
       "release": {
-        "commit": "d242feb5e64835ba2b8b0d395721a45fdda3275a",
-        "definitions_sha256": "4b1e5784b5b81a2334978362275dedfbd31318b470198ef7a5fcd4a61ca45102",
-        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:3e10f28f00ee407ecc08a77488cd28c99d0825770572199fb17dd1194b34cf57",
-        "tag": "v0.1.18",
-        "version": "0.1.18"
+        "commit": "8f878a8da07c6f00bb5a0cd944dde8d9809a8d15",
+        "definitions_sha256": "1128974c44a185a686e1dd3b91eed513fb8990402ed39bc4d60246a2135d3050",
+        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:5a070e1be5293ced09453fcd863d75724929c1057eb0f0d596d942bd9c323514",
+        "tag": "v0.1.20",
+        "version": "0.1.20"
       },
       "repository": "berntpopp/clinpgx-link",
       "repository_url": "https://github.com/berntpopp/clinpgx-link",
@@ -3974,7 +3974,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Find pharmacogenomic gene-drug (PharmGKB/ClinPGx) records (genes, drugs (chemical), variants, alleles/haplotypes, clinical (summary)/variant annotations, guidelines, labels) by exact live filters or installed dataset memberships; returns PA accessions for get_record/get_related_records. Not drug-drug interactions. Filter keys are per entity_type (see filters); summary_annotation accepts level_of_evidence. Star alleles: get_record(entity_type='haplotype', source='website').",
+          "description": "Find pharmacogenomic gene-drug (PharmGKB/ClinPGx) records (genes, drugs (chemical), variants, alleles/haplotypes, clinical (summary)/variant annotations, guidelines, labels) by exact live filters or installed dataset memberships; returns PA accessions for get_record/get_related_records. Not drug-drug interactions. Filter keys are per entity_type (see filters); summary_annotation accepts level_of_evidence. Star alleles: query='CYP2D6*10' (allele) or get_record(entity_type='haplotype', source='website').",
           "federated_name": "clinpgx_search_records",
           "inputSchema": {
             "$defs": {
@@ -4818,15 +4818,15 @@
     },
     {
       "database_provenance": {
-        "asset_sha256": "sha256:f6009745ae0fff4788218c24274d2d94e3a403ca0d98ada4e9cb944cb5c1a1a3",
+        "asset_sha256": "sha256:687ea634e119e2fc7123f36eef9af9bd1f23d27caefe369b4de103c85c816fb5",
         "data_identity_contract": "runtime-v1",
         "mode": "external-reference",
-        "release_tag": "bundle-2026-11-16",
+        "release_tag": "bundle-2026-11-16-r2",
         "schema_compatibility": [
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-20T07:09:47.681202Z"
+        "updated_at": "2026-11-22T07:05:02.616712Z"
       },
       "domain": "Variant clinical significance",
       "entrypoints": [
@@ -4835,11 +4835,11 @@
       "name": "clinvar",
       "namespace": "clinvar",
       "release": {
-        "commit": "59d4eb7ec5b9bfb0209cdb2b12815f55352ece1c",
-        "definitions_sha256": "c1ab533e7f0ce57315b8ca06c2c1987ee5deff44fb38b5f95d28bb12ab9fddc8",
-        "image": "ghcr.io/berntpopp/clinvar-link@sha256:c947f81564d1d8acd0cf78f5fb5be17cd2a170526ec35e0451ca349c3c115dcb",
-        "tag": "v0.10.0",
-        "version": "0.10.0"
+        "commit": "98639f18c49ad9a139f47d4d98d8d5d6a8ba48cd",
+        "definitions_sha256": "941feafa6cf3465b35addb01609573e807abfc899dbe673fadfd61d132da923a",
+        "image": "ghcr.io/berntpopp/clinvar-link@sha256:c3a568a372e219034f06059e9151d99315339368a3ca421d09711f1ed29bc825",
+        "tag": "v0.10.5",
+        "version": "0.10.5"
       },
       "repository": "berntpopp/clinvar-link",
       "repository_url": "https://github.com/berntpopp/clinvar-link",
@@ -4859,7 +4859,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, or VariationID; returns its normalized classification, review status and 0-4 star rating plus a recommended_citation. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). minimal keeps up to 5 trait names; every other mode also returns the PubMed / PMC / Bookshelf ids its submissions cite: citations lists at most 50, citation_count is the full total; submissions holds OMIM's own SCV text (description, conditions, PMIDs); a description is capped at 500 characters in compact, 2,000 in standard (description_truncated) and a repeated description or PMID list is sent once (description_same_as, pmids_same_as). classification is the GERMLINE aggregate; somatic_clinical_impact (AMP tier) and oncogenicity are separate blocks (null when ClinVar has none); search_somatic_classifications(identifier=...) gives their per-submission tumour types and drugs without the germline payload. Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
+          "description": "Resolve a single ClinVar variant by VCV accession, dbSNP rsID, HGVS expression, ClinVar AlleleID, VariationID, or GRCh38 CHROM-POS-REF-ALT (13-28018505-C-A, as VEP returns it); returns its normalized classification, review status and 0-4 star rating plus a recommended_citation. A clean transcript-qualified HGVS resolves even without the (GENE) qualifier (e.g. NM_033380.3:c.1871G>A). minimal keeps up to 5 trait names; every other mode also returns the PubMed / PMC / Bookshelf ids its submissions cite: citations lists at most 50, citation_count is the full total; submissions holds OMIM's own SCV text (description, conditions, PMIDs); a description is capped at 500 characters in compact, 2,000 in standard (description_truncated) and a repeated description or PMID list is sent once (description_same_as, pmids_same_as). classification is the GERMLINE aggregate (a combined ClinVar term such as Pathogenic/Likely pathogenic folds to its weaker tier and clinical_significance then carries ClinVar's own words); somatic_clinical_impact (AMP tier) and oncogenicity are separate blocks (null when ClinVar has none); search_somatic_classifications(identifier=...) gives their per-submission tumour types and drugs without the germline payload. An identifier held by several records (a multi-allelic rsID or coordinate, one name under several VCVs) is ambiguous_query with the candidate VCVs, never one picked for you. Use this when you already have a variant identifier; if it fails to resolve, fall back to search_variants.",
           "federated_name": "clinvar_get_variant",
           "inputSchema": {
             "additionalProperties": false,
@@ -4873,7 +4873,8 @@
                   "variation_id",
                   "rsid",
                   "hgvs",
-                  "allele_id"
+                  "allele_id",
+                  "coordinate"
                 ],
                 "examples": [
                   "auto"
@@ -4881,11 +4882,12 @@
                 "type": "string"
               },
               "identifier": {
-                "description": "A single ClinVar variant identifier. Accepts a VCV accession (VCV000007105), a dbSNP rsID (rs334), an HGVS expression (NM_000059.3:c.1234A>G \u2014 the (GENE) qualifier is optional), a ClinVar AlleleID, or a VariationID. Use id_type to force one interpretation; the default 'auto' detects the shape.",
+                "description": "A single ClinVar variant identifier. Accepts a VCV accession (VCV000007105), a dbSNP rsID (rs80357906), an HGVS expression (NM_000059.3:c.1234A>G \u2014 the (GENE) qualifier is optional), a ClinVar AlleleID, a VariationID, or a GRCh38 VCF-style CHROM-POS-REF-ALT as VEP prints it (13-28018505-C-A; chr prefix and ':' accepted). Use id_type to force one interpretation; the default 'auto' detects the shape.",
                 "examples": [
                   "VCV000007105",
-                  "rs334",
-                  "NM_007294.4:c.5266dup"
+                  "rs80357906",
+                  "NM_007294.4:c.5266dup",
+                  "13-28018505-C-A"
                 ],
                 "maxLength": 512,
                 "minLength": 1,
@@ -4957,7 +4959,8 @@
                   "variation_id",
                   "rsid",
                   "hgvs",
-                  "allele_id"
+                  "allele_id",
+                  "coordinate"
                 ],
                 "examples": [
                   "auto"
@@ -4965,11 +4968,11 @@
                 "type": "string"
               },
               "identifiers": {
-                "description": "A LIST of ClinVar variant identifiers resolved in one call (the batch form of get_variant). Shapes may be mixed (VCV / rsID / HGVS / AlleleID / VariationID). Each WELL-FORMED input yields one result row echoing its identifier and a `found` flag, so an absent record is an explicit miss, never silently dropped; a MALFORMED element fails the whole call with invalid_input naming its position. Capped at 100 per call.",
+                "description": "A LIST of ClinVar variant identifiers resolved in one call (the batch form of get_variant). Shapes may be mixed (VCV / rsID / HGVS / AlleleID / VariationID / GRCh38 CHROM-POS-REF-ALT). Each WELL-FORMED input yields one result row echoing its identifier and a `found` flag, so an absent record is an explicit miss, never silently dropped; a MALFORMED element fails the whole call with invalid_input naming its position. Capped at 100 per call.",
                 "examples": [
                   [
                     "VCV000007105",
-                    "rs334"
+                    "rs80357906"
                   ]
                 ],
                 "items": {
@@ -6611,7 +6614,7 @@
           "0007_embedding_run_identity"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-19T19:04:59.970326Z"
+        "updated_at": "2026-11-22T07:05:02.616712Z"
       },
       "domain": "Gene\u2013disease literature",
       "entrypoints": [
@@ -6621,11 +6624,11 @@
       "name": "genereviews",
       "namespace": "genereviews",
       "release": {
-        "commit": "e167ba70a5993909055b925cc5a40d4e9714831b",
-        "definitions_sha256": "c1719652373c3d327fd5ba04ce74e24e80841667982557c9695675fabfa8f544",
-        "image": "ghcr.io/berntpopp/genereviews-link@sha256:a07c9de39611cd8126e9246835bc7140294bf2fadea29a87d385e75d235b0164",
-        "tag": "v5.4.0",
-        "version": "5.4.0"
+        "commit": "ca6640156fe03338eff2b759c3431e7257192030",
+        "definitions_sha256": "bd7a02857dcb54ef48737ad8847099a5d4863e807e1bdd8d0367e3b30c558960",
+        "image": "ghcr.io/berntpopp/genereviews-link@sha256:d844bb53e3f106bf9e0ef9c3e8f399dfbd5a8abdd1285308e03cecdadeda2080",
+        "tag": "v5.4.1",
+        "version": "5.4.1"
       },
       "repository": "berntpopp/genereviews-link",
       "repository_url": "https://github.com/berntpopp/genereviews-link",
@@ -6644,7 +6647,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Search GeneReviews by gene symbol; returns the PubMed IDs (ids, count) of matching GeneReviews chapters, from the indexed corpus first when available, then live NCBI E-utils. If resolver links are unavailable or no PubMed ID is found, use search_passages(gene=<symbol>) for indexed chapter evidence. Pass fresh=true to bypass the corpus and query live NCBI.",
+          "description": "Search GeneReviews by gene symbol; returns the PubMed IDs (ids, count) of matching GeneReviews chapters, from the indexed corpus first when available, then live NCBI E-utils. If resolver links are unavailable or no PubMed ID is found, use search_passages(gene=<symbol>) for indexed chapter evidence. For a disease name or other free text, use search_passages(q=<text>). Pass fresh=true to bypass the corpus and query live NCBI.",
           "federated_name": "genereviews_search_genereviews",
           "inputSchema": {
             "additionalProperties": false,
@@ -7636,11 +7639,11 @@
       "name": "gnomad",
       "namespace": "gnomad",
       "release": {
-        "commit": "59e478d175df30c6a00cc4739bfa2979c8ef723f",
-        "definitions_sha256": "65d173dc5a45eb26bc815f83817d9c941a4b66a66240a1f09916f9752b5a7baa",
-        "image": "ghcr.io/berntpopp/gnomad-link@sha256:104b0c49874b55c9929e50ce928d62dce6fe36a3a96c1e439c1ce34a8dd90c2b",
-        "tag": "v9.3.1",
-        "version": "9.3.1"
+        "commit": "d806a8c65f6709ee5e1ea54931abec5b325cd583",
+        "definitions_sha256": "ed5453bce30bb94a2a5c36e9641bbf9cdb75c22726df685dededc2143fcb16e5",
+        "image": "ghcr.io/berntpopp/gnomad-link@sha256:375673fddf71d7bc20d8550fb29a9cab1f5680a0402213713c92562bebe47f57",
+        "tag": "v9.3.5",
+        "version": "9.3.5"
       },
       "repository": "berntpopp/gnomad-link",
       "repository_url": "https://github.com/berntpopp/gnomad-link",
@@ -7758,7 +7761,6 @@
                 ],
                 "maxLength": 200,
                 "minLength": 5,
-                "pattern": "^(([1-9]|1\\d|2[0-2]|X|Y)-\\d+-[ACGT]+-[ACGT]+|rs\\d+)$",
                 "type": "string"
               }
             },
@@ -7861,7 +7863,6 @@
                 ],
                 "maxLength": 200,
                 "minLength": 5,
-                "pattern": "^(([1-9]|1\\d|2[0-2]|X|Y)-\\d+-[ACGT]+-[ACGT]+|rs\\d+)$",
                 "type": "string"
               }
             },
@@ -7963,7 +7964,6 @@
                 ],
                 "maxLength": 200,
                 "minLength": 5,
-                "pattern": "^([1-9]|1\\d|2[0-2]|X|Y)-\\d+-[ACGT]+-[ACGT]+$",
                 "type": "string"
               }
             },
@@ -8070,7 +8070,6 @@
                 ],
                 "maxLength": 200,
                 "minLength": 5,
-                "pattern": "^([1-9]|1\\d|2[0-2]|X|Y)-\\d+-[ACGT]+-[ACGT]+$",
                 "type": "string"
               }
             },
@@ -8553,7 +8552,6 @@
                 ],
                 "maxLength": 200,
                 "minLength": 5,
-                "pattern": "^([1-9]|1\\d|2[0-2]|X|Y|MT?)-\\d+-[ACGT]+-[ACGT]+$",
                 "type": "string"
               }
             },
@@ -8629,7 +8627,6 @@
                 ],
                 "maxLength": 200,
                 "minLength": 5,
-                "pattern": "^([1-9]|1\\d|2[0-2]|X|Y|MT?)-\\d+-[ACGT]+-[ACGT]+$",
                 "type": "string"
               }
             },
@@ -8834,7 +8831,6 @@
                 ],
                 "maxLength": 200,
                 "minLength": 3,
-                "pattern": "^(DEL|DUP|INS|INV|BND|CPX|CTX|MCNV)_chr([1-9]|1\\d|2[0-2]|X|Y|M)_\\w+$",
                 "type": "string"
               }
             },
@@ -8889,7 +8885,6 @@
                 ],
                 "maxLength": 100,
                 "minLength": 5,
-                "pattern": "^(?:chr)?(?:M|MT|m|mt)-\\d+-[ACGTacgt]+-[ACGTacgt]+$",
                 "type": "string"
               }
             },
@@ -9128,7 +9123,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when the caller only has an rsID, partial coordinates, or text fragment; returns candidate canonical gnomAD variant ids. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent).",
+          "description": "Use this when the caller only has an rsID, a CHROM-POS-REF-ALT id to confirm, or text fragment; returns candidate canonical gnomAD variant ids. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent).",
           "federated_name": "gnomad_resolve_variant_id",
           "inputSchema": {
             "additionalProperties": false,
@@ -9159,7 +9154,7 @@
                 "type": "integer"
               },
               "query": {
-                "description": "rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
+                "description": "rsID, CHROM-POS-REF-ALT, or a chrM id (M-POS-REF-ALT).",
                 "examples": [
                   "rs80357906"
                 ],
@@ -9222,7 +9217,7 @@
                 "type": "integer"
               },
               "query": {
-                "description": "rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
+                "description": "rsID, CHROM-POS-REF-ALT, or a chrM id (M-POS-REF-ALT).",
                 "examples": [
                   "rs80357906"
                 ],
@@ -11833,11 +11828,11 @@
       "name": "litvar",
       "namespace": "litvar",
       "release": {
-        "commit": "626acd1ded5d366eeba7463c8227d51d4a50a089",
+        "commit": "d36378732477071a97e4531adfa11ac3032231cb",
         "definitions_sha256": "e1dcd0dd649fa061d18251f3608b72db796b64c9407c1f94c552ae810105b145",
-        "image": "ghcr.io/berntpopp/litvar-link@sha256:f8fa37845b5753f7a4cb8e887ac4684b46e94078cf92ea641cd2596d99222094",
-        "tag": "v6.3.0",
-        "version": "6.3.0"
+        "image": "ghcr.io/berntpopp/litvar-link@sha256:2335590aa45afd325c5eb7a58a17f486eac1b96496a499e223595a38f1f1cf4a",
+        "tag": "v6.3.2",
+        "version": "6.3.2"
       },
       "repository": "berntpopp/litvar-link",
       "repository_url": "https://github.com/berntpopp/litvar-link",
@@ -12140,7 +12135,7 @@
           "4.0.0"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-19T07:06:49.809946Z"
+        "updated_at": "2026-11-22T07:05:02.616712Z"
       },
       "domain": "Variant-effect assay scores",
       "entrypoints": [
@@ -12149,11 +12144,11 @@
       "name": "mavedb",
       "namespace": "mavedb",
       "release": {
-        "commit": "719eb4742a68d1feede5a765e1a88e189a2e98f0",
-        "definitions_sha256": "132fc0c068de38178e41e3f24cbf21a12df35e429c8386f39579e8cacb230767",
-        "image": "ghcr.io/berntpopp/mavedb-link@sha256:4935418af1a15eef70d568a3a8e2c83fa1710044cc61837a00b599038d0c2236",
-        "tag": "v0.7.0",
-        "version": "0.7.0"
+        "commit": "de44731f00c8845705fd4b12a1ce9ab82014a3a9",
+        "definitions_sha256": "cc65853b6ecc4da1d7d31583d813b6d7a4cbf5405b2c8d21a7d8e3a956d674bf",
+        "image": "ghcr.io/berntpopp/mavedb-link@sha256:3a6289491d8bc5cc80f7e3968a53d8b5a1133cef7c38ad98eaa4ac57cade8703",
+        "tag": "v0.7.3",
+        "version": "0.7.3"
       },
       "repository": "berntpopp/mavedb-link",
       "repository_url": "https://github.com/berntpopp/mavedb-link",
@@ -12664,14 +12659,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Return the genome-mapped GA4GH VRS alleles for a score set's variants (urn:mavedb:...-a-1), each with its source variant URN, variant_index, VRS allele id, ClinGen Allele ID, and current flag \u2014 the bridge from assay coordinates to reference-genome/clinical coordinates. Rows are ordered numerically by variant_index to match get_variant_scores, but JOIN on variant_urn/variant_index (do not zip by row \u2014 some variants are unmapped). current_only (default true) collapses the current/superseded pair to one row per variant. Paged via offset/limit. Signature: get_mapped_variants(urn, current_only=, limit=, offset=, response_mode=).",
+          "description": "Return the genome-mapped GA4GH VRS alleles for a score set's variants (urn:mavedb:...-a-1), each with its source variant URN, variant_index, VRS allele id, ClinGen Allele ID, and current flag \u2014 the bridge from assay coordinates to reference-genome/clinical coordinates. Rows are ordered numerically by variant_index to match get_variant_scores, but JOIN on variant_urn/variant_index (do not zip by row \u2014 some variants are unmapped). MaveDB serves only each variant's current mapping, so current_only=false returns the same rows (kept for compatibility). Paged via offset/limit. Signature: get_mapped_variants(urn, current_only=, limit=, offset=, response_mode=).",
           "federated_name": "mavedb_get_mapped_variants",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "current_only": {
                 "default": true,
-                "description": "Keep only the current mapping per variant (default true).",
+                "description": "No effect: MaveDB serves only the current mapping per variant, so false returns the same rows (kept for compatibility).",
                 "type": "boolean"
               },
               "limit": {
@@ -13117,7 +13112,7 @@
               },
               "only_current": {
                 "default": true,
-                "description": "Keep only current genome mappings (default true).",
+                "description": "No effect: MaveDB serves only current genome mappings, so false returns the same hits (kept for compatibility).",
                 "type": "boolean"
               },
               "response_mode": {
@@ -15018,11 +15013,11 @@
       "name": "moalmanac",
       "namespace": "moalmanac",
       "release": {
-        "commit": "f71391d5a529b55c4215fa4255f44c71042b157d",
-        "definitions_sha256": "96c437bd74f96623277f640b94ec5fae95daa0712d9f4226d38e860bcb50ea60",
-        "image": "ghcr.io/berntpopp/moalmanac-link@sha256:402f599c433ca2fae8b61688fe15f90ca41d4130c70ea7a543ddba8757675ca0",
-        "tag": "v0.2.0",
-        "version": "0.2.0"
+        "commit": "bf5064ab7dab4f4f0a2453f9b254c8d95c414fed",
+        "definitions_sha256": "ca6799cc8883eca4c64d951f6be280bc938f02d9e612c105912bfd43c8fd5df9",
+        "image": "ghcr.io/berntpopp/moalmanac-link@sha256:70e106ccdfdd03f4c79ffe994d283a77c717466b968d1418f1d68a028ff27de7",
+        "tag": "v0.2.2",
+        "version": "0.2.2"
       },
       "repository": "berntpopp/moalmanac-link",
       "repository_url": "https://github.com/berntpopp/moalmanac-link",
@@ -15136,7 +15131,7 @@
                     "type": "null"
                   }
                 ],
-                "description": "Biomarker words, e.g. 'BRAF V600E', 'G12C', 'v::ALK' (fusions are 'v::GENE', any partner; V600 also matches V600E/K); an exact list_biomarkers name matches only that biomarker."
+                "description": "Biomarker words, e.g. 'BRAF V600E', 'G12C', 'v::ALK' (fusions are 'v::GENE', any partner; V600 also matches V600E/K); an exact list_biomarkers name matches only that biomarker, and 'NOT <name>' the rows that require its absence."
               },
               "biomarker_type": {
                 "anyOf": [
@@ -15292,7 +15287,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "List MOAlmanac's biomarker vocabulary (e.g. 'EGFR p.L858R', 'HER2-positive', 'ERBB2 amplification') with type, linked genes and active approval count, most approvals first: map a variant onto the biomarker wording search_approvals matches. Signature: list_biomarkers(gene=, biomarker_type=, limit=, offset=).",
+          "description": "List MOAlmanac's biomarker vocabulary (e.g. 'EGFR p.L858R', 'HER2-positive', 'ERBB2 amplification') with type, linked genes and active approval count (`approvals_when_absent`: approvals that require its absence), most approvals first: map a variant onto the biomarker wording search_approvals matches. Signature: list_biomarkers(gene=, biomarker_type=, limit=, offset=).",
           "federated_name": "moalmanac_list_biomarkers",
           "inputSchema": {
             "additionalProperties": false,
@@ -19235,11 +19230,11 @@
       "name": "pubtator",
       "namespace": "pubtator",
       "release": {
-        "commit": "44f4c1a0bd53564764f9ab1255108eb6a93f2651",
-        "definitions_sha256": "38042689b112d7fb10706b03407fa96ba433ec05c727b3df4005b4b9a4fe4519",
-        "image": "ghcr.io/berntpopp/pubtator-link@sha256:268e89878b5c738600826a73ebe06f0810d4b8c6ffe6b235286a9c0e266169ca",
-        "tag": "v7.7.2",
-        "version": "7.7.2"
+        "commit": "aeb6c138e8c37835ba16944cdc65f143d6c73730",
+        "definitions_sha256": "9f02a9da48778e57f726ffb4381e4d8a9eecddd6a15f86557b8694dd2287b579",
+        "image": "ghcr.io/berntpopp/pubtator-link@sha256:90e5538e476bb2e229a8b32bc8337b1b522ce19170a69d00a76e4a778979d87a",
+        "tag": "v7.7.4",
+        "version": "7.7.4"
       },
       "repository": "berntpopp/pubtator-link",
       "repository_url": "https://github.com/berntpopp/pubtator-link",
@@ -19365,8 +19360,20 @@
                 "type": "array"
               },
               "filters": {
-                "description": "Advanced PubTator3 filter as a JSON object string, e.g. '{\"journal\":[\"Nature\"]}'. Prefer the flat publication_types / year_min / year_max parameters; do not also set a JSON `type`/`year` key.",
-                "type": "string"
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Filter object (or JSON string), e.g. {\"type\":[\"Retracted Publication\"]}; keys type/journal/year. Prefer publication_types/year_min/year_max."
               },
               "guideline_boost": {
                 "default": false,
@@ -19446,7 +19453,8 @@
                     "Observational Study",
                     "Multicenter Study",
                     "Clinical Study",
-                    "Validation Study"
+                    "Validation Study",
+                    "Retracted Publication"
                   ],
                   "type": "string"
                 },
@@ -20793,7 +20801,8 @@
                     "Observational Study",
                     "Multicenter Study",
                     "Clinical Study",
-                    "Validation Study"
+                    "Validation Study",
+                    "Retracted Publication"
                   ],
                   "type": "string"
                 },
@@ -22012,11 +22021,11 @@
       "name": "spliceai",
       "namespace": "spliceai",
       "release": {
-        "commit": "eaf3627f2e6a014daa763d431ca3f6acfedf52d8",
-        "definitions_sha256": "e2bf88ce361b36631f1f958fef4da0f1d57f7d3a59408abaa12f81cbd207a344",
-        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:67867e1ddaae80a56772d561c432109b8c417fe6502be26d9ef4bc04fc26277b",
-        "tag": "v4.3.2",
-        "version": "4.3.2"
+        "commit": "942f198f4b1a3da41a8c4824031c85227c98b5be",
+        "definitions_sha256": "491bfa94d559ef28ab4d74b30db934414edd10cd2063d2ecf16453f83c24ea9c",
+        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:f313af615f62e73704e48e173d52e974931c3a7a2c254c2ba170b57f5544f8e7",
+        "tag": "v4.3.3",
+        "version": "4.3.3"
       },
       "repository": "berntpopp/spliceailookup-link",
       "repository_url": "https://github.com/berntpopp/spliceailookup-link",
@@ -22077,10 +22086,12 @@
             "properties": {
               "genome_build": {
                 "default": "GRCh38",
-                "description": "Build whose scoring containers to warm. GRCh38 default.",
+                "description": "Build whose scoring containers to warm. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
                 "enum": [
                   "GRCh37",
-                  "GRCh38"
+                  "GRCh38",
+                  "hg19",
+                  "hg38"
                 ],
                 "type": "string"
               },
@@ -22139,10 +22150,12 @@
               },
               "genome_build": {
                 "default": "GRCh38",
-                "description": "Reference build for resolution and scoring. GRCh38 default.",
+                "description": "Reference build for resolution and scoring. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
                 "enum": [
                   "GRCh37",
-                  "GRCh38"
+                  "GRCh38",
+                  "hg19",
+                  "hg38"
                 ],
                 "type": "string"
               },
@@ -22219,10 +22232,12 @@
               },
               "genome_build": {
                 "default": "GRCh38",
-                "description": "Reference build. GRCh38 default.",
+                "description": "Reference build. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
                 "enum": [
                   "GRCh37",
-                  "GRCh38"
+                  "GRCh38",
+                  "hg19",
+                  "hg38"
                 ],
                 "type": "string"
               },
@@ -22344,10 +22359,12 @@
               },
               "genome_build": {
                 "default": "GRCh38",
-                "description": "Reference build. GRCh38 default.",
+                "description": "Reference build. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
                 "enum": [
                   "GRCh37",
-                  "GRCh38"
+                  "GRCh38",
+                  "hg19",
+                  "hg38"
                 ],
                 "type": "string"
               },
@@ -22464,10 +22481,12 @@
               },
               "genome_build": {
                 "default": "GRCh38",
-                "description": "Reference build. GRCh38 default.",
+                "description": "Reference build. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
                 "enum": [
                   "GRCh37",
-                  "GRCh38"
+                  "GRCh38",
+                  "hg19",
+                  "hg38"
                 ],
                 "type": "string"
               },
@@ -22584,10 +22603,12 @@
               },
               "genome_build": {
                 "default": "GRCh38",
-                "description": "Reference build applied to every variant. GRCh38 default.",
+                "description": "Reference build applied to every variant. GRCh38 default. UCSC aliases hg19/hg38 accepted (case-insensitive).",
                 "enum": [
                   "GRCh37",
-                  "GRCh38"
+                  "GRCh38",
+                  "hg19",
+                  "hg38"
                 ],
                 "type": "string"
               },
@@ -25483,11 +25504,11 @@
       "name": "vep",
       "namespace": "vep",
       "release": {
-        "commit": "7cf04356c73a5b325212b4589ae0dc340f6b284c",
+        "commit": "844e906a93719b3668db0104835a702086aa951a",
         "definitions_sha256": "092e4b2c2f3a5a903b58242f79ddf020fe92d00b23fc959a4cd34b4b316a714e",
-        "image": "ghcr.io/berntpopp/vep-link@sha256:e0498a5875e53b09fc64c69d6b988002050122fb503bc616f57357207f9bcf14",
-        "tag": "v1.2.3",
-        "version": "1.2.3"
+        "image": "ghcr.io/berntpopp/vep-link@sha256:eec9a508e58b187cdfa0789b9163644c575bc2174ff5685f19f626aeb69826e8",
+        "tag": "v1.2.6",
+        "version": "1.2.6"
       },
       "repository": "berntpopp/vep-link",
       "repository_url": "https://github.com/berntpopp/vep-link",

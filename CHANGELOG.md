@@ -4,6 +4,15 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.13.17] - 2026-11-22
+
+### Changed
+
+- **Drift baseline re-pinned to `fleet-2026-11-22`** from the deployed fleet (strict release-candidate capture; every live definition digest equals its signed release manifest): autopvs1-link 4.2.3, civic-link 0.1.2, clingen-link 4.2.2, clinpgx-link 0.1.20, clinvar-link 0.10.5, genereviews-link 5.4.1, gnomad-link 9.3.5, litvar-link 6.3.2, mavedb-link 0.7.3, moalmanac-link 0.2.2, pubtator-link 7.7.4, spliceailookup-link 4.3.3, vep-link 1.2.6. Still 30 backends and 345 tools: 27 tools changed, none added or removed. Router v0.13.16 must not be deployed against this fleet: its baseline pins the earlier definitions and `GF_DRIFT_MODE=enforce` refuses to boot.
+- Definition changes: clinvar `get_variant`/`get_variants` accept a GRCh38 CHROM-POS-REF-ALT (`id_type="coordinate"`); gnomad's eight variant-id fields no longer publish their `pattern` (still enforced by the server, which now answers a wrong shape with `invalid_input` and a recovery call), and `CHROM:POS` is no longer advertised; spliceai `genome_build` accepts `hg19`/`hg38`; pubtator `filters` accepts an object and `Retracted Publication`; description fixes in clingen `search_dosage`, clinpgx `search_records`, genereviews `search_genereviews`, mavedb `current_only`/`only_current` and moalmanac `NOT <name>`. autopvs1, civic, litvar and vep changed behaviour only.
+- Pinned listing ceilings raised (approved by the owner's delegate in this release wave): default 18,000 → 18,200 tokens (measured 17,930 → 18,098), strict 18,800 → 19,000 (18,790 → 18,955). Mostly `clinvar_get_variant`'s coordinate `id_type` (+529 chars, clinvar-link#154).
+- BM25 expansions regenerated for the 18 tools whose expansion inputs changed. Regenerated catalog snapshot, fleet provenance and `server.json`.
+
 ## [0.13.16] - 2026-11-21
 
 ### Fixed
