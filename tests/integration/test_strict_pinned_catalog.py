@@ -43,6 +43,11 @@ PINNED_LISTING_TOKEN_BUDGET = 19_500
 # 0.14.9 (#384): measured 20,288 (was 19,107; +1,181), same `skill` tool; 19,200 -> 20,400.
 STRICT_LISTING_TOKEN_BUDGET = 20_400
 STRICT = RouterSettings(_env_file=None, GF_SCHEMA_MODE="strict")
+# Hard caps from docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md (Rule 5 + the 2026-11-23 exceptions,
+# #384). The ceilings above may move within these; the caps move only by amending the standard.
+ROUTER_SURFACE_CAP = 20_000  # Rule 5: the default listing
+STRICT_SURFACE_CAP = 20_500  # exception: the opt-in strict listing
+SKILL_TOOL_TOKEN_CAP = 1_600  # exception to B1: the `skill` meta-tool
 
 
 def _tokens(tools) -> int:
@@ -81,6 +86,21 @@ async def test_advertised_tools_are_openai_strict_and_budgeted() -> None:
     size = _tokens(listed)
     assert default_size <= PINNED_LISTING_TOKEN_BUDGET, default_size
     assert default_size <= size <= STRICT_LISTING_TOKEN_BUDGET, (default_size, size)
+    assert default_size <= ROUTER_SURFACE_CAP and size <= STRICT_SURFACE_CAP, (default_size, size)
+
+
+def test_ceilings_stay_within_the_standard_caps() -> None:
+    assert PINNED_LISTING_TOKEN_BUDGET <= ROUTER_SURFACE_CAP
+    assert STRICT_LISTING_TOKEN_BUDGET <= STRICT_SURFACE_CAP
+
+
+async def test_skill_tool_stays_under_its_cap() -> None:
+    # B1 exception (#384): the `skill` tool lists every served skill, so it grows with skills/;
+    # trim or split the skill list before it passes the cap. Strict mode is the larger form.
+    for settings in (None, STRICT):
+        async with Client(_pinned_server(settings)[0]) as client:
+            skill = [t for t in await client.list_tools() if t.name == "skill"]
+        assert len(skill) == 1 and _tokens(skill) <= SKILL_TOOL_TOKEN_CAP, _tokens(skill)
 
 
 async def test_strict_null_sentinels_are_stripped_before_dispatch() -> None:

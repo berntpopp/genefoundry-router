@@ -18,6 +18,8 @@ All notable changes to genefoundry-router are documented here.
 
 - The five pinned-description pointers (` Workflow skill: call_tool(name="skill_<name>").`, `SKILL_POINTERS`, #376). They were loaded 0 times in the benchmark. `call_tool(name="skill_<name>")` and the skill hits in `search_tools` stay for back-compat.
 
+- **Tool-Surface Budget Standard: two narrow, owner-approved exceptions (2026-11-23, #384).** The router's `skill` meta-tool may exceed the 1,200-token `B1` limit up to a hard cap of 1,600 tokens (1,273 today, 7 skills); the skill list must be trimmed or split before that cap is passed. Rule 5's 20,000-token router-surface limit applies to the default listing; the opt-in strict listing may reach 20,500. New guard tests in `tests/integration/test_strict_pinned_catalog.py` fail when `skill` exceeds 1,600 tokens, the default listing 20,000, or the strict listing 20,500.
+
 Listing ceilings (chars/4 estimator): pinned listing 18,250 -> 19,431 (+1,181 = `skill` +1,273, pointers -92), ceiling 18,400 -> 19,500; strict 19,107 -> 20,288, ceiling 19,200 -> 20,400; slim 7,013 -> 8,194, ceiling 7,100 -> 8,300. Router-side only: `skill` is not in the drift fingerprint, so the drift baseline stays `fleet-2026-11-22b`.
 
 ## [0.14.8] - 2026-11-23
