@@ -17,13 +17,14 @@ import asyncio
 import sys
 from pathlib import Path
 
-from genefoundry_router.config import load_registry
+from genefoundry_router.config import RouterSettings, load_registry
 from genefoundry_router.devtools.discoverability import (
     evaluate,
     format_report,
     load_catalog,
     load_tasks,
 )
+from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.tool_search import resolve_entrypoints
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,7 +42,9 @@ def main() -> int:
 
     registry = load_registry(ROOT / "servers.yaml", {})
     surfaced = [] if args.search_only else resolve_entrypoints(registry)
-    report = asyncio.run(evaluate(load_catalog(), load_tasks(), surfaced))
+    # Same expansions the served transform folds in (apply_tool_search).
+    expansions = expansion_texts(RouterSettings(_env_file=None).GF_SEARCH_EXPANSIONS)
+    report = asyncio.run(evaluate(load_catalog(), load_tasks(), surfaced, expansions=expansions))
     print(("SEARCH-ONLY " if args.search_only else "") + format_report(report))
 
     if report.score_out_of_10 < args.min_score:
