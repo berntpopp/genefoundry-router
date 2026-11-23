@@ -19,6 +19,7 @@ from genefoundry_router.devtools.fakes import load_manifest, make_backend_from_s
 from genefoundry_router.observability import METRICS_REGISTRY
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.server import build_app, build_server
+from genefoundry_router.skill_search import SKILL_POINTERS, skill_pointer
 from tests.integration.test_strict_pinned_catalog import BASELINE, ROOT, _pinned_server, _tokens
 
 SLIM = RouterSettings(_env_file=None, GF_SCHEMA_MODE="slim")
@@ -33,7 +34,8 @@ META = ("search_tools", "call_tool")
 #                 2 single / 75 batch calls, 0 out of turns, accuracy 0.80.
 # fleet-2026-11-20 schemas measured 6,929; hiding `offset` on hpo_search_terms and
 # hpo_get_phenotypes_for_gene (slim_keep) brought it back under the ceiling.
-SLIM_LISTING_TOKEN_BUDGET = 6_900  # measured 6,875 on 2026-11-20 (standard: 17,809)
+# 0.14.5 (#376): measured 6,983 (+108) with the five pinned skill pointers; 6,900 -> 7,100.
+SLIM_LISTING_TOKEN_BUDGET = 7_100  # measured 6,875 on 2026-11-20 (standard: 17,809)
 
 
 def _walk_param(node, path: str):
@@ -74,8 +76,11 @@ async def test_slim_listing_shape() -> None:
         assert set(schema.get("required") or ()) == required, name
         assert "additionalProperties" not in schema, name  # hidden params must still validate
         assert tool.output_schema is None, name
-        assert tool.description and len(tool.description) <= 300, name
-        assert standard[name].description.startswith(tool.description.rstrip("…")), name
+        # #376: the listed skill pointer rides after the slimmed backend description.
+        suffix = skill_pointer(SKILL_POINTERS[name]) if name in SKILL_POINTERS else ""
+        desc = (tool.description or "").removesuffix(suffix)
+        assert desc and len(desc) <= 300, name
+        assert standard[name].description.startswith(desc.rstrip("…")), name
         for path, key in _walk_param(props, name):
             assert key not in ("examples", "title", "default"), (path, key)
         for pname, pschema in props.items():

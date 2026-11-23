@@ -119,3 +119,22 @@ def test_instructions_follow_the_listed_pins() -> None:
     assert "Only `search_tools` and `call_tool` appear" in none
     minimal = build_instructions(_registry(), listed={"gnomad_search_genes"})
     assert "gnomad_search_genes" in minimal and "gnomad_resolve_variant_id" not in minimal
+
+
+def test_first_paragraph_names_every_served_skill_and_its_call() -> None:
+    # #376: hosts truncate instructions, and agents never search for skills.
+    from pathlib import Path
+
+    from genefoundry_router.skill_search import skill_tools
+
+    skills = skill_tools(Path(__file__).resolve().parents[2] / "skills")
+    first = build_instructions(_registry(), skills=skills).split("\n\n")[0]
+    assert 'call_tool(name="skill_<name>")' in first
+    for s in skills:
+        assert s.name.removeprefix("skill_") in first
+    assert len(first.split("WORKFLOW SKILLS")[1]) < 600  # the added line stays compact
+
+
+def test_no_skills_no_skills_line() -> None:
+    assert "WORKFLOW SKILLS" not in build_instructions(_registry())
+    assert "germline" not in build_instructions(_registry())

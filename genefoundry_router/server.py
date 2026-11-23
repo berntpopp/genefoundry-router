@@ -69,6 +69,7 @@ from genefoundry_router.schema_slim import SlimParamsMiddleware
 from genefoundry_router.schema_strict import StrictNullMiddleware
 from genefoundry_router.search_rerank import SystemOneReranker
 from genefoundry_router.security import add_host_origin_validation, wrap_mcp_cors
+from genefoundry_router.skill_search import skill_tools
 from genefoundry_router.tool_search import (
     apply_tool_search,
     listed_pins,
@@ -133,13 +134,17 @@ def build_server(
         if refresh_ledger is not None
         else build_auth(settings)
     )  # caller auth at the edge; never forwarded upstream (R1.6)
+    skills_dir = Path(settings.GF_SKILLS_DIR)
+    if not skills_dir.is_dir():  # the provider would silently serve zero skills
+        raise ConfigurationError(f"GF_SKILLS_DIR {str(skills_dir)!r} is not a directory")
+    skills = skill_tools(skills_dir)
     # instructions: orient the host's model on the two-layer search surface so a
     # capability absent from the top-level listing isn't read as missing (issue #3).
     server: FastMCP = FastMCP(
         "genefoundry",
         version=__version__,
         auth=auth,
-        instructions=build_instructions(registry, listed_pins(registry, settings)),
+        instructions=build_instructions(registry, listed_pins(registry, settings), skills),
     )
     server.add_middleware(WriteAuthorizationMiddleware())
     server.add_middleware(MetricsMiddleware())  # R1.7 — before transforms so all calls count
@@ -150,7 +155,7 @@ def build_server(
     notfound_guard = NotFoundGuard(BACKEND_STATUS)
     policy = pin_policy(registry, settings)
     server.add_middleware(
-        PinnedModeInstructions(registry, policy, lambda: notfound_guard.unavailable)
+        PinnedModeInstructions(registry, policy, lambda: notfound_guard.unavailable, skills)
     )
     server.add_middleware(StrictNullMiddleware())  # #293: before guard + cache (stable keys)
     server.add_middleware(SlimParamsMiddleware(policy, settings.GF_SCHEMA_MODE))  # outside cache
@@ -176,9 +181,6 @@ def build_server(
             log.warning("backend_skipped", backend=backend.name, reason="missing_url")
             continue
         register_backend(server, backend, proxy_target=target, timeout=settings.GF_BACKEND_TIMEOUT)
-    skills_dir = Path(settings.GF_SKILLS_DIR)
-    if not skills_dir.is_dir():  # the provider would silently serve zero skills
-        raise ConfigurationError(f"GF_SKILLS_DIR {str(skills_dir)!r} is not a directory")
     server.add_provider(SkillsDirectoryProvider(skills_dir))
     if enable_search:
         apply_tool_search(
@@ -232,6 +234,7 @@ def build_app(
         raise
     guard = load_runtime_guard(settings)
     server.add_transform(guard)
+    skills = skill_tools(Path(settings.GF_SKILLS_DIR))  # build_server checked the dir
     mcp_app = server.http_app(  # ASGI sub-app; its lifespan must be entered
         path=settings.GF_MCP_PATH,
         stateless_http=True,
@@ -253,7 +256,7 @@ def build_app(
         # Advertise only what the live catalog serves (issue #256): instructions/pins named
         # every configured backend even when it harvested 0 tools, so agents called dead pins.
         live = [b for b in registry if b.namespace not in unreachable]
-        server.instructions = build_instructions(live, listed_pins(registry, settings))
+        server.instructions = build_instructions(live, listed_pins(registry, settings), skills)
         if (notfound := getattr(server, "notfound_guard", None)) is not None:
             notfound.unavailable = frozenset(unreachable)
         guard.evaluate(
