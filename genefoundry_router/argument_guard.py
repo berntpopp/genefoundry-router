@@ -20,6 +20,12 @@ from genefoundry_router.notfound_guard import _envelope
 
 log = structlog.get_logger(__name__)
 
+_CALL_SHAPE_MESSAGE = "call_tool takes `name` (required) and `arguments` only."
+_CALL_SHAPE_HINT = (
+    'Use call_tool(name="<namespace>_<tool>", arguments={...}) — put the tool\'s own '
+    "arguments inside `arguments`."
+)
+
 
 async def _accepted(fctx: Any, name: Any, arguments: Any) -> list[str] | None:
     """Sorted accepted parameter names if ``arguments`` has a key the schema forbids."""
@@ -46,7 +52,14 @@ class ArgumentGuard(Middleware):
         message = context.message
         if fctx is not None:
             accepted = await _accepted(fctx, message.name, message.arguments)
-            if accepted is None and message.name == "call_tool" and message.arguments:
+            # #375: target arguments at top level, or no string `name` (FastMCP's own
+            # missing-argument dump echoes the caller's input).
+            shape = message.name == "call_tool" and (
+                accepted is not None or not isinstance((message.arguments or {}).get("name"), str)
+            )
+            if shape:
+                accepted = ["arguments", "name"]
+            elif accepted is None and message.name == "call_tool" and message.arguments:
                 # StrictNullMiddleware (outer) already decoded a JSON-string `arguments`.
                 inner = message.arguments
                 accepted = await _accepted(fctx, inner.get("name"), inner.get("arguments"))
@@ -56,10 +69,14 @@ class ArgumentGuard(Middleware):
                     {
                         "success": False,
                         "error_code": "invalid_input",
-                        "message": "The tool does not accept one or more supplied arguments.",
+                        "message": _CALL_SHAPE_MESSAGE
+                        if shape
+                        else "The tool does not accept one or more supplied arguments.",
                         "retryable": False,
                         "allowed_values": accepted,
-                        "suggestions": [
+                        "suggestions": [_CALL_SHAPE_HINT]
+                        if shape
+                        else [
                             "Retry with only the parameters listed in allowed_values "
                             "(the tool's inputSchema properties)."
                         ],

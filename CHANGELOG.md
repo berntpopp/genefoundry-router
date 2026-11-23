@@ -4,6 +4,20 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.7] - 2026-11-23
+
+### Fixed
+
+- **An unknown tool name now names the nearest real tool** (#380). Invented names are the top cause of failed calls for weaker models. When the requested name's namespace is a served namespace and its tool part is close to a real tool there (`difflib`, cutoff 0.6), the `not_found` envelope's first suggestion names it; e.g. `hgnc_search_gene` gets ``Did you mean `hgnc_search_genes`? call_tool(name="hgnc_search_genes", arguments={...}).``; the generic search_tools hint follows. The suggestion is a catalog name only, never the requested string; it comes from the in-memory catalog of the last harvest and is confirmed with `get_tool` (quarantined or hidden tools are never suggested); a down or forbidden backend still answers `upstream_unavailable` first (#325). No backend calls.
+- **A skill-file miss suggests the skill's file list** (#374). Its `suggestions` was the generic search_tools hint; it is now the fixed `Call call_tool(name="skill_<name>") to see the skill's listed files.`
+- **`call_tool` without `name`, or with the target's arguments at top level, shows the call shape** (#375). Both now return `invalid_input` "call_tool takes `name` (required) and `arguments` only." with `allowed_values: ["arguments", "name"]` and the fixed hint `Use call_tool(name="<namespace>_<tool>", arguments={...}) — put the tool's own arguments inside `arguments`.` A missing `name` used to return FastMCP's raw pydantic dump, which echoed the caller's input.
+
+### Changed
+
+- The not-found guard's Layer 5 log-scrub filter moved from `notfound_guard.py` to `notfound_log_scrub.py` (600-LOC budget); no behaviour change.
+
+No tool schema or description change; drift baseline still `fleet-2026-11-22b`.
+
 ## [0.14.6] - 2026-11-23
 
 ### Fixed

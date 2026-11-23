@@ -32,7 +32,8 @@ from prometheus_client import generate_latest
 
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.devtools.fakes import make_fake_backend
-from genefoundry_router.notfound_guard import _SCRUBBED_MESSAGE, _UNKNOWN_TOOL_MESSAGE
+from genefoundry_router.notfound_guard import _UNKNOWN_TOOL_MESSAGE
+from genefoundry_router.notfound_log_scrub import _SCRUBBED_MESSAGE
 from genefoundry_router.observability import METRICS_REGISTRY
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.server import build_server

@@ -28,7 +28,7 @@ from genefoundry_router.audit_identity import (
     resolve_search_hits,
     search_result_label,
 )
-from genefoundry_router.notfound_guard import redacted_message
+from genefoundry_router.notfound_log_scrub import redacted_message
 from genefoundry_router.refresh_observability import (
     CLIENT_CLASSES,
     FAILURE_REASONS,
@@ -278,7 +278,7 @@ class OAuthProxyPrivacyFilter(logging.Filter):
     live in ``record.args``. Deleting the template threw away the only thing that said what
     happened (`"...it was already rotated, expired, or revoked ... which forces the client
     to re-authenticate"`) to protect data that was never in it. This is the same lesson
-    ``notfound_guard`` records for 2026-08-07, and it reuses that module's interpolation.
+    ``notfound_log_scrub`` records for 2026-08-07, and it reuses that module's interpolation.
 
     The two shapes are told apart by ``record.args``, which is a sound test rather than a
     heuristic:

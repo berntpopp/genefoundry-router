@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import difflib
 import re
+from collections.abc import Collection
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -79,6 +81,19 @@ CLIENT_SAFE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 def qualified_name(namespace: str, tool: str) -> str:
     """Return the gateway-visible name for a tool under a namespace."""
     return f"{namespace}_{tool}"
+
+
+def nearest_tool(requested: str, names: Collection[str]) -> str | None:
+    """The name in ``names`` closest to an unknown ``<namespace>_<tool>``, searched only in
+    that namespace; ``None`` below the cutoff (#380). Returns a catalog name, never input."""
+    namespace, _, leaf = requested.partition("_")
+    pool = {
+        n.partition("_")[2]: n
+        for n in names
+        if n.partition("_")[0] == namespace and is_client_safe_name(n)
+    }
+    match = difflib.get_close_matches(leaf, pool, n=1, cutoff=0.6)
+    return pool[match[0]] if match else None
 
 
 def expected_server_name(backend: BackendDef) -> str:
