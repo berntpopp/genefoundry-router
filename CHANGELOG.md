@@ -4,6 +4,22 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.9] - 2026-11-23
+
+### Added
+
+- **One listed `skill` tool serves the workflow skills to tools-only clients** (#384). This is the Agent Skills "skill tool" pattern used by Claude Code, Codex CLI and inspect_ai. It takes one free-text `command` parameter: `The skill name (no arguments). E.g., "germline-variant-classification"`. Its description is a fixed header adapted from inspect_ai 0.3.260 (MIT) plus an `<available_skills>` list of every served skill (name and SKILL.md `description`), sorted by name; a golden test pins it byte for byte to the benchmarked text. `skill(command="<name>")` returns exactly what `call_tool(name="skill_<name>")` returns (SKILL.md plus the router footer); both use the same code path. An unknown command returns a fixed `not_found` envelope that lists the real skill names and never echoes the input. The tool is absent from tools/list, and its call is rejected as unknown, under `X-GF-Skills: off` or when no skills are served. Benchmark (70 development classification cases): gpt-oss 120B scored .971 with this tool vs .857 with skills off (p=.008) and loaded a skill 44/70 times; the description pointers loaded one 0 times.
+
+### Changed
+
+- The server instructions' WORKFLOW SKILLS line now says ``load the matching one with `skill(command="<name>")` ``.
+
+### Removed
+
+- The five pinned-description pointers (` Workflow skill: call_tool(name="skill_<name>").`, `SKILL_POINTERS`, #376). They were loaded 0 times in the benchmark. `call_tool(name="skill_<name>")` and the skill hits in `search_tools` stay for back-compat.
+
+Listing ceilings (chars/4 estimator): pinned listing 18,250 -> 19,431 (+1,181 = `skill` +1,273, pointers -92), ceiling 18,400 -> 19,500; strict 19,107 -> 20,288, ceiling 19,200 -> 20,400; slim 7,013 -> 8,194, ceiling 7,100 -> 8,300. Router-side only: `skill` is not in the drift fingerprint, so the drift baseline stays `fleet-2026-11-22b`.
+
 ## [0.14.8] - 2026-11-23
 
 ### Changed

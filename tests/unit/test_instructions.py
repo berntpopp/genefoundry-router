@@ -129,7 +129,7 @@ def test_first_paragraph_names_every_served_skill_and_its_call() -> None:
 
     skills = skill_tools(Path(__file__).resolve().parents[2] / "skills")
     first = build_instructions(_registry(), skills=skills).split("\n\n")[0]
-    assert 'call_tool(name="skill_<name>")' in first
+    assert 'skill(command="<name>")' in first
     for s in skills:
         assert s.name.removeprefix("skill_") in first
     assert len(first.split("WORKFLOW SKILLS")[1]) < 600  # the added line stays compact

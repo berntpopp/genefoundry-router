@@ -5,17 +5,20 @@ Each ``skills/<name>/SKILL.md`` becomes a synthetic BM25 document named ``skill_
 the ``skill://`` resource, never in the listing or the call catalog. ``call_tool`` with its
 name (or ``read_resource`` with its URI) returns the same SKILL.md text, for clients
 that cannot read resources (#368), plus a footer naming its supporting files, which
-``read_resource`` opens the same way (#370).
+``read_resource`` opens the same way (#370). The listed ``skill`` tool returns the same text
+by skill name (#384).
 """
 
 from __future__ import annotations
 
 import json
 import re
-from collections.abc import Collection, Sequence
+from collections.abc import Awaitable, Callable, Collection, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
+from fastmcp.exceptions import ToolError
+from fastmcp.server.context import Context
 from fastmcp.skills import Skill
 from fastmcp.tools.base import Tool
 
@@ -30,21 +33,75 @@ SKILL_MISS_MESSAGE = (
 )
 
 
-# #376: agents work from the pinned tools and rarely search, so a pinned primary entry for
-# a skill names it in its listed description. Linted in tests/unit/test_tool_search_skills.py.
-SKILL_POINTERS = {
-    "clinvar_get_variant": "germline-variant-classification",
-    "autopvs1_get_variant_pvs1_data": "germline-variant-classification",
-    "hpo_score_genes_for_phenotypes": "phenotype-to-candidate-genes",
-    "pubtator_search_literature": "literature-evidence-review",
-    "hgnc_resolve_symbol": "identifier-resolution-and-lookup",
-}
+SKILL_TOOL = "skill"  # router meta-tool, like search_tools/call_tool (#384)
+_SKILL_COMMAND_HELP = 'The skill name (no arguments). E.g., "germline-variant-classification"'
+# Adapted from inspect_ai 0.3.260 tool/_tools/_skill/tool.py, MIT (c) 2024 UK AI Security Institute.
+# inspect_ai derives it from the Claude Code and Codex CLI skills prompts. Benchmarked verbatim (#384).
+_SKILL_TOOL_HEADER = """Invoke a skill to get specialized instructions for a task.
+
+<skills_instructions>
+Skills provide specialized capabilities and domain knowledge. Each skill contains instructions, and may include references.
+
+When to use:
+- Before starting a task, check if any skill in <available_skills> matches the request
+- Use the description field to determine relevance
+
+How to invoke:
+- Call this tool with the skill name only
+- Example: command: "germline-variant-classification"
+- Example: command: "literature-evidence-review"
+
+After invoking:
+- Follow the instructions returned by the skill
+- If the skill lists reference files, load only the specific files needed, with the read_resource calls it gives — don't bulk-load
+
+Multiple skills:
+- If multiple skills apply, choose the minimal set and invoke them in sequence
+- State which skills you're using and why
+
+Important:
+- When a skill is relevant, invoke this tool IMMEDIATELY as your first action — NEVER just mention a skill without actually calling this tool
+- Invoke the skill tool BEFORE generating any other response about the task
+- Only invoke skills listed in <available_skills>
+- Do not invoke a skill that is already running
+- If a skill can't be applied, state the issue and proceed with the best alternative
+</skills_instructions>
+
+"""
 _WEAK_TAIL = frozenset({"a", "an", "the", "as", "or", "is", "be", "must", "to", "of", "and"})
 
 
-def skill_pointer(skill: str) -> str:
-    """The sentence appended to a pinned tool's listed description (#376)."""
-    return f' Workflow skill: call_tool(name="skill_{skill}").'
+def skill_tool_description(skills: Sequence[Tool]) -> str:
+    """The ``skill`` tool's description: fixed header + ``<available_skills>`` (#384)."""
+    items = "".join(
+        f"<skill>\n<name>{s.name.removeprefix(SKILL_PREFIX)}</name>\n"
+        f"<description>{s.description}</description></skill>\n"
+        for s in sorted(skills, key=lambda s: s.name)
+    )
+    return f"{_SKILL_TOOL_HEADER}<available_skills>\n{items}</available_skills>\n"
+
+
+def make_skill_tool(skills: Sequence[Tool], read: Callable[[str, Context], Awaitable[Any]]) -> Tool:
+    """The listed ``skill`` tool: ``read`` is ``call_tool``'s skill read, so both return
+    the same SKILL.md + router footer (#384)."""
+    names = sorted(s.name.removeprefix(SKILL_PREFIX) for s in skills)
+    miss = {  # constants only: never echoes the caller's command
+        "success": False,
+        "error_code": "not_found",
+        "message": "No skill by that name.",
+        "retryable": False,
+        "suggestions": [f"Call skill(command=...) with one of: {', '.join(names)}."],
+    }
+
+    async def skill(
+        command: Annotated[str, _SKILL_COMMAND_HELP],
+        ctx: Context = None,  # type: ignore[assignment]
+    ) -> Any:
+        if command not in names:
+            raise ToolError(json.dumps(miss, separators=(",", ":"), sort_keys=True))
+        return await read(skill_uri(command), ctx)
+
+    return Tool.from_function(fn=skill, name=SKILL_TOOL, description=skill_tool_description(skills))
 
 
 def skill_trigger(tool: Tool) -> str:
@@ -66,7 +123,7 @@ def skills_line(skills: Sequence[Tool]) -> str:
     named = ", ".join(f"{s.name.removeprefix(SKILL_PREFIX)} ({skill_trigger(s)})" for s in skills)
     return (
         " WORKFLOW SKILLS — before a multi-step job, load the matching one with "
-        f'`call_tool(name="skill_<name>")`: {named}.'
+        f'`skill(command="<name>")`: {named}.'
     )
 
 

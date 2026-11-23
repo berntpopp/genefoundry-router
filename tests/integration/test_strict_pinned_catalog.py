@@ -26,7 +26,10 @@ BASELINE = ROOT / "genefoundry_router" / "data" / "fleet-baseline.json"
 # real capability); 18,000 -> 18,200 approved by the owner's delegate on 2026-11-22.
 # 0.14.5 (#376): measured 18,219 (+121): five pinned entries name their workflow skill
 # (` Workflow skill: call_tool(name="skill_<name>").`); 18,200 -> 18,400, coordinator scope.
-PINNED_LISTING_TOKEN_BUDGET = 18_400
+# 0.14.9 (#384): measured 19,431 (was 18,250 on 0.14.8; +1,181): the listed `skill` tool
+# (+1,273, its benchmarked description lists every served skill) minus the five pointers (-92);
+# 18,400 -> 19,500, coordinator scope.
+PINNED_LISTING_TOKEN_BUDGET = 19_500
 # The opt-in strict listing (GF_SCHEMA_MODE=strict) has its own ceiling since 2026-11-20:
 # measured 18,669. Cause: the fleet-2026-11-20 backend releases added ~3,000 chars of
 # description to pinned tools, plus the two #341 pins (hpo_score_genes_for_phenotypes,
@@ -37,7 +40,8 @@ PINNED_LISTING_TOKEN_BUDGET = 18_400
 # fleet-2026-11-22: measured 18,955 (+165), same cause as the default listing above
 # (clinvar-link#154 coordinate id_type); 18,800 -> 19,000 approved by the owner's delegate.
 # 0.14.5 (#376): measured 19,077 (+122), same skill pointers; 19,000 -> 19,200.
-STRICT_LISTING_TOKEN_BUDGET = 19_200
+# 0.14.9 (#384): measured 20,288 (was 19,107; +1,181), same `skill` tool; 19,200 -> 20,400.
+STRICT_LISTING_TOKEN_BUDGET = 20_400
 STRICT = RouterSettings(_env_file=None, GF_SCHEMA_MODE="strict")
 
 

@@ -5,9 +5,10 @@ format (`<name>/SKILL.md`, `name` + `description` frontmatter, optional `referen
 serves every folder here to MCP clients as a `skill://<name>/SKILL.md` resource (MCP Skills,
 SEP-2640: `skills/list`, `skills/get`) via FastMCP's `SkillsDirectoryProvider`, and `search_tools`
 returns a `skill_<name>` hit that points at it (at most one, on top of `limit`). The server
-instructions name every served skill in their first paragraph, and the pinned entry points in
-`SKILL_POINTERS` (`genefoundry_router/skill_search.py`) end their listed description with the
-matching skill's call; `X-GF-Skills: off` hides all three for that request. Clients that cannot read resources get the same text from the hit's `call`
+instructions name every served skill in their first paragraph, and tools/list carries one `skill`
+tool whose description lists every served skill (name + `description`); `skill(command="<name>")`
+returns the SKILL.md text. `X-GF-Skills: off` hides all three for that request. Clients that
+cannot read resources also get the same text from the hit's `call`
 (`call_tool(name="skill_<name>")`, or `read_resource` with the `skill://` URI). `GF_SKILLS_DIR` (default `skills`) must exist or
 the router refuses to start.
 
