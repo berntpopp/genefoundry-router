@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genefoundry-router"
-version = "0.14.5"
+version = "0.14.6"
 description = "A thin FastMCP 3.x aggregator federating the GeneFoundry -link MCP fleet behind one endpoint."
 readme = "README.md"
 authors = [{ name = "Bernt Popp" }]
@@ -74,6 +74,8 @@ packages = ["genefoundry_router"]
 [tool.ruff]
 line-length = 100
 target-version = "py314"
+# The drift probe runs as an SSH forced command under the VPS host's Python 3.12.
+per-file-target-version = { "scripts/readonly_drift_probe.py" = "py312" }
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "S", "T20", "SIM", "RUF"]
