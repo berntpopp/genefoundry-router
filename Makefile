@@ -120,7 +120,7 @@ http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption 
 
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-skills lint-readme lint-description-lead lint-batch-pointers lint-metadata lint-server-json lint-provenance lint-actions typecheck http-policy-adoption test-fast test-integration test-release ## Fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-skills lint-readme lint-description-lead lint-batch-pointers lint-metadata lint-server-json lint-provenance lint-actions typecheck http-policy-adoption test-fast test-integration test-release test-e2e ## Fast local CI-equivalent checks
 # NB: `lint-surface` is deliberately NOT in ci-local yet. It currently reports 595 real
 # violations across 20 of the 21 backends — that is the point of it, and it is the failing test
 # the fleet sweep exists to turn green. It joins ci-local in the same change that drives it to
@@ -220,7 +220,7 @@ snapshot-baseline: ## Re-pin the packaged drift baseline from the live fleet (on
 		--out genefoundry_router/data/fleet-baseline.json --captured-at $$(date -u +%FT%TZ) \
 		--candidate-inventory "$(RELEASE_CANDIDATE_INVENTORY)" --normalized
 
-ci-full: ci-local test-e2e ## Fast CI plus the offline e2e suite
+ci-full: ci-local ## Alias: ci-local now includes the offline e2e suite
 
 .PHONY: conformance
 conformance:  ## Probe a live MCP server: make conformance MCP_URL=... NAME=... TIER=stateless
