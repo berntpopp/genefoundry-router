@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.5] - 2026-11-23
+
+### Fixed
+
+- **Agents now see the workflow skills without searching** (#376). In a 70-case germline benchmark the model never opened a skill and called `search_tools` in 3 of 70 cases, so skills reachable only as search hits went unseen. The first paragraph of the server instructions now names every served skill with its `call_tool(name="skill_<name>")` call and a few trigger words taken from its SKILL.md description (no skills served: no line). Pinned primary entries for a skill (`clinvar_get_variant`, `autopvs1_get_variant_pvs1_data` -> germline-variant-classification; `hpo_score_genes_for_phenotypes` -> phenotype-to-candidate-genes; `pubtator_search_literature` -> literature-evidence-review; `hgnc_resolve_symbol` -> identifier-resolution-and-lookup) end their **listed** description with ` Workflow skill: call_tool(name="skill_<name>").` The mapping (`SKILL_POINTERS`) is tested against `skills/` and the `servers.yaml` pins. `X-GF-Skills: off` drops both the instructions line and the pointers for that request. Step 2 of the instructions now says a `skill_<name>` hit is run via its `call` or read via `read.uri`. The search catalog, BM25 index, hit descriptions, call routing and SKILL.md files are unchanged; the drift baseline fingerprints backend definitions only, so it stays `fleet-2026-11-22b`.
+
 ## [0.14.4] - 2026-11-22
 
 ### Fixed

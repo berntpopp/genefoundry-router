@@ -11,7 +11,8 @@ it reaches authorization, call routing or rate limits, and every tool stays call
 ``GF_SCHEMA_MODE`` / ``X-GF-Schema-Mode`` pick the listed schema form the same way: the
 backends' standard schemas, the OpenAI-strict projection (#293) for clients that need it, or
 the token-lean slim projection (``schema_slim``). ``X-GF-Skills: off`` hides workflow-skill
-hits from ``search_tools`` (no-skill baselines, #368); a skill stays readable by name.
+hits from ``search_tools`` (no-skill baselines, #368) and the skill names in the instructions
+and pinned descriptions (#376); a skill stays readable by name.
 """
 
 from __future__ import annotations

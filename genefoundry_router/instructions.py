@@ -17,13 +17,15 @@ instructions focus on the cross-tool *workflow*, not on repeating per-tool docs.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Sequence
 from typing import Any
 
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
+from fastmcp.tools.base import Tool
 
-from genefoundry_router.pinned_mode import PinPolicy, request_mode
+from genefoundry_router.pinned_mode import PinPolicy, request_mode, request_skills
 from genefoundry_router.registry import BackendDef, qualified_name
+from genefoundry_router.skill_search import skills_line
 
 
 def _entrypoints_block(registry: list[BackendDef], listed: Collection[str] | None) -> str:
@@ -47,13 +49,19 @@ def _entrypoints_block(registry: list[BackendDef], listed: Collection[str] | Non
     )
 
 
-def build_instructions(registry: list[BackendDef], listed: Collection[str] | None = None) -> str:
+def build_instructions(
+    registry: list[BackendDef],
+    listed: Collection[str] | None = None,
+    skills: Sequence[Tool] = (),
+) -> str:
     """Return the orientation text for the ``genefoundry`` MCP server.
 
     Lists the enabled backends' namespaces so the model knows the breadth of the
     federated catalog without a ``search_tools`` round-trip; disabled/url-less
     backends are mounted nowhere, so they are omitted. ``listed`` is the pinned set the
-    server lists (``GF_PINNED_MODE``, #320); ``None`` means every entry point.
+    server lists (``GF_PINNED_MODE``, #320); ``None`` means every entry point. ``skills``
+    are the served skill documents, named in the first paragraph because hosts truncate
+    long instructions (#376).
     """
     pinned = _entrypoints_block(registry, listed)
     if pinned:
@@ -75,9 +83,7 @@ def build_instructions(registry: list[BackendDef], listed: Collection[str] | Non
     return f"""\
 genefoundry is a META-ROUTER (a gateway), not a data server. It federates the \
 GeneFoundry "-link" fleet — {breadth} — behind ONE MCP endpoint and exposes a \
-SEARCH SURFACE instead of listing its whole ~200-tool catalog at once. Research \
-workflow skills (step order, stop rules, output template) are `skill://` resources \
-and also show up as `search_tools` hits; read one before a multi-step job.
+SEARCH SURFACE instead of listing its whole ~200-tool catalog at once.{skills_line(skills)}
 
 WHAT IS LISTED vs WHAT EXISTS. {listing} \
 Every other capability — across {catalog} — is present and callable, but it is \
@@ -95,8 +101,8 @@ Hits flagged `low_confidence` (or none) mean no clear match: rephrase in domain 
 Search ONE intent per call: a multi-part question (e.g. a disease's genes AND where those \
 genes sit on the chromosome) needs one search per part, chained on the first result.
   2. Read a hit's `name`; a tool is always `<namespace>_<tool>` \
-(e.g. `spliceai_predict_splicing`, `vep_annotate_variant`). A hit with `skill` is a \
-workflow: read its `read.uri`, or call its `call` if you cannot read resources.
+(e.g. `spliceai_predict_splicing`, `vep_annotate_variant`). A `skill_<name>` hit is a \
+workflow skill: run its `call` (`call_tool(name="skill_<name>")`) or read its `read.uri`.
   3. `call_tool(name="<namespace>_<tool>", arguments={{…}})` to invoke it — each hit's \
 `call` field is that call, ready to fill. A tool that is NOT in your client's tool list \
 is invoked ONLY through `call_tool`: calling its name directly fails in clients that \
@@ -120,7 +126,8 @@ support."""
 
 class PinnedModeInstructions(Middleware):
     """Answer ``initialize`` / ``server/discover`` with the request's ``X-GF-Pinned-Mode``
-    instructions (#320), so a ``none``-mode client is not told about pins it cannot see.
+    instructions (#320), so a ``none``-mode client is not told about pins it cannot see,
+    and without the skills line under ``X-GF-Skills: off`` (#376).
 
     Only the returned text changes; auth and routing never read it.
     """
@@ -130,18 +137,20 @@ class PinnedModeInstructions(Middleware):
         registry: list[BackendDef],
         policy: PinPolicy,
         unavailable: Callable[[], Collection[str]],
+        skills: Sequence[Tool] = (),
     ) -> None:
         self._registry = registry
+        self._skills = skills
         self._policy = policy
         self._unavailable = unavailable
 
     def _override(self) -> str | None:
-        mode = request_mode(self._policy.default)
-        if mode == self._policy.default:
+        mode, skills = request_mode(self._policy.default), request_skills()
+        if mode == self._policy.default and skills:
             return None  # server.instructions already matches
         down = self._unavailable()
         live = [b for b in self._registry if b.namespace not in down]
-        return build_instructions(live, self._policy.listed(mode))
+        return build_instructions(live, self._policy.listed(mode), self._skills if skills else ())
 
     async def on_initialize(self, context: MiddlewareContext[Any], call_next: CallNext) -> Any:
         result = await call_next(context)

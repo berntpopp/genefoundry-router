@@ -7,8 +7,8 @@ from fastapi.testclient import TestClient
 from fastmcp import Client, FastMCP
 
 from genefoundry_router.config import RouterSettings
+from genefoundry_router.devtools.fakes import make_fake_backend
 from genefoundry_router.exceptions import RouterError
-from genefoundry_router.instructions import build_instructions
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.security import MCP_CORS_ALLOW_HEADERS
 from genefoundry_router.server import build_app, build_server
@@ -57,8 +57,50 @@ def test_missing_skills_dir_fails() -> None:
         build_server(settings, _REGISTRY, proxy_targets={"gnomad": FastMCP("x")})
 
 
-def test_instructions_mention_skills() -> None:
-    assert "skill://" in build_instructions(_REGISTRY)[:600]
+_CLINVAR = BackendDef(name="clinvar", url_env="Y", namespace="clinvar", entrypoints=["get_variant"])
+_POINTER = 'call_tool(name="skill_germline-variant-classification")'
+
+
+def test_server_instructions_name_served_skills(gnomad_fake: FastMCP) -> None:
+    server = build_server(
+        RouterSettings(_env_file=None), _REGISTRY, proxy_targets={"gnomad": gnomad_fake}
+    )
+    assert "germline-variant-classification" in (server.instructions or "").split("\n\n")[0]
+
+
+def test_skills_header_off_drops_skill_pointers(gnomad_fake: FastMCP) -> None:
+    # #376: pinned tool descriptions and instructions name the matching skill unless off.
+    clinvar = make_fake_backend("clinvar-link", ["get_variant"])
+    app = build_app(
+        RouterSettings(_env_file=None),
+        [*_REGISTRY, _CLINVAR],
+        proxy_targets={"gnomad": gnomad_fake, "clinvar": clinvar},
+    )
+
+    def post(method: str, params: dict, skills: str | None) -> dict:
+        headers = {"accept": "application/json, text/event-stream"}
+        if skills is not None:
+            headers["x-gf-skills"] = skills
+        body = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
+        resp = client.post("/mcp", headers=headers, json=body)
+        assert resp.status_code == 200, resp.text
+        return resp.json()["result"]
+
+    def pinned(skills: str | None) -> str:
+        tools = post("tools/list", {}, skills)["tools"]
+        return next(t for t in tools if t["name"] == "clinvar_get_variant").get("description", "")
+
+    init = {
+        "protocolVersion": "2025-06-18",
+        "capabilities": {},
+        "clientInfo": {"name": "t", "version": "1"},
+    }
+    with TestClient(app) as client:
+        assert _POINTER in pinned(None)
+        assert "skill" not in pinned("off")
+        assert "WORKFLOW SKILLS" in post("initialize", init, None)["instructions"]
+        assert "WORKFLOW SKILLS" not in post("initialize", init, "off")["instructions"]
+        assert _POINTER in pinned(None)  # no cross-request state
 
 
 def test_skills_header_off_hides_skill_hits(gnomad_fake: FastMCP) -> None:

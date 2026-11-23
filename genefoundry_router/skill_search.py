@@ -11,6 +11,7 @@ that cannot read resources (#368), plus a footer naming its supporting files, wh
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Collection, Sequence
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,46 @@ SKILL_MISS_MESSAGE = (
     "No skill file at that URI; only skill:// files listed in a skill's router note "
     "can be read via call_tool."
 )
+
+
+# #376: agents work from the pinned tools and rarely search, so a pinned primary entry for
+# a skill names it in its listed description. Linted in tests/unit/test_tool_search_skills.py.
+SKILL_POINTERS = {
+    "clinvar_get_variant": "germline-variant-classification",
+    "autopvs1_get_variant_pvs1_data": "germline-variant-classification",
+    "hpo_score_genes_for_phenotypes": "phenotype-to-candidate-genes",
+    "pubtator_search_literature": "literature-evidence-review",
+    "hgnc_resolve_symbol": "identifier-resolution-and-lookup",
+}
+_WEAK_TAIL = frozenset({"a", "an", "the", "as", "or", "is", "be", "must", "to", "of", "and"})
+
+
+def skill_pointer(skill: str) -> str:
+    """The sentence appended to a pinned tool's listed description (#376)."""
+    return f' Workflow skill: call_tool(name="skill_{skill}").'
+
+
+def skill_trigger(tool: Tool) -> str:
+    """A few words from the SKILL.md description saying when to load it (#376)."""
+    text = re.sub(r"^Use when (asked )?(to |whether )?", "", tool.description or "")
+    text = re.sub(r" \([^)]*\)", "", text)
+    words = re.split(r", e\.g\.| — |; ", text)[0].split()[:5]
+    cut = next((i for i, w in enumerate(words) if i >= 3 and w.endswith(",")), None)
+    words = words[: cut + 1] if cut is not None else words
+    while words and words[-1].rstrip(",") in _WEAK_TAIL:
+        words.pop()
+    return " ".join(words).rstrip(",")
+
+
+def skills_line(skills: Sequence[Tool]) -> str:
+    """The instructions sentence naming every served skill; empty when none (#376)."""
+    if not skills:
+        return ""
+    named = ", ".join(f"{s.name.removeprefix(SKILL_PREFIX)} ({skill_trigger(s)})" for s in skills)
+    return (
+        " WORKFLOW SKILLS — before a multi-step job, load the matching one with "
+        f'`call_tool(name="skill_<name>")`: {named}.'
+    )
 
 
 def is_skill_name(name: object) -> bool:

@@ -45,12 +45,14 @@ from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_stric
 from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.search_rerank import Reranker, build_reranker
 from genefoundry_router.skill_search import (
+    SKILL_POINTERS,
     SKILL_PREFIX,
     serve,
     skill_call_uri,
     skill_file_uris,
     skill_footer,
     skill_hit,
+    skill_pointer,
     skill_tools,
     skill_uri,
 )
@@ -286,6 +288,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         self._search_tool: Tool | None = None
         self._call_tool: Tool | None = None
         self.skills = list(skills)  # search-only pointer documents (#336)
+        self._skill_names = {t.name for t in self.skills}
 
     async def _ranked(
         self, tools: Sequence[Tool], query: str, limit: int | None = None
@@ -391,11 +394,20 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         shown = [t for t in listed if t.name not in pins or t.name in keep]
         mode = request_schema_mode(self.schema_mode)
         if mode == "strict":
-            return [self._projection(mode, t) for t in shown]
-        if mode == "slim":  # byte-stable: name order, whatever order backends mounted in
+            shown = [self._projection(mode, t) for t in shown]
+        elif mode == "slim":  # byte-stable: name order, whatever order backends mounted in
             slim = [self._projection(mode, t) if t.name in keep else t for t in shown]
-            return sorted(slim, key=lambda t: t.name)
-        return shown
+            shown = sorted(slim, key=lambda t: t.name)
+        return [self._point(t) for t in shown] if request_skills() else shown
+
+    def _point(self, tool: Tool) -> Tool:
+        """Listed copy of a pinned primary entry naming its served skill (#376); the
+        catalog, BM25 index and calls keep the backend's own description."""
+        skill = SKILL_POINTERS.get(tool.name)
+        if skill is None or f"{SKILL_PREFIX}{skill}" not in self._skill_names:
+            return tool
+        text = (tool.description or "").rstrip() + skill_pointer(skill)
+        return tool.model_copy(update={"description": text})
 
     def _projection(self, mode: SchemaMode, tool: Tool) -> Tool:
         """Strict or slim projection, cached per source object so a relist does not rebuild
