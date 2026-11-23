@@ -39,11 +39,8 @@ from genefoundry_router.limits import (
     ip_rate_limit_rpm,
 )
 from genefoundry_router.normalization import apply_normalizations
-from genefoundry_router.notfound_guard import (
-    NotFoundGuard,
-    install_notfound_log_filter,
-    install_protocol_error_handler,
-)
+from genefoundry_router.notfound_guard import NotFoundGuard, install_protocol_error_handler
+from genefoundry_router.notfound_log_scrub import install_notfound_log_filter
 from genefoundry_router.observability import (
     BACKEND_STATUS,
     AuditLogMiddleware,
@@ -259,6 +256,7 @@ def build_app(
         server.instructions = build_instructions(live, listed_pins(registry, settings), skills)
         if (notfound := getattr(server, "notfound_guard", None)) is not None:
             notfound.unavailable = frozenset(unreachable)
+            notfound.catalog = frozenset(t.name for t in tools)
         guard.evaluate(
             fingerprint_definitions(definitions_from_tools(tools)),
             phase=phase,

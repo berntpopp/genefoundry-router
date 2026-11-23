@@ -34,7 +34,7 @@ import structlog
 from fastmcp.utilities import logging as fastmcp_logging
 from rich.console import Console
 
-from genefoundry_router.notfound_guard import (
+from genefoundry_router.notfound_log_scrub import (
     _REDACTED_ARG,
     _SCRUBBED_MESSAGE,
     install_notfound_log_filter,
