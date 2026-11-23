@@ -157,3 +157,17 @@ async def test_search_hits_carry_a_working_call_example(gnomad_fake):
         assert call["arguments"]["arguments"] == {}
         result = await client.call_tool(call["tool"], call["arguments"], raise_on_error=False)
     assert not result.is_error, result.content
+
+
+async def test_call_tool_params_say_exact_name_not_search(gnomad_fake):
+    # #382: clients that validate against the listed schema never reach the router's hint.
+    settings = RouterSettings(_env_file=None)
+    registry = [BackendDef(name="gnomad", url_env="X", namespace="gnomad")]
+    server = build_server(settings, registry, proxy_targets={"gnomad": gnomad_fake})
+    apply_tool_search(server, settings)
+    async with Client(server) as client:
+        tool = next(t for t in await client.list_tools() if t.name == "call_tool")
+    props = tool.inputSchema["properties"]
+    assert "Not a search" in props["name"]["description"]
+    assert "search_tools" in props["name"]["description"]
+    assert '"query": "BRCA1"' in props["arguments"]["description"]
