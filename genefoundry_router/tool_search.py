@@ -295,7 +295,6 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         self._call_tool: Tool | None = None
         self._skill_tool: Tool | None = None
         self.skills = list(skills)  # search-only pointer documents (#336)
-        self._skill_names = {t.name for t in self.skills}
 
     async def _ranked(
         self, tools: Sequence[Tool], query: str, limit: int | None = None
