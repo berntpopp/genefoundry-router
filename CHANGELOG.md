@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.6] - 2026-11-23
+
+### Fixed
+
+- **The private drift probe runs on the VPS host's Python 3.12 again.** The scheduled drift job has reported every new backend (cbioportal, civic, mitomap, moalmanac, opentargets, pgscatalog, strchive, ucsc) as unreachable since 2026-11-20: the host still runs the 2026-10-04 copy of `scripts/readonly_drift_probe.py`, which allowlists only 22 URLs, and the current copy could not be installed because its `except OSError, ProbeError, json.JSONDecodeError:` (PEP 758) is a `SyntaxError` on 3.12. The clause is parenthesized; `pyproject.toml` sets ruff `per-file-target-version = py312` for that file so the formatter no longer strips the parentheses, and a unit test parses it with `ast.parse(..., feature_version=(3, 12))`. `docs/deployment.md` states the 3.12 constraint and the allowlist count (30). No tool schema or description change; drift baseline unchanged. Operator: reinstall the script at `/usr/local/libexec/genefoundry/readonly_drift_probe.py` after this release.
+
 ## [0.14.5] - 2026-11-23
 
 ### Fixed

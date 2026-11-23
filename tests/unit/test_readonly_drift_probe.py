@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import os
@@ -15,6 +16,11 @@ SPEC = importlib.util.spec_from_file_location("readonly_drift_probe", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 probe = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(probe)
+
+
+def test_script_parses_as_python_3_12() -> None:
+    # The SSH forced command runs the VPS host's /usr/bin/python3 (3.12), not the image's 3.14.
+    ast.parse(SCRIPT.read_text(), feature_version=(3, 12))
 
 
 def _environment() -> list[str]:

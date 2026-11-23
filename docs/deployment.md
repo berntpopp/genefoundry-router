@@ -42,8 +42,12 @@ client sends no remote command, disables forwarding and TTY allocation, and requ
 pinned host key. The matching server-side key must be restricted to the root-owned
 `scripts/readonly_drift_probe.py` installation as its forced command, reject a nonempty
 `SSH_ORIGINAL_COMMAND`, and have no general shell or sudo rule attached to that key.
+The forced command runs under the VPS host's `/usr/bin/python3` (3.12), not the router
+image's 3.14, so this file must stay Python 3.12-compatible (ruff `per-file-target-version`
+and `test_script_parses_as_python_3_12` enforce the syntax). Reinstall it whenever its
+allowlist changes; a stale copy reports the missing backends as unreachable.
 
-The forced command selects only the fixed allowlist of 26 production `GF_*_URL` values and
+The forced command selects only the fixed allowlist of 30 production `GF_*_URL` values and
 the single PubTator service token from the running router container's Docker metadata.
 It validates those URLs against the registry's reviewed public endpoints, then runs
 `genefoundry-router drift` using that container's exact cached release digest. The verifier
