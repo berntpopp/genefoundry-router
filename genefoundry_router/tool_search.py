@@ -98,6 +98,12 @@ _CALL_TOOL_DESCRIPTION = (
     "definition from its loaded set — re-run `search_tools` to rediscover it and call "
     "again. That is recoverable, not a router failure."
 )
+# Param text is what schema-validating clients (inspect_ai) see before any call reaches us (#382).
+_CALL_NAME_HELP = (
+    'Exact tool name, e.g. "hgnc_resolve_symbol". '
+    "Not a search: to find a tool, call search_tools(query=...) first."
+)
+_CALL_ARGS_HELP = 'The tool\'s own arguments as an object, e.g. {"query": "BRCA1"}.'
 
 
 # FastMCP's BM25 tokenizer does not stem, so "actionable" never matches a tool whose
@@ -431,8 +437,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             transform = self
 
             async def call_tool(
-                name: Annotated[str, "The name of the tool to call"],
-                arguments: Annotated[dict[str, Any] | None, "Arguments to pass to the tool"] = None,
+                name: Annotated[str, _CALL_NAME_HELP],
+                arguments: Annotated[dict[str, Any] | None, _CALL_ARGS_HELP] = None,
                 ctx: Context = None,  # type: ignore[assignment]
             ) -> Any:
                 uri = skill_call_uri(name, arguments)  # tools-only clients (#368, #370)

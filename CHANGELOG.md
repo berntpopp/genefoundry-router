@@ -4,6 +4,14 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.8] - 2026-11-23
+
+### Changed
+
+- **`call_tool`'s parameter descriptions say `name` is an exact tool name, not a search** (#382). Clients such as inspect_ai validate `call_tool` arguments against the listed inputSchema before sending, so #375's server-side hint never reaches them; a benchmark run had Mistral Small send 240 `call_tool` calls with `{"query": "..."}` and no `name`. `name` now reads `Exact tool name, e.g. "hgnc_resolve_symbol". Not a search: to find a tool, call search_tools(query=...) first.`; `arguments` reads `The tool's own arguments as an object, e.g. {"query": "BRCA1"}.` (matching `hgnc_resolve_symbol`'s real `query` parameter). Strict and slim listings carry the same text. Pinned listing +31 tokens (18,250), strict +30 (19,107), slim +30 (7,013); all under their ceilings.
+
+Router-side schema change only (`call_tool` is not in the drift fingerprint); drift baseline still `fleet-2026-11-22b`.
+
 ## [0.14.7] - 2026-11-23
 
 ### Fixed
