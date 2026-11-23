@@ -45,14 +45,14 @@ from genefoundry_router.schema_strict import strip_strict_nulls, to_openai_stric
 from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.search_rerank import Reranker, build_reranker
 from genefoundry_router.skill_search import (
-    SKILL_POINTERS,
     SKILL_PREFIX,
+    SKILL_TOOL,
+    make_skill_tool,
     serve,
     skill_call_uri,
     skill_file_uris,
     skill_footer,
     skill_hit,
-    skill_pointer,
     skill_tools,
     skill_uri,
 )
@@ -293,8 +293,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         self.reranker = reranker
         self._search_tool: Tool | None = None
         self._call_tool: Tool | None = None
+        self._skill_tool: Tool | None = None
         self.skills = list(skills)  # search-only pointer documents (#336)
-        self._skill_names = {t.name for t in self.skills}
 
     async def _ranked(
         self, tools: Sequence[Tool], query: str, limit: int | None = None
@@ -395,7 +395,7 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         Only the listing changes: calls resolve the original tool, and
         :class:`StrictNullMiddleware` strips the ``null`` sentinels strict clients send.
         """
-        listed = await super().transform_tools(tools)
+        listed = [*await super().transform_tools(tools), *self._listed_skill_tool()]
         keep, pins = self.policy.listed(), self._always_visible  # #320: per-request pin mode
         shown = [t for t in listed if t.name not in pins or t.name in keep]
         mode = request_schema_mode(self.schema_mode)
@@ -404,16 +404,30 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         elif mode == "slim":  # byte-stable: name order, whatever order backends mounted in
             slim = [self._projection(mode, t) if t.name in keep else t for t in shown]
             shown = sorted(slim, key=lambda t: t.name)
-        return [self._point(t) for t in shown] if request_skills() else shown
+        return shown
 
-    def _point(self, tool: Tool) -> Tool:
-        """Listed copy of a pinned primary entry naming its served skill (#376); the
-        catalog, BM25 index and calls keep the backend's own description."""
-        skill = SKILL_POINTERS.get(tool.name)
-        if skill is None or f"{SKILL_PREFIX}{skill}" not in self._skill_names:
-            return tool
-        text = (tool.description or "").rstrip() + skill_pointer(skill)
-        return tool.model_copy(update={"description": text})
+    def _listed_skill_tool(self) -> list[Tool]:
+        """The ``skill`` meta-tool (#384), absent with no served skills or ``X-GF-Skills: off``."""
+        if not self.skills or not request_skills():
+            return []
+        if self._skill_tool is None:
+            self._skill_tool = make_skill_tool(self.skills, self._read_skill)
+        return [self._skill_tool]
+
+    async def get_tool(self, name: str, call_next: Any, *, version: Any = None) -> Tool | None:
+        if name == SKILL_TOOL:
+            return next(iter(self._listed_skill_tool()), None)
+        return await super().get_tool(name, call_next, version=version)
+
+    async def _read_skill(self, uri: str | None, ctx: Context) -> Any:
+        """A served skill file's text (SKILL.md + router footer), or ``None`` (#368, #370)."""
+        skill = next((t for t in self.skills if uri in skill_file_uris(t)), None)
+        if skill is None or uri is None:
+            return None
+        text = (await ctx.read_resource(uri)).contents[0].content
+        if uri == skill_uri(skill.name) and isinstance(text, str):
+            text += skill_footer(skill)
+        return text
 
     def _projection(self, mode: SchemaMode, tool: Tool) -> Tool:
         """Strict or slim projection, cached per source object so a relist does not rebuild
@@ -441,12 +455,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
                 arguments: Annotated[dict[str, Any] | None, _CALL_ARGS_HELP] = None,
                 ctx: Context = None,  # type: ignore[assignment]
             ) -> Any:
-                uri = skill_call_uri(name, arguments)  # tools-only clients (#368, #370)
-                skill = next((t for t in transform.skills if uri in skill_file_uris(t)), None)
-                if skill is not None and uri is not None:
-                    text = (await ctx.read_resource(uri)).contents[0].content
-                    if uri == skill_uri(skill.name) and isinstance(text, str):
-                        text += skill_footer(skill)
+                text = await transform._read_skill(skill_call_uri(name, arguments), ctx)
+                if text is not None:  # tools-only clients (#368, #370)
                     return text
                 if arguments and any(v is None or isinstance(v, dict) for v in arguments.values()):
                     catalog = await transform.get_tool_catalog(ctx)

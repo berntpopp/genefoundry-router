@@ -120,6 +120,29 @@ number this standard adopts as a hard per-server ceiling.
 | **The cost** | 54% of the fleet's entire tool surface, on every request, forever. |
 | **The alternative** | The router's `search_tools` already serves complete schemas on demand (`detail: full`). The information is not lost; it becomes lazy instead of eager. |
 
+## Exceptions
+
+**2026-11-23, owner-approved (`genefoundry-router#384`).** Both exceptions are narrow and apply
+only to the router. They exist because of one tool: the router's `skill` meta-tool, which serves
+the workflow skills to tools-only clients (the Agent Skills "skill tool" pattern used by Claude
+Code, Codex CLI and inspect_ai). Its description has to list every served skill (name plus
+description), so it cannot be short. Benchmark on 70 development classification cases:
+gpt-oss 120B scored .971 with this tool vs .857 with skills off (p=.008) and loaded a skill
+44/70 times; Gemma 4 31B with inspect_ai's skill tool loaded it 70/70 and scored 1.000 vs .829.
+Pointers to skills in other tools' descriptions or in the server instructions, and one tool per
+skill, were each loaded 0 times.
+
+1. **`B1` (Rule 1): the router's `skill` meta-tool MAY exceed 1,200 tokens, up to a hard cap of
+   1,600 tokens**, measured the same way (serialized `tools/list` entry, 4 characters per token).
+   It was 1,273 tokens on 2026-11-23, with 7 skills. It grows with the skill count, so the skill
+   list MUST be trimmed or split before the cap is passed; the cap is not raised to admit growth.
+   No other tool gets this exception.
+2. **Rule 5: the 20,000-token router-surface limit applies to the default `tools/list`.** The
+   opt-in strict listing (`GF_SCHEMA_MODE=strict` / `X-GF-Schema-Mode: strict`) MAY reach
+   **20,500 tokens**. The default listing stays at 20,000.
+
+Both caps are enforced by `tests/integration/test_strict_pinned_catalog.py`.
+
 ## CI gate
 
 `scripts/check_tool_surface.py` enforces `B1` and `B2` offline against

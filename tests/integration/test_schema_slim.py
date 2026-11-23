@@ -19,11 +19,10 @@ from genefoundry_router.devtools.fakes import load_manifest, make_backend_from_s
 from genefoundry_router.observability import METRICS_REGISTRY
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.server import build_app, build_server
-from genefoundry_router.skill_search import SKILL_POINTERS, skill_pointer
 from tests.integration.test_strict_pinned_catalog import BASELINE, ROOT, _pinned_server, _tokens
 
 SLIM = RouterSettings(_env_file=None, GF_SCHEMA_MODE="slim")
-META = ("search_tools", "call_tool")
+META = ("search_tools", "call_tool", "skill")
 # Default pins + slim, same ~4 chars/token estimator as the pinned-listing budget. A ceiling:
 # lower it as pinned schemas are trimmed, never raise it to admit growth.
 # Raised for two deliberate pins (#341), each on a 75-sample gene-ranking run of one model:
@@ -35,7 +34,9 @@ META = ("search_tools", "call_tool")
 # fleet-2026-11-20 schemas measured 6,929; hiding `offset` on hpo_search_terms and
 # hpo_get_phenotypes_for_gene (slim_keep) brought it back under the ceiling.
 # 0.14.5 (#376): measured 6,983 (+108) with the five pinned skill pointers; 6,900 -> 7,100.
-SLIM_LISTING_TOKEN_BUDGET = 7_100  # measured 6,875 on 2026-11-20 (standard: 17,809)
+# 0.14.9 (#384): measured 8,194 (was 7,013; +1,181), the listed `skill` tool less the pointers;
+# 7,100 -> 8,300.
+SLIM_LISTING_TOKEN_BUDGET = 8_300  # measured 6,875 on 2026-11-20 (standard: 17,809)
 
 
 def _walk_param(node, path: str):
@@ -76,9 +77,7 @@ async def test_slim_listing_shape() -> None:
         assert set(schema.get("required") or ()) == required, name
         assert "additionalProperties" not in schema, name  # hidden params must still validate
         assert tool.output_schema is None, name
-        # #376: the listed skill pointer rides after the slimmed backend description.
-        suffix = skill_pointer(SKILL_POINTERS[name]) if name in SKILL_POINTERS else ""
-        desc = (tool.description or "").removesuffix(suffix)
+        desc = tool.description or ""
         assert desc and len(desc) <= 300, name
         assert standard[name].description.startswith(desc.rstrip("…")), name
         for path, key in _walk_param(props, name):

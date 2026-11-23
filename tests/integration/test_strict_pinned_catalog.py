@@ -26,7 +26,10 @@ BASELINE = ROOT / "genefoundry_router" / "data" / "fleet-baseline.json"
 # real capability); 18,000 -> 18,200 approved by the owner's delegate on 2026-11-22.
 # 0.14.5 (#376): measured 18,219 (+121): five pinned entries name their workflow skill
 # (` Workflow skill: call_tool(name="skill_<name>").`); 18,200 -> 18,400, coordinator scope.
-PINNED_LISTING_TOKEN_BUDGET = 18_400
+# 0.14.9 (#384): measured 19,431 (was 18,250 on 0.14.8; +1,181): the listed `skill` tool
+# (+1,273, its benchmarked description lists every served skill) minus the five pointers (-92);
+# 18,400 -> 19,500, coordinator scope.
+PINNED_LISTING_TOKEN_BUDGET = 19_500
 # The opt-in strict listing (GF_SCHEMA_MODE=strict) has its own ceiling since 2026-11-20:
 # measured 18,669. Cause: the fleet-2026-11-20 backend releases added ~3,000 chars of
 # description to pinned tools, plus the two #341 pins (hpo_score_genes_for_phenotypes,
@@ -37,8 +40,14 @@ PINNED_LISTING_TOKEN_BUDGET = 18_400
 # fleet-2026-11-22: measured 18,955 (+165), same cause as the default listing above
 # (clinvar-link#154 coordinate id_type); 18,800 -> 19,000 approved by the owner's delegate.
 # 0.14.5 (#376): measured 19,077 (+122), same skill pointers; 19,000 -> 19,200.
-STRICT_LISTING_TOKEN_BUDGET = 19_200
+# 0.14.9 (#384): measured 20,288 (was 19,107; +1,181), same `skill` tool; 19,200 -> 20,400.
+STRICT_LISTING_TOKEN_BUDGET = 20_400
 STRICT = RouterSettings(_env_file=None, GF_SCHEMA_MODE="strict")
+# Hard caps from docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md (Rule 5 + the 2026-11-23 exceptions,
+# #384). The ceilings above may move within these; the caps move only by amending the standard.
+ROUTER_SURFACE_CAP = 20_000  # Rule 5: the default listing
+STRICT_SURFACE_CAP = 20_500  # exception: the opt-in strict listing
+SKILL_TOOL_TOKEN_CAP = 1_600  # exception to B1: the `skill` meta-tool
 
 
 def _tokens(tools) -> int:
@@ -77,6 +86,21 @@ async def test_advertised_tools_are_openai_strict_and_budgeted() -> None:
     size = _tokens(listed)
     assert default_size <= PINNED_LISTING_TOKEN_BUDGET, default_size
     assert default_size <= size <= STRICT_LISTING_TOKEN_BUDGET, (default_size, size)
+    assert default_size <= ROUTER_SURFACE_CAP and size <= STRICT_SURFACE_CAP, (default_size, size)
+
+
+def test_ceilings_stay_within_the_standard_caps() -> None:
+    assert PINNED_LISTING_TOKEN_BUDGET <= ROUTER_SURFACE_CAP
+    assert STRICT_LISTING_TOKEN_BUDGET <= STRICT_SURFACE_CAP
+
+
+async def test_skill_tool_stays_under_its_cap() -> None:
+    # B1 exception (#384): the `skill` tool lists every served skill, so it grows with skills/;
+    # trim or split the skill list before it passes the cap. Strict mode is the larger form.
+    for settings in (None, STRICT):
+        async with Client(_pinned_server(settings)[0]) as client:
+            skill = [t for t in await client.list_tools() if t.name == "skill"]
+        assert len(skill) == 1 and _tokens(skill) <= SKILL_TOOL_TOKEN_CAP, _tokens(skill)
 
 
 async def test_strict_null_sentinels_are_stripped_before_dispatch() -> None:

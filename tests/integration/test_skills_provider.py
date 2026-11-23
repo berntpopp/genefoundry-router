@@ -58,7 +58,6 @@ def test_missing_skills_dir_fails() -> None:
 
 
 _CLINVAR = BackendDef(name="clinvar", url_env="Y", namespace="clinvar", entrypoints=["get_variant"])
-_POINTER = 'call_tool(name="skill_germline-variant-classification")'
 
 
 def test_server_instructions_name_served_skills(gnomad_fake: FastMCP) -> None:
@@ -68,8 +67,8 @@ def test_server_instructions_name_served_skills(gnomad_fake: FastMCP) -> None:
     assert "germline-variant-classification" in (server.instructions or "").split("\n\n")[0]
 
 
-def test_skills_header_off_drops_skill_pointers(gnomad_fake: FastMCP) -> None:
-    # #376: pinned tool descriptions and instructions name the matching skill unless off.
+def test_skills_header_off_drops_skills_line(gnomad_fake: FastMCP) -> None:
+    # #384: pinned descriptions carry no skill pointer; the instructions line goes when off.
     clinvar = make_fake_backend("clinvar-link", ["get_variant"])
     app = build_app(
         RouterSettings(_env_file=None),
@@ -96,11 +95,10 @@ def test_skills_header_off_drops_skill_pointers(gnomad_fake: FastMCP) -> None:
         "clientInfo": {"name": "t", "version": "1"},
     }
     with TestClient(app) as client:
-        assert _POINTER in pinned(None)
-        assert "skill" not in pinned("off")
+        assert "skill" not in pinned(None)
         assert "WORKFLOW SKILLS" in post("initialize", init, None)["instructions"]
         assert "WORKFLOW SKILLS" not in post("initialize", init, "off")["instructions"]
-        assert _POINTER in pinned(None)  # no cross-request state
+        assert "WORKFLOW SKILLS" in post("initialize", init, None)["instructions"]  # stateless
 
 
 def test_skills_header_off_hides_skill_hits(gnomad_fake: FastMCP) -> None:

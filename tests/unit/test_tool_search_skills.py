@@ -222,25 +222,3 @@ async def test_call_tool_miss_message_names_what_is_missing(call: dict, message:
     assert (body["error_code"], body["message"]) == ("not_found", message)
     assert "clinvar://" not in result.content[0].text  # type: ignore[union-attr]
     assert "no-such" not in result.content[0].text  # type: ignore[union-attr]
-
-
-def test_skill_pointers_name_real_skills_and_pinned_tools() -> None:
-    # #376: the pinned-description mapping must not drift from skills/ or servers.yaml.
-    from genefoundry_router.config import load_registry
-    from genefoundry_router.skill_search import SKILL_POINTERS
-    from genefoundry_router.tool_search import resolve_entrypoints
-
-    pins = set(resolve_entrypoints(load_registry(ROOT / "servers.yaml", {})))
-    served = {t.name.removeprefix("skill_") for t in skill_tools(ROOT / "skills")}
-    assert set(SKILL_POINTERS) <= pins
-    assert set(SKILL_POINTERS.values()) <= served
-
-
-async def test_pinned_pointer_needs_a_served_skill() -> None:
-    from fastmcp.tools.base import Tool
-
-    tool = Tool(name="clinvar_get_variant", description="ClinVar.", parameters={})
-    served = CompactBM25SearchTransform(skills=skill_tools(ROOT / "skills"))
-    bare = CompactBM25SearchTransform()
-    assert "skill_germline-variant-classification" in (served._point(tool).description or "")
-    assert bare._point(tool) is tool

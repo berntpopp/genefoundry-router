@@ -1,0 +1,53 @@
+Invoke a skill to get specialized instructions for a task.
+
+<skills_instructions>
+Skills provide specialized capabilities and domain knowledge. Each skill contains instructions, and may include references.
+
+When to use:
+- Before starting a task, check if any skill in <available_skills> matches the request
+- Use the description field to determine relevance
+
+How to invoke:
+- Call this tool with the skill name only
+- Example: command: "germline-variant-classification"
+- Example: command: "literature-evidence-review"
+
+After invoking:
+- Follow the instructions returned by the skill
+- If the skill lists reference files, load only the specific files needed, with the read_resource calls it gives — don't bulk-load
+
+Multiple skills:
+- If multiple skills apply, choose the minimal set and invoke them in sequence
+- State which skills you're using and why
+
+Important:
+- When a skill is relevant, invoke this tool IMMEDIATELY as your first action — NEVER just mention a skill without actually calling this tool
+- Invoke the skill tool BEFORE generating any other response about the task
+- Only invoke skills listed in <available_skills>
+- Do not invoke a skill that is already running
+- If a skill can't be applied, state the issue and proceed with the best alternative
+</skills_instructions>
+
+<available_skills>
+<skill>
+<name>genetic-report-review</name>
+<description>Use when asked to review, second-check, audit or sign out a genetic test report (germline panel, exome or genome, CNV/array, somatic tumour, pharmacogenomic, predictive or segregation report), or to find errors in a lab report, e.g. "review this exome report", "second look at this BRCA1 report", "is this report ready to sign out".</description></skill>
+<skill>
+<name>germline-variant-classification</name>
+<description>Use when asked to classify a germline sequence variant (SNV or small indel) as pathogenic, likely pathogenic, VUS, likely benign or benign under ACMG/AMP, to re-derive or check an existing classification, or to say which ACMG criteria a variant meets — e.g. "classify NM_000492.4:c.1521_1523del in CFTR", "is this MYH7 missense a VUS?", "which ACMG codes apply to rs80357906?". Also mtDNA variants and repeat-expansion sizing via its references. Not for somatic/tumour variants or CNVs.</description></skill>
+<skill>
+<name>identifier-resolution-and-lookup</name>
+<description>Use when a question needs identifiers chained across two or more databases, or resolved in batch, before it can be answered (a single direct lookup does not need this skill) — gene symbols, aliases, Ensembl/RefSeq/UniProt/NCBI ids, rsIDs, HGVS or coordinates on GRCh37/GRCh38, disease names or OMIM/Orphanet/MONDO ids, HPO terms — e.g. "Ensembl id of the gene causing Dravet syndrome", "what chromosome band is the gene for OMIM:154700", "convert these 50 ENSG ids to symbols". Research use only.</description></skill>
+<skill>
+<name>lay-summary</name>
+<description>Use when asked to explain a genetic result, gene, variant or genetic condition in plain language for a patient, parent or family member, e.g. "explain this VUS to the family", "write a patient-friendly summary of this BRCA2 result", "lay summary of Marfan syndrome", "Erklärung für die Familie in einfacher Sprache".</description></skill>
+<skill>
+<name>literature-evidence-review</name>
+<description>Use when asked to review, summarize or synthesize the published evidence on a gene, variant or gene–disease link, to find what a set of papers actually says, to check whether cited PMIDs support a claim, or to report what is new since a date — e.g. "what is the evidence that KMT2D causes Kabuki syndrome", "literature on BRCA2 c.8167G>A", "new papers on SCN2A epilepsy since 2024", "do these PMIDs really describe this variant?".</description></skill>
+<skill>
+<name>phenotype-to-candidate-genes</name>
+<description>Use when a patient's phenotypes (HPO terms or clinical features) must be matched to the most likely causal gene, with or without a candidate gene list from exome or genome variants — e.g. "which of these genes explains seizures, hypotonia and microcephaly", "rank candidate genes for these HPO terms", "pick the causal gene for this case". Research use only.</description></skill>
+<skill>
+<name>somatic-variant-interpretation</name>
+<description>Use when asked whether a somatic (tumour, cancer) variant is oncogenic or actionable, or how often a somatic variant occurs in a tumour type — e.g. "is BRAF V600E actionable in melanoma", "is TP53 R175H a hotspot", "KRAS G12C prevalence in lung adenocarcinoma". Research use only.</description></skill>
+</available_skills>

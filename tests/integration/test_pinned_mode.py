@@ -19,7 +19,7 @@ from tests.integration.test_strict_pinned_catalog import (
 )
 from tests.unit.test_schema_strict import assert_strict_invariants
 
-META = {"search_tools", "call_tool"}
+META = {"search_tools", "call_tool", "skill"}  # skill: served skills (#384)
 
 
 def _tokens(tools) -> int:  # same ~4 chars/token estimator as the budget test
