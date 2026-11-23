@@ -231,7 +231,7 @@ kept out of the fast `make ci-local` to preserve that loop's speed (§10).
 - **`make run-dev` exports `.env.dev`** into the env (no CLI `--env-file`); `.env.dev` committed
   via `!.env.dev` (no secrets).
 - **Version provenance = `initialize.serverInfo.version`**, not a backend tool.
-- **`make test-e2e` stays out of `make ci-local`** (offline but adds boot time); optionally
+- ~~`make test-e2e` stays out of `make ci-local`~~ — since 2026-11-23 it runs in `ci-local` (offline, ~2 s); was optionally
   under `make ci-full`. Config mismatch is a **hard fail** in e2e.
 
 ## 11. Future extensions (out of scope here)
