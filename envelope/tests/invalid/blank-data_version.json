@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "result": {
+    "hgnc_id": "HGNC:1097",
+    "approved_symbol": "BRAF"
+  },
+  "_meta": {
+    "request_id": "9f1c2a7e",
+    "elapsed_ms": 3,
+    "source": "hgnc",
+    "data_version": " ",
+    "retrieved_at": "2026-11-20T08:00:00Z"
+  }
+}

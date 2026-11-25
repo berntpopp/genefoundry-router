@@ -97,6 +97,9 @@ every backend) checks the rule on each tool it can call: the successful result o
 from the tool's own `examples` MUST carry non-empty `_meta.source`, `_meta.data_version` and
 `_meta.retrieved_at`. A missing or empty field fails the gate and names the field.
 
+The envelope is also published as a JSON Schema with test vectors, for a server in any language:
+[`envelope/`](../envelope/README.md).
+
 ## Adoption and compatibility
 
 Adding the fields is additive; a backend ships them in a minor release. Moving a value that a

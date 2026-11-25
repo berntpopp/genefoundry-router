@@ -1,0 +1,23 @@
+{
+  "success": false,
+  "error_code": "not_found",
+  "message": "",
+  "retryable": false,
+  "recovery_action": "call mondo_search_diseases",
+  "candidates": [
+    {
+      "id": "MONDO:0009061",
+      "label": "cystic fibrosis",
+      "match_type": "fuzzy"
+    }
+  ],
+  "_meta": {
+    "request_id": "9f1c2a7e",
+    "elapsed_ms": 3,
+    "next_commands": [
+      {
+        "tool": "mondo_search_diseases"
+      }
+    ]
+  }
+}

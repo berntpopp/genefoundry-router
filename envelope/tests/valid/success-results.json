@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "results": [
+    {
+      "id": "NBK1227:0024",
+      "recommended_citation": "Adam MP, et al. GeneReviews. NBK1227."
+    }
+  ],
+  "query_echo": "BRAF",
+  "recommended_citation": null,
+  "unsafe_for_clinical_use": true,
+  "_meta": {
+    "request_id": "9f1c2a7e",
+    "elapsed_ms": 3,
+    "source": "genereviews",
+    "data_version": "2026-11-03",
+    "retrieved_at": "2026-11-20T08:00:00Z",
+    "pagination": {
+      "total_count": 1,
+      "has_more": false,
+      "next_cursor": null
+    }
+  }
+}

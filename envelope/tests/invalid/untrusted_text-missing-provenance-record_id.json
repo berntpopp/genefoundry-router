@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "results": [
+    {
+      "id": "PMID:12345678",
+      "abstract": {
+        "kind": "untrusted_text",
+        "text": "BRAF mutations in melanoma.",
+        "provenance": {
+          "source": "pubtator",
+          "retrieved_at": "2026-07-10T12:00:00Z"
+        },
+        "raw_sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    }
+  ],
+  "_meta": {
+    "request_id": "9f1c2a7e",
+    "elapsed_ms": 3,
+    "source": "pubtator",
+    "data_version": "2026-11-03",
+    "retrieved_at": "2026-11-20T08:00:00Z"
+  }
+}
