@@ -21,6 +21,9 @@ Nothing enforced them. This does.
   3. THE ERROR AN LLM CANNOT ACT ON. A missing argument answered with `not_found` /
      "The requested tool is not available" — telling the model the tool does not exist.
 
+It also gates the provenance core rule of Response-Envelope v1.2: every successful control call
+must carry non-empty `_meta.source`, `_meta.data_version` and `_meta.retrieved_at`.
+
 Advisory (WARN, never affects the verdict): a `resolve_*` miss should be a `not_found` carrying
 `_meta.next_commands` (Response-Envelope Standard v1 §2a).
 
@@ -70,6 +73,9 @@ BOGUS_ARG = "__gf_conformance_no_such_arg__"
 # Errors that mean "the world is broken", not "the server is wrong". A probe that hits one of
 # these is skipped, never passed — an unreachable upstream must not silently buy a green tick.
 INCONCLUSIVE = {"upstream_unavailable", "rate_limited", "internal"}
+
+# Required in `_meta` of every successful result (Response-Envelope Standard v1.2, core rule).
+PROVENANCE = ("source", "data_version", "retrieved_at")
 
 # Tools that orient a client rather than query data (Tool-Naming Standard ops/meta carve-out).
 META_TOOLS = ("capabilit", "health", "diagnost", "warmup", "help", "quickstart")
@@ -226,7 +232,7 @@ def envelope(result: dict[str, Any]) -> dict[str, Any]:
         if block.get("type") == "text":
             try:
                 parsed = json.loads(block.get("text") or "")
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 continue
             if isinstance(parsed, dict):
                 return parsed
@@ -663,6 +669,19 @@ def check_total_is_not_the_page_size(
     )
 
 
+def check_provenance(rep: Report, tool: str, env: dict[str, Any]) -> None:
+    """Response-Envelope Standard v1.2 (core rule): a successful result names where its data
+    came from, which release, and when it was fetched upstream."""
+    meta = env.get("_meta")
+    meta = meta if isinstance(meta, dict) else {}
+    missing = [k for k in PROVENANCE if not (isinstance(meta.get(k), str) and meta[k].strip())]
+    rep.check(
+        f"{tool}: success carries _meta.{{{', '.join(PROVENANCE)}}}",
+        not missing,
+        f"missing or empty: {', '.join(missing)} (Response-Envelope Standard v1.2)",
+    )
+
+
 def check_resolver_miss(
     rep: Report, probe: Probe, tool: dict[str, Any], base: dict[str, Any]
 ) -> None:
@@ -686,7 +705,7 @@ def check_resolver_miss(
     label = f"{name}: a resolver miss is an honest not_found with next_commands"
     try:
         result = probe.call(name, {**base, key: SENTINEL})
-    except (ProtocolError, httpx.HTTPError):
+    except ProtocolError, httpx.HTTPError:
         return  # a rejected value or a flaky upstream says nothing about a miss; advisory only
     env = envelope(result)
     if not is_error_result(result, env):
@@ -854,6 +873,7 @@ def run_probe(base_url: str, *, expected_name: str, timeout: float = 60.0) -> Re
                 )
             continue
 
+        check_provenance(rep, name, control_env)
         check_declared_enums(rep, probe, tool, base)
         check_resolver_miss(rep, probe, tool, base)
 

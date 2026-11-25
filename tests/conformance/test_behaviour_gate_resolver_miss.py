@@ -30,7 +30,14 @@ RESOLVER: dict[str, Any] = {
         "properties": {"query": {"type": "string", "examples": ["cystic fibrosis"]}},
     },
 }
-HIT = {"structuredContent": {"success": True, "result": {"id": "MONDO:0009061"}}}
+PROVENANCE = {
+    "source": "mondo",
+    "data_version": "2026-11-03",
+    "retrieved_at": "2026-11-20T08:00:00Z",
+}
+HIT: dict[str, Any] = {
+    "structuredContent": {"success": True, "result": {"id": "MONDO:0009061"}, "_meta": PROVENANCE}
+}
 
 
 def _not_found(next_commands: list[Any]) -> dict[str, Any]:
@@ -39,7 +46,7 @@ def _not_found(next_commands: list[Any]) -> dict[str, Any]:
     return {"isError": True, "structuredContent": env}
 
 
-def _run(monkeypatch: pytest.MonkeyPatch, miss: dict[str, Any]) -> Any:
+def _run(monkeypatch: pytest.MonkeyPatch, miss: dict[str, Any], hit: dict[str, Any] = HIT) -> Any:
     class Fake:
         def __init__(self, base_url: str, timeout: float = 60.0) -> None:
             self.server_info = {"name": NAME}
@@ -60,10 +67,37 @@ def _run(monkeypatch: pytest.MonkeyPatch, miss: dict[str, Any]) -> Any:
                         "field": behaviour.BOGUS_ARG,
                     },
                 }
-            return miss if args.get("query") == behaviour.SENTINEL else HIT
+            return miss if args.get("query") == behaviour.SENTINEL else hit
 
     monkeypatch.setattr(behaviour, "Probe", Fake)
     return behaviour.run_probe("http://fake", expected_name=NAME)
+
+
+@pytest.mark.parametrize(
+    ("meta", "named"),
+    [
+        ({}, "source, data_version, retrieved_at"),
+        ({**PROVENANCE, "retrieved_at": ""}, "retrieved_at"),
+        ({**PROVENANCE, "data_version": None}, "data_version"),
+    ],
+)
+def test_success_without_provenance_fails(
+    monkeypatch: pytest.MonkeyPatch, meta: dict[str, Any], named: str
+) -> None:
+    """Response-Envelope Standard v1.2: a missing or empty provenance field fails the gate."""
+    hit = {"structuredContent": {"success": True, "result": {"id": "X"}, "_meta": meta}}
+    rep = _run(monkeypatch, _not_found([{"tool": "search_diseases"}]), hit)
+    assert not rep.conformant
+    assert any(
+        f.endswith(f"missing or empty: {named} (Response-Envelope Standard v1.2)")
+        for f in rep.failed
+    )
+
+
+def test_success_with_provenance_passes(monkeypatch: pytest.MonkeyPatch) -> None:
+    rep = _run(monkeypatch, _not_found([{"tool": "search_diseases"}]))
+    assert rep.conformant, rep.failed
+    assert any("success carries _meta" in p for p in rep.passed)
 
 
 def test_not_found_with_next_commands_passes(monkeypatch: pytest.MonkeyPatch) -> None:
