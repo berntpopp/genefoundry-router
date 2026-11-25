@@ -240,3 +240,10 @@ def test_server_ignoring_origin_fails_the_foreign_origin_check() -> None:
 def test_server_refusing_its_allowed_origin_fails() -> None:
     rep = _probe_origin(_origin_server(set()), "https://srv.example")
     assert rep.failed == ["allowed Origin 'https://srv.example' → 200 — got 403"]
+
+
+def test_edge_refusing_every_request_earns_no_origin_pass() -> None:
+    transport = httpx.MockTransport(lambda request: httpx.Response(403, text="<html>"))
+    rep = _probe_origin(transport, "https://srv.example")
+    assert not rep.conformant
+    assert not any("Origin →" in label for label in rep.passed)

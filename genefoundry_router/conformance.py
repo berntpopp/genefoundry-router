@@ -197,7 +197,10 @@ def run_probe(
         )
 
         check_sse_rejected(client, base, rep, token=service_token, headers=headers)
-        check_origin(client, base, rep, headers=headers, allowed_origin=allowed_origin)
+        # A 403 proves Origin validation only if the same request without Origin is served;
+        # an edge that refuses every request must not earn the pass.
+        if init.status_code == 200:
+            check_origin(client, base, rep, headers=headers, allowed_origin=allowed_origin)
 
         health = client.get(f"{base}/health")
         rep.check("GET /health → 200", health.status_code == 200, f"got {health.status_code}")

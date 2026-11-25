@@ -188,6 +188,11 @@ Asserts against an unauthenticated server:
 | `POST /mcp` without `Origin` → `200` (the initialize check above) | MUST |
 | `POST /mcp` with an allowed `Origin` → `200` (asserted when `--allowed-origin` is given; `fleet-probe` passes each backend's own public origin) | MUST |
 
+The two `Origin` checks run only after the request without `Origin` returned `200`, so a proxy
+that refuses every request cannot pass them. Backend hostnames are reachable only from the router
+network; the checks are therefore measured in each repository's `conformance.yml` (against its own
+container) and by `fleet-probe` run from inside that network.
+
 ### 7.2 Router profile
 
 Same transport / no-redirect / protocol-version contract, plus:
