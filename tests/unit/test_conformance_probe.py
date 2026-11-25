@@ -10,6 +10,7 @@ from unittest.mock import patch
 import httpx
 
 from genefoundry_router.conformance import (
+    FOREIGN_ORIGIN,
     Report,
     _parse_body,
     check_sse_rejected,
@@ -115,6 +116,8 @@ def test_run_probe_with_service_token() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         auth_headers.append(request.headers.get("authorization"))
+        if request.headers.get("origin") == FOREIGN_ORIGIN:
+            return httpx.Response(403)
         if request.url.path == "/mcp":
             if request.method == "POST":
                 body = json.loads(request.read())
@@ -190,3 +193,50 @@ def test_run_probe_null_result_tolerated() -> None:
         rep = run_probe("http://test", expected_name="srv", tier="stateless")
         # Should not crash with AttributeError, but fail on checks
         assert not rep.conformant
+
+
+def _origin_server(allowed: set[str], *, validate: bool = True) -> httpx.MockTransport:
+    """A fake backend that is conformant except for how it treats the Origin header."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        origin = request.headers.get("origin")
+        if validate and origin is not None and origin not in allowed:
+            return httpx.Response(403, json={"error": "forbidden origin"})
+        if request.url.path == "/health":
+            return httpx.Response(200, json={"status": "ok", "version": "1.0", "transport": "http"})
+        if request.method == "GET":
+            return httpx.Response(405)
+        if request.headers.get("mcp-protocol-version") == "1999-01-01":
+            return httpx.Response(400)
+        result: dict[str, Any] = {"serverInfo": {"name": "srv"}, "tools": [{"name": "t1"}]}
+        return httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": result})
+
+    return httpx.MockTransport(handler)
+
+
+def _probe_origin(transport: httpx.MockTransport, allowed_origin: str | None) -> Report:
+    with patch("httpx.Client", return_value=httpx.Client(transport=transport)):
+        return run_probe(
+            "http://test", expected_name="srv", tier="stateless", allowed_origin=allowed_origin
+        )
+
+
+def test_origin_validating_server_is_conformant() -> None:
+    rep = _probe_origin(_origin_server({"https://srv.example"}), "https://srv.example")
+    assert rep.conformant, rep.failed
+    for label in (
+        "POST /mcp without Origin → 200",
+        "foreign Origin → 403",
+        "allowed Origin 'https://srv.example' → 200",
+    ):
+        assert label in rep.passed
+
+
+def test_server_ignoring_origin_fails_the_foreign_origin_check() -> None:
+    rep = _probe_origin(_origin_server(set(), validate=False), None)
+    assert rep.failed == ["foreign Origin → 403 — got 200"]
+
+
+def test_server_refusing_its_allowed_origin_fails() -> None:
+    rep = _probe_origin(_origin_server(set()), "https://srv.example")
+    assert rep.failed == ["allowed Origin 'https://srv.example' → 200 — got 403"]

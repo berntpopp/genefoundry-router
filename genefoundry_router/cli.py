@@ -437,14 +437,14 @@ def fleet_probe(
                 expected_name=expected_server_name(b),
                 tier=tier,
                 service_token=b.service_token,
+                allowed_origin="/".join(base.split("/")[:3]),  # scheme://host, its own origin
             )
             return b.name, rep, None
         except httpx.HTTPError as exc:  # DNS/TLS/connect/timeout — a transport error, not a verdict
             return b.name, None, str(exc)
 
     enabled = [b for b in registry if b.enabled]
-    max_workers = min(32, len(getattr(registry, "backends", registry)) or 1)
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+    with ThreadPoolExecutor(max_workers=min(32, len(enabled) or 1)) as pool:
         results = list(pool.map(_probe, enabled))
     code, lines = _classify_fleet(results)
     for line in lines:

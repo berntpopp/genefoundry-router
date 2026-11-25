@@ -4,6 +4,10 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **The transport probe tests `Origin` validation** (#394). A `POST /mcp` with a foreign `Origin` must return `403`; a request without `Origin` must return `200`; with `--allowed-origin`, a request with that `Origin` must return `200`. `fleet-probe` passes each backend's own public origin. MCP Transport Standard v1 §2.5 and §7.1 state the three cases.
+
 ## [0.14.9] - 2026-11-23
 
 ### Added

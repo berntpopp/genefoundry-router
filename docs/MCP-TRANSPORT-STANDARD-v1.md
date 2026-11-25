@@ -78,7 +78,10 @@ the stateless tier, MUST answer `Content-Type: application/json`.
 
 ### 2.5 Security
 
-Servers MUST validate the `Origin` header (DNS-rebinding protection). In containers, binding
+Servers MUST validate the `Origin` header (DNS-rebinding protection): a request whose `Origin`
+is not on the server's allowlist MUST be refused with `403`; a request without an `Origin`
+header (a non-browser client, such as the router) and a request with an allowed `Origin` MUST be
+served. A deployed backend allows its own public origin. In containers, binding
 `0.0.0.0` is permitted because exposure is mediated by the reverse proxy; this MUST be
 documented (ties to Container-Hardening v1). The router MUST NOT forward the caller's
 `Authorization` header to backends.
@@ -181,7 +184,9 @@ Asserts against an unauthenticated server:
 | `serverInfo.name` equals the expected `<ns>-link` name (exact match; server MUST conform to `^[a-z0-9]+(-[a-z0-9]+)*-link$`) | MUST |
 | Follow-up request with unsupported `MCP-Protocol-Version` → `400` | MUST |
 | `GET /health` → `200` with `{status, version, transport}` | MUST |
-| Cross-`Origin` request rejected | MUST |
+| `POST /mcp` with a foreign `Origin` (`https://origin-probe.invalid`) → `403` | MUST |
+| `POST /mcp` without `Origin` → `200` (the initialize check above) | MUST |
+| `POST /mcp` with an allowed `Origin` → `200` (asserted when `--allowed-origin` is given; `fleet-probe` passes each backend's own public origin) | MUST |
 
 ### 7.2 Router profile
 
@@ -199,6 +204,10 @@ Same transport / no-redirect / protocol-version contract, plus:
 # backend
 python -m genefoundry_router.conformance http://127.0.0.1:8000 \
     --name gtex-link --tier stateless
+
+# deployed backend, including the allowed-Origin check
+python -m genefoundry_router.conformance https://gtex-link.genefoundry.org \
+    --name gtex-link --tier stateless --allowed-origin https://gtex-link.genefoundry.org
 
 # router (with auth)
 python -m genefoundry_router.conformance http://127.0.0.1:8000 \

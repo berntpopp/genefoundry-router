@@ -91,6 +91,7 @@ def test_fleet_probe_honors_servers_file_envvar(
     monkeypatch.setenv("U_CUSTOM", "http://custom/mcp")
 
     def fake_probe(url: str, **kw: object) -> Report:
+        assert kw["allowed_origin"] == "http://custom"  # the backend's own origin
         rep = Report(url, "custom-link", "stateless")
         rep.check("check", True)
         return rep
