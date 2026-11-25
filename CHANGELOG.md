@@ -7,6 +7,7 @@ All notable changes to genefoundry-router are documented here.
 ### Added
 
 - **The transport probe tests `Origin` validation** (#394). A `POST /mcp` with a foreign `Origin` must return `403`; a request without `Origin` must return `200`; with `--allowed-origin`, a request with that `Origin` must return `200`. `fleet-probe` passes each backend's own public origin. MCP Transport Standard v1 §2.5 and §7.1 state the three cases.
+- **Response-Envelope Standard v1.2: provenance is a core rule** (#393). Every successful result must carry non-empty `_meta.source`, `_meta.data_version` and `_meta.retrieved_at`. A cached result reports the time of the upstream fetch that filled the cache. The behaviour gate fails a tool whose successful result lacks a field (MCP Behaviour Standard B9).
 
 ## [0.14.9] - 2026-11-23
 

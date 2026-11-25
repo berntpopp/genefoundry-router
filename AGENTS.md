@@ -80,7 +80,8 @@ Other useful targets: `make test`, `make test-integration`, `make test-cov` (cov
 ## Fleet standards (apply repo-wide; each `-link` repo has a tracking issue)
 
 - Tool-Naming & Normalization — `docs/TOOL-NAMING-STANDARD-v1.md`
-- Response-Envelope — `docs/RESPONSE-ENVELOPE-STANDARD-v1.md`
+- Response-Envelope — `docs/RESPONSE-ENVELOPE-STANDARD-v1.md`, amended by `-v1.1.md` (untrusted text)
+  and `-v1.2.md` (provenance: `source`, `data_version`, `retrieved_at` on every successful result)
 - Tool-Surface Budget — `docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md` (`make lint-surface`)
 - Tool-Schema Documentation — `docs/TOOL-SCHEMA-DOCUMENTATION-STANDARD-v1.md` (`make lint-surface`)
 - Container & Deployment Hardening — `docs/CONTAINER-HARDENING-STANDARD-v1.md`

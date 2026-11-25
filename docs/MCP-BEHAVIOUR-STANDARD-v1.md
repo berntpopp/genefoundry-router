@@ -154,6 +154,12 @@ A probe that cannot reach the server **skips or errors — it never passes**. A 
 because it could not run is the failure mode this entire standard exists to prevent.
 (`scripts/mcp_survey.py` currently exits `0` when every host fails to resolve. That is a bug.)
 
+### B9 — A successful result MUST carry its provenance
+
+Every successful result of a probed tool carries non-empty `_meta.source`, `_meta.data_version`
+and `_meta.retrieved_at` (`RESPONSE-ENVELOPE-STANDARD-v1.2`, core rule). A missing or empty field
+fails the gate and is named in the failure.
+
 ## Gaps in the current gate — closed, and how
 
 The first cut of the probe implemented **B1, B2, B3, B6, B8** and silently missed **B4** and **B7**.
@@ -203,6 +209,7 @@ joins `ci-local` in the change that drives the fleet to zero.
 
 - `docs/RESPONSE-ENVELOPE-STANDARD-v1.1.md` — *"silent omission is not compliant"*; the error
   envelope and the closed `error_code` enum; the batch carve-out.
+- `docs/RESPONSE-ENVELOPE-STANDARD-v1.2.md` — provenance on every successful result (B9).
 - `docs/TOOL-SCHEMA-DOCUMENTATION-STANDARD-v1.md` — S2 (`examples` on required params) and S4
   (closed vocabularies declare `enum`). **B7 depends on it.**
 - [MCP 2025-11-25 — Tools, Error Handling](https://modelcontextprotocol.io/specification/2025-11-25/server/tools):

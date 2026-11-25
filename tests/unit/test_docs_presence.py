@@ -34,3 +34,9 @@ def test_claude_md_references_agents_md():
 def test_response_envelope_v11_and_inventory_are_present():
     assert (ROOT / "docs/RESPONSE-ENVELOPE-STANDARD-v1.1.md").is_file()
     assert (ROOT / "docs/conformance/untrusted-text-inventory.yml").is_file()
+
+
+def test_response_envelope_v12_states_the_provenance_core_rule():
+    txt = (ROOT / "docs/RESPONSE-ENVELOPE-STANDARD-v1.2.md").read_text()
+    for token in ["`source`", "`data_version`", "`retrieved_at`", "Cache hit"]:
+        assert token in txt, f"Response-Envelope v1.2 missing {token!r}"
