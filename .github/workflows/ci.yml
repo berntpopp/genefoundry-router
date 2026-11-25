@@ -59,6 +59,11 @@ jobs:
       - name: Run CI checks (format, lint, typecheck, tests)
         run: make ci-local
 
+      # The envelope README's command lines, run over every vector with two more validators
+      # (the Python one runs in ci-local). Needs the network, so it is not part of ci-local.
+      - name: Envelope schema vectors (check-jsonschema, ajv)
+        run: make envelope-check
+
       # The offline guard (tests/unit/test_action_pin_comments.py) proves pin comments are
       # self-consistent; it cannot catch one that is uniformly wrong. Resolving the claim
       # needs the network, so it lives here rather than in ci-local. Skips without a token.

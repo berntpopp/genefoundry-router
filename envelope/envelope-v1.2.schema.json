@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://genefoundry.org/schemas/envelope/1.2.0/envelope.schema.json",
+  "title": "GeneFoundry response envelope v1.2",
+  "description": "The structuredContent object of an MCP tool result that carries upstream data. The envelope and _meta are open; only untrusted_text is closed.",
+  "type": "object",
+  "required": ["success", "_meta"],
+  "properties": {
+    "success": { "type": "boolean" },
+    "_meta": {
+      "type": "object",
+      "required": ["request_id", "elapsed_ms"],
+      "properties": {
+        "request_id": { "type": "string" },
+        "elapsed_ms": { "type": "number" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/fenced" }
+    }
+  },
+  "additionalProperties": { "$ref": "#/$defs/fenced" },
+  "if": { "type": "object", "required": ["success"], "properties": { "success": { "const": false } } },
+  "then": { "$ref": "#/$defs/error" },
+  "else": { "if": { "type": "object" }, "then": { "$ref": "#/$defs/success" } },
+  "$defs": {
+    "success": {
+      "type": "object",
+      "anyOf": [{ "required": ["result"] }, { "required": ["results"] }],
+      "properties": {
+        "result": { "type": "object" },
+        "results": { "type": "array" },
+        "_meta": {
+          "type": "object",
+          "required": ["source", "data_version", "retrieved_at"],
+          "properties": {
+            "source": { "$ref": "#/$defs/text" },
+            "data_version": { "$ref": "#/$defs/text" },
+            "retrieved_at": { "$ref": "#/$defs/utc" }
+          }
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "required": ["error_code", "message", "retryable"],
+      "properties": {
+        "error_code": { "$ref": "#/$defs/text" },
+        "message": { "$ref": "#/$defs/text" },
+        "retryable": { "type": "boolean" },
+        "recovery_action": { "type": "string" }
+      }
+    },
+    "untrusted_text": {
+      "type": "object",
+      "required": ["kind", "text", "provenance", "raw_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "untrusted_text" },
+        "text": {
+          "$comment": "Excludes the code points v1.1 removes (C0, C1, zero-width and bidirectional controls).",
+          "type": "string",
+          "pattern": "^[^\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b-\u200d\u2060\ufeff\u202a-\u202e\u2066-\u2069]*$"
+        },
+        "provenance": {
+          "type": "object",
+          "required": ["source", "record_id", "retrieved_at"],
+          "additionalProperties": false,
+          "properties": {
+            "source": { "$ref": "#/$defs/text" },
+            "record_id": { "$ref": "#/$defs/text" },
+            "retrieved_at": { "$ref": "#/$defs/utc" }
+          }
+        },
+        "raw_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "fenced": {
+      "$comment": "Any object with kind=untrusted_text, at any depth, is the v1.1 object.",
+      "if": { "type": "object", "required": ["kind"], "properties": { "kind": { "const": "untrusted_text" } } },
+      "then": { "$ref": "#/$defs/untrusted_text" },
+      "else": {
+        "if": { "type": "object" },
+        "then": { "type": "object", "additionalProperties": { "$ref": "#/$defs/fenced" } },
+        "else": { "if": { "type": "array" }, "then": { "type": "array", "items": { "$ref": "#/$defs/fenced" } } }
+      }
+    },
+    "text": { "type": "string", "minLength": 1 },
+    "utc": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$" }
+  }
+}

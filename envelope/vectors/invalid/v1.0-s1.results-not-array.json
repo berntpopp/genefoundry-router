@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "results": {
+    "id": "PMID:12345678"
+  },
+  "_meta": {
+    "request_id": "9f1c2a7e",
+    "elapsed_ms": 3,
+    "source": "pubtator",
+    "data_version": "2026-11-03",
+    "retrieved_at": "2026-11-20T08:00:00Z"
+  }
+}
