@@ -38,7 +38,8 @@ in its envelope `_meta` block (v1 §4), each a non-empty string:
 ```
 
 The rule is **core**: a backend that omits a field, or sends it empty, is not conformant.
-Error results (`success: false`) MAY carry the fields and are not required to. Tools that orient a
+Error results (`success: false`) MAY carry the fields and are not required to; `source` stays a
+SHOULD on an error (v1 §4). Tools that orient a
 client and return no upstream data (capabilities, health, diagnostics; the ops/meta carve-out of
 the Tool-Naming Standard) are outside the rule.
 
@@ -98,7 +99,7 @@ from the tool's own `examples` MUST carry non-empty `_meta.source`, `_meta.data_
 `_meta.retrieved_at`. A missing or empty field fails the gate and names the field.
 
 The envelope is also published as a JSON Schema with test vectors, for a server in any language:
-[`envelope/`](../envelope/README.md).
+[`envelope/`](../envelope/README.md). Its schema requires `retrieved_at` to end in `Z`.
 
 ## Adoption and compatibility
 

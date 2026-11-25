@@ -10,11 +10,18 @@ release (`data_version`) and when it was fetched (`retrieved_at`, UTC). An error
 This directory is the standard in a form any language can load:
 
 - [`envelope-v1.2.schema.json`](envelope-v1.2.schema.json): JSON Schema (draft 2020-12).
-- [`tests/valid/`](tests/valid) and [`tests/invalid/`](tests/invalid): test vectors. Each invalid
-  file breaks one rule, named by its filename. A validator setup is correct when it accepts every
-  valid file and rejects every invalid one.
+- [`vectors/valid/`](vectors/valid) and [`vectors/invalid/`](vectors/invalid): one bare envelope
+  per file. Each invalid file breaks exactly one rule; its name starts with the standard and
+  section (`v1.0-s4.`, `v1.1.`, `v1.2.`) and then says which rule. A validator setup is correct
+  when it accepts every valid file and rejects every invalid one.
+- [`vectors/sanitize.json`](vectors/sanitize.json): in/out vectors for the v1.1 fence. Each entry
+  has `raw_base64` (the upstream bytes) and the expected `text` (NFC, then the listed code points
+  removed) and `raw_sha256` (digest of the raw bytes). A schema cannot check a function; these can.
 
-Copy the schema file into your repository, or fetch it from its `$id`. The prose standard is
+Copy the schema file into your repository. Its `$id`,
+`https://genefoundry.org/schemas/envelope/1.2.0/envelope.schema.json`, is a versioned name that
+never changes; it need not resolve, and the canonical copy is this directory of the
+genefoundry-router repository. The prose standard is
 [v1](../docs/RESPONSE-ENVELOPE-STANDARD-v1.md), [v1.1](../docs/RESPONSE-ENVELOPE-STANDARD-v1.1.md)
 and [v1.2](../docs/RESPONSE-ENVELOPE-STANDARD-v1.2.md); where the schema and the prose differ, the
 prose wins.
@@ -28,7 +35,7 @@ memory.
 
 ```bash
 uvx check-jsonschema --schemafile envelope-v1.2.schema.json result.json
-npx ajv-cli validate --spec=draft2020 --strict-types=false -s envelope-v1.2.schema.json -d result.json
+npx ajv-cli validate --spec=draft2020 -s envelope-v1.2.schema.json -d result.json
 ```
 
 **Python** (`pip install jsonschema`)
@@ -41,7 +48,7 @@ jsonschema.validate(result, json.load(open("envelope-v1.2.schema.json")))
 
 ```js
 import Ajv2020 from "ajv/dist/2020.js";
-const ok = new Ajv2020({ strictTypes: false }).validate(JSON.parse(fs.readFileSync("envelope-v1.2.schema.json", "utf8")), result);
+const ok = new Ajv2020().validate(JSON.parse(fs.readFileSync("envelope-v1.2.schema.json", "utf8")), result);
 ```
 
 **R** (`install.packages("jsonvalidate")`)
@@ -56,8 +63,8 @@ jsonvalidate::json_validate("result.json", "envelope-v1.2.schema.json", engine =
 err := jsonschema.NewCompiler().MustCompile("envelope-v1.2.schema.json").Validate(result)
 ```
 
-In Go, decode `result` with `jsonschema.UnmarshalJSON`. The schema uses no `format` keyword, so
-no validator needs a format plug-in.
+In Go, decode `result` with `jsonschema.UnmarshalJSON`. The schema uses no `format` keyword, on
+which validators disagree, so every validator gives the same verdict without a plug-in.
 
 ## Get `structuredContent` from a tool result
 
@@ -110,4 +117,26 @@ async def test_tool_returns_the_envelope(tool, arguments):
 - Rules a schema cannot express: `isError`, the `content` mirror, Unicode sanitation, size
   limits, that `retrieved_at` is the upstream fetch time, and that prose is not duplicated outside
   its `untrusted_text` object.
-- `retrieved_at` must end in `Z` or `+00:00`.
+- `retrieved_at` must end in `Z`; `+00:00` is rejected.
+- `untrusted_text` and its `provenance` are closed: no other property is accepted there. The
+  envelope and `_meta` are open.
+
+## Mappings
+
+The field names stay as they are. These tables are for a bridge to another format.
+
+| Envelope field | [PAV](https://pav-ontology.github.io/pav/) term |
+|---|---|
+| `_meta.source` | `pav:retrievedFrom` (PAV expects a URI; this is a short name) |
+| `_meta.data_version` | `pav:version` |
+| `_meta.retrieved_at` | `pav:retrievedOn` |
+
+| Error field | [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457.html) problem member |
+|---|---|
+| `error_code` | `type`: `https://genefoundry.org/schemas/envelope/errors/<error_code>` |
+| `message` | `detail` |
+| `_meta.request_id` | `instance`: `urn:uuid:<request_id>` |
+| `retryable`, `recovery_action` | extension members, same names |
+
+As in RFC 9457, a client branches on `error_code` only, never parses `message`, and ignores
+members it does not know.

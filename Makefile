@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-skills lint-readme lint-description-lead lint-batch-pointers readme-inventory provenance lint-provenance lint-actions lint-action-versions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog bench-rerank expansions ci-full
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-skills lint-readme lint-description-lead lint-batch-pointers readme-inventory provenance lint-provenance lint-actions lint-action-versions typecheck typecheck-fresh test test-fast test-unit test-integration test-release test-cov test-all http-policy-adoption envelope-check check ci-local precommit clean run validate doctor list-tools docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config container-validate container-content container-deploy-verify dev-fleet run-dev test-e2e snapshot-fleet snapshot-baseline snapshot-catalog bench-rerank expansions ci-full
 
 .DEFAULT_GOAL := help
 
@@ -117,6 +117,19 @@ test-all: test-cov ## Alias for full test run with coverage
 
 http-policy-adoption: ## Validate the source-only HTTP-policy-v1 fleet adoption ledger
 	uv run pytest tests/unit/test_http_policy_adoption.py -q
+
+ENVELOPE_SCHEMA := envelope/envelope-v1.2.schema.json
+envelope-check: ## Run the envelope README command lines over every vector (online: uvx, and npx when node is present)
+	uvx check-jsonschema==0.39.0 --schemafile $(ENVELOPE_SCHEMA) envelope/vectors/valid/*.json
+	@for f in envelope/vectors/invalid/*.json; do \
+		if uvx check-jsonschema==0.39.0 --schemafile $(ENVELOPE_SCHEMA) "$$f" >/dev/null 2>&1; then echo "check-jsonschema accepted $$f"; exit 1; fi; \
+	done; echo "check-jsonschema rejected every invalid vector"
+	@if command -v npx >/dev/null 2>&1; then \
+		npx --yes ajv-cli@5.0.0 validate --spec=draft2020 -s $(ENVELOPE_SCHEMA) -d "envelope/vectors/valid/*.json" || exit 1; \
+		for f in envelope/vectors/invalid/*.json; do \
+			if npx --yes ajv-cli@5.0.0 validate --spec=draft2020 -s $(ENVELOPE_SCHEMA) -d "$$f" >/dev/null 2>&1; then echo "ajv accepted $$f"; exit 1; fi; \
+		done; echo "ajv rejected every invalid vector"; \
+	else echo "npx not on PATH: ajv check skipped"; fi
 
 check: format lint ## Format and lint
 

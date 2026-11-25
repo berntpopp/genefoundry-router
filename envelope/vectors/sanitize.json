@@ -1,0 +1,68 @@
+[
+  {
+    "description": "ASCII is unchanged",
+    "raw_base64": "QlJBRiBWNjAwRSBpbiBtZWxhbm9tYS4=",
+    "text": "BRAF V600E in melanoma.",
+    "raw_sha256": "53dd2285d45172e06b31d029ff3767a8cbc0f71ac2940bf2b7f1005068f54b26"
+  },
+  {
+    "description": "NFC composes e + combining acute",
+    "raw_base64": "U2pvzIhncmVuLCBjYWZlzIE=",
+    "text": "Sj\u00f6gren, caf\u00e9",
+    "raw_sha256": "e4b6c8fee496ab9237e49f673f912e99ebfc1fd852dcdc49bf63362b75da798a"
+  },
+  {
+    "description": "tab, LF and CR are kept",
+    "raw_base64": "YQliDQpj",
+    "text": "a\tb\r\nc",
+    "raw_sha256": "c479f3f40a7fc57851bcbf458c042151306deff9713898030fb3d93825cd77c7"
+  },
+  {
+    "description": "C0 controls are removed",
+    "raw_base64": "YQAICwwOH2I=",
+    "text": "ab",
+    "raw_sha256": "694fb01826500823c39d24fa040d4e0ecf5b12625292a43776c47b1a309b11c9"
+  },
+  {
+    "description": "DEL and C1 controls are removed",
+    "raw_base64": "YX/ChcKfYg==",
+    "text": "ab",
+    "raw_sha256": "e0368af773e6c055e4fa595557ba3738935579841bcaa440e3a54bb691c8397c"
+  },
+  {
+    "description": "zero-width controls and BOM are removed",
+    "raw_base64": "77u/QlLigIvigIzigI3igaBBRg==",
+    "text": "BRAF",
+    "raw_sha256": "d7f790af3c921c42de56c4a6f2ac30c30ed951f3371670250875a41ef64eac95"
+  },
+  {
+    "description": "bidirectional controls are removed",
+    "raw_base64": "YWJj4oCuZGVm4oCs4oGm4oGp",
+    "text": "abcdef",
+    "raw_sha256": "5abcaad4a664d36459817369f836fbf1bcccb68bccd4381ef1f6c64b13b224f1"
+  },
+  {
+    "description": "no NFKC: ligature, micro sign and superscript are kept",
+    "raw_base64": "76yBbmRpbmcgNSDCtWcvbcKy",
+    "text": "\ufb01nding 5 \u00b5g/m\u00b2",
+    "raw_sha256": "d191357ff5e7ae7fb31d946e2bd179b6dcbdec78858cc366fc741165eb2de580"
+  },
+  {
+    "description": "scientific symbols and non-Latin text are kept",
+    "raw_base64": "zrEtc3ludWNsZWluIOKJpSAyIMOXIOaXpeacrA==",
+    "text": "\u03b1-synuclein \u2265 2 \u00d7 \u65e5\u672c",
+    "raw_sha256": "691f93953cde49c62a8050f3fb33127bfdeb8575f80bc20141daeefb53cb71c0"
+  },
+  {
+    "description": "the digest is over the raw bytes, before any change",
+    "raw_base64": "eOKAi2XMgQ==",
+    "text": "x\u00e9",
+    "raw_sha256": "71e935ab8437f913e07fcf92de026ff1646ce46ecda9fb62e6f3ab142aa2d22c"
+  },
+  {
+    "description": "empty text",
+    "raw_base64": "",
+    "text": "",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]
