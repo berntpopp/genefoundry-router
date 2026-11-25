@@ -23,6 +23,7 @@ import httpx
 
 SUPPORTED_PROTOCOL = "2025-06-18"
 UNSUPPORTED_PROTOCOL = "1999-01-01"
+FOREIGN_ORIGIN = "https://origin-probe.invalid"  # RFC 2606: can never be an allowed origin
 
 _INIT = {
     "jsonrpc": "2.0",
@@ -94,6 +95,27 @@ def check_sse_rejected(
         return rep.check("GET /mcp does not 307", get.status_code != 307, f"got {get.status_code}")
 
 
+def check_origin(
+    client: httpx.Client,
+    base: str,
+    rep: Report,
+    *,
+    headers: dict[str, str],
+    allowed_origin: str | None = None,
+) -> None:
+    """Origin validation (Transport Standard §2.5): a foreign Origin is refused with 403;
+    an allowed one, when the caller names it, is served."""
+    foreign = client.post(f"{base}/mcp", json=_INIT, headers={**headers, "Origin": FOREIGN_ORIGIN})
+    rep.check("foreign Origin → 403", foreign.status_code == 403, f"got {foreign.status_code}")
+    if allowed_origin:
+        ok = client.post(f"{base}/mcp", json=_INIT, headers={**headers, "Origin": allowed_origin})
+        rep.check(
+            f"allowed Origin {allowed_origin!r} → 200",
+            ok.status_code == 200,
+            f"got {ok.status_code}",
+        )
+
+
 def run_probe(
     base_url: str,
     *,
@@ -101,6 +123,7 @@ def run_probe(
     tier: str,
     require_auth: bool = False,
     service_token: str | None = None,
+    allowed_origin: str | None = None,
 ) -> Report:
     base = base_url.rstrip("/")
     rep = Report(base, expected_name, tier)
@@ -130,7 +153,10 @@ def run_probe(
             init.status_code != 307,
             f"got {init.status_code} Location={init.headers.get('location')!r}",
         )
-        rep.check("POST /mcp → 200", init.status_code == 200, f"got {init.status_code}")
+        # httpx sends no Origin header, so this is also the "request without Origin" case.
+        rep.check(
+            "POST /mcp without Origin → 200", init.status_code == 200, f"got {init.status_code}"
+        )
         rep.check(
             "init Content-Type is application/json",
             init.headers.get("content-type", "").startswith("application/json"),
@@ -171,6 +197,10 @@ def run_probe(
         )
 
         check_sse_rejected(client, base, rep, token=service_token, headers=headers)
+        # A 403 proves Origin validation only if the same request without Origin is served;
+        # an edge that refuses every request must not earn the pass.
+        if init.status_code == 200:
+            check_origin(client, base, rep, headers=headers, allowed_origin=allowed_origin)
 
         health = client.get(f"{base}/health")
         rep.check("GET /health → 200", health.status_code == 200, f"got {health.status_code}")
@@ -189,6 +219,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tier", choices=["stateless", "stateful"], default="stateless")
     parser.add_argument("--require-auth", action="store_true")
     parser.add_argument("--token", "--service-token", dest="service_token", default=None)
+    parser.add_argument("--allowed-origin", default=None, help="an Origin the server must accept")
     args = parser.parse_args(argv)
     try:
         rep = run_probe(
@@ -197,6 +228,7 @@ def main(argv: list[str] | None = None) -> int:
             tier=args.tier,
             require_auth=args.require_auth,
             service_token=args.service_token,
+            allowed_origin=args.allowed_origin,
         )
     except httpx.HTTPError as exc:
         print(f"TRANSPORT ERROR: {exc}", file=sys.stderr)
