@@ -1,0 +1,92 @@
+name: Community admission
+
+# Federation Standard v1 §8. Plain `pull_request` trigger only (no privileged variant): the
+# PR's code runs with a read-only token and no credentials. The probe job contacts the candidate and
+# waits for a maintainer's approval through the `community-admission` environment
+# (docs/community-admission.md).
+
+on:
+  pull_request:
+    paths:
+      - registry/community.yaml
+      - registry/pins/community/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-admission-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Registry and pin checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      namespaces: ${{ steps.changed.outputs.namespaces }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          version: "0.8.7"
+      - name: Install
+        run: uv sync --frozen --no-dev
+      - name: Schema, namespace, pin and Unicode lint
+        run: uv run python scripts/admission_check.py static
+      - name: Changed namespaces
+        id: changed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" HEAD > "$RUNNER_TEMP/paths.txt"
+          git show "$BASE_SHA:registry/community.yaml" > "$RUNNER_TEMP/base.yaml" 2>/dev/null \
+            || echo "servers: []" > "$RUNNER_TEMP/base.yaml"
+          namespaces=$(uv run python scripts/admission_check.py changed \
+            --base "$RUNNER_TEMP/base.yaml" --paths "$RUNNER_TEMP/paths.txt")
+          echo "namespaces=$namespaces" >> "$GITHUB_OUTPUT"
+
+  probe:
+    name: Ownership, conformance and live pin (maintainer approval)
+    needs: static
+    if: ${{ needs.static.outputs.namespaces != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: community-admission
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          version: "0.8.7"
+      - name: Install router and conformance kit
+        run: |
+          uv sync --frozen --no-dev
+          # gts-conformance v0.2.3
+          uv pip install "gts-conformance @ git+https://github.com/berntpopp/gts-conformance@cb25c54c23e011d7af6085d7f98f674af589edb9"
+      - name: Probe the candidate
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          NAMESPACES: ${{ needs.static.outputs.namespaces }}
+        run: >-
+          uv run --no-sync python scripts/admission_check.py probe
+          --author "$AUTHOR" --namespaces "$NAMESPACES"

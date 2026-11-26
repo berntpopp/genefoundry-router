@@ -4,6 +4,10 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Federation Standard v1 §8: community admission CI (#415).** `.github/workflows/community-admission.yml` runs on `pull_request` (never the privileged variant) for changes to `registry/community.yaml` or `registry/pins/community/`. A static job applies the §3 loader rules, requires one pin per served entry and none without, limits tool descriptions to 300 characters, lints every string for NFC and the Response Envelope v1.2 removal set (bidi, zero-width, tag, controls) and fails a PR that changes files outside the registry. For each added or changed namespace, a probe job in the protected `community-admission` environment (required reviewers, no secrets) refuses a non-global address before any request, requires an ownership proof (DNS TXT `_genefoundry.<host>` or `/.well-known/genefoundry.json`) naming the namespace, the PR author's login and probe consent, runs the GTS conformance kit v0.2.3 at core level behind a connect-time IP guard, and fails with a unified diff when the live definitions differ from the pin. Setup: `docs/community-admission.md`.
+
 ## [0.14.17] - 2026-11-26
 
 ### Changed
