@@ -85,8 +85,8 @@
  ],
  "genereviews-chapter": [
   "genereviews_get_chapter_section",
-  "genereviews_get_chapter_metadata",
   "genereviews_get_genereview_summary",
+  "genereviews_get_chapter_metadata",
   "genereviews_get_table",
   "genereviews_search_genereviews"
  ],
@@ -102,7 +102,7 @@
   "gnomad_compute_carrier_frequency",
   "gnomad_get_gene_variants",
   "gnomad_get_variant_frequencies",
-  "gnomad_compute_variant_liftover"
+  "gnomad_compute_gene_carrier_frequency"
  ],
  "gnomad-carrier-frequency": [
   "gnomad_compute_carrier_frequency",
@@ -114,9 +114,9 @@
  "gnomad-coverage": [
   "gnomad_get_coverage",
   "ucsc_get_region_annotations",
-  "pubtator_search_guidelines",
-  "pubtator_search_literature",
-  "metadome_get_position_tolerance"
+  "metadome_get_position_tolerance",
+  "ucsc_find_blat_alignments",
+  "ucsc_search_genome"
  ],
  "gnomad-gene-variants": [
   "gnomad_compute_gene_carrier_frequency",
@@ -303,23 +303,23 @@
  "pubtator-ground": [
   "pubtator_get_review_context",
   "pubtator_get_review_context_batch",
-  "pubtator_get_publication_passages",
   "pubtator_search_guidelines",
-  "pubtator_search_literature"
+  "pubtator_get_publication_passages",
+  "pubtator_search_biomedical_entities"
  ],
  "pubtator-relations": [
   "clinpgx_get_related_records",
   "clinpgx_search_records",
-  "pubtator_find_entity_relations",
   "genereviews_get_chapter_section",
-  "litvar_search_gene_variants"
+  "litvar_search_gene_variants",
+  "genereviews_search_passages_batch"
  ],
  "pubtator-search": [
   "pubtator_search_biomedical_entities",
   "pubtator_find_entity_relations",
   "pubtator_search_guidelines",
   "pubtator_search_literature",
-  "pubtator_get_mesh"
+  "genereviews_search_genereviews"
  ],
  "pubtator-variant-evidence": [
   "pubtator_get_variant_evidence",
@@ -358,15 +358,15 @@
  ],
  "skill-lay-summary": [
   "skill_lay-summary",
-  "pubtator_search_literature",
   "gtex_search",
   "skill_phenotype-to-candidate-genes",
-  "gencc_search_diseases"
+  "gencc_search_diseases",
+  "skill_germline-variant-classification"
  ],
  "skill-literature-review": [
   "skill_literature-evidence-review",
-  "pubtator_list_evidence_certainty",
   "pubtator_get_evidence_certainty",
+  "pubtator_list_evidence_certainty",
   "opentargets_get_drug_candidates",
   "opentargets_search_disease_targets"
  ],
@@ -444,8 +444,8 @@
   "uniprot_get_protein_features",
   "metadome_get_protein_domains",
   "metadome_get_diagnostics",
-  "metadome_get_meta_domain",
-  "metadome_compare_positions"
+  "metadome_compare_positions",
+  "metadome_get_meta_domain"
  ],
  "uniprot-find-protein": [
   "uniprot_get_protein",
