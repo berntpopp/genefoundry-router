@@ -143,6 +143,18 @@ skill, were each loaded 0 times.
 
 Both caps are enforced by `tests/integration/test_strict_pinned_catalog.py`.
 
+**2026-11-26, owner-approved.** One server exception to `B2`:
+
+3. **`B2` (Rule 2): `pubtator-link`'s whole-server tool surface MAY exceed 10,000 tokens, up to a
+   hard cap of 13,000 tokens**, measured the same way (serialized `tools/list`, 4 characters per
+   token). It was 12,815 tokens at v8.0.0 (34 tools, largest 1,092 tokens), after trimming. The
+   reason is the per-property documentation the Tool-Schema Documentation Standard requires
+   (`S1`–`S3`), spread over a large literature-review workflow surface. Every pubtator tool still
+   obeys `B1`. The cap is not raised to admit growth; a new tool must fit under it or the surface
+   must be trimmed or split. No other server gets this exception. Enforced by
+   `scripts/check_tool_surface.py` (`SERVER_TOKEN_CAPS`) and
+   `tests/unit/test_tool_surface_linter.py`.
+
 ## CI gate
 
 `scripts/check_tool_surface.py` enforces `B1` and `B2` offline against

@@ -10648,7 +10648,7 @@
     "residue annotations"
    ]
   },
-  "metadome_request_tolerance_landscape": {
+  "metadome_submit_tolerance_landscape": {
    "source_sha256": "30d0643dbe8aa91c40a1c5932de542af87ce0106a820e55f13f8dc7b110872e6",
    "queries": [
     "build tolerance map for transcript",
@@ -10782,7 +10782,7 @@
     "analyzable transcript"
    ]
   },
-  "metadome_summarize_intolerant_regions": {
+  "metadome_find_intolerant_regions": {
    "source_sha256": "6c87e2342361250744fcc16f2def5a3adfa18b4f98f5058f67660ab4589524be",
    "queries": [
     "Which parts of the BRCA1 protein are most sensitive to mutations?",
@@ -15308,7 +15308,7 @@
     "effect weights"
    ]
   },
-  "pubtator_build_topic_literature_map": {
+  "pubtator_generate_topic_literature_map": {
    "source_sha256": "3fdb67aca9e47d057f1a1d058771b76a1d5e37e11eda95423768aaafbf7e4224",
    "queries": [
     "map out the recent literature on CRISPR off-target effects in hematopoietic stem cells",
@@ -15375,7 +15375,7 @@
     "topic clustering"
    ]
   },
-  "pubtator_convert_article_ids": {
+  "pubtator_map_article_ids": {
    "source_sha256": "3d6676430167379521a8b9e9822a054f7824feaef9805a4a02a4bfb0e0a3db3b",
    "queries": [
     "convert these DOIs to PMIDs for my bibliography",
@@ -15509,7 +15509,7 @@
     "backend diagnostics"
    ]
   },
-  "pubtator_estimate_publication_context": {
+  "pubtator_compute_publication_context": {
    "source_sha256": "6c1c0ff6e2de7e3c6069fc98f93e3c29aeee5c09fd8db97f7fb974a41f3a4530",
    "queries": [
     "how much text will I get for these PMIDs before downloading",
@@ -16951,7 +16951,7 @@
     "PubMed citations"
    ]
   },
-  "pubtator_inspect_review_index": {
+  "pubtator_get_review_index_status": {
    "source_sha256": "d1d31f697d8f17c2882434847d8783a1701304e0ae3a450649f3de6a243d1f8b",
    "queries": [
     "check if my review index was built correctly and show me how many papers failed",
@@ -17219,7 +17219,7 @@
     "index footprint"
    ]
   },
-  "pubtator_preflight_review_sources": {
+  "pubtator_get_review_source_coverage": {
    "source_sha256": "664d788c0715d3b81986d13004a3df263cb7fc3c4193e41bd9d4dd15ddce4d53",
    "queries": [
     "Can I get the full text for these PMIDs or just abstracts?",
@@ -17484,7 +17484,7 @@
     "artículos científicos"
    ]
   },
-  "pubtator_suggest_corpus": {
+  "pubtator_find_review_corpus": {
    "source_sha256": "4d681f44554532eb5f4597f070a05774344d5072f581615bfcbb94c6ae9f210a",
    "queries": [
     "find key papers on BRCA1 variants for a clinical review",
