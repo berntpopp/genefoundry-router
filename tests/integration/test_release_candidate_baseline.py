@@ -14,7 +14,7 @@ RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 
 # fleet-2026-11-26: strict capture of 30 verified signed backend releases (all 30 re-released for
-# Response-Envelope v1.2; metadome and pubtator tool renames). Previous: fleet-2026-11-22b (ucsc,
+# Response-Envelope v1.2, 16 then patched; metadome and pubtator tool renames). Previous: fleet-2026-11-22b (ucsc,
 # gtex, stringdb, clinvar, spliceai, gnomad, vep, mondo re-released); fleet-2026-11-22 (autopvs1, civic,
 # clingen, clinpgx, clinvar, genereviews, gnomad, litvar, mavedb, moalmanac, pubtator, spliceai,
 # vep re-released); fleet-2026-11-20b (clinvar, vep, mondo, hpo, ucsc re-released; civic,
@@ -25,10 +25,10 @@ APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 # Updating these four hashes adopts the reviewed fleet atomically with its captured evidence;
 # they must never move independently merely to make a failing check pass.
 HISTORICAL_EVIDENCE_SHA256 = {
-    APPLICATION_RELEASES: "dac0ca9d501f8c911d588fe797dba0c2b625a178690e39789f2de910fd427769",
-    RELEASE_INVENTORY: "471dbf000e3a5dac9a2552aae4d3b96bf2c87c5c62e6dc09c9f18c0ad31ae68a",
-    RELEASE_CANDIDATE: "9ea78f6adf0c1df81931496717a9d25399d464f1d8ecc5108732ed8868ffaed9",
-    BASELINE: "9ea78f6adf0c1df81931496717a9d25399d464f1d8ecc5108732ed8868ffaed9",
+    APPLICATION_RELEASES: "64fccf5f6dcfacba8f83b0243406f1705746cf5a70837a512129f039b29ea9c7",
+    RELEASE_INVENTORY: "8b3f84c0023684ad17da27954efd52508c38ca9459e7612935127baf561175f9",
+    RELEASE_CANDIDATE: "a7446bda1c19026d43efcf91b1903139a718bfa338f4d045c7366b42be322f8a",
+    BASELINE: "a7446bda1c19026d43efcf91b1903139a718bfa338f4d045c7366b42be322f8a",
 }
 
 

@@ -101,8 +101,9 @@ def test_baseline_output_schemas_are_valid_draft_2020_12_when_declared() -> None
                 )
                 Draft202012Validator.check_schema(schema)
 
-    # In baseline, 1 tool explicitly advertises an outputSchema (metadome dropped its 11 in 0.5.x)
-    assert output_schema_count == 1
+    # No baseline tool advertises an outputSchema: metadome dropped its 11 in 0.5.x and
+    # panelapp v0.11.1 dropped get_panelapp_diagnostics' (GTS-CORE-SCH-04).
+    assert output_schema_count == 0
 
 
 def test_baseline_schemas_contain_no_dangling_or_external_refs() -> None:

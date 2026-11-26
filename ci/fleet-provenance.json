@@ -1139,11 +1139,11 @@
       "name": "civic",
       "namespace": "civic",
       "release": {
-        "commit": "c47755b08b6beb13577485a538ba531074af5e64",
+        "commit": "2102c24a8d583048734f0e8b9ec2640e263acd5a",
         "definitions_sha256": "28b48ddd4ad0d282f579e7755444ab5e6f66b4d96b3da04a492d8d1ea25cad7a",
-        "image": "ghcr.io/berntpopp/civic-link@sha256:1040794ca6a778d89b3307b43a67d0dcddeb364faa5593497129a6a0159e016d",
-        "tag": "v0.3.0",
-        "version": "0.3.0"
+        "image": "ghcr.io/berntpopp/civic-link@sha256:fcfe81b3535824471df159bfe3b044702b8ae262e0e74796e5dfe9429d7c0fb4",
+        "tag": "v0.3.1",
+        "version": "0.3.1"
       },
       "repository": "berntpopp/civic-link",
       "repository_url": "https://github.com/berntpopp/civic-link",
@@ -3104,11 +3104,11 @@
       "name": "clinpgx",
       "namespace": "clinpgx",
       "release": {
-        "commit": "8fdb9d14e9a5ca5827006b17e618a2538abc1277",
+        "commit": "b946962373fc8ec0e65df9d56bd63663ffeed17f",
         "definitions_sha256": "701c96c4c14eea98600d57d99bc916f47ca55b35d23db6281c0c89468d7cb3af",
-        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:fee2588117c9b200c667883ff6ab35761d339125280bd0c3df5e13005bcd9dda",
-        "tag": "v0.1.25",
-        "version": "0.1.25"
+        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:7175115090bda034ff76d716a02105b2bc408b3bcc04a21e687b6f20260a8358",
+        "tag": "v0.1.26",
+        "version": "0.1.26"
       },
       "repository": "berntpopp/clinpgx-link",
       "repository_url": "https://github.com/berntpopp/clinpgx-link",
@@ -4839,11 +4839,11 @@
       "name": "clinvar",
       "namespace": "clinvar",
       "release": {
-        "commit": "7926e99708d3e7751832cef95adb75ba57d8155c",
+        "commit": "a6000f28e93168b0cfb8af1a6813c6977e50a63a",
         "definitions_sha256": "cca333c507975bfc89acdfdf2fb0e7944dd49f694d49d7223ee9292445933952",
-        "image": "ghcr.io/berntpopp/clinvar-link@sha256:4981869cf52a260916a2a84eac4d409b5f394e7d5e4bbbf3967caf7959ee4308",
-        "tag": "v0.12.0",
-        "version": "0.12.0"
+        "image": "ghcr.io/berntpopp/clinvar-link@sha256:898a155d6754a43b7badc504804e9387e5f180927c5b6885d102e38597ff775f",
+        "tag": "v0.12.1",
+        "version": "0.12.1"
       },
       "repository": "berntpopp/clinvar-link",
       "repository_url": "https://github.com/berntpopp/clinvar-link",
@@ -5753,7 +5753,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-26T01:07:25.616332Z"
+        "updated_at": "2026-11-26T07:04:32.419054Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -5762,11 +5762,11 @@
       "name": "gencc",
       "namespace": "gencc",
       "release": {
-        "commit": "b3c7c3a73c137b4462dd151df8775492f4eda633",
+        "commit": "87592129e980b3e7ecb7be14e69ec611d18d7823",
         "definitions_sha256": "14521b495eb3f94fd6ae63e44b79026171db488485efa58f44c45a86bb453251",
-        "image": "ghcr.io/berntpopp/gencc-link@sha256:5f766cc06dae3d309ff0294d78c08415dea2107aa6bd6f14d9ff2dca31aef8f4",
-        "tag": "v0.13.0",
-        "version": "0.13.0"
+        "image": "ghcr.io/berntpopp/gencc-link@sha256:51a12f0422ab4bcdf72cf5417333fba7b33db34894b2176ef86d699cba2e7d66",
+        "tag": "v0.13.1",
+        "version": "0.13.1"
       },
       "repository": "berntpopp/gencc-link",
       "repository_url": "https://github.com/berntpopp/gencc-link",
@@ -11839,11 +11839,11 @@
       "name": "litvar",
       "namespace": "litvar",
       "release": {
-        "commit": "46596b4014d7e8c6b3ee256e2948efa6b18b2fc2",
+        "commit": "b903ac9534a06ee0df3dfb2145f03fd85ed432c5",
         "definitions_sha256": "e1dcd0dd649fa061d18251f3608b72db796b64c9407c1f94c552ae810105b145",
-        "image": "ghcr.io/berntpopp/litvar-link@sha256:eb77ee840a9fb4c02624ecc569e6387491f26bfd204904ed24d0219fffb271a1",
-        "tag": "v6.4.0",
-        "version": "6.4.0"
+        "image": "ghcr.io/berntpopp/litvar-link@sha256:50c8da295e6b54673fdd80a89d54d0577318f881f45057a0b0d6b4cea4d2b4af",
+        "tag": "v6.4.1",
+        "version": "6.4.1"
       },
       "repository": "berntpopp/litvar-link",
       "repository_url": "https://github.com/berntpopp/litvar-link",
@@ -12146,7 +12146,7 @@
           "4.0.0"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-26T01:07:25.616332Z"
+        "updated_at": "2026-11-26T13:14:47.388247Z"
       },
       "domain": "Variant-effect assay scores",
       "entrypoints": [
@@ -12155,11 +12155,11 @@
       "name": "mavedb",
       "namespace": "mavedb",
       "release": {
-        "commit": "0aa52e80a74249e05ea5db6436266b3c838aa220",
+        "commit": "c381ccb4ba5239f8d12aa347b29f72e4d401e738",
         "definitions_sha256": "1e3ee5830ac62f474fb330cbc5ad76b6e1dd856c98a47c8635e41fb55fae8115",
-        "image": "ghcr.io/berntpopp/mavedb-link@sha256:c37244e2d1df68545b4cc98e56ce1cb715120c4d2fe8afb7c166914436c59479",
-        "tag": "v0.10.0",
-        "version": "0.10.0"
+        "image": "ghcr.io/berntpopp/mavedb-link@sha256:fff13ef286e0c825bcc867248a01f501d1838c78c361644f351b9facc18b9be3",
+        "tag": "v0.10.2",
+        "version": "0.10.2"
       },
       "repository": "berntpopp/mavedb-link",
       "repository_url": "https://github.com/berntpopp/mavedb-link",
@@ -13328,11 +13328,11 @@
       "name": "metadome",
       "namespace": "metadome",
       "release": {
-        "commit": "9e7b90fadd9cc2f2e9b7072382e88a0fe0d6fe4c",
+        "commit": "16504b5faec94fac71c04604a228fd31785b9cfb",
         "definitions_sha256": "fc8fa8c999fb0f69f7bc5ccb37bcdd79f5b4b72cfd6116c5712deb25ee5b54ce",
-        "image": "ghcr.io/berntpopp/metadome-link@sha256:17aaf2ca6108dedbe637fa09459211ae9273888ff8aef5de0a309645f7a5e3c0",
-        "tag": "v1.0.0",
-        "version": "1.0.0"
+        "image": "ghcr.io/berntpopp/metadome-link@sha256:afcaf55e3be484897602c514b4485977f95871a82d5f0db9ed147b591ba0ee96",
+        "tag": "v1.0.1",
+        "version": "1.0.1"
       },
       "repository": "berntpopp/metadome-link",
       "repository_url": "https://github.com/berntpopp/metadome-link",
@@ -13990,7 +13990,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-26T01:07:25.616332Z"
+        "updated_at": "2026-11-26T07:04:32.419054Z"
       },
       "domain": "Mouse phenotype & models",
       "entrypoints": [
@@ -13999,11 +13999,11 @@
       "name": "mgi",
       "namespace": "mgi",
       "release": {
-        "commit": "a65cadadb0454c92b65bc5a846daf7163bbd96e4",
+        "commit": "016aa1cd16de469cf24bf3f3cf10d361b3864f2d",
         "definitions_sha256": "fa7190cb3fb4ad90e7b055f1b6ab7b4744fb61b4c541d87cae962882bffac6e0",
-        "image": "ghcr.io/berntpopp/mgi-link@sha256:4f8998160f051f61ffe743c7ef658cd8b87e0ea08c8aacb59547255b8ffc0acd",
-        "tag": "v0.10.0",
-        "version": "0.10.0"
+        "image": "ghcr.io/berntpopp/mgi-link@sha256:958991771c3a2045e00e7d856dbdcb497927ef02804c8a29a500bf4169680909",
+        "tag": "v0.10.1",
+        "version": "0.10.1"
       },
       "repository": "berntpopp/mgi-link",
       "repository_url": "https://github.com/berntpopp/mgi-link",
@@ -16160,11 +16160,11 @@
       "name": "opentargets",
       "namespace": "opentargets",
       "release": {
-        "commit": "ec63f9c1c8eed799a9edbe340a26aaa3391b5a1c",
+        "commit": "84c77fef5f5e8338b4dff947d92878ee28934645",
         "definitions_sha256": "f86b3ee917b1ffbd3d9d4892cf9d0ba29ab3ba9de5c3982343ac7f6c66e83ba0",
-        "image": "ghcr.io/berntpopp/opentargets-link@sha256:f97619360364ea5f7e314db109ffe92ea2c76d072ece6fb865eb02743fb1acd4",
-        "tag": "v0.3.0",
-        "version": "0.3.0"
+        "image": "ghcr.io/berntpopp/opentargets-link@sha256:18d2bb9a2ac83e3917fd5f36743d21f1fe3297ca8b03b6a7f2947f256d84ddfe",
+        "tag": "v0.3.1",
+        "version": "0.3.1"
       },
       "repository": "berntpopp/opentargets-link",
       "repository_url": "https://github.com/berntpopp/opentargets-link",
@@ -16600,11 +16600,11 @@
       "name": "orphanet",
       "namespace": "orphanet",
       "release": {
-        "commit": "4b4471c44a3e2af42ac1078ceb7e27b4aa98bdee",
+        "commit": "1dfd32d0e2beed84638f74bff57a54e2a9633218",
         "definitions_sha256": "23120ab23fd1f12c4af1be15b162d23c8d4ab77f2ea022a38977aa442f7214db",
-        "image": "ghcr.io/berntpopp/orphanet-link@sha256:ac821db9367d2b11a2165f56ea823a2c1f458a406744916b96d1cd7bfbc6ee64",
-        "tag": "v0.10.0",
-        "version": "0.10.0"
+        "image": "ghcr.io/berntpopp/orphanet-link@sha256:5bffcecc81017296988a6e0ec37548dd5891bf74923c8ffa0c9a1045a49846c8",
+        "tag": "v0.10.1",
+        "version": "0.10.1"
       },
       "repository": "berntpopp/orphanet-link",
       "repository_url": "https://github.com/berntpopp/orphanet-link",
@@ -17827,11 +17827,11 @@
       "name": "panelapp",
       "namespace": "panelapp",
       "release": {
-        "commit": "1e49f283b44371bcf9600c2e584f0e1b351012fb",
-        "definitions_sha256": "79b95e2cdad63bab70af3c775f256be44343c9e5fa319ce504ed3506a734338f",
-        "image": "ghcr.io/berntpopp/panelapp-link@sha256:0626cd423342ad140d9304b50e9b67cf786465713469c5ef107425fdfcf082c0",
-        "tag": "v0.11.0",
-        "version": "0.11.0"
+        "commit": "ffc17b65fcbb1e0bfe3cd6fc6180f05aa18c8dd5",
+        "definitions_sha256": "312b9225b25b11a5bfb5070eee79bcad79aed3b16f345e108ac6195968e6609e",
+        "image": "ghcr.io/berntpopp/panelapp-link@sha256:45230486e244ad78a34556486426a97723672af84ac310e9841ca1632a31d3cf",
+        "tag": "v0.11.1",
+        "version": "0.11.1"
       },
       "repository": "berntpopp/panelapp-link",
       "repository_url": "https://github.com/berntpopp/panelapp-link",
@@ -18466,288 +18466,7 @@
             "type": "object"
           },
           "name": "get_panelapp_diagnostics",
-          "outputSchema": {
-            "additionalProperties": true,
-            "properties": {
-              "_meta": {
-                "additionalProperties": true,
-                "description": "Per-call envelope metadata.",
-                "properties": {
-                  "cache": {
-                    "enum": [
-                      "hit",
-                      "miss",
-                      "coalesced",
-                      "partial"
-                    ],
-                    "type": "string"
-                  },
-                  "citation_ref": {
-                    "type": "string"
-                  },
-                  "citation_short": {
-                    "type": "string"
-                  },
-                  "data_freshness": {
-                    "additionalProperties": true,
-                    "description": "Panel-list generation freshness and background refresh state.",
-                    "properties": {
-                      "age_seconds": {
-                        "type": [
-                          "number",
-                          "null"
-                        ]
-                      },
-                      "consecutive_failures": {
-                        "type": "integer"
-                      },
-                      "enabled": {
-                        "type": "boolean"
-                      },
-                      "failures_total": {
-                        "type": "integer"
-                      },
-                      "interval_seconds": {
-                        "type": "integer"
-                      },
-                      "last_attempt_at": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "last_error_type": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "last_successful_refresh_at": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "status": {
-                        "enum": [
-                          "disabled",
-                          "initializing",
-                          "healthy",
-                          "degraded",
-                          "stale"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "type": "object"
-                  },
-                  "data_license": {
-                    "type": "string"
-                  },
-                  "elapsed_ms": {
-                    "type": "number"
-                  },
-                  "next_commands": {
-                    "items": {
-                      "additionalProperties": false,
-                      "properties": {
-                        "arguments": {
-                          "additionalProperties": true,
-                          "type": "object"
-                        },
-                        "tool": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "arguments",
-                        "tool"
-                      ],
-                      "type": "object"
-                    },
-                    "type": "array"
-                  },
-                  "recommended_citation": {
-                    "type": "string"
-                  },
-                  "request_id": {
-                    "type": "string"
-                  },
-                  "response_mode": {
-                    "type": "string"
-                  },
-                  "tool": {
-                    "type": "string"
-                  },
-                  "unsafe_for_clinical_use": {
-                    "type": "boolean"
-                  },
-                  "upstream": {
-                    "additionalProperties": {
-                      "additionalProperties": true,
-                      "properties": {
-                        "calls": {
-                          "type": "integer"
-                        },
-                        "ms": {
-                          "type": "number"
-                        }
-                      },
-                      "type": "object"
-                    },
-                    "description": "Per-region upstream fetch timing for this call ({calls, ms}).",
-                    "type": "object"
-                  },
-                  "upstream_ms": {
-                    "type": "number"
-                  }
-                },
-                "type": "object"
-              },
-              "capabilities_version": {
-                "type": "string"
-              },
-              "data": {
-                "additionalProperties": true,
-                "description": "Live backend status, cache stats, and the RED metrics snapshot.",
-                "properties": {
-                  "cache": {
-                    "additionalProperties": true,
-                    "type": "object"
-                  },
-                  "cache_ttl_seconds": {
-                    "type": "integer"
-                  },
-                  "metrics": {
-                    "additionalProperties": true,
-                    "description": "Process-wide RED aggregates (also at GET /metrics).",
-                    "properties": {
-                      "cache": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      },
-                      "errors_by_code": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      },
-                      "errors_total": {
-                        "type": "integer"
-                      },
-                      "requests_by_tool": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      },
-                      "requests_total": {
-                        "type": "integer"
-                      },
-                      "tool_duration_ms": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      },
-                      "upstream_duration_ms": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      }
-                    },
-                    "type": "object"
-                  },
-                  "mode": {
-                    "type": "string"
-                  },
-                  "refresh": {
-                    "additionalProperties": true,
-                    "description": "Panel-list generation freshness and background refresh state.",
-                    "properties": {
-                      "age_seconds": {
-                        "type": [
-                          "number",
-                          "null"
-                        ]
-                      },
-                      "consecutive_failures": {
-                        "type": "integer"
-                      },
-                      "enabled": {
-                        "type": "boolean"
-                      },
-                      "failures_total": {
-                        "type": "integer"
-                      },
-                      "interval_seconds": {
-                        "type": "integer"
-                      },
-                      "last_attempt_at": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "last_error_type": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "last_successful_refresh_at": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "status": {
-                        "enum": [
-                          "disabled",
-                          "initializing",
-                          "healthy",
-                          "degraded",
-                          "stale"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "type": "object"
-                  },
-                  "sources": {
-                    "additionalProperties": true,
-                    "type": "object"
-                  }
-                },
-                "type": "object"
-              },
-              "error_code": {
-                "type": "string"
-              },
-              "field_errors": {
-                "items": {
-                  "additionalProperties": true,
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              "headline": {
-                "type": "string"
-              },
-              "message": {
-                "type": "string"
-              },
-              "recovery_action": {
-                "type": "string"
-              },
-              "retryable": {
-                "type": "boolean"
-              },
-              "server_version": {
-                "type": "string"
-              },
-              "success": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "success"
-            ],
-            "type": "object"
-          },
+          "outputSchema": null,
           "tags": [
             "curation",
             "discovery",
@@ -18772,11 +18491,11 @@
       "name": "pgscatalog",
       "namespace": "pgscatalog",
       "release": {
-        "commit": "0715a379290b729867726718ce46499bfcfd559d",
+        "commit": "d7855c22e24a3b3dc5e70a0e1177da9c46b9df03",
         "definitions_sha256": "9fbadb38ae587ab99f46ea86ab92e82bce634155a6b815377a2a8dc266734c43",
-        "image": "ghcr.io/berntpopp/pgscatalog-link@sha256:6276a6f8b4e75d025484f382c3750a34a4bc9b2157572378e64c316cf8d01396",
-        "tag": "v0.5.0",
-        "version": "0.5.0"
+        "image": "ghcr.io/berntpopp/pgscatalog-link@sha256:aade5dd6c456aaffebdab1662431e2053ea8fcafae3e738cc6284b8e26604daf",
+        "tag": "v0.5.1",
+        "version": "0.5.1"
       },
       "repository": "berntpopp/pgscatalog-link",
       "repository_url": "https://github.com/berntpopp/pgscatalog-link",
@@ -19241,11 +18960,11 @@
       "name": "pubtator",
       "namespace": "pubtator",
       "release": {
-        "commit": "88b9edef4cfd6f5054c0c3fc890809fcaa5f9f25",
+        "commit": "773623a003b35af71e89a3fd8e0694134be0e2d9",
         "definitions_sha256": "4745151b24524a4858afebac59b84f1660cb20be0cd89e9915269a49ff8eab96",
-        "image": "ghcr.io/berntpopp/pubtator-link@sha256:d0d6122981f9e533877681c2f8159ef0dac2bd8116e2c3762f7122a5cda84710",
-        "tag": "v8.0.1",
-        "version": "8.0.1"
+        "image": "ghcr.io/berntpopp/pubtator-link@sha256:46e8a90de3e99df2698de5d9db310def2fc288bb3e7250522376184577c96bce",
+        "tag": "v8.0.2",
+        "version": "8.0.2"
       },
       "repository": "berntpopp/pubtator-link",
       "repository_url": "https://github.com/berntpopp/pubtator-link",
@@ -21998,11 +21717,11 @@
       "name": "spliceai",
       "namespace": "spliceai",
       "release": {
-        "commit": "c176ea274dcd343de13050b066fa426f9729a731",
+        "commit": "71a8b04c50540b4fee0edf27d7e2dc56b4ca4eab",
         "definitions_sha256": "491bfa94d559ef28ab4d74b30db934414edd10cd2063d2ecf16453f83c24ea9c",
-        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:c628b20f7cf8e3d3f954f66de22f11d432aef4c4ad93090dd4fd5a674575f9c1",
-        "tag": "v4.4.0",
-        "version": "4.4.0"
+        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:f3acc0bfa3b3a00d616455ecfbf8e7a07a2da2c69bc4cbd41478dcd7408c17d0",
+        "tag": "v4.4.1",
+        "version": "4.4.1"
       },
       "repository": "berntpopp/spliceailookup-link",
       "repository_url": "https://github.com/berntpopp/spliceailookup-link",
@@ -22950,11 +22669,11 @@
       "name": "stringdb",
       "namespace": "stringdb",
       "release": {
-        "commit": "9e06c6ebb6ad8d448481913be9aeea5a2857e347",
+        "commit": "0353e7fd18ae2be18b16fed414cb2fce132ff525",
         "definitions_sha256": "e7eb83412332702dded220bc915f14f80276deb94526230b1530331dd636153f",
-        "image": "ghcr.io/berntpopp/stringdb-link@sha256:51721de6fa4b24ef770fa0ff9f539fe9c5c99d551ead74d94a77d6812f17bd6d",
-        "tag": "v4.7.0",
-        "version": "4.7.0"
+        "image": "ghcr.io/berntpopp/stringdb-link@sha256:45dd7a2f64874eaf213e480659935337fae7be19be59eaeefe8dd39eda2695a8",
+        "tag": "v4.7.1",
+        "version": "4.7.1"
       },
       "repository": "berntpopp/stringdb-link",
       "repository_url": "https://github.com/berntpopp/stringdb-link",
@@ -24474,11 +24193,11 @@
       "name": "uniprot",
       "namespace": "uniprot",
       "release": {
-        "commit": "f3a7cb17f5b88cfc87f2b8dbbc2b5baaae5322bc",
+        "commit": "6be89f781186007a767a84484aa0cb4babbad88e",
         "definitions_sha256": "e26ca491b5dd0e05629dc057162385308cef4cf4e0c25001d01e63da28b1de42",
-        "image": "ghcr.io/berntpopp/uniprot-link@sha256:27b21a6069c53a1a1ae351daaadb92fc1ec8d0c5bf5d9ff7d65f58ac037a6223",
-        "tag": "v6.0.1",
-        "version": "6.0.1"
+        "image": "ghcr.io/berntpopp/uniprot-link@sha256:2dba25044598067e902430adb3ade202d629df6c552c8e79605220c933ab5e5c",
+        "tag": "v6.0.3",
+        "version": "6.0.3"
       },
       "repository": "berntpopp/uniprot-link",
       "repository_url": "https://github.com/berntpopp/uniprot-link",
