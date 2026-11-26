@@ -104,6 +104,12 @@ TOOL_CACHE_MISSES = Counter(
     ["namespace"],
     registry=METRICS_REGISTRY,
 )
+COMMUNITY_QUARANTINES = Counter(
+    "genefoundry_community_quarantine_total",
+    "Latched whole-backend quarantines of community backends (Federation v1 §4)",
+    ["namespace", "reason"],
+    registry=METRICS_REGISTRY,
+)
 DRIFT_CHANGED = Gauge(
     "genefoundry_drift_changed",
     "Changed normalized tool definitions in the last runtime check",

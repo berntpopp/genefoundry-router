@@ -162,6 +162,12 @@ class RouterSettings(BaseSettings):
     GF_POLL_INTERVAL: float = 0  # seconds; 0 disables the polling re-list
     GF_DRIFT_MODE: Literal["off", "warn", "enforce"] = "warn"
     GF_DRIFT_BASELINE: str | None = None
+    # Federation Standard v1 §4 (#411), community instance only: one reviewed pin file per
+    # backend, a kill-switch file of namespaces (re-read every poll and <=5 s on calls), and
+    # the latch state file the `release` command edits (without it a restart clears latches).
+    GF_COMMUNITY_PINS_DIR: str = "registry/pins/community"
+    GF_KILL_SWITCH_FILE: str | None = None
+    GF_QUARANTINE_FILE: str | None = None
 
     # Transport security (R1.4 — MCP Origin/DNS-rebinding MUST)
     # NoDecode: suppress pydantic-settings' JSON pre-decode of complex env values so the

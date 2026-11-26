@@ -215,6 +215,10 @@ def build_app(
     seed /health reachability -> start the polling refresher (R1.7). On shutdown: stop it.
     """
     configure_logging(settings.GF_LOG_LEVEL)
+    community = [b for b in registry if b.trust == "community"]
+    if any(b.cache_ttl != settings.GF_POLL_INTERVAL for b in community):
+        # Federation v1 §4: every poll re-harvests exactly when the tools/list cache expires.
+        raise ConfigurationError("community backends require GF_POLL_INTERVAL == cache_ttl")
     refresh_ledger = None
     if settings.GF_AUTH_MODE == "oauth" and settings.GF_REFRESH_OBSERVABILITY_DB:
         refresh_ledger = RefreshLedger(
@@ -236,6 +240,12 @@ def build_app(
             refresh_ledger.close()
         raise
     guard = load_runtime_guard(settings)
+    guard.bind_community(
+        community,
+        pins_dir=settings.GF_COMMUNITY_PINS_DIR,
+        kill_switch_file=settings.GF_KILL_SWITCH_FILE,
+        state_file=settings.GF_QUARANTINE_FILE,
+    )
     server.add_transform(guard)
     skills = skill_tools(Path(settings.GF_SKILLS_DIR))  # build_server checked the dir
     mcp_app = server.http_app(  # ASGI sub-app; its lifespan must be entered

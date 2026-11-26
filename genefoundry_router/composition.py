@@ -29,6 +29,9 @@ DEFAULT_CACHE_TTL = 300
 # Generous default so legitimately slow backends (e.g. spliceai cold ~60s) are not cut
 # off, while still bounding an indefinite hang. Overridable via GF_BACKEND_TIMEOUT.
 DEFAULT_BACKEND_TIMEOUT = 120.0
+# Federation v1 §4: a community harvest is bounded so an unreachable backend cannot hold
+# up startup or a poll.
+COMMUNITY_HARVEST_TIMEOUT = 5.0
 
 force_tool_refresh: ContextVar[bool] = ContextVar("force_tool_refresh", default=False)
 # True while the startup harvest is still retrying (#325): a backend booting alongside the
@@ -137,8 +140,12 @@ class CachedProxyProvider(ProxyProvider):
             if not force_tool_refresh.get() and (cached := self._fresh_cached_tools()) is not None:
                 return cached
             self._tools_cache = None
+            community = self._backend is not None and self._backend.trust == "community"
             try:
-                tools = await super()._list_tools()
+                if community:
+                    tools = await asyncio.wait_for(super()._list_tools(), COMMUNITY_HARVEST_TIMEOUT)
+                else:
+                    tools = await super()._list_tools()
             except Exception as exc:
                 # Issue #266: a mid-life list failure silently dropped the backend's tools and
                 # call_tool said not_found; record it so the guard can say unavailable.
@@ -152,6 +159,11 @@ class CachedProxyProvider(ProxyProvider):
                 raise
             if self._backend is not None:
                 set_backend_up(self._backend, up=bool(tools), tools=len(tools))
+            if community:
+                from genefoundry_router.runtime_drift import check_community_harvest
+
+                # Before any tool is served: raw upstream definitions vs the reviewed pin.
+                check_community_harvest(self._backend.namespace, tools)  # type: ignore[union-attr]
             return [t.model_copy(deep=True) for t in tools]
 
 
