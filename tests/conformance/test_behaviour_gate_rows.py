@@ -50,10 +50,20 @@ def test_rows_and_counts_are_read_inside_result() -> None:
     assert behaviour.more_flag(env) is True
 
 
-def test_grouped_collection_inside_result() -> None:
-    env: dict[str, Any] = {"success": True, "result": {"mappings": {"OMIM": [{"id": "x"}]}}}
+def test_result_itself_can_be_the_grouped_collection() -> None:
+    env: dict[str, Any] = {"success": True, "result": {"OMIM": [{"id": "x"}], "UMLS": []}}
 
     assert behaviour.rows(env) == [{"id": "x"}]
+
+
+def test_dict_of_lists_inside_a_result_record_is_not_a_collection() -> None:
+    """spliceailookup: `result.consequence.aberrations` is record detail, not the row list."""
+    env: dict[str, Any] = {
+        "success": True,
+        "result": {"variant_id": "1-2-A-T", "consequence": {"aberrations": [{"type": "x"}]}},
+    }
+
+    assert behaviour.rows(env) is None
 
 
 def test_record_inside_result_is_not_a_collection() -> None:
