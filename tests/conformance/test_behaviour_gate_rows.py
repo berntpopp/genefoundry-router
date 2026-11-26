@@ -34,3 +34,35 @@ def test_empty_grouped_collection_still_counts_as_empty_rows() -> None:
     }
 
     assert behaviour.rows(env) == []
+
+
+def test_rows_and_counts_are_read_inside_result() -> None:
+    """Response-Envelope v1.2 backends carry the payload, and often its counts, under `result`."""
+    env: dict[str, Any] = {
+        "success": True,
+        "result": {"variants": [{"id": "a"}, {"id": "b"}], "total": 9, "truncated": True},
+        "_meta": {},
+    }
+
+    assert behaviour.rows(env) == [{"id": "a"}, {"id": "b"}]
+    assert behaviour.count_of(env) == 9
+    assert behaviour.total_of(env) == 9
+    assert behaviour.more_flag(env) is True
+
+
+def test_grouped_collection_inside_result() -> None:
+    env: dict[str, Any] = {"success": True, "result": {"mappings": {"OMIM": [{"id": "x"}]}}}
+
+    assert behaviour.rows(env) == [{"id": "x"}]
+
+
+def test_record_inside_result_is_not_a_collection() -> None:
+    env: dict[str, Any] = {"success": True, "result": {"id": "HP:1", "children": [{"id": "c"}]}}
+
+    assert behaviour.rows(env) is None
+
+
+def test_top_level_counts_win_over_result() -> None:
+    env: dict[str, Any] = {"success": True, "total": 3, "result": {"total": 7}}
+
+    assert behaviour.total_of(env) == 3

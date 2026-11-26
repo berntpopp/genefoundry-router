@@ -119,3 +119,12 @@ def test_unhelpful_miss_warns_without_failing(
     rep = _run(monkeypatch, miss)
     assert any(why in w for w in rep.warned), rep.warned
     assert rep.conformant, rep.failed
+
+
+def test_openai_compat_tools_are_exempt_from_provenance(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`search`/`fetch` return OpenAI's fixed document shape (v1.2 exemption), not the envelope."""
+    monkeypatch.setitem(RESOLVER, "name", "fetch")
+    hit = {"structuredContent": {"id": "X", "title": "t", "text": "…", "url": "u", "metadata": {}}}
+    rep = _run(monkeypatch, _not_found([{"tool": "search"}]), hit)
+    assert rep.conformant, rep.failed
+    assert not any("success carries _meta" in p for p in rep.passed)

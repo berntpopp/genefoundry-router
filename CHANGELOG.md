@@ -4,6 +4,14 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.11] - 2026-11-26
+
+### Changed
+
+- **The behaviour gate reads the payload inside `result`.** Backends that adopted Response-Envelope v1.2 carry their payload under `result` (object) or `results` (array). `docs/conformance/behaviour.py` now finds rows, grouped collections, counts (`total`, `count`, …) and `truncated`/`has_more` inside `result` as well as at the envelope top level, so its filter, `response_mode` and truncation checks still gate those tools. A top-level value wins over one inside `result`. Envelopes with a flat payload are read as before.
+- **OpenAI deep-research compatibility tools are exempt from the envelope and provenance rules.** `search` and `fetch` must return OpenAI's fixed document shape for a ChatGPT connector. Response-Envelope v1.2 lists them under "Exemptions" beside the ops/meta tools, MCP Behaviour Standard B9 names them, and the behaviour gate skips its provenance check for these two names.
+- **Skills name the new result paths**: `result.location` (`hgnc_resolve_symbol`), `result.somatic_clinical_impact`, `result.oncogenicity` and `result.citations` (`clinvar_get_variant`), `result.summary.faf95…grpmax` (`gnomad_get_variant_frequencies`) and `result.simple` (`civic_search_molecular_profiles`).
+
 ## [0.14.10] - 2026-11-26
 
 ### Added
