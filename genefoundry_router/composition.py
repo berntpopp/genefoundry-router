@@ -19,6 +19,7 @@ from fastmcp.server.providers.proxy import (
 )
 from fastmcp.tools import Tool
 
+from genefoundry_router import community_guard
 from genefoundry_router.egress import check_community_url, community_httpx_client_factory
 from genefoundry_router.observability import set_backend_up
 from genefoundry_router.registry import BackendDef
@@ -150,6 +151,13 @@ class CachedProxyProvider(ProxyProvider):
                         error_type=type(exc).__name__,
                     )
                 raise
+            if self._backend is not None and self._backend.trust == "community":
+                try:
+                    tools = community_guard.harden_tools(tools, self._backend.namespace)
+                except Exception:
+                    set_backend_up(self._backend, up=False, tools=0)
+                    self._tools_cache = None
+                    raise
             if self._backend is not None:
                 set_backend_up(self._backend, up=bool(tools), tools=len(tools))
             return [t.model_copy(deep=True) for t in tools]
@@ -228,6 +236,10 @@ def _register_via_provider(
         ttl = DEFAULT_CACHE_TTL
     if httpx_client_factory is None and backend.trust == "community":
         httpx_client_factory = community_httpx_client_factory()
+    if backend.trust == "community":
+        httpx_client_factory = community_guard.cap_responses(
+            httpx_client_factory, backend.namespace
+        )
     provider = CachedProxyProvider(
         client_factory=lambda: make_proxy_client(
             proxy_target,

@@ -56,6 +56,9 @@ starts.
 | `GF_TOMBSTONES_FILE` | `registry/tombstones.yaml` | Delisted community namespaces, never reassigned |
 | `GF_DISABLED_BACKENDS` | empty | CSV of community backend names/namespaces to disable |
 | `GF_PRIVACY_PROFILE` | `default` | `patient` refuses startup with community backends or a reranker URL that is not loopback/private |
+| `GF_COMMUNITY_MAX_RESPONSE_BYTES` | `262144` | Community response cap (raw and decoded); exceeding it quarantines the backend |
+| `GF_COMMUNITY_MAX_TOOLS` | `32` | Community `tools/list` cap; exceeding it quarantines the backend |
+| `GF_COMMUNITY_MAX_ARG_BYTES` | `8192` | Community call arguments above this size are refused before any upstream request |
 | `GF_DRIFT_BASELINE` | _(packaged)_ | Optional path override for the reviewed packaged baseline |
 | `GF_<NAME>_URL` | _(unset)_ | Per-backend `/mcp` URL (e.g. `GF_GNOMAD_URL`) |
 
