@@ -79,3 +79,37 @@ def test_readme_total_matches_the_sum_of_rows() -> None:
     rows = list(ROW_RE.finditer(block))
     assert int(total_claim.group(1)) == len(rows)
     assert int(total_claim.group(2)) == sum(int(m.group("tools")) for m in rows)
+
+
+def test_community_inventory_is_a_separate_table(tmp_path: Path) -> None:
+    """Federation Standard v1: community entries render in their own generated table."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "gen_inv", ROOT / "scripts/gen_readme_inventory.py"
+    )
+    assert spec and spec.loader
+    gen = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gen)
+
+    community = tmp_path / "community.yaml"
+    community.write_text(
+        """
+servers:
+  - name: acme
+    namespace: acme
+    url: https://mcp.acme.example/mcp
+    operator: Acme Lab
+    contact: ops@acme.example
+    ownership: dns-txt
+    server_name: acme-link
+    source_name: Acme DB
+    description: Example domain
+    data_egress: {retention: 30 days, subprocessors: [], tools_sending_free_text: []}
+""",
+        encoding="utf-8",
+    )
+    block = gen.render_community(community)
+    assert "| `acme` | Example domain | Acme DB | Acme Lab | 30 days |" in block
+    assert "acme" not in gen.render()  # the core table never lists community entries
+    assert "No community backends are admitted." in gen.render_community()

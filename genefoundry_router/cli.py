@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from genefoundry_router.conformance import Report
     from genefoundry_router.devtools.fakes import Manifest
 
-from genefoundry_router.config import RouterSettings, load_registry
+from genefoundry_router.config import RouterSettings, load_registry, load_serving_registry
 from genefoundry_router.refresh_cli import refresh_report_command
 from genefoundry_router.registry import MAX_QUALIFIED_NAME_LEN, BackendDef, expected_server_name
 from genefoundry_router.server import build_app
@@ -286,7 +286,7 @@ def run(
             "GF_METRICS_TOKEN — operational telemetry is public. Set GF_METRICS_TOKEN in "
             "production.[/yellow]"
         )
-    registry = load_registry(servers_file, os.environ)
+    registry = load_serving_registry(settings, servers_file, os.environ)
     application = build_app(settings, registry)
     uvicorn.run(application, host=host, port=port, log_level=log_level.lower(), workers=1)
 

@@ -40,6 +40,7 @@ RUN apt-get update && apt-get upgrade -y \
 WORKDIR /home/app/web
 COPY --from=builder /build/.venv /build/.venv
 COPY servers.yaml pyproject.toml README.md ./
+COPY registry ./registry
 COPY skills ./skills
 RUN /build/.venv/bin/python -c \
       "from importlib.resources import files; from pathlib import Path; assert files('genefoundry_router.data').joinpath('fleet-baseline.json').is_file(); assert files('genefoundry_router.data').joinpath('fleet-provenance.json').is_file(); assert any(Path('skills').glob('*/SKILL.md'))" \

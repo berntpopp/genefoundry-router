@@ -51,6 +51,11 @@ starts.
 | `GF_SEARCH_RERANK_MIN_SCORE` | `0.0` | `noul` only: drop hits below this P(yes); an all-dropped search serves up to `GF_SEARCH_MAX_RESULTS` BM25 hits flagged `low_confidence` ("nothing clearly fits"). `0.25` for Jev 1.13 with the v0.13.3 candidate text (highest negative 0.21; floors are model- and text-specific, re-measure when either changes, see `docs/discovery.md`) |
 | `GF_SEARCH_RERANK_TIMEOUT` | `3.0` | Seconds for the whole rerank round-trip; on timeout/error the BM25 order is served and the stage cools down for 30 s |
 | `GF_DRIFT_MODE` | `warn` | Runtime catalog policy: `off` \| `warn` \| `enforce` |
+| `GF_COMMUNITY_SERVERS_FILE` | unset | Community backend file (Federation Standard v1 §3); every entry is forced to `trust=community` |
+| `GF_ALLOW_COMMUNITY_BACKENDS` | `false` | Must be `true` when `GF_COMMUNITY_SERVERS_FILE` is set; that also requires `GF_DRIFT_MODE=enforce` |
+| `GF_TOMBSTONES_FILE` | `registry/tombstones.yaml` | Delisted community namespaces, never reassigned |
+| `GF_DISABLED_BACKENDS` | empty | CSV of community backend names/namespaces to disable |
+| `GF_PRIVACY_PROFILE` | `default` | `patient` refuses startup with community backends or a reranker URL that is not loopback/private |
 | `GF_DRIFT_BASELINE` | _(packaged)_ | Optional path override for the reviewed packaged baseline |
 | `GF_<NAME>_URL` | _(unset)_ | Per-backend `/mcp` URL (e.g. `GF_GNOMAD_URL`) |
 

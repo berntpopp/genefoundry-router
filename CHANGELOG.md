@@ -4,6 +4,10 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Federation Standard v1 §3: community loader, forced trust and privacy guards (#410).** `GF_COMMUNITY_SERVERS_FILE` loads operator-hosted backends with `trust=community` forced; the loader rejects `trust`, `entrypoints`, `transform`, `url_env`, `service_token_env` and `enabled`, any URL other than `https://<host>/mcp` on port 443, core or tombstoned (`registry/tombstones.yaml`) names and namespaces, and duplicates; `operator`, `contact`, `ownership`, `server_name`, `source_name` and `data_egress` are required. Disabling uses the file's `disabled:` list or `GF_DISABLED_BACKENDS`. Startup fails unless `GF_ALLOW_COMMUNITY_BACKENDS=true` and `GF_DRIFT_MODE=enforce`; `GF_PRIVACY_PROFILE=patient` refuses community backends and a reranker URL that is not loopback or private. A core instance refuses community entries. The README inventory lists community backends in a separate generated table. Core behaviour is unchanged.
+
 ## [0.14.15] - 2026-11-26
 
 ### Changed

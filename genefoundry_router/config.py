@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+import ipaddress
+from collections.abc import Collection, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Literal
+from urllib.parse import urlsplit
 
 import yaml
 from pydantic import (
@@ -84,6 +86,16 @@ class RouterSettings(BaseSettings):
     GF_SERVERS_FILE: str = "servers.yaml"
     # Research workflow skills served as skill:// resources (#336); must exist.
     GF_SKILLS_DIR: str = "skills"
+
+    # Federation Standard v1 §3 (#410). Community backends load only from their own file,
+    # only on an instance that opts in, and only with drift enforcement on.
+    GF_COMMUNITY_SERVERS_FILE: str | None = None
+    GF_ALLOW_COMMUNITY_BACKENDS: bool = False
+    GF_TOMBSTONES_FILE: str = "registry/tombstones.yaml"
+    # CSV of community backend names/namespaces to disable without editing the file.
+    GF_DISABLED_BACKENDS: Annotated[list[str], NoDecode] = []
+    # patient: no community backends and no reranker that sends queries off the host.
+    GF_PRIVACY_PROFILE: Literal["default", "patient"] = "default"
 
     # Tool search
     GF_SEARCH_MAX_RESULTS: int = 5
@@ -201,7 +213,11 @@ class RouterSettings(BaseSettings):
     GF_OAUTH_REQUIRE_CONSENT: Literal["external", "remember", "true", "false"] = "external"
 
     @field_validator(
-        "GF_ALLOWED_HOSTS", "GF_ALLOWED_ORIGINS", "GF_OAUTH_LEGACY_ISSUERS", mode="before"
+        "GF_ALLOWED_HOSTS",
+        "GF_ALLOWED_ORIGINS",
+        "GF_OAUTH_LEGACY_ISSUERS",
+        "GF_DISABLED_BACKENDS",
+        mode="before",
     )
     @classmethod
     def _split_csv_allowlist(cls, v: object) -> object:
@@ -234,7 +250,12 @@ class RouterSettings(BaseSettings):
             raise ValueError("GF_ALLOWED_HOSTS must not contain wildcard entries")
         return value
 
-    @field_validator("GF_METRICS_TOKEN", "GF_REFRESH_OBSERVABILITY_DB", mode="before")
+    @field_validator(
+        "GF_METRICS_TOKEN",
+        "GF_REFRESH_OBSERVABILITY_DB",
+        "GF_COMMUNITY_SERVERS_FILE",
+        mode="before",
+    )
     @classmethod
     def _blank_optional_string(cls, v: object) -> object:
         """Treat blank optional string settings as unset."""
@@ -283,6 +304,27 @@ class RouterSettings(BaseSettings):
             rerank_config(self)
         except ValidationError as exc:
             raise ValueError(f"invalid GF_SEARCH_RERANK_* settings: {exc}") from exc
+        return self
+
+    @model_validator(mode="after")
+    def _community_and_privacy_guards(self) -> RouterSettings:
+        """Federation Standard v1 §3: refuse startup rather than run community unguarded."""
+        if self.GF_COMMUNITY_SERVERS_FILE:
+            if not self.GF_ALLOW_COMMUNITY_BACKENDS:
+                raise ValueError(
+                    "GF_COMMUNITY_SERVERS_FILE is set but GF_ALLOW_COMMUNITY_BACKENDS is false"
+                )
+            if self.GF_DRIFT_MODE != "enforce":
+                raise ValueError("community backends require GF_DRIFT_MODE=enforce")
+        if self.GF_PRIVACY_PROFILE == "patient":
+            if self.GF_COMMUNITY_SERVERS_FILE:
+                raise ValueError("GF_PRIVACY_PROFILE=patient forbids community backends")
+            if self.GF_SEARCH_RERANK != "off" and not _is_local_url(
+                self.GF_SEARCH_RERANK_URL or ""
+            ):
+                raise ValueError(
+                    "GF_PRIVACY_PROFILE=patient requires a loopback or private reranker URL"
+                )
         return self
 
     @field_validator("GF_RATE_LIMIT_OVERRIDES")
@@ -384,9 +426,155 @@ def load_registry(path: str | Path, environ: Mapping[str, str]) -> list[BackendD
         if backend.namespace in seen_namespaces:
             raise RegistryError(f"duplicate namespace: {backend.namespace!r}")
         seen_namespaces.add(backend.namespace)
+        if not backend.url_env:
+            raise RegistryError(f"backend {backend.name!r} has no url_env")
         backend.url = environ.get(backend.url_env)
         if backend.service_token_env is not None:
             raw_token = environ.get(backend.service_token_env)
             backend.service_token = raw_token.strip() if raw_token and raw_token.strip() else None
         backends.append(backend)
     return backends
+
+
+def _is_local_url(url: str) -> bool:
+    """True for a loopback/private IP, ``localhost`` or a single-label (container) host name."""
+    host = urlsplit(url).hostname or ""
+    # ponytail: no DNS lookup; a dotted name counts as public even if it resolves privately.
+    if host == "localhost" or (host and "." not in host and ":" not in host):
+        return True
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return address.is_loopback or address.is_private
+
+
+COMMUNITY_REQUIRED = (
+    "name",
+    "namespace",
+    "url",
+    "operator",
+    "contact",
+    "ownership",
+    "server_name",
+    "source_name",
+    "data_egress",
+)
+COMMUNITY_FORBIDDEN = (
+    "trust",
+    "entrypoints",
+    "transform",
+    "url_env",
+    "service_token_env",
+    "enabled",  # disabling uses only the `disabled:` list or GF_DISABLED_BACKENDS
+)
+
+
+def _read_yaml_mapping(path: Path) -> dict[str, object]:
+    if not path.exists():
+        raise RegistryError(f"registry file not found: {path}")
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as exc:
+        raise RegistryError(f"invalid YAML in {path}: {exc}") from exc
+    if not isinstance(raw, dict):
+        raise RegistryError(f"{path} must be a mapping")
+    return raw
+
+
+def _mapping_list(raw: dict[str, object], key: str, path: Path) -> list[dict[str, object]]:
+    items = raw.get(key) or []
+    if not isinstance(items, list) or not all(isinstance(i, dict) for i in items):
+        raise RegistryError(f"{path}: {key!r} must be a list of mappings")
+    return items
+
+
+def _is_conforming_community_url(url: object) -> bool:
+    if not isinstance(url, str):
+        return False
+    parts = urlsplit(url)
+    try:
+        port = parts.port
+    except ValueError:
+        return False
+    return (
+        parts.scheme == "https"
+        and bool(parts.hostname)
+        and "@" not in parts.netloc
+        and port in (None, 443)
+        and parts.path == "/mcp"
+        and not parts.query
+        and not parts.fragment
+    )
+
+
+def load_community_registry(
+    path: str | Path,
+    core: Sequence[BackendDef],
+    tombstones_path: str | Path,
+    disabled: Collection[str] = (),
+) -> list[BackendDef]:
+    """Load ``GF_COMMUNITY_SERVERS_FILE`` (Federation Standard v1 §3).
+
+    Every entry is forced to ``trust=community``. Entries under ``disabled:`` reserve their
+    name/namespace but are not loaded; ``disabled`` (GF_DISABLED_BACKENDS) loads matching
+    entries with ``enabled=False``. Raises RegistryError on any rule violation.
+    """
+    path = Path(path)
+    raw = _read_yaml_mapping(path)
+    if unknown := set(raw) - {"servers", "disabled"}:
+        raise RegistryError(f"{path}: unknown top-level keys {sorted(unknown)}")
+    servers = _mapping_list(raw, "servers", path)
+    retired = _mapping_list(raw, "disabled", path)
+    tombstones_path = Path(tombstones_path)
+    tombs = _mapping_list(_read_yaml_mapping(tombstones_path), "tombstones", tombstones_path)
+    tombstoned = {str(t[k]) for t in tombs for k in ("name", "namespace") if k in t}
+    core_names = {b.name for b in core} | {b.namespace for b in core}
+
+    seen: set[str] = set()
+    for entry in [*servers, *retired]:
+        for key in ("name", "namespace"):
+            value = entry.get(key)
+            if not isinstance(value, str) or not value:
+                raise RegistryError(f"{path}: community entry {entry!r} is missing {key!r}")
+            if value in core_names:
+                raise RegistryError(f"community {key} {value!r} is used by a core entry")
+        keys = {str(entry["name"]), str(entry["namespace"])}
+        if keys & seen:
+            raise RegistryError(f"duplicate community name/namespace: {sorted(keys & seen)!r}")
+        seen |= keys
+
+    backends: list[BackendDef] = []
+    for entry in servers:
+        label = entry["name"]
+        if forbidden := [k for k in COMMUNITY_FORBIDDEN if k in entry]:
+            raise RegistryError(f"community backend {label!r}: forbidden key(s) {forbidden!r}")
+        if missing := [k for k in COMMUNITY_REQUIRED if k not in entry]:
+            raise RegistryError(f"community backend {label!r}: missing required {missing!r}")
+        if tombstoned & {entry["name"], entry["namespace"]}:
+            raise RegistryError(f"community backend {label!r}: name or namespace is tombstoned")
+        if not _is_conforming_community_url(entry["url"]):
+            raise RegistryError(f"community backend {label!r}: url must be https://<host>/mcp")
+        try:
+            backend = BackendDef.model_validate({**entry, "trust": "community"})
+        except ValidationError as exc:
+            raise RegistryError(f"invalid community backend {label!r}: {exc}") from exc
+        backend.enabled = not ({backend.name, backend.namespace} & set(disabled))
+        backends.append(backend)
+    return backends
+
+
+def load_serving_registry(
+    settings: RouterSettings, servers_file: str | Path, environ: Mapping[str, str]
+) -> list[BackendDef]:
+    """Core registry plus, on a community instance, the community entries (§3 guards ran
+    when ``settings`` validated)."""
+    registry = load_registry(servers_file, environ)
+    if settings.GF_COMMUNITY_SERVERS_FILE:
+        registry += load_community_registry(
+            settings.GF_COMMUNITY_SERVERS_FILE,
+            registry,
+            settings.GF_TOMBSTONES_FILE,
+            settings.GF_DISABLED_BACKENDS,
+        )
+    return registry
