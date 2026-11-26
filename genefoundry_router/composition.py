@@ -160,7 +160,9 @@ class CachedProxyProvider(ProxyProvider):
                 raise
             if self._backend is not None and self._backend.trust == "community":
                 try:
-                    tools = community_guard.harden_tools(tools, self._backend.namespace)
+                    tools = community_guard.harden_tools(
+                        tools, self._backend.namespace, self._backend
+                    )
                 except Exception:
                     set_backend_up(self._backend, up=False, tools=0)
                     self._tools_cache = None

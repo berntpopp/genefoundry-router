@@ -1,0 +1,492 @@
+{
+ "autopvs1-pvs1": [
+  "autopvs1_get_variant_pvs1_data",
+  "autopvs1_get_cnv_pvs1_data",
+  "autopvs1_get_cnvs_pvs1_data_bulk",
+  "autopvs1_get_variants_pvs1_data_bulk",
+  "autopvs1_search_variants"
+ ],
+ "cbioportal-mutation-prevalence": [
+  "cbioportal_get_gene_alteration_frequency",
+  "cbioportal_get_gene_mutations",
+  "cbioportal_get_mutation_hotspots",
+  "skill_somatic-variant-interpretation",
+  "cbioportal_list_cancer_types"
+ ],
+ "civic-variant-evidence": [
+  "civic_search_evidence_items",
+  "civic_search_molecular_profiles",
+  "civic_search_assertions",
+  "civic_get_evidence_item",
+  "civic_get_variant"
+ ],
+ "clingen-actionability": [
+  "clingen_search_actionability",
+  "civic_get_gene",
+  "clingen_get_gene_actionability",
+  "civic_search_evidence_items",
+  "civic_search_assertions"
+ ],
+ "clingen-dosage": [
+  "clingen_search_dosage",
+  "clingen_get_gene_dosage",
+  "clingen_get_gene_summary",
+  "mavedb_get_gene_score_sets",
+  "hpo_score_genes_for_phenotypes"
+ ],
+ "clingen-validity": [
+  "clingen_get_gene_validity",
+  "clingen_search_validity",
+  "clingen_get_cspec",
+  "clingen_get_variant_interpretations",
+  "clingen_get_cspec_criterion"
+ ],
+ "clinpgx-datasets": [
+  "clinpgx_search_dataset",
+  "clinpgx_list_datasets",
+  "clinpgx_get_dataset",
+  "clinpgx_get_dataset_record",
+  "clinpgx_search_records"
+ ],
+ "clinpgx-gene-drug-interactions": [
+  "clinpgx_search_dataset",
+  "clinpgx_get_website_data",
+  "clinpgx_get_api_schema",
+  "clinpgx_search_records",
+  "clinpgx_get_related_records"
+ ],
+ "clinvar-gene-variants": [
+  "clinvar_get_variants_by_gene",
+  "clinvar_search_variants",
+  "gnomad_compute_gene_carrier_frequency",
+  "gnomad_get_gene_summary",
+  "clinvar_get_gene_clinvar_summary"
+ ],
+ "clinvar-significance": [
+  "clinvar_get_gene_clinvar_summary",
+  "clinvar_get_variants",
+  "clinvar_get_variant",
+  "clinvar_get_variants_by_gene",
+  "clinvar_search_variants"
+ ],
+ "gencc-curations": [
+  "gencc_get_gene_curations",
+  "gencc_list_submitters",
+  "clingen_get_gene_validity",
+  "gencc_find_curations",
+  "mondo_get_disease"
+ ],
+ "gencc-resolve": [
+  "gencc_resolve_identifier",
+  "gencc_get_gene_disease_assertion",
+  "gencc_get_gene_curations",
+  "gencc_get_disease_curations",
+  "gencc_search_genes"
+ ],
+ "genereviews-chapter": [
+  "genereviews_get_chapter_section",
+  "genereviews_get_chapter_metadata",
+  "genereviews_get_genereview_summary",
+  "genereviews_get_table",
+  "genereviews_search_genereviews"
+ ],
+ "genereviews-management": [
+  "genereviews_search_passages",
+  "genereviews_get_chapter_section",
+  "genereviews_get_fulltext",
+  "genereviews_search_passages_batch",
+  "genereviews_search_genereviews"
+ ],
+ "gnomad-allele-frequency": [
+  "gnomad_get_variant_details",
+  "gnomad_compute_carrier_frequency",
+  "gnomad_get_gene_variants",
+  "gnomad_get_variant_frequencies",
+  "gnomad_compute_variant_liftover"
+ ],
+ "gnomad-carrier-frequency": [
+  "gnomad_compute_carrier_frequency",
+  "gnomad_compute_gene_carrier_frequency",
+  "gnomad_get_gene_summary",
+  "pubtator_compute_publication_context",
+  "gnomad_get_variant_frequencies"
+ ],
+ "gnomad-coverage": [
+  "gnomad_get_coverage",
+  "ucsc_get_region_annotations",
+  "pubtator_search_guidelines",
+  "pubtator_search_literature",
+  "metadome_get_position_tolerance"
+ ],
+ "gnomad-gene-variants": [
+  "gnomad_compute_gene_carrier_frequency",
+  "gnomad_get_gene_variants",
+  "gnomad_get_region",
+  "clinvar_get_variants",
+  "gnomad_get_gene_summary"
+ ],
+ "gnomad-normalize-variant": [
+  "clinvar_get_variant",
+  "clinvar_get_variants",
+  "vep_recode_variant",
+  "gnomad_resolve_variant_id",
+  "spliceai_resolve_variant"
+ ],
+ "gtex-tissue-expression": [
+  "gtex_get_top_expressed_genes_by_tissue",
+  "gtex_get_median_expression_levels",
+  "gtex_fetch",
+  "gtex_get_individual_expression_data",
+  "gtex_get_gene_information"
+ ],
+ "gtex-top-genes": [
+  "gtex_get_top_expressed_genes_by_tissue",
+  "gtex_get_median_expression_levels",
+  "gtex_get_individual_expression_data",
+  "gtex_get_gene_information",
+  "gtex_fetch"
+ ],
+ "hgnc-cross-references": [
+  "uniprot_resolve_identifiers",
+  "hgnc_resolve_gene_by_xref",
+  "stringdb_resolve_protein_identifiers",
+  "hgnc_get_gene_cross_references",
+  "uniprot_find_proteins_batch"
+ ],
+ "hgnc-resolve-symbol": [
+  "hgnc_get_gene",
+  "hgnc_resolve_symbol",
+  "hgnc_search_genes",
+  "gnomad_search_genes",
+  "hgnc_get_gene_cross_references"
+ ],
+ "hpo-genes-for-phenotype": [
+  "hpo_get_genes_for_phenotype",
+  "hpo_get_diseases_for_phenotype",
+  "hpo_score_genes_for_phenotypes",
+  "orphanet_find_diseases_by_phenotype",
+  "hpo_resolve_term"
+ ],
+ "hpo-resolve-term": [
+  "hpo_resolve_term",
+  "hpo_get_term",
+  "hpo_resolve_terms_batch",
+  "hpo_search_terms",
+  "orphanet_get_disease_phenotypes"
+ ],
+ "litvar-resolve-rsid": [
+  "litvar_resolve_rsid",
+  "litvar_get_variant_literature",
+  "litvar_get_variant_summary",
+  "litvar_search_genetic_variants",
+  "litvar_search_gene_variants"
+ ],
+ "litvar-variant-literature": [
+  "litvar_get_variant_literature",
+  "litvar_search_genetic_variants",
+  "pgscatalog_get_publication",
+  "genereviews_get_chapter_section",
+  "mavedb_get_experiment"
+ ],
+ "mavedb-score-set": [
+  "mavedb_get_gene_score_sets",
+  "mavedb_search_score_sets",
+  "mavedb_search_experiments",
+  "mavedb_get_score_distribution",
+  "mavedb_get_score_set"
+ ],
+ "metadome-tolerance": [
+  "metadome_get_tolerance_landscape",
+  "metadome_find_intolerant_regions",
+  "metadome_get_variant_counts",
+  "metadome_compare_positions",
+  "metadome_resolve_transcript"
+ ],
+ "mgi-by-phenotype": [
+  "mgi_find_markers_by_phenotype",
+  "mgi_get_marker_diseases",
+  "mgi_search_markers",
+  "orphanet_find_diseases_by_gene",
+  "mgi_get_mp_term"
+ ],
+ "mgi-knockout-phenotype": [
+  "mgi_get_marker_alleles",
+  "mgi_get_phenotype_overview",
+  "mgi_get_marker_ortholog",
+  "mgi_get_marker_phenotypes",
+  "mgi_search_markers"
+ ],
+ "mgi-ortholog": [
+  "mgi_get_marker_ortholog",
+  "mgi_resolve_marker",
+  "mgi_get_marker",
+  "mgi_get_marker_diseases",
+  "mgi_get_phenotype_overview"
+ ],
+ "mitomap-mtdna-variant": [
+  "mitomap_get_diagnostics",
+  "mitomap_get_variant",
+  "mitomap_get_server_capabilities",
+  "mitomap_search_variants",
+  "gnomad_get_mitochondrial_variant"
+ ],
+ "moalmanac-regulatory-approval": [
+  "moalmanac_search_approvals",
+  "moalmanac_list_biomarkers",
+  "moalmanac_get_diagnostics",
+  "moalmanac_get_indication",
+  "moalmanac_get_server_capabilities"
+ ],
+ "mondo-ancestors": [
+  "mondo_get_disease_parents",
+  "mondo_get_disease_ancestors",
+  "mondo_get_disease",
+  "hpo_get_term_parents",
+  "stringdb_compute_functional_enrichment"
+ ],
+ "mondo-cross-ontology": [
+  "orphanet_map_cross_ontology",
+  "orphanet_resolve_xref",
+  "mondo_map_cross_ontology",
+  "mondo_resolve_xref",
+  "hpo_get_phenotypes_for_disease"
+ ],
+ "mondo-resolve-disease": [
+  "orphanet_resolve_disease",
+  "mondo_resolve_disease",
+  "mondo_get_disease",
+  "mondo_resolve_xref",
+  "orphanet_map_cross_ontology"
+ ],
+ "opentargets-target-drugs": [
+  "opentargets_get_drug_candidates",
+  "opentargets_get_target_disease_evidence",
+  "opentargets_resolve_target",
+  "clinpgx_get_related_records",
+  "opentargets_get_target_tractability"
+ ],
+ "orphanet-resolve-disease": [
+  "orphanet_resolve_disease",
+  "orphanet_get_disease",
+  "orphanet_get_disease_batch",
+  "orphanet_get_disease_phenotypes",
+  "orphanet_search_diseases"
+ ],
+ "panelapp-find-panel": [
+  "panelapp_get_panelapp_diagnostics",
+  "pubtator_get_variant_evidence",
+  "panelapp_get_panels_for_genes",
+  "panelapp_get_panel_genes",
+  "clinvar_search_variants"
+ ],
+ "panelapp-gene-panels": [
+  "panelapp_get_panelapp_diagnostics",
+  "panelapp_get_panel",
+  "panelapp_compare_panels",
+  "panelapp_get_panel_genes",
+  "panelapp_search_panels"
+ ],
+ "panelapp-panel-genes": [
+  "panelapp_get_panel_genes",
+  "panelapp_get_gene_panels",
+  "panelapp_get_panels_for_genes",
+  "panelapp_get_panelapp_diagnostics",
+  "panelapp_compare_panels"
+ ],
+ "pgscatalog-trait-scores": [
+  "pgscatalog_get_score_performance",
+  "pgscatalog_get_score",
+  "pgscatalog_get_trait",
+  "pgscatalog_resolve_trait",
+  "pgscatalog_search_scores"
+ ],
+ "pubtator-ground": [
+  "pubtator_get_review_context",
+  "pubtator_get_review_context_batch",
+  "pubtator_get_publication_passages",
+  "pubtator_search_guidelines",
+  "pubtator_search_literature"
+ ],
+ "pubtator-relations": [
+  "clinpgx_get_related_records",
+  "clinpgx_search_records",
+  "pubtator_find_entity_relations",
+  "genereviews_get_chapter_section",
+  "litvar_search_gene_variants"
+ ],
+ "pubtator-search": [
+  "pubtator_search_biomedical_entities",
+  "pubtator_find_entity_relations",
+  "pubtator_search_guidelines",
+  "pubtator_search_literature",
+  "pubtator_get_mesh"
+ ],
+ "pubtator-variant-evidence": [
+  "pubtator_get_variant_evidence",
+  "skill_literature-evidence-review",
+  "litvar_search_gene_variants",
+  "mavedb_search_experiments",
+  "pubtator_generate_topic_literature_map"
+ ],
+ "resolve-disease-generic": [
+  "clinvar_get_variants",
+  "clinvar_get_variant",
+  "mondo_resolve_disease",
+  "mondo_resolve_disease_batch",
+  "mondo_get_disease"
+ ],
+ "resolve-gene-generic": [
+  "clinvar_get_variants",
+  "clinvar_get_variant",
+  "uniprot_resolve_identifiers",
+  "clinvar_search_variants",
+  "gencc_resolve_identifier"
+ ],
+ "skill-acmg-classify": [
+  "skill_germline-variant-classification",
+  "gnomad_compute_gene_carrier_frequency",
+  "autopvs1_get_server_capabilities",
+  "autopvs1_get_server_health",
+  "mavedb_get_classified_variants"
+ ],
+ "skill-identifier-ensembl-batch": [
+  "hgnc_resolve_symbols_batch",
+  "gtex_search_genes",
+  "hgnc_resolve_symbol",
+  "gencc_get_genes_curations",
+  "hgnc_get_gene_cross_references"
+ ],
+ "skill-lay-summary": [
+  "skill_lay-summary",
+  "pubtator_search_literature",
+  "gtex_search",
+  "skill_phenotype-to-candidate-genes",
+  "gencc_search_diseases"
+ ],
+ "skill-literature-review": [
+  "skill_literature-evidence-review",
+  "pubtator_list_evidence_certainty",
+  "pubtator_get_evidence_certainty",
+  "opentargets_get_drug_candidates",
+  "opentargets_search_disease_targets"
+ ],
+ "skill-phenotype-exome-candidates": [
+  "hpo_score_genes_for_phenotypes",
+  "skill_phenotype-to-candidate-genes",
+  "hpo_resolve_term",
+  "orphanet_find_diseases_by_phenotype",
+  "gnomad_get_variant_frequencies"
+ ],
+ "skill-phenotype-to-genes": [
+  "hpo_score_genes_for_phenotypes",
+  "skill_phenotype-to-candidate-genes",
+  "hpo_get_genes_for_phenotype",
+  "hpo_get_phenotypes_for_gene",
+  "hpo_resolve_term"
+ ],
+ "skill-report-errors": [
+  "skill_genetic-report-review",
+  "vep_check_upstream_health",
+  "mavedb_get_diagnostics",
+  "gnomad_get_variant_frequencies",
+  "spliceai_resolve_variant"
+ ],
+ "skill-report-review": [
+  "skill_genetic-report-review",
+  "mitomap_get_variant",
+  "litvar_search_genetic_variants",
+  "stringdb_get_interaction_partners",
+  "uniprot_search_sparql_query"
+ ],
+ "spliceai-pangolin": [
+  "spliceai_predict_pangolin",
+  "spliceai_warmup",
+  "spliceai_predict_splicing",
+  "spliceai_predict_spliceai",
+  "spliceai_predict_splicing_batch"
+ ],
+ "spliceai-predict": [
+  "spliceai_predict_splicing_batch",
+  "spliceai_predict_splicing",
+  "spliceai_predict_pangolin",
+  "spliceai_predict_spliceai",
+  "spliceai_resolve_variant"
+ ],
+ "strchive-repeat-ranges": [
+  "strchive_search_loci",
+  "strchive_compare_repeat_length",
+  "strchive_get_locus",
+  "strchive_get_diagnostics",
+  "strchive_get_server_capabilities"
+ ],
+ "string-enrichment": [
+  "stringdb_compute_functional_enrichment",
+  "mavedb_find_variant",
+  "stringdb_compute_ppi_enrichment",
+  "stringdb_get_interaction_partners",
+  "mavedb_search_experiments"
+ ],
+ "string-partners": [
+  "stringdb_search_protein_interactions",
+  "stringdb_compute_ppi_enrichment",
+  "uniprot_get_protein_cross_references",
+  "uniprot_get_protein_variants",
+  "uniprot_get_protein"
+ ],
+ "ucsc-region-tracks": [
+  "ucsc_get_region_annotations",
+  "ucsc_search_genome",
+  "ucsc_predict_pcr_products",
+  "ucsc_find_blat_alignments",
+  "ucsc_get_reference_sequence"
+ ],
+ "uniprot-domains": [
+  "uniprot_get_protein_features",
+  "metadome_get_protein_domains",
+  "metadome_get_diagnostics",
+  "metadome_get_meta_domain",
+  "metadome_compare_positions"
+ ],
+ "uniprot-find-protein": [
+  "uniprot_get_protein",
+  "uniprot_get_protein_diseases",
+  "uniprot_find_proteins",
+  "uniprot_find_proteins_batch",
+  "uniprot_get_protein_go_terms"
+ ],
+ "uniprot-protein-disease": [
+  "uniprot_get_protein_variants",
+  "uniprot_get_server_capabilities",
+  "uniprot_get_protein_diseases",
+  "uniprot_get_protein_features",
+  "uniprot_find_proteins_batch"
+ ],
+ "uniprot-sequence": [
+  "uniprot_get_protein_sequence",
+  "uniprot_get_protein_variants",
+  "stringdb_get_protein_homology_scores",
+  "uniprot_get_protein",
+  "ucsc_find_blat_alignments"
+ ],
+ "vep-annotate": [
+  "vep_annotate_variants_batch",
+  "vep_annotate_variant",
+  "spliceai_predict_spliceai",
+  "spliceai_predict_splicing",
+  "spliceai_predict_splicing_batch"
+ ],
+ "vep-liftover": [
+  "vep_liftover_variant",
+  "gnomad_compare_variant_across_datasets",
+  "gnomad_get_coverage",
+  "ucsc_search_genome",
+  "ucsc_get_reference_sequence"
+ ],
+ "vep-recode": [
+  "vep_recode_variant",
+  "vep_liftover_variant",
+  "clinvar_get_variant",
+  "mavedb_get_hgvs_validation",
+  "mavedb_get_variant_score"
+ ]
+}
