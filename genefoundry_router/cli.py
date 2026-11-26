@@ -18,12 +18,14 @@ if TYPE_CHECKING:
     from genefoundry_router.devtools.fakes import Manifest
 
 from genefoundry_router.config import RouterSettings, load_registry, load_serving_registry
+from genefoundry_router.pin_cli import register_pin_commands
 from genefoundry_router.refresh_cli import refresh_report_command
 from genefoundry_router.registry import MAX_QUALIFIED_NAME_LEN, BackendDef, expected_server_name
 from genefoundry_router.server import build_app
 
 app = typer.Typer(help="GeneFoundry Router — federate the -link MCP fleet.", no_args_is_help=True)
 app.command("refresh-report")(refresh_report_command)
+register_pin_commands(app)
 
 
 @app.callback()
@@ -537,10 +539,7 @@ async def _snapshot_live(registry: list[BackendDef]) -> tuple[Manifest, set[str]
 
     manifest = Manifest(
         snapshot_meta=SnapshotMeta(captured_at="live", source="live", router_servers_file=""),
-        backends={
-            namespace: BackendSpec(version=None, tools=tools)
-            for namespace, tools in by_namespace.items()
-        },
+        backends={ns: BackendSpec(version=None, tools=tools) for ns, tools in by_namespace.items()},
     )
     return manifest, unreachable
 
@@ -555,18 +554,17 @@ def drift(
     Exits non-zero on any added/removed/changed tool so it can run in CI/cron. Refresh the
     pinned manifest with ``make snapshot-fleet`` only after reviewing the change.
     """
-    from importlib.resources import as_file, files
     from pathlib import Path
 
     from genefoundry_router.devtools.fakes import load_manifest
     from genefoundry_router.drift import diff_manifests
+    from genefoundry_router.runtime_drift import bundled_baseline
 
     configured = manifest or RouterSettings().GF_DRIFT_BASELINE
     if configured is not None:
         pinned = load_manifest(Path(configured))
     else:
-        resource = files("genefoundry_router.data").joinpath("fleet-baseline.json")
-        with as_file(resource) as path:
+        with bundled_baseline() as path:
             pinned = load_manifest(path)
     live, unreachable = asyncio.run(_snapshot_live(load_registry(servers_file, os.environ)))
     # Exclude unreachable backends from BOTH sides so an outage isn't read as "removed".

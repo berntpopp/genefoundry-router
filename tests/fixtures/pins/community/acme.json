@@ -1,0 +1,53 @@
+{
+  "namespace": "acme",
+  "tools": [
+    {
+      "annotations": null,
+      "description": "Look up an Acme record by identifier.",
+      "execution": null,
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "acme_lookup",
+      "outputSchema": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      }
+    },
+    {
+      "annotations": null,
+      "description": "Search Acme records by free text.",
+      "execution": null,
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "acme_search",
+      "outputSchema": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      }
+    }
+  ]
+}
