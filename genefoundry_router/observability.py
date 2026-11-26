@@ -110,6 +110,12 @@ COMMUNITY_QUARANTINES = Counter(
     ["namespace", "reason"],
     registry=METRICS_REGISTRY,
 )
+COMMUNITY_BREAKER_STATE = Gauge(
+    "genefoundry_community_breaker_state",
+    "Community backend circuit breaker (0=closed, 1=open, 2=half_open; Federation v1 §6)",
+    ["namespace"],
+    registry=METRICS_REGISTRY,
+)
 DRIFT_CHANGED = Gauge(
     "genefoundry_drift_changed",
     "Changed normalized tool definitions in the last runtime check",
@@ -447,6 +453,18 @@ def register_health(
         added = list(getattr(drift_report, "added", []))
         removed = list(getattr(drift_report, "removed", []))
         drift_degraded = bool(getattr(drift_guard, "degraded", False))
+        backends_summary: dict[str, object] = {
+            "total": len(backends),
+            "enabled": len(enabled),
+            "namespaces": [b.namespace for b in enabled],
+            "reachable": {b.namespace: BACKEND_STATUS.get(b.namespace) for b in enabled},
+            "tools": {b.namespace: BACKEND_TOOL_COUNT.get(b.namespace, 0) for b in enabled},
+            "degraded": degraded,
+        }
+        if community := [b.namespace for b in enabled if b.trust == "community"]:
+            from genefoundry_router.community_breaker import get as breaker  # imports us
+
+            backends_summary["circuit"] = {ns: breaker(ns).state() for ns in community}
         return {
             "status": "degraded" if degraded or drift_degraded else "healthy",
             "service": "genefoundry",
@@ -456,14 +474,7 @@ def register_health(
                 "added": added,
                 "removed": removed,
             },
-            "backends": {
-                "total": len(backends),
-                "enabled": len(enabled),
-                "namespaces": [b.namespace for b in enabled],
-                "reachable": {b.namespace: BACKEND_STATUS.get(b.namespace) for b in enabled},
-                "tools": {b.namespace: BACKEND_TOOL_COUNT.get(b.namespace, 0) for b in enabled},
-                "degraded": degraded,
-            },
+            "backends": backends_summary,
         }
 
 

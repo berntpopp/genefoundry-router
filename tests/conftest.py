@@ -20,6 +20,15 @@ import genefoundry_router.observability as observability
 
 
 @pytest.fixture(autouse=True)
+def _reset_community_breakers() -> Iterator[None]:
+    from genefoundry_router import community_breaker
+
+    community_breaker._BREAKERS.clear()
+    yield
+    community_breaker._BREAKERS.clear()
+
+
+@pytest.fixture(autouse=True)
 def _isolate_structlog() -> Iterator[None]:
     structlog.reset_defaults()
     observability.audit_log = structlog.get_logger("genefoundry.audit")

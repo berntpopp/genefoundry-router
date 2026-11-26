@@ -9,6 +9,7 @@ arguments are refused before any upstream request. Core backends never reach thi
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import secrets
@@ -26,6 +27,7 @@ from mcp.shared.exceptions import MCPError
 from mcp.types import PARSE_ERROR, TextContent
 from pydantic import PrivateAttr, ValidationError
 
+from genefoundry_router import community_breaker
 from genefoundry_router.egress import InvalidResponseError
 from genefoundry_router.notfound_guard import _envelope
 from genefoundry_router.runtime_drift import quarantine_backend
@@ -62,6 +64,7 @@ def configure(settings: Any) -> None:
     MAX_RESPONSE_BYTES = settings.GF_COMMUNITY_MAX_RESPONSE_BYTES
     MAX_TOOLS = settings.GF_COMMUNITY_MAX_TOOLS
     MAX_ARG_BYTES = settings.GF_COMMUNITY_MAX_ARG_BYTES
+    community_breaker.MAX_INFLIGHT = settings.GF_COMMUNITY_MAX_INFLIGHT
 
 
 def clean(text: str) -> str:
@@ -117,27 +120,51 @@ class ResponseTooLargeError(InvalidResponseError):
     """A community response passed GF_COMMUNITY_MAX_RESPONSE_BYTES (raw or decoded)."""
 
 
-class _CappedStream(httpx2.AsyncByteStream):
-    """Count raw and decoded bytes as they stream; abort and quarantine past the cap."""
+_SSE_EVENT_END = re.compile(rb"\r\n\r\n|\n\n|\r\r")
 
-    def __init__(self, inner: Any, encoding: str, namespace: str) -> None:
+
+class _CappedStream(httpx2.AsyncByteStream):
+    """Count raw and decoded bytes as they stream; abort and quarantine past the cap.
+
+    The cap is per JSON-RPC message: an SSE body (one event per message, possibly
+    long-lived) restarts the count at every event boundary of the decoded stream.
+    """
+
+    def __init__(self, inner: Any, encoding: str, namespace: str, sse: bool = False) -> None:
         if encoding not in ("", "identity", "gzip", "deflate"):
             raise InvalidResponseError(f"content-encoding {encoding!r} refused")
-        self._inner, self._namespace = inner, namespace
+        self._inner, self._namespace, self._sse = inner, namespace, sse
         self._decoder = zlib.decompressobj(47) if encoding in ("gzip", "deflate") else None
+        self._tail = b""  # last decoded bytes, so a boundary split across chunks is seen
+
+    def _count(self, pending: int, out: bytes) -> int:
+        """Decoded bytes of the current message after ``out``, or of the largest message
+        that ``out`` completed if that one is past the cap."""
+        if not self._sse:
+            return pending + len(out)
+        buf, start = self._tail + out, len(self._tail) - pending  # start: current message
+        self._tail = buf[-3:]
+        for end in _SSE_EVENT_END.finditer(buf):
+            if end.end() - start > MAX_RESPONSE_BYTES:
+                return end.end() - start
+            start = end.end()
+        return len(buf) - start
 
     async def __aiter__(self) -> AsyncIterator[bytes]:
-        raw = decoded = 0
+        raw = decoded = 0  # decoded: bytes of the current message
         async for chunk in self._inner:
             raw += len(chunk)
             data = chunk
+            if self._decoder is None:
+                decoded = self._count(decoded, chunk)
             while self._decoder is not None and data and decoded <= MAX_RESPONSE_BYTES:
                 try:  # bounded: never inflates more than one byte past the cap
-                    decoded += len(self._decoder.decompress(data, MAX_RESPONSE_BYTES + 1 - decoded))
+                    out = self._decoder.decompress(data, MAX_RESPONSE_BYTES + 1 - decoded)
                 except zlib.error as exc:
                     raise InvalidResponseError("undecodable body") from exc
+                decoded = self._count(decoded, out)
                 data = self._decoder.unconsumed_tail
-            if max(raw, decoded) > MAX_RESPONSE_BYTES:
+            if decoded > MAX_RESPONSE_BYTES or (not self._sse and raw > MAX_RESPONSE_BYTES):
                 log.warning("community_response_too_large", namespace=self._namespace)
                 quarantine(self._namespace, "response_cap")
                 raise ResponseTooLargeError("community response exceeds the byte cap")
@@ -155,7 +182,8 @@ def cap_responses(factory: Any, namespace: str) -> Any:
 
     async def on_response(response: httpx2.Response) -> None:
         encoding = response.headers.get("content-encoding", "").strip().lower()
-        response.stream = _CappedStream(response.stream, encoding, namespace)
+        sse = response.headers.get("content-type", "").lower().startswith("text/event-stream")
+        response.stream = _CappedStream(response.stream, encoding, namespace, sse)
 
     def capped(**kwargs: Any) -> httpx2.AsyncClient:
         client: httpx2.AsyncClient = factory(**kwargs)
@@ -176,12 +204,22 @@ class CommunityProxyTool(ProxyTool):
         size = len(json.dumps(arguments, separators=(",", ":"), ensure_ascii=False).encode())
         if size > MAX_ARG_BYTES:
             return failure("invalid_input")
+        breaker = community_breaker.get(self._community_namespace)
+        probe = breaker.admit()
+        if probe is None:  # bulkhead full or breaker open: no upstream request (§6)
+            return failure("unavailable")
+        ok: bool | None = None
         try:
-            result = await super().run(arguments, context)
+            async with asyncio.timeout(breaker.timeout):
+                result = await super().run(arguments, context)
+            ok = True
         except Exception as exc:
-            code = classify(exc)
+            ok = False
+            code = "upstream_timeout" if isinstance(exc, TimeoutError) else classify(exc)
             log.warning("community_call_failed", namespace=self._community_namespace, code=code)
             return failure(code)
+        finally:
+            breaker.release(ok, probe)
         if result.is_error:
             return failure("upstream_error")
         nonce = secrets.token_hex(16)
