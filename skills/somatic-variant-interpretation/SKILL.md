@@ -18,7 +18,7 @@ Research use only. Not clinical decision support. The output is never a clinical
 VEP and ClinVar `get_variant` are in your tool list; the others exist only through `call_tool`, exactly as written.
 
 1. `vep_annotate_variant`(`variant`= HGVS or `GENE:p.X` with a colon). Use the allele whose `hgvsp` is the asked change.
-2. `call_tool(name="clinvar_search_variants", arguments={"query": "GENE X123Y"})` → `clinvar_get_variant`(`identifier`= its VCV): read `somatic_clinical_impact` and `oncogenicity`.
+2. `call_tool(name="clinvar_search_variants", arguments={"query": "GENE X123Y"})` → `clinvar_get_variant`(`identifier`= its VCV): read `result.somatic_clinical_impact` and `result.oncogenicity`.
 3. `call_tool(name="moalmanac_search_approvals", arguments={"gene": "GENE"})`: read `summary.biomarkers` and `summary.diseases`. A row counts only for this alteration type (RET fusion ≠ RET M918T; HER2 amplification ≠ ERBB2 S310F). A class "<GENE> activating/oncogenic variants" covers an oncogenic or hotspot variant; for its diseases call again with `biomarker`= that class name.
 4. `call_tool(name="civic_search_molecular_profiles", arguments={"query": "GENE X123Y"})` → `call_tool(name="civic_search_assertions", arguments={"molecular_profile_id": <integer>})`.
 5. `call_tool(name="cbioportal_get_mutation_hotspots", arguments={"gene": "GENE", "residue": "V600"})`.

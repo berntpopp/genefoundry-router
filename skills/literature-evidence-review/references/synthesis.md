@@ -22,11 +22,11 @@ sources, not a single paper.
   inheritance, date. Both curate germline gene–disease links; skip them for somatic or
   drug-response questions.
 - Variant: `clinvar_get_variant` (`identifier`): classification, stars, and the PMIDs its
-  submissions cite (`citations`).
+  submissions cite (`result.citations`).
 
 ## 3. Find papers (1–3 calls)
 
-- Variant: start with the PMIDs curated records cite (`clinvar_get_variant` `citations`,
+- Variant: start with the PMIDs curated records cite (`clinvar_get_variant` `result.citations`,
   `clingen_get_variant_interpretation`); they were chosen for this allele. Then
   `litvar_get_variant_literature` (`variant_id` = rsID; HGVS without an rsID returns
   `not_found`). Note `resolved_variant`: an rsID covers each ALT at the position, so a LitVar

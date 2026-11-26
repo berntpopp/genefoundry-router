@@ -158,7 +158,11 @@ because it could not run is the failure mode this entire standard exists to prev
 
 Every successful result of a probed tool carries non-empty `_meta.source`, `_meta.data_version`
 and `_meta.retrieved_at` (`RESPONSE-ENVELOPE-STANDARD-v1.2`, core rule). A missing or empty field
-fails the gate and is named in the failure.
+fails the gate and is named in the failure. Exempt: ops/meta tools, and the OpenAI deep-research
+compatibility tools `search` and `fetch`, whose result is OpenAI's fixed document shape.
+
+The row, count and truncation checks (B2, B3, B4) read the payload at the top level of the
+envelope and inside `result`, where a v1.2 backend carries it.
 
 ## Gaps in the current gate — closed, and how
 

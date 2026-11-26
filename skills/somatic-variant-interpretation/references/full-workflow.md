@@ -11,12 +11,12 @@ oncogenicity work-up).
    for the cancer sources. Normalize the tumour type: `mondo_search_diseases`, and
    `mondo_map_cross_ontology` with `prefixes: ["ONCOTREE"]` to get the OncoTree code
    (e.g. ONCOTREE:SKCM ↔ MONDO:0005012) that cBioPortal uses.
-2. **ClinVar somatic.** `clinvar_get_variant` returns `somatic_clinical_impact` (tier) and
-   `oncogenicity` as their own blocks beside the germline classification;
+2. **ClinVar somatic.** `clinvar_get_variant` returns `result.somatic_clinical_impact` (tier) and
+   `result.oncogenicity` as their own blocks beside the germline classification;
    `clinvar_search_somatic_classifications` lists a gene's tiered / oncogenic variants
    (filters `gene_symbol`, `tier`, `oncogenicity`, `tumour_type`).
 3. **CIViC evidence.** `civic_search_molecular_profiles` (gene + variant, HGVS, CAID or
-   ClinVar id) → use the `simple` profile; complex profiles (combinations) are listed
+   ClinVar id) → use the `result.simple` profile; complex profiles (combinations) are listed
    separately — never fold them into the single-variant answer. Then
    `civic_search_assertions` / `civic_search_evidence_items` with `molecular_profile_id`
    and `disease` (accepted evidence by default). CIViC diseases are DOID; crosswalk to MONDO

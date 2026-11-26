@@ -19,7 +19,7 @@ already returns the band).
 | Have | Tool | Notes |
 |---|---|---|
 | 2+ genes in any id form | `hgnc_resolve_symbols_batch` | ONE call, up to 200; symbols, aliases, ENSG, RefSeq, UniProt, `NCBIGene:<n>` |
-| one gene | `hgnc_resolve_symbol` | returns HGNC id, approved symbol and `location` (band); ambiguous alias → candidate list, pick none silently |
+| one gene | `hgnc_resolve_symbol` | returns HGNC id, approved symbol and `result.location` (band); ambiguous alias → candidate list, pick none silently |
 | gene → Ensembl / NCBI / OMIM / UniProt / MANE ids | `hgnc_get_gene_cross_references` | the resolve tools do not return external ids |
 | other external gene id (OMIM gene, MGI, MANE transcript) | `hgnc_resolve_gene_by_xref` | `source` + `value`; a MANE Select ENST/NM resolves to its gene |
 | disease name | `mondo_resolve_disease` | returns MONDO id + Mondo causal genes; `ambiguous_query` → choose by the user's wording or ask |

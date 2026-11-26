@@ -43,6 +43,18 @@ SHOULD on an error (v1 §4). Tools that orient a
 client and return no upstream data (capabilities, health, diagnostics; the ops/meta carve-out of
 the Tool-Naming Standard) are outside the rule.
 
+### Exemptions
+
+Two kinds of tool are outside the provenance rule:
+
+- **ops/meta tools** (capabilities, health, diagnostics): they return no upstream data.
+- **OpenAI deep-research compatibility tools**, named exactly `search` and `fetch`. A ChatGPT
+  connector requires their results in OpenAI's fixed document shape
+  (`{results: [{id, title, url}]}` and `{id, title, text, url, metadata}`), which has no room
+  for the envelope. A success of these two tools is therefore also exempt from the v1 §1 frame
+  (`success`, `result`/`results`, `_meta`). A backend SHOULD still put the source and the
+  release into the document's `metadata`. Errors of these tools follow v1 unchanged.
+
 ## Field semantics
 
 ### `source`
@@ -96,7 +108,9 @@ provenance").
 The behaviour gate ([`docs/conformance/behaviour.py`](conformance/behaviour.py), vendored into
 every backend) checks the rule on each tool it can call: the successful result of the call built
 from the tool's own `examples` MUST carry non-empty `_meta.source`, `_meta.data_version` and
-`_meta.retrieved_at`. A missing or empty field fails the gate and names the field.
+`_meta.retrieved_at`. A missing or empty field fails the gate and names the field. The gate
+skips the rule for `search` and `fetch` (see Exemptions), and it reads rows and counts at the
+top level of the envelope and inside `result`.
 
 The envelope is also published as a JSON Schema with test vectors, for a server in any language:
 its canonical home is
