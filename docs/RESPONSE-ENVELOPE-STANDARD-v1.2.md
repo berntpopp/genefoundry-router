@@ -99,7 +99,10 @@ from the tool's own `examples` MUST carry non-empty `_meta.source`, `_meta.data_
 `_meta.retrieved_at`. A missing or empty field fails the gate and names the field.
 
 The envelope is also published as a JSON Schema with test vectors, for a server in any language:
-[`envelope/`](../envelope/README.md). Its schema requires `retrieved_at` to end in `Z`.
+its canonical home is
+[berntpopp/genefoundry-envelope](https://github.com/berntpopp/genefoundry-envelope) (release
+v1.2.0), and [`envelope/`](../envelope/README.md) is this repository's copy, byte-identical to
+that release. Its schema requires `retrieved_at` to end in `Z`.
 
 ## Adoption and compatibility
 

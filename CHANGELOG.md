@@ -4,11 +4,17 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.10] - 2026-11-26
+
 ### Added
 
 - **The transport probe tests `Origin` validation** (#394). A `POST /mcp` with a foreign `Origin` must return `403`; a request without `Origin` must return `200`; with `--allowed-origin`, a request with that `Origin` must return `200`. `fleet-probe` passes each backend's own public origin. MCP Transport Standard v1 §2.5 and §7.1 state the three cases.
 - **Response-Envelope Standard v1.2: provenance is a core rule** (#393). Every successful result must carry non-empty `_meta.source`, `_meta.data_version` and `_meta.retrieved_at`. A cached result reports the time of the upstream fetch that filled the cache. The behaviour gate fails a tool whose successful result lacks a field (MCP Behaviour Standard B9).
 - **The response envelope as a JSON Schema with test vectors** (`envelope/`). `envelope-v1.2.schema.json` (draft 2020-12, `$id` `https://genefoundry.org/schemas/envelope/1.2.0/envelope.schema.json`) covers the success envelope with its provenance, the error envelope and the closed v1.1 `untrusted_text` object at any depth. `envelope/vectors/` holds valid and invalid instances (one violation per invalid file, named by the rule it breaks) and `sanitize.json`, in/out vectors for the v1.1 text sanitation and `raw_sha256`. The README gives one-line validation in Python, JavaScript, R, Go and on the command line; CI runs the command lines over every vector (`make envelope-check`). Response-Envelope v1.2 now states that `source` stays a SHOULD on errors.
+
+### Changed
+
+- **The envelope schema's canonical home is [berntpopp/genefoundry-envelope](https://github.com/berntpopp/genefoundry-envelope)** (release v1.2.0). `envelope/README.md` and Response-Envelope v1.2 point there; the router keeps its copy, and a unit test pins `envelope/envelope-v1.2.schema.json` to the release's sha256.
 
 ## [0.14.9] - 2026-11-23
 

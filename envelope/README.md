@@ -20,8 +20,10 @@ This directory is the standard in a form any language can load:
 
 Copy the schema file into your repository. Its `$id`,
 `https://genefoundry.org/schemas/envelope/1.2.0/envelope.schema.json`, is a versioned name that
-never changes; it need not resolve, and the canonical copy is this directory of the
-genefoundry-router repository. The prose standard is
+never changes; it need not resolve. The canonical home of the schema and the vectors is
+[berntpopp/genefoundry-envelope](https://github.com/berntpopp/genefoundry-envelope) (release
+v1.2.0); this directory is the router's copy, pinned to that release by a sha256 test. The prose
+standard is
 [v1](../docs/RESPONSE-ENVELOPE-STANDARD-v1.md), [v1.1](../docs/RESPONSE-ENVELOPE-STANDARD-v1.1.md)
 and [v1.2](../docs/RESPONSE-ENVELOPE-STANDARD-v1.2.md); where the schema and the prose differ, the
 prose wins.
