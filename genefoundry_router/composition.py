@@ -19,7 +19,7 @@ from fastmcp.server.providers.proxy import (
 )
 from fastmcp.tools import Tool
 
-from genefoundry_router.egress import community_httpx_client_factory
+from genefoundry_router.egress import check_community_url, community_httpx_client_factory
 from genefoundry_router.observability import set_backend_up
 from genefoundry_router.registry import BackendDef
 
@@ -226,8 +226,7 @@ def _register_via_provider(
         ttl = getattr(backend, "cache_ttl", DEFAULT_CACHE_TTL)
     if ttl is None:
         ttl = DEFAULT_CACHE_TTL
-    # ponytail: getattr until #410 adds BackendDef.trust; then read backend.trust directly.
-    if httpx_client_factory is None and getattr(backend, "trust", "core") == "community":
+    if httpx_client_factory is None and backend.trust == "community":
         httpx_client_factory = community_httpx_client_factory()
     provider = CachedProxyProvider(
         client_factory=lambda: make_proxy_client(
@@ -256,6 +255,12 @@ def register_backend(
     proxy client also disables caller-token forwarding). Normalization transforms extend
     this; the async normalization pass runs from the lifespan.
     """
+    if backend.trust == "community" and proxy_target is None and backend.url is not None:
+        try:
+            check_community_url(backend.url)  # load-time check; connect time is what holds
+        except ValueError as exc:
+            log.warning("backend_skipped", backend=backend.name, reason=str(exc))
+            return
     if httpx_client_factory is not None:
         _register_via_provider(
             server,

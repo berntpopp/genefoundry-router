@@ -121,6 +121,18 @@ def test_bad_url_rejected_at_load(url: str) -> None:
         check_community_url(url, resolve=_resolver([PUBLIC]))
 
 
+def test_community_backend_failing_load_check_is_not_mounted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def refuse(url: str) -> None:
+        raise ValueError("refused")
+
+    monkeypatch.setattr(composition, "check_community_url", refuse)
+    server = MagicMock(spec=FastMCP)
+    register_backend(server, _backend(trust="community"))
+    server.add_provider.assert_not_called()
+
+
 def test_private_dns_rejected_at_load() -> None:
     with pytest.raises(ValueError):
         check_community_url(URL, resolve=_resolver(["10.0.0.1"]))
@@ -175,6 +187,7 @@ def test_composition_selects_community_client_only_for_community(
         "make_proxy_client",
         lambda *a, httpx_client_factory=None, **k: captured.append(httpx_client_factory),
     )
+    monkeypatch.setattr(composition, "check_community_url", lambda url: None)
     backend = _backend() if trust is None else _backend(trust=trust)
     providers: list[Any] = []
     server = MagicMock(spec=FastMCP)

@@ -21,6 +21,8 @@ import anyio.to_thread
 import httpcore2
 import httpx2
 
+from genefoundry_router.config import _is_conforming_community_url
+
 Resolver = Callable[[str, int], list[str]]
 IPCheck = Callable[[str], bool]
 
@@ -63,19 +65,19 @@ def _refusal(host: str, port: int, addrs: list[str], allow: IPCheck) -> str | No
 def check_community_url(url: str, resolve: Resolver = resolve_host) -> None:
     """Load-time check of a community URL; the connect-time check is the one relied on."""
     parts = urlsplit(url)
-    if parts.scheme != "https" or not parts.hostname:
-        raise ValueError(f"community backend URL must be https: {url!r}")
+    if not _is_conforming_community_url(url) or parts.hostname is None:
+        raise ValueError(f"community backend URL must be https://<host>/mcp: {url!r}")
     try:
         ipaddress.ip_address(parts.hostname)
     except ValueError:
         pass
     else:
         raise ValueError(f"community backend URL must name a host, not an IP: {url!r}")
-    if (parts.port or 443) != 443:
-        raise ValueError(f"community backend URL must use port 443: {url!r}")
-    if not parts.path.rstrip("/").endswith("/mcp"):
-        raise ValueError(f"community backend URL must end in /mcp: {url!r}")
-    reason = _refusal(parts.hostname, 443, resolve(parts.hostname, 443), is_public_ip)
+    try:
+        addrs = resolve(parts.hostname, 443)
+    except OSError as exc:
+        raise ValueError(f"community backend URL does not resolve: {url!r}") from exc
+    reason = _refusal(parts.hostname, 443, addrs, is_public_ip)
     if reason:
         raise ValueError(f"community backend URL refused ({reason}): {url!r}")
 
