@@ -4,6 +4,8 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.17] - 2026-11-26
+
 ### Changed
 
 - **Community cap breaches latch the backend (#412, #411).** A response-byte or tool-count cap breach now calls the #411 latch (`quarantine_backend`) with the fixed reason `response_cap` or `tool_cap`; an oversized argument is refused but does not quarantine, since the caller, not the backend, chose it. Startup now fails when `GF_ALLOW_COMMUNITY_BACKENDS=true` and `GF_QUARANTINE_FILE` is unset, so a restart cannot clear a latch.
