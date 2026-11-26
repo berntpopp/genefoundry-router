@@ -25,13 +25,33 @@ backends:
   - backend: pubtator
     tool: get_publication_passages
     json_pointers: [/passages/*/text]
+    surfaces:
+      - {tool: get_publication_passages, pointer: /passages/*/text}
+      - {tool: get_variant_evidence, pointer: /literature/*/snippet}
+      - {tool: get_publication_annotations, pointer: /documents/*/passages/*/text}
+      - {tool: get_publication_annotations, pointer: "/documents/*/passages/*/infons/license,xml"}
+      - {tool: get_publication_annotations (format=biocxml), pointer: /documents/*/content}
+      - {tool: get_publication_annotations (format=pubtator), pointer: "/documents/*/sections/* (title, abstract)"}
+      - {tool: get_pmc_annotations, pointer: /documents/*/passages/*/text}
+      - {tool: get_pmc_annotations, pointer: "/documents/*/passages/*/infons/license,xml"}
+      - {tool: get_pmc_annotations (format=biocxml), pointer: /documents/*/content}
+    not_fenced:
+      - tool: get_publication_metadata
+        pointer: /results/*/bibtex
+        reason: "rendered by the server from the record's structured citation fields; not upstream free text (pubtator-link#293)"
     max_text_bytes: 2097152
     max_objects: 128
     compatibility: breaking-v1.1
     test_vector: hostile-literature-v1
     classification: untrusted-text
-    evidence: pubtator_link/models/publication_passages.py:MCPPublicationPassage.text
-    existing_sanitization: v1.1 fence (fence_untrusted_text) shipped, released 6.0.0
+    evidence: >-
+      pubtator_link/models/publication_passages.py:MCPPublicationPassage.text;
+      pubtator_link/mcp/untrusted_content.py (fence_export_documents, fence_variant_snippets);
+      tests/unit/mcp/test_untrusted_content.py (every export serialization and the variant
+      snippet, each fenced object validated against the envelope schema v1.2)
+    existing_sanitization: >-
+      v1.1 fence (fence_untrusted_text) shipped, released 6.0.0; variant-evidence snippets and
+      annotation exports fenced in 7.10.0 (pubtator-link#293, #294)
 
   - backend: genereviews
     tool: search_passages

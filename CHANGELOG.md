@@ -4,6 +4,10 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The untrusted-text inventory lists the surfaces pubtator-link fenced in 7.10.0.** The `pubtator` row of `docs/conformance/untrusted-text-inventory.yml` named `get_publication_passages` only. It now also names the `get_variant_evidence` literature snippets and, for `get_publication_annotations` and `get_pmc_annotations`, the passage text, `infons.license`, `infons.xml` and the BioC XML and PubTator-format document content. `get_publication_metadata` `bibtex` is recorded as not fenced: the server renders it from structured citation fields.
+
 ## [0.14.13] - 2026-11-26
 
 ### Fixed
