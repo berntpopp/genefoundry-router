@@ -4,6 +4,10 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Community cap breaches latch the backend (#412, #411).** A response-byte or tool-count cap breach now calls the #411 latch (`quarantine_backend`) with the fixed reason `response_cap` or `tool_cap`; an oversized argument is refused but does not quarantine, since the caller, not the backend, chose it. Startup now fails when `GF_ALLOW_COMMUNITY_BACKENDS=true` and `GF_QUARANTINE_FILE` is unset, so a restart cannot clear a latch.
+
 ### Added
 
 - **Federation Standard v1 §5: gateway-side response hardening for community backends (#412).** `genefoundry_router/community_guard.py` streams every community response through a byte cap (`GF_COMMUNITY_MAX_RESPONSE_BYTES`, 262,144, counted raw and decoded, so a gzip bomb stops at the cap; encodings other than gzip/deflate are `invalid_response`) and caps `tools/list` at `GF_COMMUNITY_MAX_TOOLS` (32); either breach quarantines the backend. Every string of `content`, `structuredContent` and `_meta` is NFC-normalised with the Response Envelope v1.2 removal set, tag characters U+E0000–U+E007F and the #398 invisible marks removed; every text block is wrapped in a per-call nonce fence (`<<<GF-UNTRUSTED ...>>>` / `<<<GF-END ...>>>`) with `<<<GF-` escaped in the payload. Upstream failures map to fixed codes (`upstream_error`, `upstream_timeout`, `rate_limited`, `unavailable`, `invalid_response`) with router-written messages; the backend's error text is dropped. Arguments above `GF_COMMUNITY_MAX_ARG_BYTES` (8,192) are refused before any upstream request. Core backends are unchanged.

@@ -161,7 +161,10 @@ def _settings(**kwargs: Any) -> RouterSettings:
     return RouterSettings(_env_file=None, **kwargs)  # type: ignore[call-arg]
 
 
-COMMUNITY = {"GF_COMMUNITY_SERVERS_FILE": "registry/community.yaml"}
+COMMUNITY = {
+    "GF_COMMUNITY_SERVERS_FILE": "registry/community.yaml",
+    "GF_QUARANTINE_FILE": "state/quarantine.json",
+}
 
 
 def test_defaults_keep_community_off() -> None:
@@ -184,6 +187,16 @@ def test_community_file_requires_enforced_drift(mode: str) -> None:
 
 def test_community_file_with_allow_and_enforce_starts() -> None:
     _settings(**COMMUNITY, GF_ALLOW_COMMUNITY_BACKENDS=True, GF_DRIFT_MODE="enforce")
+
+
+def test_community_instance_requires_a_quarantine_file() -> None:
+    """#412: without GF_QUARANTINE_FILE the latch is in memory and a restart clears it."""
+    with pytest.raises(ValidationError, match="GF_QUARANTINE_FILE"):
+        _settings(
+            GF_COMMUNITY_SERVERS_FILE="registry/community.yaml",
+            GF_ALLOW_COMMUNITY_BACKENDS=True,
+            GF_DRIFT_MODE="enforce",
+        )
 
 
 def test_patient_profile_refuses_community_backends() -> None:
@@ -252,5 +265,6 @@ def test_serving_registry_adds_community_entries_only_when_configured(tmp_path: 
         GF_TOMBSTONES_FILE=str(tmp_path / "tombstones.yaml"),
         GF_ALLOW_COMMUNITY_BACKENDS=True,
         GF_DRIFT_MODE="enforce",
+        GF_QUARANTINE_FILE=str(tmp_path / "quarantine.json"),
     )
     assert [b.trust for b in load_serving_registry(community, servers, {})] == ["core", "community"]
