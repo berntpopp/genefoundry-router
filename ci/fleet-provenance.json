@@ -16,11 +16,11 @@
       "name": "autopvs1",
       "namespace": "autopvs1",
       "release": {
-        "commit": "f1384f5afe0db0be9c591d67a6ca5c2dbda8328f",
-        "definitions_sha256": "778255b227295db4e572a1cb322f62424edd0a0e712aba7c8cf4090405cb2881",
-        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:4102681857d8872659fb06b1a051be11b8caf09b70b17986e1de25662ab7373a",
-        "tag": "v4.2.3",
-        "version": "4.2.3"
+        "commit": "026da6e6a91f5897aad8fedad78946d6be84d31a",
+        "definitions_sha256": "eac24c93d1d32598520ae5fcf8b9e9593ec80d7e1bfc16a9b13b460c675455d2",
+        "image": "ghcr.io/berntpopp/autopvs1-link@sha256:b2e7b7ae6d0b44e47238012249533d2e2cdc7a4478ed6fc53b926652687a0aa8",
+        "tag": "v4.3.2",
+        "version": "4.3.2"
       },
       "repository": "berntpopp/autopvs1-link",
       "repository_url": "https://github.com/berntpopp/autopvs1-link",
@@ -108,8 +108,8 @@
                   "hg38"
                 ],
                 "examples": [
-                  "hg38",
-                  "hg19"
+                  "hg19",
+                  "hg38"
                 ],
                 "type": "string"
               },
@@ -266,7 +266,7 @@
                 "examples": [
                   [
                     {
-                      "genome_build": "hg38",
+                      "genome_build": "hg19",
                       "variant_id": "X-82763936-A-T"
                     }
                   ]
@@ -550,11 +550,11 @@
       "name": "cbioportal",
       "namespace": "cbioportal",
       "release": {
-        "commit": "ac6a8eec89dfdf47f9317530efbc4b1ac19d7d2c",
+        "commit": "f67f558ea532c68dc621437fc8490504451cbd0c",
         "definitions_sha256": "0fa624aaef71d907d46ff6f003097828e2eaecc043c1555b4f724d06fee860f0",
-        "image": "ghcr.io/berntpopp/cbioportal-link@sha256:c8274954a6b7a3744d93033c6b02aa6e9300060ae313e0a01046377a37f0e0e6",
-        "tag": "v0.2.0",
-        "version": "0.2.0"
+        "image": "ghcr.io/berntpopp/cbioportal-link@sha256:50a5007464df076eac3bd47fe2d605a3d152620433be4daa3c8e19405d50fb22",
+        "tag": "v0.4.0",
+        "version": "0.4.0"
       },
       "repository": "berntpopp/cbioportal-link",
       "repository_url": "https://github.com/berntpopp/cbioportal-link",
@@ -1139,11 +1139,11 @@
       "name": "civic",
       "namespace": "civic",
       "release": {
-        "commit": "f9a34d08c2ec67d3bb5c4423133e4532fd9fe349",
+        "commit": "2102c24a8d583048734f0e8b9ec2640e263acd5a",
         "definitions_sha256": "28b48ddd4ad0d282f579e7755444ab5e6f66b4d96b3da04a492d8d1ea25cad7a",
-        "image": "ghcr.io/berntpopp/civic-link@sha256:ae9f107076030f5b5c6241b2fd420478a584eec09bf9b0e457bb17abd0db6596",
-        "tag": "v0.1.2",
-        "version": "0.1.2"
+        "image": "ghcr.io/berntpopp/civic-link@sha256:fcfe81b3535824471df159bfe3b044702b8ae262e0e74796e5dfe9429d7c0fb4",
+        "tag": "v0.3.1",
+        "version": "0.3.1"
       },
       "repository": "berntpopp/civic-link",
       "repository_url": "https://github.com/berntpopp/civic-link",
@@ -1815,7 +1815,7 @@
           "2"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-22T07:05:02.616712Z"
+        "updated_at": "2026-11-26T01:07:25.616332Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -1824,11 +1824,11 @@
       "name": "clingen",
       "namespace": "clingen",
       "release": {
-        "commit": "d777a50ef526ae35b2041b1aa051c0ca3a9b47ab",
-        "definitions_sha256": "5a953edee3977068ee95a0a683ed4ed2daef27e7483fdeada282a9c7d08414ae",
-        "image": "ghcr.io/berntpopp/clingen-link@sha256:3d61fee8fe1f4b5b5dbab238555423ccd5597e173936121a8d0038ce09409423",
-        "tag": "v4.2.2",
-        "version": "4.2.2"
+        "commit": "a5507c8fc2ce9312f49823ea31bc2b38b96f3349",
+        "definitions_sha256": "5d920d57e8b64cd56bb2b7d80137abe4bb9286b724e6763038ee1d0beda90237",
+        "image": "ghcr.io/berntpopp/clingen-link@sha256:fc8aa499e15fa7794b77972ef2ac514be33c877dbd10c509474d1c73f16223b1",
+        "tag": "v5.0.1",
+        "version": "5.0.1"
       },
       "repository": "berntpopp/clingen-link",
       "repository_url": "https://github.com/berntpopp/clingen-link",
@@ -1885,17 +1885,6 @@
                 "maxLength": 64,
                 "minLength": 1,
                 "pattern": "^[A-Za-z0-9._-]{1,32}$|^[Hh][Gg][Nn][Cc]:\\d+$",
-                "type": "string"
-              },
-              "response_mode": {
-                "default": "compact",
-                "description": "compact (default) trims null fields; full keeps everything.",
-                "enum": [
-                  "minimal",
-                  "compact",
-                  "standard",
-                  "full"
-                ],
                 "type": "string"
               }
             },
@@ -3059,17 +3048,6 @@
                   "cardiomyopathy",
                   "RASopathy"
                 ]
-              },
-              "response_mode": {
-                "default": "compact",
-                "description": "compact (default) is the same compact list; full is identical.",
-                "enum": [
-                  "minimal",
-                  "compact",
-                  "standard",
-                  "full"
-                ],
-                "type": "string"
               }
             },
             "type": "object"
@@ -3119,18 +3097,18 @@
           "1.0.0"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-22T07:05:02.616712Z"
+        "updated_at": "2026-11-25T19:00:05.492170Z"
       },
       "domain": "Pharmacogenomics / gene-drug guidelines",
       "entrypoints": [],
       "name": "clinpgx",
       "namespace": "clinpgx",
       "release": {
-        "commit": "8f878a8da07c6f00bb5a0cd944dde8d9809a8d15",
-        "definitions_sha256": "1128974c44a185a686e1dd3b91eed513fb8990402ed39bc4d60246a2135d3050",
-        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:5a070e1be5293ced09453fcd863d75724929c1057eb0f0d596d942bd9c323514",
-        "tag": "v0.1.20",
-        "version": "0.1.20"
+        "commit": "b946962373fc8ec0e65df9d56bd63663ffeed17f",
+        "definitions_sha256": "701c96c4c14eea98600d57d99bc916f47ca55b35d23db6281c0c89468d7cb3af",
+        "image": "ghcr.io/berntpopp/clinpgx-link@sha256:7175115090bda034ff76d716a02105b2bc408b3bcc04a21e687b6f20260a8358",
+        "tag": "v0.1.26",
+        "version": "0.1.26"
       },
       "repository": "berntpopp/clinpgx-link",
       "repository_url": "https://github.com/berntpopp/clinpgx-link",
@@ -3208,17 +3186,6 @@
                 "examples": [
                   "GET /data/gene/{id}"
                 ]
-              },
-              "response_mode": {
-                "default": "compact",
-                "description": "Detail mode; schemas remain reachable.",
-                "enum": [
-                  "minimal",
-                  "compact",
-                  "standard",
-                  "full"
-                ],
-                "type": "string"
               }
             },
             "type": "object"
@@ -3333,7 +3300,13 @@
                   }
                 ],
                 "default": null,
-                "description": "Ordered scalar RFC 6901 pointers for JSON data."
+                "description": "Ordered scalar RFC 6901 pointers for JSON data.",
+                "examples": [
+                  [
+                    "/symbol",
+                    "/name"
+                  ]
+                ]
               },
               "query_parameters": {
                 "anyOf": [
@@ -3473,7 +3446,13 @@
                   }
                 ],
                 "default": null,
-                "description": "Ordered scalar RFC 6901 pointers for JSON data."
+                "description": "Ordered scalar RFC 6901 pointers for JSON data.",
+                "examples": [
+                  [
+                    "/gene/id",
+                    "/gene/symbol"
+                  ]
+                ]
               },
               "query_parameters": {
                 "anyOf": [
@@ -3754,7 +3733,13 @@
                   }
                 ],
                 "default": null,
-                "description": "Ordered profiled source fields to return."
+                "description": "Ordered profiled source fields to return.",
+                "examples": [
+                  [
+                    "Symbol",
+                    "Name"
+                  ]
+                ]
               },
               "limit": {
                 "default": 20,
@@ -3810,7 +3795,13 @@
                   }
                 ],
                 "default": null,
-                "description": "Ordered enclosing PharmCAT parent fields: gene and/or version."
+                "description": "Ordered enclosing PharmCAT parent fields: gene and/or version.",
+                "examples": [
+                  [
+                    "gene",
+                    "version"
+                  ]
+                ]
               },
               "query": {
                 "anyOf": [
@@ -3882,7 +3873,13 @@
                   }
                 ],
                 "default": null,
-                "description": "Ordered profiled source fields to return."
+                "description": "Ordered profiled source fields to return.",
+                "examples": [
+                  [
+                    "Symbol",
+                    "Name"
+                  ]
+                ]
               },
               "parent_fields": {
                 "anyOf": [
@@ -3903,7 +3900,13 @@
                   }
                 ],
                 "default": null,
-                "description": "Ordered enclosing PharmCAT parent fields: gene and/or version."
+                "description": "Ordered enclosing PharmCAT parent fields: gene and/or version.",
+                "examples": [
+                  [
+                    "gene",
+                    "version"
+                  ]
+                ]
               },
               "pointer": {
                 "default": "",
@@ -3925,7 +3928,13 @@
                   }
                 ],
                 "default": null,
-                "description": "Ordered scalar RFC 6901 pointers."
+                "description": "Ordered scalar RFC 6901 pointers.",
+                "examples": [
+                  [
+                    "/fields/Symbol",
+                    "/fields/Name"
+                  ]
+                ]
               },
               "record_id": {
                 "description": "Snapshot-bound record identity discovered with search_dataset.",
@@ -3974,7 +3983,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Find pharmacogenomic gene-drug (PharmGKB/ClinPGx) records (genes, drugs (chemical), variants, alleles/haplotypes, clinical (summary)/variant annotations, guidelines, labels) by exact live filters or installed dataset memberships; returns PA accessions for get_record/get_related_records. Not drug-drug interactions. Filter keys are per entity_type (see filters); summary_annotation accepts level_of_evidence. Star alleles: query='CYP2D6*10' (allele) or get_record(entity_type='haplotype', source='website').",
+          "description": "Find pharmacogenomic gene-drug (PharmGKB/ClinPGx) records (genes, drugs (chemical), variants, alleles/haplotypes, clinical (summary)/variant annotations, guidelines, labels) by exact live filters or installed dataset memberships; returns PA accessions for get_record/get_related_records. Not drug-drug interactions. Star alleles: query='CYP2D6*10' (allele) or get_record(entity_type='haplotype', source='website').",
           "federated_name": "clinpgx_search_records",
           "inputSchema": {
             "$defs": {
@@ -4072,13 +4081,13 @@
                   }
                 ],
                 "default": null,
-                "description": "Opaque continuation returned for the same selectors and source identity.",
+                "description": "Opaque continuation; same selectors and source only.",
                 "examples": [
-                  "authenticated-continuation"
+                  "opaque-continuation"
                 ]
               },
               "entity_type": {
-                "description": "Entity family to search in the selected source.",
+                "description": "Entity family to search.",
                 "enum": [
                   "allele",
                   "annotation_id",
@@ -4114,11 +4123,8 @@
                   }
                 ],
                 "default": null,
-                "description": "ANDed exact filters; keys depend on entity_type. API keys: pathway: id; gene: gene|id; chemical: chemical|id|name; disease: id; variant: variant; literature: id|resource_id; guideline_annotation: chemical|gene|source; label: chemical|gene|source; summary_annotation: annotation_id|chemical|gene|id|level_of_evidence|variant; variant_annotation: gene|variant. A PA accession is accepted by gene/chemical/name on gene, chemical and label and by chemical on summary_annotation; guideline_annotation gene/chemical take PA accessions only; other name/symbol keys reject PA values. level_of_evidence: 1A|1B|2A|2B|3|4. Download keys: annotation_id|chemical|gene|id|name|source|variant.",
+                "description": "ANDed exact filters. API keys by entity_type: pathway: id; gene: gene|id; chemical: chemical|id|name; disease: id; variant: variant; literature: id|resource_id; guideline_annotation: chemical|gene|source; label: chemical|gene|source; summary_annotation: annotation_id|chemical|gene|id|level_of_evidence|variant; variant_annotation: gene|variant. PA accessions: accepted by gene/chemical/name on gene, chemical, label and by chemical on summary_annotation; required by guideline_annotation gene/chemical; rejected by other name/symbol keys. level_of_evidence: 1A|1B|2A|2B|3|4. Download keys: annotation_id|chemical|gene|id|name|source|variant.",
                 "examples": [
-                  {
-                    "chemical": "clopidogrel"
-                  },
                   {
                     "chemical": "PA449053",
                     "gene": "CYP2C19"
@@ -4127,7 +4133,7 @@
               },
               "limit": {
                 "default": 20,
-                "description": "Maximum rows returned on this page.",
+                "description": "Max rows per page.",
                 "examples": [
                   20
                 ],
@@ -4137,7 +4143,7 @@
               },
               "offset": {
                 "default": 0,
-                "description": "Zero-based offset; cannot accompany cursor.",
+                "description": "Zero-based; not with cursor.",
                 "examples": [
                   0
                 ],
@@ -4155,14 +4161,14 @@
                   }
                 ],
                 "default": null,
-                "description": "Literal AND-token local text query; unavailable for API searches. Rejected (invalid_input) for guideline_annotation, label, pathway, summary_annotation, variant_annotation: use filters.",
+                "description": "Local literal AND-token text query; invalid_input for guideline_annotation, label, pathway, summary_annotation, variant_annotation: use filters.",
                 "examples": [
                   "CYP2C19 clopidogrel"
                 ]
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Detail tier; never changes source identity. minimal|compact|standard project verified fields per family. Rows of families without a verified profile return deferred_content=true (retrieved but withheld, not missing); recovery_action=retry_with_response_mode_full means full inlines them, otherwise read them with get_source_content.",
+                "description": "Detail tier; same source identity. minimal|compact|standard project verified fields per family. deferred_content=true rows are withheld, not missing: follow their recovery_action.",
                 "enum": [
                   "minimal",
                   "compact",
@@ -4184,7 +4190,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Opt-in, API only: shapes the whole row list fetched with filters, not just this page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts. See _meta.shaping.",
+                "description": "API only: shapes all fetched rows, not one page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts; see _meta.shaping.",
                 "examples": [
                   {
                     "filter": {
@@ -4192,14 +4198,13 @@
                         "1A"
                       ]
                     },
-                    "order": "desc",
                     "sort": "score"
                   }
                 ]
               },
               "source": {
                 "default": "auto",
-                "description": "Source policy: auto routes exact filters to API and broad queries locally.",
+                "description": "auto: exact filters go to the API, text queries local.",
                 "enum": [
                   "auto",
                   "api",
@@ -4212,7 +4217,7 @@
               },
               "view": {
                 "default": "base",
-                "description": "ClinPGx upstream projection for live API reads.",
+                "description": "Upstream projection for API reads.",
                 "enum": [
                   "min",
                   "base",
@@ -4311,7 +4316,7 @@
                 ]
               },
               "record_id": {
-                "description": "Exact ClinPGx identifier or returned local record_id; numeric-detail families reuse the decimal id returned by search_records.",
+                "description": "ClinPGx ID or returned local record_id; numeric-detail families use the decimal id from search_records.",
                 "examples": [
                   "PA124"
                 ],
@@ -4321,7 +4326,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Detail tier; never changes source identity. minimal|compact|standard project verified fields per family. Rows of families without a verified profile return deferred_content=true (retrieved but withheld, not missing); recovery_action=retry_with_response_mode_full means full inlines them, otherwise read them with get_source_content.",
+                "description": "Detail tier; same source identity. minimal|compact|standard project verified fields per family. deferred_content=true rows are withheld, not missing: follow their recovery_action.",
                 "enum": [
                   "minimal",
                   "compact",
@@ -4348,7 +4353,7 @@
               },
               "view": {
                 "default": "max",
-                "description": "ClinPGx upstream projection for live API reads.",
+                "description": "Upstream projection for API reads.",
                 "enum": [
                   "min",
                   "base",
@@ -4387,7 +4392,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Get records linked to known ClinPGx IDs: gene+drug guideline, label, summary or variant annotations (pair mode, other_id), or all objects connected to one ID (relationship). See result_type for modes. For gene+drug guidelines prefer search_records(entity_type='guideline_annotation', filters={gene, chemical: PA accessions}); the live pair report can omit CPIC/DPWG. Guideline URLs: get_record(source='website').",
+          "description": "Get records linked to known ClinPGx IDs: gene+drug guideline, label, summary or variant annotations (pair mode, other_id), or all objects connected to one ID (relationship). For gene+drug guidelines prefer search_records(entity_type='guideline_annotation', filters={gene, chemical: PA accessions}); the live pair report can omit CPIC/DPWG. Guideline URLs: get_record(source='website').",
           "federated_name": "clinpgx_get_related_records",
           "inputSchema": {
             "$defs": {
@@ -4485,14 +4490,14 @@
                   }
                 ],
                 "default": null,
-                "description": "Opaque continuation returned for the same selectors and source identity.",
+                "description": "Opaque continuation; same selectors and source only.",
                 "examples": [
-                  "authenticated-continuation"
+                  "opaque-continuation"
                 ]
               },
               "entity_type": {
                 "default": "Gene",
-                "description": "Object class owning record_id; documentation-only and cursor-bound, not sent upstream as a pair filter.",
+                "description": "Object class of record_id; documentation-only.",
                 "enum": [
                   "Gene",
                   "Chemical",
@@ -4506,7 +4511,7 @@
               },
               "limit": {
                 "default": 20,
-                "description": "Maximum rows returned on this page.",
+                "description": "Max rows per page.",
                 "examples": [
                   20
                 ],
@@ -4516,7 +4521,7 @@
               },
               "offset": {
                 "default": 0,
-                "description": "Zero-based offset; cannot accompany cursor.",
+                "description": "Zero-based; not with cursor.",
                 "examples": [
                   0
                 ],
@@ -4534,14 +4539,14 @@
                   }
                 ],
                 "default": null,
-                "description": "Second exact ClinPGx ID; when supplied, selects live API pair mode.",
+                "description": "Second exact ClinPGx ID; selects live API pair mode.",
                 "examples": [
                   "PA449053"
                 ]
               },
               "other_type": {
                 "default": "Chemical",
-                "description": "Target connected-object type sent upstream without other_id; documentation-only and cursor-bound in pair mode, not an upstream pair filter.",
+                "description": "Target connected-object type, sent upstream without other_id; documentation-only in pair mode.",
                 "enum": [
                   "Gene",
                   "Chemical",
@@ -4554,7 +4559,7 @@
                 "type": "string"
               },
               "record_id": {
-                "description": "Exact ClinPGx identifier or returned local record_id; numeric-detail families reuse the decimal id returned by search_records.",
+                "description": "ClinPGx ID or returned local record_id; numeric-detail families use the decimal id from search_records.",
                 "examples": [
                   "PA124"
                 ],
@@ -4564,7 +4569,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Detail tier; never changes source identity. minimal|compact|standard project verified fields per family. Rows of families without a verified profile return deferred_content=true (retrieved but withheld, not missing); recovery_action=retry_with_response_mode_full means full inlines them, otherwise read them with get_source_content.",
+                "description": "Detail tier; same source identity. minimal|compact|standard project verified fields per family. deferred_content=true rows are withheld, not missing: follow their recovery_action.",
                 "enum": [
                   "minimal",
                   "compact",
@@ -4577,7 +4582,7 @@
                 "type": "string"
               },
               "result_type": {
-                "description": "Mode is chosen by arguments. API connected-object (omit other_id): relationship, lists objects of other_type linked to record_id. API pair (other_id required): guideline_annotation|label|multilink_annotation|pathway|summary_annotation|variant_annotation, records linking both IDs (e.g. gene PA124 + chemical PA449053). source='download' (installed snapshot only): allele|evidence|literature|relationship.",
+                "description": "API connected-object mode (no other_id): relationship lists other_type objects linked to record_id. API pair mode (other_id set): guideline_annotation|label|multilink_annotation|pathway|summary_annotation|variant_annotation, records linking both IDs. source='download': allele|evidence|literature|relationship.",
                 "enum": [
                   "allele",
                   "evidence",
@@ -4605,7 +4610,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Opt-in, API only: shapes the whole row list fetched with filters, not just this page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts. See _meta.shaping.",
+                "description": "API only: shapes all fetched rows, not one page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts; see _meta.shaping.",
                 "examples": [
                   {
                     "filter": {
@@ -4613,7 +4618,6 @@
                         "1A"
                       ]
                     },
-                    "order": "desc",
                     "sort": "score"
                   }
                 ]
@@ -4632,7 +4636,7 @@
               },
               "view": {
                 "default": "base",
-                "description": "API pair upstream projection; not sent upstream in connected-object mode, but remains cursor-bound.",
+                "description": "API pair upstream projection; not sent upstream in connected-object mode but cursor-bound.",
                 "enum": [
                   "min",
                   "base",
@@ -4826,7 +4830,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-22T07:05:02.616712Z"
+        "updated_at": "2026-11-25T19:00:05.492170Z"
       },
       "domain": "Variant clinical significance",
       "entrypoints": [
@@ -4835,11 +4839,11 @@
       "name": "clinvar",
       "namespace": "clinvar",
       "release": {
-        "commit": "e7c5fca8ada4f395a7c5a075f6898b7505879e2b",
-        "definitions_sha256": "941feafa6cf3465b35addb01609573e807abfc899dbe673fadfd61d132da923a",
-        "image": "ghcr.io/berntpopp/clinvar-link@sha256:f4bc31e1a0b6dfd166a90b9e72afc6608a91a3f780319fa24732af86cb043dac",
-        "tag": "v0.10.6",
-        "version": "0.10.6"
+        "commit": "a6000f28e93168b0cfb8af1a6813c6977e50a63a",
+        "definitions_sha256": "cca333c507975bfc89acdfdf2fb0e7944dd49f694d49d7223ee9292445933952",
+        "image": "ghcr.io/berntpopp/clinvar-link@sha256:898a155d6754a43b7badc504804e9387e5f180927c5b6885d102e38597ff775f",
+        "tag": "v0.12.1",
+        "version": "0.12.1"
       },
       "repository": "berntpopp/clinvar-link",
       "repository_url": "https://github.com/berntpopp/clinvar-link",
@@ -5034,7 +5038,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Free-text search across ClinVar variant names, genes, and traits; returns matching variants (vcv_accession, gene, classification, star rating) as a paginated list. Use this to locate a record when you only have a gene symbol plus a change (BRAF V600E reads as p.Val600Glu) or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, so results never wander into an unrelated gene, and _meta.search declares what was inferred and whether the match degraded. Pagination: total_count / has_more / next_offset; in minimal/compact mode the citation is hoisted once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
+          "description": "Free-text search across ClinVar variant names, genes, and traits; returns matching variants (vcv_accession, gene, classification, star rating) as a paginated list. Use this to locate a record when you only have a gene symbol plus a change (BRAF V600E reads as p.Val600Glu) or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, and _meta.search declares what was inferred and whether the match degraded. Paginated (total_count / has_more / next_offset); minimal/compact hoist the citation once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
           "federated_name": "clinvar_search_variants",
           "inputSchema": {
             "additionalProperties": false,
@@ -5108,7 +5112,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Restrict the search to this HGNC gene symbol. An explicit value always wins; when omitted, a symbol in the query text is applied automatically (reported as _meta.search.gene_symbol_inferred) so loose text narrows within the gene, not into unrelated ones. An unknown symbol is not_found, never an empty page.",
+                "description": "Restrict the search to this HGNC gene symbol or HGNC id (an Ensembl or NCBI Gene id is rejected with the call that converts it). An explicit value always wins; when omitted, a symbol in the query text is applied automatically (reported as _meta.search.gene_symbol_inferred). An unknown symbol is not_found, never an empty page.",
                 "examples": [
                   "BRCA1"
                 ]
@@ -5313,7 +5317,7 @@
             "additionalProperties": false,
             "properties": {
               "gene_symbol": {
-                "description": "An HGNC gene symbol (case-insensitive), e.g. BRCA1, TP53, CFTR. A symbol with no ClinVar variants in the local index returns not_found, never an empty success.",
+                "description": "An HGNC gene symbol (case-insensitive, e.g. BRCA1) or HGNC id (HGNC:1100). An Ensembl or NCBI Gene id is rejected with the call that converts it. A gene with no ClinVar variants in the local index returns not_found, never an empty success.",
                 "examples": [
                   "BRCA1"
                 ],
@@ -5406,7 +5410,7 @@
                 ]
               },
               "gene_symbol": {
-                "description": "An HGNC gene symbol (case-insensitive), e.g. BRCA1, TP53, CFTR. A symbol with no ClinVar variants in the local index returns not_found, never an empty success.",
+                "description": "An HGNC gene symbol (case-insensitive, e.g. BRCA1) or HGNC id (HGNC:1100). An Ensembl or NCBI Gene id is rejected with the call that converts it. A gene with no ClinVar variants in the local index returns not_found, never an empty success.",
                 "examples": [
                   "BRCA1"
                 ],
@@ -5549,7 +5553,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Restrict to this HGNC gene symbol (case-insensitive). A symbol with no ClinVar variants is rejected with invalid_input; a known gene with no somatic call returns an empty page.",
+                "description": "Restrict to this HGNC gene symbol (case-insensitive) or HGNC id; an Ensembl or NCBI Gene id is rejected with the call that converts it. A symbol with no ClinVar variants is rejected with invalid_input; a known gene with no somatic call returns an empty page.",
                 "examples": [
                   "BRAF"
                 ]
@@ -5749,7 +5753,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-19T07:06:49.809946Z"
+        "updated_at": "2026-11-26T07:04:32.419054Z"
       },
       "domain": "Gene\u2013disease curation",
       "entrypoints": [
@@ -5758,11 +5762,11 @@
       "name": "gencc",
       "namespace": "gencc",
       "release": {
-        "commit": "f4576ee0830699ea8e70428b1881bb571b8cd227",
-        "definitions_sha256": "b068c3bc6efc3d5e9f086ad5e9f47cd694a00e03dfd7e4b0b176c86bf8c68048",
-        "image": "ghcr.io/berntpopp/gencc-link@sha256:18595adc331d110e1620263697735f81464f36155416a86aeba5cfa37ec3ca53",
-        "tag": "v0.11.0",
-        "version": "0.11.0"
+        "commit": "87592129e980b3e7ecb7be14e69ec611d18d7823",
+        "definitions_sha256": "14521b495eb3f94fd6ae63e44b79026171db488485efa58f44c45a86bb453251",
+        "image": "ghcr.io/berntpopp/gencc-link@sha256:51a12f0422ab4bcdf72cf5417333fba7b33db34894b2176ef86d699cba2e7d66",
+        "tag": "v0.13.1",
+        "version": "0.13.1"
       },
       "repository": "berntpopp/gencc-link",
       "repository_url": "https://github.com/berntpopp/gencc-link",
@@ -5861,7 +5865,7 @@
                 "type": "integer"
               },
               "query": {
-                "description": "Gene symbol, partial symbol, or HGNC id to search for.",
+                "description": "Gene symbol, partial symbol, or HGNC id to search for. An Ensembl or NCBI Gene id is rejected with the call that converts it.",
                 "examples": [
                   "BRCA1",
                   "SKI"
@@ -5870,12 +5874,10 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Verbosity: minimal | compact | standard | full.",
+                "description": "Verbosity: minimal | compact.",
                 "enum": [
                   "minimal",
-                  "compact",
-                  "standard",
-                  "full"
+                  "compact"
                 ],
                 "examples": [
                   "compact"
@@ -5923,7 +5925,7 @@
                 "description": "Opaque, release-bound page token from a prior truncated.next_cursor."
               },
               "gene_symbol": {
-                "description": "Gene identifier: an approved HGNC symbol (e.g. SKI) or an HGNC CURIE (e.g. HGNC:10896). Exact match; resolve free text with search_genes first.",
+                "description": "Gene identifier: an approved HGNC symbol (e.g. SKI) or an HGNC CURIE (e.g. HGNC:10896). Exact match; resolve free text with search_genes first. An Ensembl or NCBI Gene id is rejected with the call that converts it.",
                 "examples": [
                   "SKI",
                   "HGNC:10896"
@@ -5988,7 +5990,7 @@
             "additionalProperties": false,
             "properties": {
               "genes": {
-                "description": "Gene symbols or HGNC ids (max 20).",
+                "description": "Gene symbols or HGNC ids (max 20). An Ensembl or NCBI Gene id is listed under `unsupported`, with the call that converts it.",
                 "examples": [
                   [
                     "BRCA2",
@@ -6088,12 +6090,10 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Verbosity: minimal | compact | standard | full.",
+                "description": "Verbosity: minimal | compact.",
                 "enum": [
                   "minimal",
-                  "compact",
-                  "standard",
-                  "full"
+                  "compact"
                 ],
                 "examples": [
                   "compact"
@@ -6269,18 +6269,18 @@
             "additionalProperties": false,
             "properties": {
               "disease": {
-                "description": "Disease identifier: a MONDO CURIE (MONDO:0010526), an OMIM CURIE (OMIM:301500), or an exact harmonized disease title.",
+                "description": "Disease identifier: a MONDO CURIE (MONDO:0012933), an OMIM CURIE (OMIM:612555), or an exact harmonized disease title.",
                 "examples": [
-                  "MONDO:0010526",
-                  "OMIM:301500"
+                  "MONDO:0012933",
+                  "OMIM:612555"
                 ],
                 "type": "string"
               },
               "gene_symbol": {
-                "description": "Gene identifier: an approved HGNC symbol (e.g. GLA) or an HGNC CURIE (e.g. HGNC:4296). Exact match; resolve free text with search_genes first.",
+                "description": "Gene identifier: an approved HGNC symbol (e.g. BRCA2) or an HGNC CURIE (e.g. HGNC:1101). Exact match; resolve free text with search_genes first. An Ensembl or NCBI Gene id is rejected with the call that converts it.",
                 "examples": [
-                  "GLA",
-                  "HGNC:4296"
+                  "BRCA2",
+                  "HGNC:1101"
                 ],
                 "type": "string"
               },
@@ -6398,7 +6398,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Restrict to one gene (approved symbol or HGNC CURIE); unresolvable -> not_found.",
+                "description": "Restrict to one gene (approved symbol or HGNC CURIE); unresolvable -> not_found, an Ensembl or NCBI Gene id -> invalid_input.",
                 "examples": [
                   "BRCA1",
                   "HGNC:1100"
@@ -6614,7 +6614,7 @@
           "0007_embedding_run_identity"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-22T07:05:02.616712Z"
+        "updated_at": "2026-11-25T19:00:05.492170Z"
       },
       "domain": "Gene\u2013disease literature",
       "entrypoints": [
@@ -6624,11 +6624,11 @@
       "name": "genereviews",
       "namespace": "genereviews",
       "release": {
-        "commit": "ca6640156fe03338eff2b759c3431e7257192030",
+        "commit": "cea7582a493da808cc35d8058635d6ab2f47b618",
         "definitions_sha256": "bd7a02857dcb54ef48737ad8847099a5d4863e807e1bdd8d0367e3b30c558960",
-        "image": "ghcr.io/berntpopp/genereviews-link@sha256:d844bb53e3f106bf9e0ef9c3e8f399dfbd5a8abdd1285308e03cecdadeda2080",
-        "tag": "v5.4.1",
-        "version": "5.4.1"
+        "image": "ghcr.io/berntpopp/genereviews-link@sha256:2be05e731b392cc1b96583fefde831f8068dc0bf442910797720698b155d9eaa",
+        "tag": "v5.5.1",
+        "version": "5.5.1"
       },
       "repository": "berntpopp/genereviews-link",
       "repository_url": "https://github.com/berntpopp/genereviews-link",
@@ -7639,11 +7639,11 @@
       "name": "gnomad",
       "namespace": "gnomad",
       "release": {
-        "commit": "d9c403ff162dfa684dcc9071e916fc01d3f1a6c5",
-        "definitions_sha256": "1bba7b648e79cca6fd940c3dd4957052ea9f4d998b49ccde454bfc6ea0c5393e",
-        "image": "ghcr.io/berntpopp/gnomad-link@sha256:11fe00f7dfc4a1541043f896912e884f039d85090fe20d4456c86aced984e57c",
-        "tag": "v9.3.6",
-        "version": "9.3.6"
+        "commit": "a02e156396d23c29f64d832aa731cbfa3feb2408",
+        "definitions_sha256": "fe27f2c9d0f67ff6d0a305f6db6c0e73c5af56ead289ea657b7b3d48154772f4",
+        "image": "ghcr.io/berntpopp/gnomad-link@sha256:ca189d6e6522469bfd3b73d39359e6faeeaa274500fdeed160f126ef8975385c",
+        "tag": "v10.0.3",
+        "version": "10.0.3"
       },
       "repository": "berntpopp/gnomad-link",
       "repository_url": "https://github.com/berntpopp/gnomad-link",
@@ -8515,7 +8515,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a caller has a single variant id; returns its ClinVar clinical significance, review status, gold stars, and submissions. Complementary to get_variant_frequencies for clinical workflows. compact (default) drops per-submission provenance bookkeeping; response_mode='full' keeps it. Returns ~2-8kB compact, larger with full or a high submissions_limit.",
+          "description": "Use this when a caller has a single variant id; returns its ClinVar clinical significance, review status, gold stars, and submissions. Complementary to get_variant_frequencies for clinical workflows. Returns ~0.8kB per submission (default 25); lower submissions_limit for a smaller payload.",
           "federated_name": "gnomad_get_clinvar_variant_details",
           "inputSchema": {
             "additionalProperties": false,
@@ -8531,7 +8531,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "compact (default) drops the per-submission sha256/retrieved_at integrity bookkeeping (keeps the fenced condition/submitter text); full returns the complete fenced provenance.",
+                "description": "Accepted for compatibility: both modes return the same payload. Every fenced text keeps raw_sha256 and provenance.retrieved_at.",
                 "enum": [
                   "compact",
                   "full"
@@ -9286,11 +9286,11 @@
       "name": "gtex",
       "namespace": "gtex",
       "release": {
-        "commit": "5a2985e2c29b34898ab044b9727952e33f0aff64",
-        "definitions_sha256": "c328df5e70200be0915b22d23feb827b0bf5eeac6ba752f062b7c0a1cecd82c5",
-        "image": "ghcr.io/berntpopp/gtex-link@sha256:89a2a95ff5467af9b7b9fd4e9b21974ca608136658a69909db67dcb50681ceff",
-        "tag": "v3.2.5",
-        "version": "3.2.5"
+        "commit": "0283bdfd129c2b5d314e6f30065d0e413b0976fb",
+        "definitions_sha256": "c19132d6b2deb767855e299a93c9edf2935e9af22ab35bc0d48ebd114adf6365",
+        "image": "ghcr.io/berntpopp/gtex-link@sha256:ad32608cac9a30b99dced793d67314b708e8fa5fc47f13d8191ddb8fee20242f",
+        "tag": "v4.1.2",
+        "version": "4.1.2"
       },
       "repository": "berntpopp/gtex-link",
       "repository_url": "https://github.com/berntpopp/gtex-link",
@@ -9397,7 +9397,7 @@
                 "type": "integer"
               },
               "query": {
-                "description": "Gene symbol or partial symbol to match against the GTEx catalog (e.g. 'BRCA' matches BRCA1, BRCA2).",
+                "description": "Gene symbol or partial symbol to match against the GTEx catalog (e.g. 'BRCA' matches BRCA1, BRCA2), or an Ensembl gene id. HGNC / NCBI Gene ids are rejected: hgnc_resolve_symbol converts them.",
                 "examples": [
                   "BRCA1",
                   "TP53"
@@ -9427,7 +9427,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Retrieve detailed gene information from GTEx Portal for one or more GENCODE IDs or gene symbols. Returns chromosome, coordinates, gene type, Entrez ID, and description. Use when you already know the gene identifier. Inputs that match no gene are listed in `not_found` (`not_returned` when `truncated`).",
+          "description": "Retrieve detailed gene information from GTEx Portal for one or more GENCODE IDs or gene symbols. Returns chromosome, coordinates, gene type, Entrez ID, and description. Use when you already know the gene identifier. Inputs that match no gene are listed in `not_found` (`not_returned` when `truncated`); HGNC / NCBI Gene ids are not accepted (`unsupported_identifiers`).",
           "federated_name": "gtex_get_gene_information",
           "inputSchema": {
             "additionalProperties": false,
@@ -9451,7 +9451,7 @@
                 "description": "GENCODE annotation release to resolve against; omit for the server default (v26)."
               },
               "gene_id": {
-                "description": "One or more gene symbols or GENCODE IDs; symbols are auto-resolved (e.g. UMOD or ENSG00000169344.15).",
+                "description": "One or more gene symbols or GENCODE IDs; symbols are auto-resolved (e.g. UMOD or ENSG00000169344.15). For an HGNC or NCBI Gene id, call hgnc_resolve_symbol first.",
                 "examples": [
                   [
                     "BRCA1",
@@ -10005,7 +10005,13 @@
           ]
         },
         {
-          "annotations": null,
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false,
+            "readOnlyHint": true,
+            "title": null
+          },
           "description": "Return supported tools, datasets, the tissue vocabulary, recommended workflows, response modes, error codes, and limits. Compare `capabilities_version` to skip re-fetching when unchanged.",
           "federated_name": "gtex_get_server_capabilities",
           "inputSchema": {
@@ -10035,7 +10041,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-19T19:04:59.970326Z"
+        "updated_at": "2026-11-26T07:04:32.419054Z"
       },
       "domain": "Gene nomenclature",
       "entrypoints": [
@@ -10045,11 +10051,11 @@
       "name": "hgnc",
       "namespace": "hgnc",
       "release": {
-        "commit": "035303684d5e859c7d1fc21ccd659afad2d343bb",
+        "commit": "76612a254f8d4f54b0b1a63ef9e4af2012f275b5",
         "definitions_sha256": "17843ba4d1f1c6e00837230f01bd25982af465949c2457990a00b4ee77e81e54",
-        "image": "ghcr.io/berntpopp/hgnc-link@sha256:84bd576862ff022517efda0a4778eb65c60a3cb8d77f88cc784237e76b121fd6",
-        "tag": "v2.5.0",
-        "version": "2.5.0"
+        "image": "ghcr.io/berntpopp/hgnc-link@sha256:06240e4bc13e5f175c1649f9124751a7c5cd2c380ace536a2f7cdf5310baf9a5",
+        "tag": "v3.1.0",
+        "version": "3.1.0"
       },
       "repository": "berntpopp/hgnc-link",
       "repository_url": "https://github.com/berntpopp/hgnc-link",
@@ -10602,7 +10608,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-19T19:04:59.970326Z"
+        "updated_at": "2026-11-25T19:00:05.492170Z"
       },
       "domain": "Phenotype ontology & associations",
       "entrypoints": [
@@ -10614,11 +10620,11 @@
       "name": "hpo",
       "namespace": "hpo",
       "release": {
-        "commit": "9e916ca419798e123c4b0d836a124ec9e0281901",
-        "definitions_sha256": "4da2c61a869b63b411458a8ca3d48c902c0853c87bbe8e08c4e53aad45267778",
-        "image": "ghcr.io/berntpopp/hpo-link@sha256:4cdeb650e52ed6c9030d50f508ca93481bd94a9379d11db7fa901071af54381e",
-        "tag": "v0.12.0",
-        "version": "0.12.0"
+        "commit": "526c5e2ab1bfde43ef9c972e09f8cd784fb02cc9",
+        "definitions_sha256": "1050f305943ec281ea9119de7a09dc5a1a655e9edadedd6b33864f2d5254a092",
+        "image": "ghcr.io/berntpopp/hpo-link@sha256:8c5cf5bb3f3d1db33e16937ddf814b6a7c1f77421797c294356eed6c2d8b5e21",
+        "tag": "v0.16.1",
+        "version": "0.16.1"
       },
       "repository": "berntpopp/hpo-link",
       "repository_url": "https://github.com/berntpopp/hpo-link",
@@ -11166,7 +11172,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Resolve an external cross-reference CURIE (UMLS/SNOMEDCT_US/NCIT/MEDDRA/ICD-10/ICD-9/MONDO/DOID/ORPHA) back to the HPO term(s) that cross-reference it. Returns matches[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step (offset). Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
+          "description": "Resolve an external cross-reference CURIE (UMLS/SNOMEDCT_US/NCIT/MEDDRA/ICD-10/ICD-9/MONDO/DOID/ORPHA) back to the HPO term(s) that cross-reference it. Returns results[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step (offset). Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
           "federated_name": "hpo_resolve_xref",
           "inputSchema": {
             "additionalProperties": false,
@@ -11750,7 +11756,12 @@
                   }
                 ],
                 "default": null,
-                "description": "Phenotypes observed ABSENT. Reported as conflicts on each gene's best disease; they never lower a score."
+                "description": "Phenotypes observed ABSENT. Reported as conflicts on each gene's best disease; they never lower a score.",
+                "examples": [
+                  [
+                    "HP:0001250"
+                  ]
+                ]
               },
               "hpo_ids": {
                 "description": "Present patient phenotypes as HP ids (e.g. HP:0001250).",
@@ -11828,11 +11839,11 @@
       "name": "litvar",
       "namespace": "litvar",
       "release": {
-        "commit": "d36378732477071a97e4531adfa11ac3032231cb",
+        "commit": "b903ac9534a06ee0df3dfb2145f03fd85ed432c5",
         "definitions_sha256": "e1dcd0dd649fa061d18251f3608b72db796b64c9407c1f94c552ae810105b145",
-        "image": "ghcr.io/berntpopp/litvar-link@sha256:2335590aa45afd325c5eb7a58a17f486eac1b96496a499e223595a38f1f1cf4a",
-        "tag": "v6.3.2",
-        "version": "6.3.2"
+        "image": "ghcr.io/berntpopp/litvar-link@sha256:50c8da295e6b54673fdd80a89d54d0577318f881f45057a0b0d6b4cea4d2b4af",
+        "tag": "v6.4.1",
+        "version": "6.4.1"
       },
       "repository": "berntpopp/litvar-link",
       "repository_url": "https://github.com/berntpopp/litvar-link",
@@ -12135,7 +12146,7 @@
           "4.0.0"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-22T07:05:02.616712Z"
+        "updated_at": "2026-11-26T13:14:47.388247Z"
       },
       "domain": "Variant-effect assay scores",
       "entrypoints": [
@@ -12144,11 +12155,11 @@
       "name": "mavedb",
       "namespace": "mavedb",
       "release": {
-        "commit": "de44731f00c8845705fd4b12a1ce9ab82014a3a9",
-        "definitions_sha256": "cc65853b6ecc4da1d7d31583d813b6d7a4cbf5405b2c8d21a7d8e3a956d674bf",
-        "image": "ghcr.io/berntpopp/mavedb-link@sha256:3a6289491d8bc5cc80f7e3968a53d8b5a1133cef7c38ad98eaa4ac57cade8703",
-        "tag": "v0.7.3",
-        "version": "0.7.3"
+        "commit": "c381ccb4ba5239f8d12aa347b29f72e4d401e738",
+        "definitions_sha256": "1e3ee5830ac62f474fb330cbc5ad76b6e1dd856c98a47c8635e41fb55fae8115",
+        "image": "ghcr.io/berntpopp/mavedb-link@sha256:fff13ef286e0c825bcc867248a01f501d1838c78c361644f351b9facc18b9be3",
+        "tag": "v0.10.2",
+        "version": "0.10.2"
       },
       "repository": "berntpopp/mavedb-link",
       "repository_url": "https://github.com/berntpopp/mavedb-link",
@@ -12530,7 +12541,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Look up the functional score for ONE variant without paging the whole table. Pass a full variant URN (urn:mavedb:...-a-1#2) to resolve it directly, OR a score-set URN plus hgvs= (e.g. 'c.8168A>G' or 'p.Arg1699Trp') to scan that score set's table for the matching row(s). BOTH paths return the same shape: {urn, query, resolved_by, match_count, variants:[{variant_urn, variant_index, hgvs_nt, hgvs_pro, score, classifications?}], calibrations?}. mapped_variants are opt-in (standard/full) and current-only unless full. The fast path for 'what is the score (and calibrated class) for this variant?'. Signature: get_variant_score(urn, hgvs=, response_mode=).",
+          "description": "Look up the functional score for ONE variant without paging the whole table. Pass a full variant URN (urn:mavedb:...-a-1#2) to resolve it directly, OR a score-set URN plus hgvs= (e.g. 'c.8168A>G' or 'p.Arg1699Trp') to scan that score set's table for the matching row(s). BOTH paths return the same shape: {urn, query, resolved_by, match_count, results:[{variant_urn, variant_index, hgvs_nt, hgvs_pro, score, classifications?}], calibrations?}. mapped_variants are opt-in (standard/full) and current-only unless full. The fast path for 'what is the score (and calibrated class) for this variant?'. Signature: get_variant_score(urn, hgvs=, response_mode=).",
           "federated_name": "mavedb_get_variant_score",
           "inputSchema": {
             "additionalProperties": false,
@@ -13317,11 +13328,11 @@
       "name": "metadome",
       "namespace": "metadome",
       "release": {
-        "commit": "0f9a601b74fcc79a841623c7403a2a45a1f09ddb",
-        "definitions_sha256": "d2a832958ade521977a9b759659e287c50262bfcf169f07db63c17787f0834fe",
-        "image": "ghcr.io/berntpopp/metadome-link@sha256:7722805ff87f81c287f1e1dd36935428795b4484aa9183396669f58c707a7f85",
-        "tag": "v0.5.2",
-        "version": "0.5.2"
+        "commit": "16504b5faec94fac71c04604a228fd31785b9cfb",
+        "definitions_sha256": "fc8fa8c999fb0f69f7bc5ccb37bcdd79f5b4b72cfd6116c5712deb25ee5b54ce",
+        "image": "ghcr.io/berntpopp/metadome-link@sha256:afcaf55e3be484897602c514b4485977f95871a82d5f0db9ed147b591ba0ee96",
+        "tag": "v1.0.1",
+        "version": "1.0.1"
       },
       "repository": "berntpopp/metadome-link",
       "repository_url": "https://github.com/berntpopp/metadome-link",
@@ -13400,7 +13411,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Resolve a gene symbol or versioned ENST id to the MetaDome transcript (GRCh37 or GRCh38 build) to use for its missense tolerance landscape; for a gene returns its transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then request_tolerance_landscape.",
+          "description": "Resolve a gene symbol or versioned ENST id to the MetaDome transcript (GRCh37 or GRCh38 build) to use for its missense tolerance landscape; for a gene returns its transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then submit_tolerance_landscape.",
           "federated_name": "metadome_resolve_transcript",
           "inputSchema": {
             "additionalProperties": false,
@@ -13446,7 +13457,7 @@
             "title": null
           },
           "description": "Start the MetaDome tolerance-landscape build for a transcript (async, idempotent); returns job_id and status ready or processing. Cold builds can take up to ~1 h. Every read tool needs this first; then poll get_tolerance_landscape.",
-          "federated_name": "metadome_request_tolerance_landscape",
+          "federated_name": "metadome_submit_tolerance_landscape",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
@@ -13472,7 +13483,7 @@
             ],
             "type": "object"
           },
-          "name": "request_tolerance_landscape",
+          "name": "submit_tolerance_landscape",
           "outputSchema": null,
           "tags": [
             "domain",
@@ -13490,7 +13501,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Get per-residue missense tolerance (sw_dn_ds, lower = more intolerant) and Pfam domains for a transcript, paginated. Call request_tolerance_landscape first. status processing with poll_after_s is not an error: wait and poll again. not_found = MetaDome has no landscape or build job for the id.",
+          "description": "Get per-residue missense tolerance (sw_dn_ds, lower = more intolerant) and Pfam domains for a transcript, paginated. Call submit_tolerance_landscape first. status processing with poll_after_s is not an error: wait and poll again. not_found = MetaDome has no landscape or build job for the id.",
           "federated_name": "metadome_get_tolerance_landscape",
           "inputSchema": {
             "additionalProperties": false,
@@ -13564,7 +13575,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Get the tolerance score, Pfam domain and ClinVar variants at one protein residue. Needs a built landscape (request_tolerance_landscape). For several residues use compare_positions.",
+          "description": "Get the tolerance score, Pfam domain and ClinVar variants at one protein residue. Needs a built landscape (submit_tolerance_landscape). For several residues use compare_positions.",
           "federated_name": "metadome_get_position_tolerance",
           "inputSchema": {
             "additionalProperties": false,
@@ -13619,7 +13630,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Get residue ClinVar variants plus Pfam meta-domain homolog aggregates for one residue or a range. Aggregates can include other genes; MetaDome has no per-residue gnomAD counts. Needs a built landscape (request_tolerance_landscape).",
+          "description": "Get residue ClinVar variants plus Pfam meta-domain homolog aggregates for one residue or a range. Aggregates can include other genes; MetaDome has no per-residue gnomAD counts. Needs a built landscape (submit_tolerance_landscape).",
           "federated_name": "metadome_get_variant_counts",
           "inputSchema": {
             "additionalProperties": false,
@@ -13712,7 +13723,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Compare several residues of one transcript; returns a side-by-side tolerance, domain and ClinVar table. Needs a built landscape (request_tolerance_landscape). For one residue use get_position_tolerance.",
+          "description": "Compare several residues of one transcript; returns a side-by-side tolerance, domain and ClinVar table. Needs a built landscape (submit_tolerance_landscape). For one residue use get_position_tolerance.",
           "federated_name": "metadome_compare_positions",
           "inputSchema": {
             "additionalProperties": false,
@@ -13773,7 +13784,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "List Pfam domains (id, name, residue range) of a transcript. Needs a built landscape (request_tolerance_landscape). Then get_meta_domain for homolog variants.",
+          "description": "List Pfam domains (id, name, residue range) of a transcript. Needs a built landscape (submit_tolerance_landscape). Then get_meta_domain for homolog variants.",
           "federated_name": "metadome_get_protein_domains",
           "inputSchema": {
             "additionalProperties": false,
@@ -13818,7 +13829,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Get variants at the aligned position of homologous Pfam domains (meta-domain) for one residue; these span other genes, not this gene alone. Needs a built landscape (request_tolerance_landscape). Paginated.",
+          "description": "Get variants at the aligned position of homologous Pfam domains (meta-domain) for one residue; these span other genes, not this gene alone. Needs a built landscape (submit_tolerance_landscape). Paginated.",
           "federated_name": "metadome_get_meta_domain",
           "inputSchema": {
             "additionalProperties": false,
@@ -13911,8 +13922,8 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Find ranked runs of missense-intolerant residues (sw_dn_ds below threshold) with Pfam overlap and scoped variant evidence. Needs a built landscape (request_tolerance_landscape). For raw per-residue scores use get_tolerance_landscape.",
-          "federated_name": "metadome_summarize_intolerant_regions",
+          "description": "Find ranked runs of missense-intolerant residues (sw_dn_ds below threshold) with Pfam overlap and scoped variant evidence. Needs a built landscape (submit_tolerance_landscape). For raw per-residue scores use get_tolerance_landscape.",
+          "federated_name": "metadome_find_intolerant_regions",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
@@ -13956,7 +13967,7 @@
             ],
             "type": "object"
           },
-          "name": "summarize_intolerant_regions",
+          "name": "find_intolerant_regions",
           "outputSchema": null,
           "tags": [
             "analysis",
@@ -13979,7 +13990,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-19T07:06:49.809946Z"
+        "updated_at": "2026-11-26T07:04:32.419054Z"
       },
       "domain": "Mouse phenotype & models",
       "entrypoints": [
@@ -13988,11 +13999,11 @@
       "name": "mgi",
       "namespace": "mgi",
       "release": {
-        "commit": "d9c870ac183797f8912d267cf3c643cc69756be6",
-        "definitions_sha256": "432a24e962db4308fcd2714bc6526bcf3e8c956185ad935fe0ab1afdc8f7510b",
-        "image": "ghcr.io/berntpopp/mgi-link@sha256:5124debb36e278da948225ad4fe3c87fda35afc75f89bda9534beac8ce6cc3eb",
-        "tag": "v0.8.3",
-        "version": "0.8.3"
+        "commit": "016aa1cd16de469cf24bf3f3cf10d361b3864f2d",
+        "definitions_sha256": "fa7190cb3fb4ad90e7b055f1b6ab7b4744fb61b4c541d87cae962882bffac6e0",
+        "image": "ghcr.io/berntpopp/mgi-link@sha256:958991771c3a2045e00e7d856dbdcb497927ef02804c8a29a500bf4169680909",
+        "tag": "v0.10.1",
+        "version": "0.10.1"
       },
       "repository": "berntpopp/mgi-link",
       "repository_url": "https://github.com/berntpopp/mgi-link",
@@ -14076,7 +14087,7 @@
             "additionalProperties": false,
             "properties": {
               "query": {
-                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
                 "examples": [
                   "Wt1",
                   "MGI:98968",
@@ -14126,7 +14137,7 @@
             "additionalProperties": false,
             "properties": {
               "query": {
-                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
                 "examples": [
                   "Wt1",
                   "MGI:98968",
@@ -14320,7 +14331,7 @@
                 "type": "integer"
               },
               "query": {
-                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
                 "examples": [
                   "Wt1",
                   "MGI:98968",
@@ -14390,7 +14401,7 @@
                 "description": "Optional top-level MP system filter (name or MP id)."
               },
               "query": {
-                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
                 "examples": [
                   "Wt1",
                   "MGI:98968",
@@ -14439,7 +14450,7 @@
             "additionalProperties": false,
             "properties": {
               "query": {
-                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
                 "examples": [
                   "Wt1",
                   "MGI:98968",
@@ -14526,7 +14537,7 @@
             "additionalProperties": false,
             "properties": {
               "query": {
-                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
                 "examples": [
                   "Wt1",
                   "MGI:98968",
@@ -14577,7 +14588,7 @@
             "additionalProperties": false,
             "properties": {
               "query": {
-                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+                "description": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
                 "examples": [
                   "Wt1",
                   "MGI:98968",
@@ -14696,18 +14707,18 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-19T07:06:49.809946Z"
+        "updated_at": "2026-11-26T07:04:32.419054Z"
       },
       "domain": "Mitochondrial DNA (mtDNA) variants & disease associations",
       "entrypoints": [],
       "name": "mitomap",
       "namespace": "mitomap",
       "release": {
-        "commit": "068f83646b8b56f5ba8f4ec033e078bd6c397d1e",
+        "commit": "0d251a6cef9c11f9dc57d66380903cc3ba55460a",
         "definitions_sha256": "7e34cc3274e5079612e56a9e12852eab55dac23db9b25dcbb1bd0ca5bc3f987f",
-        "image": "ghcr.io/berntpopp/mitomap-link@sha256:4302ae56d10d763a036a69c836fa8f48feb98e935b9dc11d233da96054cca305",
-        "tag": "v0.3.0",
-        "version": "0.3.0"
+        "image": "ghcr.io/berntpopp/mitomap-link@sha256:f7ff75cb596952dd80a7e0b73e3afc372a616ba14c4c44cf5e8f7890bbac5dbc",
+        "tag": "v0.4.1",
+        "version": "0.4.1"
       },
       "repository": "berntpopp/mitomap-link",
       "repository_url": "https://github.com/berntpopp/mitomap-link",
@@ -15013,11 +15024,11 @@
       "name": "moalmanac",
       "namespace": "moalmanac",
       "release": {
-        "commit": "bf5064ab7dab4f4f0a2453f9b254c8d95c414fed",
+        "commit": "83eba54f5779a347ba7013504c58b19d42f65a95",
         "definitions_sha256": "ca6799cc8883eca4c64d951f6be280bc938f02d9e612c105912bfd43c8fd5df9",
-        "image": "ghcr.io/berntpopp/moalmanac-link@sha256:70e106ccdfdd03f4c79ffe994d283a77c717466b968d1418f1d68a028ff27de7",
-        "tag": "v0.2.2",
-        "version": "0.2.2"
+        "image": "ghcr.io/berntpopp/moalmanac-link@sha256:b7b4ce42494b9f9c613872f53512d68d659e73b220067454c8f779ad3f6bce3f",
+        "tag": "v0.4.0",
+        "version": "0.4.0"
       },
       "repository": "berntpopp/moalmanac-link",
       "repository_url": "https://github.com/berntpopp/moalmanac-link",
@@ -15376,7 +15387,7 @@
           "4"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-22T12:38:44.472703Z"
+        "updated_at": "2026-11-26T07:04:32.419054Z"
       },
       "domain": "Disease ontology / cross-references",
       "entrypoints": [
@@ -15386,11 +15397,11 @@
       "name": "mondo",
       "namespace": "mondo",
       "release": {
-        "commit": "5526f1b04f147d2aa2c9877afd171ee03ac18f73",
+        "commit": "6cc622888fe505e274d73f02e24978ebfeca3181",
         "definitions_sha256": "c80a97d29693626c50cae22040fb58c2208f72500c5d22d12322448ce351cb08",
-        "image": "ghcr.io/berntpopp/mondo-link@sha256:741aaa96e0469854a673c100b4bd3ace626b6df96692f2255e49dbff6c150730",
-        "tag": "v0.11.3",
-        "version": "0.11.3"
+        "image": "ghcr.io/berntpopp/mondo-link@sha256:54bb561be168107097b267047356de6662f79f5c33d1308be261f564b7448bff",
+        "tag": "v0.13.1",
+        "version": "0.13.1"
       },
       "repository": "berntpopp/mondo-link",
       "repository_url": "https://github.com/berntpopp/mondo-link",
@@ -16149,11 +16160,11 @@
       "name": "opentargets",
       "namespace": "opentargets",
       "release": {
-        "commit": "cd3e8c894267716f00f811a3e71cbdc6e4bfc769",
+        "commit": "84c77fef5f5e8338b4dff947d92878ee28934645",
         "definitions_sha256": "f86b3ee917b1ffbd3d9d4892cf9d0ba29ab3ba9de5c3982343ac7f6c66e83ba0",
-        "image": "ghcr.io/berntpopp/opentargets-link@sha256:c6ca7da138648169f8a89b4714951bb74654eae3be2422f0c1a90b96de9364ad",
-        "tag": "v0.1.1",
-        "version": "0.1.1"
+        "image": "ghcr.io/berntpopp/opentargets-link@sha256:18d2bb9a2ac83e3917fd5f36743d21f1fe3297ca8b03b6a7f2947f256d84ddfe",
+        "tag": "v0.3.1",
+        "version": "0.3.1"
       },
       "repository": "berntpopp/opentargets-link",
       "repository_url": "https://github.com/berntpopp/opentargets-link",
@@ -16580,7 +16591,7 @@
           "1"
         ],
         "status": "attested-reference",
-        "updated_at": "2026-11-19T19:04:59.970326Z"
+        "updated_at": "2026-11-25T19:00:05.492170Z"
       },
       "domain": "Rare disease ontology & associations",
       "entrypoints": [
@@ -16589,11 +16600,11 @@
       "name": "orphanet",
       "namespace": "orphanet",
       "release": {
-        "commit": "4e286af2e0e443183f37b35ae86ac4c7f16c0d25",
-        "definitions_sha256": "32a99db91857680e6a4f5162754ffc514f21952f829f0a6070cc0cfb7e6f5184",
-        "image": "ghcr.io/berntpopp/orphanet-link@sha256:7afd3202036778a5f75731cfa64825586b800c051dfcbab5009736ee0fc5558a",
-        "tag": "v0.7.0",
-        "version": "0.7.0"
+        "commit": "1dfd32d0e2beed84638f74bff57a54e2a9633218",
+        "definitions_sha256": "23120ab23fd1f12c4af1be15b162d23c8d4ab77f2ea022a38977aa442f7214db",
+        "image": "ghcr.io/berntpopp/orphanet-link@sha256:5bffcecc81017296988a6e0ec37548dd5891bf74923c8ffa0c9a1045a49846c8",
+        "tag": "v0.10.1",
+        "version": "0.10.1"
       },
       "repository": "berntpopp/orphanet-link",
       "repository_url": "https://github.com/berntpopp/orphanet-link",
@@ -17518,7 +17529,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Resolve an external cross-reference CURIE (OMIM/MONDO/ICD-10/ICD-11/UMLS/GARD/MeSH/MedDRA) back to the Orphanet disorder(s) that map to it. Returns matches[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step. Miss semantics (list-shaped, unlike resolve_disease): a malformed CURIE is rejected with invalid_input, while a well-formed but unmapped CURIE returns an empty page (total: 0), not not_found. Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
+          "description": "Resolve an external cross-reference CURIE (OMIM/MONDO/ICD-10/ICD-11/UMLS/GARD/MeSH/MedDRA) back to the Orphanet disorder(s) that map to it. Returns results[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step. Miss semantics (list-shaped, unlike resolve_disease): a malformed CURIE is rejected with invalid_input, while a well-formed but unmapped CURIE returns an empty page (total: 0), not not_found. Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
           "federated_name": "orphanet_resolve_xref",
           "inputSchema": {
             "additionalProperties": false,
@@ -17584,7 +17595,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "List an Orphanet disorder's cross-references to other ontologies, grouped by source (OMIM/MONDO/ICD-10/ICD-11/UMLS/GARD/MeSH/MedDRA), each with its mapping relation. Returns them under `mappings` (get_disease returns the same data under `xrefs`). Use prefixes=['OMIM'] to restrict to a subset of sources. count is the number of leaf mapping rows (individual targets), not the number of source groups. Signature: map_cross_ontology(term, prefixes=, response_mode=).",
+          "description": "List an Orphanet disorder's cross-references to other ontologies, grouped by source (OMIM/MONDO/ICD-10/ICD-11/UMLS/GARD/MeSH/MedDRA), each with its mapping relation. Returns them under `result` (get_disease returns the same data under `result.xrefs`). Use prefixes=['OMIM'] to restrict to a subset of sources. count is the number of leaf mapping rows (individual targets), not the number of source groups. Signature: map_cross_ontology(term, prefixes=, response_mode=).",
           "federated_name": "orphanet_map_cross_ontology",
           "inputSchema": {
             "additionalProperties": false,
@@ -17816,11 +17827,11 @@
       "name": "panelapp",
       "namespace": "panelapp",
       "release": {
-        "commit": "31835ab497fc5c0ce6c278d692c9948991b3e05c",
-        "definitions_sha256": "04f72aebcb0ef65d0ed0fb802342a5edcfc827a107d5960bf2db1d991428cc8e",
-        "image": "ghcr.io/berntpopp/panelapp-link@sha256:f120bcfef85047f2bf9ffa9fac134b22c6ca92ac4965cc21cd7a05a1b1473b92",
-        "tag": "v0.9.1",
-        "version": "0.9.1"
+        "commit": "ffc17b65fcbb1e0bfe3cd6fc6180f05aa18c8dd5",
+        "definitions_sha256": "312b9225b25b11a5bfb5070eee79bcad79aed3b16f345e108ac6195968e6609e",
+        "image": "ghcr.io/berntpopp/panelapp-link@sha256:45230486e244ad78a34556486426a97723672af84ac310e9841ca1632a31d3cf",
+        "tag": "v0.11.1",
+        "version": "0.11.1"
       },
       "repository": "berntpopp/panelapp-link",
       "repository_url": "https://github.com/berntpopp/panelapp-link",
@@ -18098,7 +18109,7 @@
             "additionalProperties": false,
             "properties": {
               "gene_symbol": {
-                "description": "Approved gene symbol (e.g. PKD1). Required: PanelApp queries by symbol.",
+                "description": "Approved gene symbol (e.g. PKD1). Required: PanelApp queries by symbol; an HGNC, Ensembl or NCBI Gene id is rejected with the call that converts it.",
                 "examples": [
                   "SCN1A"
                 ],
@@ -18183,7 +18194,7 @@
             "additionalProperties": false,
             "properties": {
               "query": {
-                "description": "Approved gene symbol or free text to resolve to one rolled-up gene (e.g. SCN1A). An HGNC id is not a lookup key here.",
+                "description": "Approved gene symbol or free text to resolve to one rolled-up gene (e.g. SCN1A). An HGNC, Ensembl or NCBI Gene id is not a lookup key here: it is rejected with the call that converts it.",
                 "examples": [
                   "SCN1A"
                 ],
@@ -18349,7 +18360,7 @@
             "additionalProperties": false,
             "properties": {
               "gene_symbols": {
-                "description": "Approved gene symbols (e.g. PKD1); capped at 20 per call.",
+                "description": "Approved gene symbols (e.g. PKD1); capped at 20 per call. An HGNC, Ensembl or NCBI Gene id is listed under `unsupported` with the call that converts it.",
                 "examples": [
                   [
                     "SCN1A",
@@ -18455,288 +18466,7 @@
             "type": "object"
           },
           "name": "get_panelapp_diagnostics",
-          "outputSchema": {
-            "additionalProperties": true,
-            "properties": {
-              "_meta": {
-                "additionalProperties": true,
-                "description": "Per-call envelope metadata.",
-                "properties": {
-                  "cache": {
-                    "enum": [
-                      "hit",
-                      "miss",
-                      "coalesced",
-                      "partial"
-                    ],
-                    "type": "string"
-                  },
-                  "citation_ref": {
-                    "type": "string"
-                  },
-                  "citation_short": {
-                    "type": "string"
-                  },
-                  "data_freshness": {
-                    "additionalProperties": true,
-                    "description": "Panel-list generation freshness and background refresh state.",
-                    "properties": {
-                      "age_seconds": {
-                        "type": [
-                          "number",
-                          "null"
-                        ]
-                      },
-                      "consecutive_failures": {
-                        "type": "integer"
-                      },
-                      "enabled": {
-                        "type": "boolean"
-                      },
-                      "failures_total": {
-                        "type": "integer"
-                      },
-                      "interval_seconds": {
-                        "type": "integer"
-                      },
-                      "last_attempt_at": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "last_error_type": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "last_successful_refresh_at": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "status": {
-                        "enum": [
-                          "disabled",
-                          "initializing",
-                          "healthy",
-                          "degraded",
-                          "stale"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "type": "object"
-                  },
-                  "data_license": {
-                    "type": "string"
-                  },
-                  "elapsed_ms": {
-                    "type": "number"
-                  },
-                  "next_commands": {
-                    "items": {
-                      "additionalProperties": false,
-                      "properties": {
-                        "arguments": {
-                          "additionalProperties": true,
-                          "type": "object"
-                        },
-                        "tool": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "arguments",
-                        "tool"
-                      ],
-                      "type": "object"
-                    },
-                    "type": "array"
-                  },
-                  "recommended_citation": {
-                    "type": "string"
-                  },
-                  "request_id": {
-                    "type": "string"
-                  },
-                  "response_mode": {
-                    "type": "string"
-                  },
-                  "tool": {
-                    "type": "string"
-                  },
-                  "unsafe_for_clinical_use": {
-                    "type": "boolean"
-                  },
-                  "upstream": {
-                    "additionalProperties": {
-                      "additionalProperties": true,
-                      "properties": {
-                        "calls": {
-                          "type": "integer"
-                        },
-                        "ms": {
-                          "type": "number"
-                        }
-                      },
-                      "type": "object"
-                    },
-                    "description": "Per-region upstream fetch timing for this call ({calls, ms}).",
-                    "type": "object"
-                  },
-                  "upstream_ms": {
-                    "type": "number"
-                  }
-                },
-                "type": "object"
-              },
-              "capabilities_version": {
-                "type": "string"
-              },
-              "data": {
-                "additionalProperties": true,
-                "description": "Live backend status, cache stats, and the RED metrics snapshot.",
-                "properties": {
-                  "cache": {
-                    "additionalProperties": true,
-                    "type": "object"
-                  },
-                  "cache_ttl_seconds": {
-                    "type": "integer"
-                  },
-                  "metrics": {
-                    "additionalProperties": true,
-                    "description": "Process-wide RED aggregates (also at GET /metrics).",
-                    "properties": {
-                      "cache": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      },
-                      "errors_by_code": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      },
-                      "errors_total": {
-                        "type": "integer"
-                      },
-                      "requests_by_tool": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      },
-                      "requests_total": {
-                        "type": "integer"
-                      },
-                      "tool_duration_ms": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      },
-                      "upstream_duration_ms": {
-                        "additionalProperties": true,
-                        "type": "object"
-                      }
-                    },
-                    "type": "object"
-                  },
-                  "mode": {
-                    "type": "string"
-                  },
-                  "refresh": {
-                    "additionalProperties": true,
-                    "description": "Panel-list generation freshness and background refresh state.",
-                    "properties": {
-                      "age_seconds": {
-                        "type": [
-                          "number",
-                          "null"
-                        ]
-                      },
-                      "consecutive_failures": {
-                        "type": "integer"
-                      },
-                      "enabled": {
-                        "type": "boolean"
-                      },
-                      "failures_total": {
-                        "type": "integer"
-                      },
-                      "interval_seconds": {
-                        "type": "integer"
-                      },
-                      "last_attempt_at": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "last_error_type": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "last_successful_refresh_at": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "status": {
-                        "enum": [
-                          "disabled",
-                          "initializing",
-                          "healthy",
-                          "degraded",
-                          "stale"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "type": "object"
-                  },
-                  "sources": {
-                    "additionalProperties": true,
-                    "type": "object"
-                  }
-                },
-                "type": "object"
-              },
-              "error_code": {
-                "type": "string"
-              },
-              "field_errors": {
-                "items": {
-                  "additionalProperties": true,
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              "headline": {
-                "type": "string"
-              },
-              "message": {
-                "type": "string"
-              },
-              "recovery_action": {
-                "type": "string"
-              },
-              "retryable": {
-                "type": "boolean"
-              },
-              "server_version": {
-                "type": "string"
-              },
-              "success": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "success"
-            ],
-            "type": "object"
-          },
+          "outputSchema": null,
           "tags": [
             "curation",
             "discovery",
@@ -18761,11 +18491,11 @@
       "name": "pgscatalog",
       "namespace": "pgscatalog",
       "release": {
-        "commit": "1a58b2aec27ff2c981ac80bd00e26315446871fe",
+        "commit": "d7855c22e24a3b3dc5e70a0e1177da9c46b9df03",
         "definitions_sha256": "9fbadb38ae587ab99f46ea86ab92e82bce634155a6b815377a2a8dc266734c43",
-        "image": "ghcr.io/berntpopp/pgscatalog-link@sha256:fc6aa18acc37648df82fa84b8180f98ebaa5a094bc98ca76a41abdbabff45473",
-        "tag": "v0.3.3",
-        "version": "0.3.3"
+        "image": "ghcr.io/berntpopp/pgscatalog-link@sha256:aade5dd6c456aaffebdab1662431e2053ea8fcafae3e738cc6284b8e26604daf",
+        "tag": "v0.5.1",
+        "version": "0.5.1"
       },
       "repository": "berntpopp/pgscatalog-link",
       "repository_url": "https://github.com/berntpopp/pgscatalog-link",
@@ -19230,11 +18960,11 @@
       "name": "pubtator",
       "namespace": "pubtator",
       "release": {
-        "commit": "aeb6c138e8c37835ba16944cdc65f143d6c73730",
-        "definitions_sha256": "9f02a9da48778e57f726ffb4381e4d8a9eecddd6a15f86557b8694dd2287b579",
-        "image": "ghcr.io/berntpopp/pubtator-link@sha256:90e5538e476bb2e229a8b32bc8337b1b522ce19170a69d00a76e4a778979d87a",
-        "tag": "v7.7.4",
-        "version": "7.7.4"
+        "commit": "773623a003b35af71e89a3fd8e0694134be0e2d9",
+        "definitions_sha256": "4745151b24524a4858afebac59b84f1660cb20be0cd89e9915269a49ff8eab96",
+        "image": "ghcr.io/berntpopp/pubtator-link@sha256:46e8a90de3e99df2698de5d9db310def2fc288bb3e7250522376184577c96bce",
+        "tag": "v8.0.2",
+        "version": "8.0.2"
       },
       "repository": "berntpopp/pubtator-link",
       "repository_url": "https://github.com/berntpopp/pubtator-link",
@@ -19253,13 +18983,13 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a client needs supported tools, transports, formats, and limitations; returns those lists in one capability record. Do not use this for task-specific workflow guidance; use workflow_help. Next: workflow_help.",
+          "description": "Use this when a client needs supported tools, transports, formats and limitations; returns one capability record. Not for workflow guidance. Next: workflow_help.",
           "federated_name": "pubtator_get_server_capabilities",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "details": {
-                "description": "Optional capability sections to expand (e.g. 'tools', 'workflow_help'); omit for the default summary.",
+                "description": "Capability sections to expand; omit for the summary.",
                 "examples": [
                   [
                     "tools",
@@ -19300,14 +19030,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a fresh context needs the canonical PubTator-Link research workflow: returns ordered workflow steps with the tool to call at each.",
+          "description": "Use this when a fresh context needs the canonical research workflow; returns ordered steps with the tool to call at each.",
           "federated_name": "pubtator_workflow_help",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "task": {
                 "default": "clinical_genetics_review",
-                "description": "Workflow to describe; defaults to the canonical 'clinical_genetics_review' pipeline.",
+                "description": "Workflow to describe.",
                 "examples": [
                   "clinical_genetics_review"
                 ],
@@ -19332,14 +19062,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs PubMed biomedical literature search via PubTator3: returns ranked articles (PMID, title, journal, year, citation). Supports flat and section filters and coverage='preflight'. If preflight_error_code is coverage_preflight_internal_error, retryable=false: continue with results or inspect diagnostics.",
+          "description": "Use this when a user needs PubMed literature search via PubTator3; returns ranked articles (PMID, title, journal, year, citation). On preflight_error_code coverage_preflight_internal_error (retryable=false) continue with the results.",
           "federated_name": "pubtator_search_literature",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "coverage": {
                 "default": "none",
-                "description": "'none' (default) or 'preflight' to attach source-coverage hints.",
+                "description": "'preflight' attaches source-coverage hints.",
                 "enum": [
                   "none",
                   "preflight"
@@ -19347,7 +19077,7 @@
                 "type": "string"
               },
               "entity_ids": {
-                "description": "Restrict to articles mentioning these PubTator entity IDs (resolve them first with search_biomedical_entities), AND-combined with the query.",
+                "description": "PubTator entity IDs (from search_biomedical_entities) articles must mention; AND-ed with the query.",
                 "examples": [
                   [
                     "@GENE_BRCA1"
@@ -19373,16 +19103,16 @@
                   }
                 ],
                 "default": null,
-                "description": "Filter object (or JSON string), e.g. {\"type\":[\"Retracted Publication\"]}; keys type/journal/year. Prefer publication_types/year_min/year_max."
+                "description": "Filter object or JSON (keys type/journal/year), e.g. {\"type\":[\"Review\"]}; prefer publication_types/year_min/year_max."
               },
               "guideline_boost": {
                 "default": false,
-                "description": "Boost guideline / systematic-review / consensus articles in ranking.",
+                "description": "Boost guideline/systematic-review/consensus articles.",
                 "type": "boolean"
               },
               "include_citations": {
                 "default": "none",
-                "description": "Citation rendering per hit: 'none' (default), 'nlm', 'bibtex', or 'both'.",
+                "description": "Citation format per hit.",
                 "enum": [
                   "none",
                   "nlm",
@@ -19393,19 +19123,19 @@
               },
               "include_meta": {
                 "default": true,
-                "description": "Include the _meta orientation block (next_commands, provenance).",
+                "description": "Include the _meta block (next_commands, provenance).",
                 "type": "boolean"
               },
               "limit": {
                 "default": 5,
-                "description": "Max hits to return, at most the rest of `page`; `returned` and `has_more` report what was cut.",
+                "description": "Max hits, at most the rest of `page`; see `returned`/`has_more`.",
                 "maximum": 20,
                 "minimum": 1,
                 "type": "integer"
               },
               "metadata": {
                 "default": "basic",
-                "description": "Metadata enrichment per hit: 'none', 'basic' (default), 'with_abstract' (abstract preview, max 640 chars), or 'full'.",
+                "description": "Per-hit metadata; 'with_abstract' adds an abstract preview (max 640 chars).",
                 "enum": [
                   "none",
                   "basic",
@@ -19416,20 +19146,20 @@
               },
               "offset": {
                 "default": 0,
-                "description": "0-based start position inside `page`; set it from `next_offset`.",
+                "description": "0-based start within `page`, from `next_offset`.",
                 "maximum": 99,
                 "minimum": 0,
                 "type": "integer"
               },
               "page": {
                 "default": 1,
-                "description": "1-based PubTator3 result page (10 hits each). To continue, use `next_page`/`next_offset` from the previous response.",
+                "description": "1-based result page (10 hits each); continue with `next_page`/`next_offset`.",
                 "maximum": 1000,
                 "minimum": 1,
                 "type": "integer"
               },
               "publication_types": {
-                "description": "Restrict to these PubMed publication types (case-sensitive, Title-Case), AND-combined with the query.",
+                "description": "PubMed publication types (Title-Case), AND-ed with the query.",
                 "examples": [
                   [
                     "Review",
@@ -19462,7 +19192,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Payload verbosity: 'compact' (default, LLM-friendly), 'standard', or 'full'.",
+                "description": "Payload verbosity.",
                 "enum": [
                   "compact",
                   "standard",
@@ -19471,7 +19201,7 @@
                 "type": "string"
               },
               "sections": {
-                "description": "Restrict the text match to these article sections (lowercase, case-sensitive).",
+                "description": "Article sections to match the text in.",
                 "examples": [
                   [
                     "title",
@@ -19492,11 +19222,11 @@
                 "type": "array"
               },
               "sort": {
-                "description": "Sort order. Accepts 'date desc' (newest first), 'score desc' (relevance, default), or '_id desc'. Synonyms such as 'date' or 'relevance' are normalized; PubTator3 sorts descending only.",
+                "description": "'score desc' (relevance, default), 'date desc' (newest first) or '_id desc'; descending only.",
                 "type": "string"
               },
               "text": {
-                "description": "Free-text PubMed/PubTator3 query: entity names, gene symbols, HGVS, or a natural-language topic. PubTator3 matches across title, abstract, and, for open-access articles, full text.",
+                "description": "PubMed query: entity names, gene symbols, HGVS or a topic; matches title, abstract and open-access full text.",
                 "examples": [
                   "BRCA1 ovarian cancer PARP inhibitor"
                 ],
@@ -19506,7 +19236,7 @@
               },
               "text_hl_format": {
                 "default": "plain",
-                "description": "Match-highlight rendering: 'none', 'plain' (default), or 'annotated'.",
+                "description": "Match-highlight format.",
                 "enum": [
                   "none",
                   "plain",
@@ -19547,14 +19277,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs guideline, recommendation, consensus, or systematic review papers for a biomedical research question; returns ranked candidate PMIDs with titles. Wraps search_literature with guideline/systematic-review filters and guideline boosting; not an independent guideline database.",
+          "description": "Use this when a user needs guideline, consensus or systematic-review papers for a research question; returns ranked candidate PMIDs with titles. Wraps search_literature with guideline filters and boosting; not a guideline database.",
           "federated_name": "pubtator_search_guidelines",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "coverage": {
                 "default": "preflight",
-                "description": "'preflight' (default) or 'none' to skip source-coverage hints.",
+                "description": "'none' skips source-coverage hints.",
                 "enum": [
                   "none",
                   "preflight"
@@ -19562,7 +19292,7 @@
                 "type": "string"
               },
               "entity_ids": {
-                "description": "Restrict to articles mentioning these PubTator entity IDs (resolve them first with search_biomedical_entities).",
+                "description": "PubTator entity IDs (from search_biomedical_entities) articles must mention.",
                 "examples": [
                   [
                     "@GENE_BRCA1"
@@ -19583,20 +19313,20 @@
               },
               "offset": {
                 "default": 0,
-                "description": "0-based start position inside `page`; set it from `next_offset`.",
+                "description": "0-based start within `page`, from `next_offset`.",
                 "maximum": 99,
                 "minimum": 0,
                 "type": "integer"
               },
               "page": {
                 "default": 1,
-                "description": "1-based PubTator3 result page (10 hits each). To continue, use `next_page`/`next_offset` from the previous response.",
+                "description": "1-based result page (10 hits each); continue with `next_page`/`next_offset`.",
                 "maximum": 1000,
                 "minimum": 1,
                 "type": "integer"
               },
               "sections": {
-                "description": "Restrict the text match to these article sections (lowercase).",
+                "description": "Article sections to match the text in.",
                 "examples": [
                   [
                     "title",
@@ -19617,7 +19347,7 @@
                 "type": "array"
               },
               "text": {
-                "description": "Free-text research question to find guideline, recommendation, consensus, or systematic-review articles for.",
+                "description": "Research question to find guideline, consensus or systematic-review articles for.",
                 "examples": [
                   "asthma treatment adults"
                 ],
@@ -19658,13 +19388,13 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs canonical PubTator biomedical entity IDs for genes, diseases, chemicals, species, variants, or cell lines; returns matching entity IDs with names and types.",
+          "description": "Use this when a user needs canonical PubTator entity IDs for genes, diseases, chemicals, species, variants or cell lines; returns matching IDs with names and types.",
           "federated_name": "pubtator_search_biomedical_entities",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "concept": {
-                "description": "Restrict autocomplete to one PubTator concept type; omit for all types.",
+                "description": "Concept type to restrict to; omit for all.",
                 "enum": [
                   "Gene",
                   "Disease",
@@ -19684,7 +19414,7 @@
                 "type": "integer"
               },
               "query": {
-                "description": "Entity name or fragment to resolve, e.g. a gene symbol or disease name.",
+                "description": "Entity name or fragment, e.g. a gene symbol.",
                 "examples": [
                   "TP53"
                 ],
@@ -19712,13 +19442,13 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user has a PubTator entity ID and needs literature-derived related entities to expand a corpus; returns related PubTator entity IDs with relation types. Do not use this for canonical entity lookup; use search_biomedical_entities. Next: search_literature.",
+          "description": "Use this when a user has a PubTator entity ID and needs literature-derived related entities; returns related entity IDs with relation types. For ID lookup use search_biomedical_entities. Next: search_literature.",
           "federated_name": "pubtator_find_entity_relations",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "entity_id": {
-                "description": "PubTator entity ID to expand from, e.g. @CHEMICAL_remdesivir (resolve names with search_biomedical_entities first).",
+                "description": "PubTator entity ID to expand (from search_biomedical_entities).",
                 "examples": [
                   "@CHEMICAL_remdesivir"
                 ],
@@ -19740,7 +19470,7 @@
                 "type": "integer"
               },
               "relation_type": {
-                "description": "Optional relation type to keep, e.g. 'treat', 'cause', 'associate'; omit for all relation types.",
+                "description": "Relation type to keep; omit for all.",
                 "enum": [
                   "treat",
                   "cause",
@@ -19760,7 +19490,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Payload verbosity: 'compact' (default), 'standard', or 'full'.",
+                "description": "Payload verbosity.",
                 "enum": [
                   "compact",
                   "standard",
@@ -19769,7 +19499,7 @@
                 "type": "string"
               },
               "target_entity_type": {
-                "description": "Optional target concept type to keep, e.g. 'Disease' or 'Chemical'; omit for all target types.",
+                "description": "Target concept type to keep; omit for all.",
                 "enum": [
                   "Gene",
                   "Disease",
@@ -19802,13 +19532,13 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs source-attributed variant records and literature evidence for a gene and variant; returns source-attributed variant records plus PMID literature evidence. Does not compute clinical classification.",
+          "description": "Use this when a user needs evidence for a gene variant; returns source-attributed variant records plus PMID literature evidence. No clinical classification.",
           "federated_name": "pubtator_get_variant_evidence",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "condition": {
-                "description": "Optional condition/phenotype to scope the evidence.",
+                "description": "Condition/phenotype to scope the evidence.",
                 "minLength": 1,
                 "type": "string"
               },
@@ -19822,7 +19552,7 @@
               },
               "include_citations": {
                 "default": true,
-                "description": "Attach formatted citations for the supporting PMIDs.",
+                "description": "Attach formatted citations.",
                 "type": "boolean"
               },
               "max_literature_pmids": {
@@ -19855,7 +19585,7 @@
                 "type": "array"
               },
               "variant": {
-                "description": "cDNA/HGVS or rsID variant string. Required; use `protein`/`condition` to refine.",
+                "description": "cDNA/HGVS or rsID; refine with `protein`/`condition`.",
                 "examples": [
                   "c.68_69delAG"
                 ],
@@ -19884,13 +19614,13 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs a compact, review-feeding PMID corpus for a research question: returns candidate PMIDs, roles, coverage hints, metadata, and next commands.",
-          "federated_name": "pubtator_suggest_corpus",
+          "description": "Use this when a user needs a compact PMID corpus for a research question; returns candidate PMIDs, roles, coverage hints, metadata and next commands.",
+          "federated_name": "pubtator_find_review_corpus",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "entity_ids": {
-                "description": "Optional PubTator entity IDs to anchor the corpus on.",
+                "description": "PubTator entity IDs to anchor on.",
                 "examples": [
                   [
                     "@GENE_MEFV"
@@ -19903,7 +19633,7 @@
               },
               "include_metadata": {
                 "default": true,
-                "description": "Attach per-PMID citation metadata to each candidate.",
+                "description": "Attach per-PMID citation metadata.",
                 "type": "boolean"
               },
               "max_pmids": {
@@ -19932,7 +19662,7 @@
                 "type": "boolean"
               },
               "question": {
-                "description": "Research question to assemble a compact candidate PMID corpus for.",
+                "description": "Research question to build the PMID corpus for.",
                 "examples": [
                   "Does colchicine prevent FMF flares?"
                 ],
@@ -19946,7 +19676,7 @@
             ],
             "type": "object"
           },
-          "name": "suggest_corpus",
+          "name": "find_review_corpus",
           "outputSchema": null,
           "tags": [
             "entity",
@@ -19961,13 +19691,13 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user provides article identifiers such as PMIDs, PMCIDs, or DOIs and needs normalized candidate PMIDs for research workflows; returns the normalized PMID, PMCID and DOI for each input identifier.",
-          "federated_name": "pubtator_convert_article_ids",
+          "description": "Use this when a user has PMIDs, PMCIDs or DOIs to normalize; returns the PMID, PMCID and DOI for each input.",
+          "federated_name": "pubtator_map_article_ids",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "ids": {
-                "description": "Article identifiers (PMIDs, PMCIDs, or DOIs) to normalize to PMIDs.",
+                "description": "PMIDs, PMCIDs or DOIs to normalize.",
                 "examples": [
                   [
                     "PMC123456",
@@ -19983,7 +19713,7 @@
               },
               "source": {
                 "default": "auto",
-                "description": "Identifier kind: 'auto' (default, detect), 'pmid', 'pmcid', or 'doi'.",
+                "description": "Identifier kind; 'auto' detects.",
                 "enum": [
                   "pmid",
                   "pmcid",
@@ -19998,7 +19728,7 @@
             ],
             "type": "object"
           },
-          "name": "convert_article_ids",
+          "name": "map_article_ids",
           "outputSchema": null,
           "tags": [
             "entity",
@@ -20013,14 +19743,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs MeSH descriptors and candidate PubMed search terms for a biomedical research query; returns matching MeSH descriptors and suggested PubMed query terms.",
+          "description": "Use this when a user needs MeSH descriptors for a biomedical query; returns matching descriptors and suggested PubMed query terms.",
           "federated_name": "pubtator_get_mesh",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "exact": {
                 "default": false,
-                "description": "Require an exact descriptor match instead of prefix/fuzzy.",
+                "description": "Exact descriptor match only (no prefix/fuzzy).",
                 "type": "boolean"
               },
               "limit": {
@@ -20031,7 +19761,7 @@
                 "type": "integer"
               },
               "query": {
-                "description": "Term to resolve to MeSH descriptors and candidate search terms.",
+                "description": "Term to resolve to MeSH descriptors.",
                 "examples": [
                   "breast cancer"
                 ],
@@ -20060,13 +19790,13 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user provides free-text citations and needs candidate PMIDs for research evidence gathering; returns candidate PMID matches per citation.",
+          "description": "Use this when a user has free-text citations; returns candidate PMID matches per citation.",
           "federated_name": "pubtator_get_citation",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "citations": {
-                "description": "Free-text citation strings to resolve to candidate PMIDs.",
+                "description": "Free-text citation strings.",
                 "examples": [
                   [
                     "Smith J. Example disease study. 2024."
@@ -20100,7 +19830,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user has seed PMIDs and needs similar, cited-by, or reference-linked articles to expand a research corpus; returns related PMIDs with title, journal, year and relation.",
+          "description": "Use this when a user has seed PMIDs and needs similar, cited-by or reference-linked articles; returns related PMIDs with title, journal, year and relation.",
           "federated_name": "pubtator_find_related_articles",
           "inputSchema": {
             "additionalProperties": false,
@@ -20114,7 +19844,7 @@
               },
               "mode": {
                 "default": "similar",
-                "description": "Relation to follow: 'similar' (default), 'cited_by', or 'references'.",
+                "description": "Relation to follow.",
                 "enum": [
                   "similar",
                   "cited_by",
@@ -20123,7 +19853,7 @@
                 "type": "string"
               },
               "pmids": {
-                "description": "Seed PMIDs (or PMCIDs/DOIs, converted) to expand from.",
+                "description": "Seed PMIDs (or PMCIDs/DOIs, converted).",
                 "examples": [
                   [
                     "25741868"
@@ -20158,7 +19888,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a client needs PubTator-Link subsystem status and recovery commands: returns per-subsystem health and suggested recovery commands.",
+          "description": "Use this when a client needs subsystem status; returns per-subsystem health and recovery commands.",
           "federated_name": "pubtator_diagnostics",
           "inputSchema": {
             "additionalProperties": false,
@@ -20181,14 +19911,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user provides PubMed IDs and needs raw PubTator BioC annotation export; returns BioC documents with passages and entity annotations. Do not use this for compact grounded answers; use get_publication_passages. Next: get_publication_passages.",
+          "description": "Use this when a user needs raw PubTator BioC annotations for PMIDs; returns BioC documents with passages and entity annotations. For grounded answers use get_publication_passages. Next: get_publication_passages.",
           "federated_name": "pubtator_get_publication_annotations",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "format": {
                 "default": "biocjson",
-                "description": "Export serialization: 'biocjson' (default), 'biocxml', or 'pubtator'.",
+                "description": "Export format.",
                 "enum": [
                   "pubtator",
                   "biocxml",
@@ -20198,11 +19928,11 @@
               },
               "full": {
                 "default": false,
-                "description": "Request full-text annotations where available (else abstract).",
+                "description": "Full-text annotations where available (else abstract).",
                 "type": "boolean"
               },
               "pmids": {
-                "description": "PMIDs (or PMCIDs/DOIs, converted) to export raw PubTator BioC annotations for.",
+                "description": "PMIDs (or PMCIDs/DOIs, converted) to export.",
                 "examples": [
                   [
                     "25741868"
@@ -20237,8 +19967,8 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs a bounded topic-level literature map from a topic query, optionally seeded with PMIDs: returns candidate PMID lanes with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
-          "federated_name": "pubtator_build_topic_literature_map",
+          "description": "Use this when a user needs a bounded literature map for a topic, optionally seeded with PMIDs; returns candidate PMID lanes with bounded summaries and response_size_class. response_mode='compact' (default) suits candidate selection; full can be large (debug). Next: get_publication_passages.",
+          "federated_name": "pubtator_generate_topic_literature_map",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
@@ -20272,7 +20002,7 @@
               },
               "expand_query_seeds": {
                 "default": false,
-                "description": "Seed the map from a query search when no PMIDs are given.",
+                "description": "Seed from a query search when no PMIDs are given.",
                 "type": "boolean"
               },
               "include_authors": {
@@ -20292,7 +20022,7 @@
               },
               "include_meta": {
                 "default": true,
-                "description": "Include the _meta orientation block.",
+                "description": "Include the _meta block.",
                 "type": "boolean"
               },
               "include_pubtator_entities": {
@@ -20360,7 +20090,7 @@
                 "type": "boolean"
               },
               "pmids": {
-                "description": "Optional seed PMIDs (or PMCIDs/DOIs, converted) to anchor the map on.",
+                "description": "Seed PMIDs (or PMCIDs/DOIs, converted) to anchor the map.",
                 "examples": [
                   [
                     "31036433"
@@ -20380,7 +20110,7 @@
                 "type": "boolean"
               },
               "query": {
-                "description": "Topic or research question to build the literature map around.",
+                "description": "Topic or research question to map.",
                 "examples": [
                   "familial Mediterranean fever colchicine"
                 ],
@@ -20397,7 +20127,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Payload shape: 'compact' (default), 'nodes_edges', or 'full'.",
+                "description": "Payload shape.",
                 "enum": [
                   "compact",
                   "nodes_edges",
@@ -20430,7 +20160,7 @@
             ],
             "type": "object"
           },
-          "name": "build_topic_literature_map",
+          "name": "generate_topic_literature_map",
           "outputSchema": null,
           "tags": [
             "entity",
@@ -20445,19 +20175,19 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs the text of a PubMed/PMC article by PMID: returns citable passages (title, abstract and, for open-access PMC articles, full text incl. figure captions and tables), not raw BioC. For article-local answering use mode='full_abstract' first (untruncated); sections (FIG, TABLE, RESULTS, ...) selects full text; check coverage_by_pmid. Not for prepared review RAG; use get_review_context_batch.",
+          "description": "Use this when a user needs article text by PMID; returns citable passages (title, abstract and, for open-access PMC articles, full text incl. figure captions and tables), not raw BioC. For article-local answers use mode='full_abstract' first (untruncated); sections (FIG, TABLE, RESULTS, ...) select full text; check coverage_by_pmid. For prepared reviews use get_review_context_batch.",
           "federated_name": "pubtator_get_publication_passages",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "dry_run": {
                 "default": false,
-                "description": "Return a size/coverage estimate without passage text.",
+                "description": "Size/coverage estimate only, no passage text.",
                 "type": "boolean"
               },
               "full": {
                 "default": false,
-                "description": "Prefer full-text passages where the article is open-access.",
+                "description": "Prefer open-access full-text passages.",
                 "type": "boolean"
               },
               "include_references": {
@@ -20486,7 +20216,7 @@
               },
               "mode": {
                 "default": "compact_passages",
-                "description": "Passage selection: 'compact_passages' (default), 'full_abstract' (all title/abstract passages), 'abstracts', or 'section_text'.",
+                "description": "Passage selection; 'full_abstract' returns all title/abstract passages.",
                 "enum": [
                   "abstracts",
                   "full_abstract",
@@ -20496,7 +20226,7 @@
                 "type": "string"
               },
               "pmids": {
-                "description": "PMIDs (or PMCIDs/DOIs, converted) to fetch compact citable passages for.",
+                "description": "PMIDs (or PMCIDs/DOIs, converted) to fetch passages for.",
                 "examples": [
                   [
                     "25741868"
@@ -20511,7 +20241,7 @@
                 "type": "array"
               },
               "sections": {
-                "description": "Restrict to these BioC section labels (case-insensitive); omit for all. A missing section contributes no passages; a table usually yields a caption and a body passage.",
+                "description": "BioC section labels to keep (case-insensitive); omit for all. A table usually yields a caption and a body passage.",
                 "examples": [
                   [
                     "ABSTRACT",
@@ -20537,7 +20267,7 @@
               },
               "verbosity": {
                 "default": "standard",
-                "description": "'lean', 'standard' (default), or 'full' (+ each dropped row).",
+                "description": "Field verbosity; 'full' lists each dropped row.",
                 "enum": [
                   "lean",
                   "standard",
@@ -20566,14 +20296,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs citation-grade metadata for known PMIDs: returns title, authors, journal, year, DOI and formatted citations per PMID. Do not use this for article text or annotations; use get_publication_passages. Next: get_publication_passages.",
+          "description": "Use this when a user needs citation metadata for known PMIDs; returns title, authors, journal, year, DOI and formatted citations. For text use get_publication_passages. Next: get_publication_passages.",
           "federated_name": "pubtator_get_publication_metadata",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "include_citations": {
                 "default": "both",
-                "description": "Citation rendering: 'none', 'nlm', 'bibtex', or 'both' (default).",
+                "description": "Citation format.",
                 "enum": [
                   "none",
                   "nlm",
@@ -20598,7 +20328,7 @@
                 "type": "boolean"
               },
               "pmids": {
-                "description": "PMIDs (or PMCIDs/DOIs, converted) to fetch citation-grade metadata for.",
+                "description": "PMIDs (or PMCIDs/DOIs, converted).",
                 "examples": [
                   [
                     "25741868"
@@ -20633,14 +20363,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs reference or cited-by neighbors for one publication: returns reference and cited-by PMIDs with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
+          "description": "Use this when a user needs reference or cited-by neighbors of one publication; returns their PMIDs with bounded summaries and response_size_class. response_mode='compact' (default) suits candidate selection; full can be large (debug). Next: get_publication_passages.",
           "federated_name": "pubtator_get_publication_citation_graph",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "direction": {
                 "default": "both",
-                "description": "Which neighbors: 'references', 'cited_by', or 'both' (default).",
+                "description": "Neighbors to return.",
                 "enum": [
                   "references",
                   "cited_by",
@@ -20673,7 +20403,7 @@
                 "type": "integer"
               },
               "pmid": {
-                "description": "PMID (or PMCID/DOI, converted) of the publication whose citation neighbors are wanted.",
+                "description": "PMID (or PMCID/DOI, converted) to get citation neighbors for.",
                 "examples": [
                   "40562663"
                 ],
@@ -20693,7 +20423,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Payload shape: 'compact' (default), 'nodes_edges', or 'full'.",
+                "description": "Payload shape.",
                 "enum": [
                   "compact",
                   "nodes_edges",
@@ -20722,7 +20452,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user has one PMID and needs related full-text-preferred candidates: returns related candidate PMIDs with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
+          "description": "Use this when a user has one PMID and needs related candidates, full text preferred; returns candidate PMIDs with bounded summaries and response_size_class. response_mode='compact' (default) suits candidate selection; full can be large (debug). Next: get_publication_passages.",
           "federated_name": "pubtator_find_related_evidence_candidates",
           "inputSchema": {
             "additionalProperties": false,
@@ -20741,7 +20471,7 @@
               },
               "include_meta": {
                 "default": true,
-                "description": "Include the _meta orientation block.",
+                "description": "Include the _meta block.",
                 "type": "boolean"
               },
               "include_pubtator_search": {
@@ -20764,7 +20494,7 @@
                 "type": "integer"
               },
               "pmid": {
-                "description": "Seed PMID (or PMCID/DOI, converted) to find related evidence candidates for.",
+                "description": "Seed PMID (or PMCID/DOI, converted).",
                 "examples": [
                   "40562663"
                 ],
@@ -20778,7 +20508,7 @@
                 "type": "boolean"
               },
               "publication_types": {
-                "description": "Restrict candidates to these PubMed publication types.",
+                "description": "PubMed publication types to keep.",
                 "examples": [
                   [
                     "Review"
@@ -20810,7 +20540,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Payload shape: 'compact' (default), 'nodes_edges', or 'full'.",
+                "description": "Payload shape.",
                 "enum": [
                   "compact",
                   "nodes_edges",
@@ -20851,14 +20581,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs to estimate passage count and context size before fetching publication passages; returns estimated passage and character counts plus a recommended passage mode. Do not use this for text retrieval; use get_publication_passages. Next: get_publication_passages.",
-          "federated_name": "pubtator_estimate_publication_context",
+          "description": "Use this when a user needs passage-count and size estimates before fetching passages; returns estimated passage and character counts plus a recommended mode. Next: get_publication_passages.",
+          "federated_name": "pubtator_compute_publication_context",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "full": {
                 "default": false,
-                "description": "Estimate under full-text retrieval where available.",
+                "description": "Estimate under full-text retrieval.",
                 "type": "boolean"
               },
               "include_references": {
@@ -20880,7 +20610,7 @@
               },
               "mode": {
                 "default": "compact_passages",
-                "description": "Passage selection to estimate under: 'compact_passages' (default), 'full_abstract', 'abstracts', or 'section_text'.",
+                "description": "Passage selection to estimate under.",
                 "enum": [
                   "abstracts",
                   "full_abstract",
@@ -20890,7 +20620,7 @@
                 "type": "string"
               },
               "pmids": {
-                "description": "PMIDs (or PMCIDs/DOIs, converted) to estimate passage count and context size for.",
+                "description": "PMIDs (or PMCIDs/DOIs, converted) to estimate.",
                 "examples": [
                   [
                     "25741868"
@@ -20905,7 +20635,7 @@
                 "type": "array"
               },
               "sections": {
-                "description": "Restrict to these BioC section labels (case-insensitive); omit for all. A missing section contributes no passages; a table usually yields a caption and a body passage.",
+                "description": "BioC section labels to keep (case-insensitive); omit for all. A table usually yields a caption and a body passage.",
                 "examples": [
                   [
                     "ABSTRACT",
@@ -20935,7 +20665,7 @@
             ],
             "type": "object"
           },
-          "name": "estimate_publication_context",
+          "name": "compute_publication_context",
           "outputSchema": null,
           "tags": [
             "entity",
@@ -20950,14 +20680,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user provides PMC IDs and needs raw PubTator full-text BioC annotation export; returns BioC documents with passages and entity annotations. Do not use this for compact grounded answers; use get_publication_passages. Next: get_publication_passages.",
+          "description": "Use this when a user needs raw PubTator full-text BioC annotations for PMC IDs; returns BioC documents with passages and entity annotations. For grounded answers use get_publication_passages. Next: get_publication_passages.",
           "federated_name": "pubtator_get_pmc_annotations",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "format": {
                 "default": "biocjson",
-                "description": "Export serialization: 'biocjson' (default) or 'biocxml'.",
+                "description": "Export format.",
                 "enum": [
                   "biocxml",
                   "biocjson"
@@ -20965,7 +20695,7 @@
                 "type": "string"
               },
               "pmcids": {
-                "description": "PMC IDs to export raw PubTator full-text BioC annotations for.",
+                "description": "PMC IDs to export.",
                 "examples": [
                   [
                     "PMC5334499"
@@ -20999,41 +20729,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user has a PubTator text annotation session ID and needs its results; returns the annotated text with entity mentions and IDs once ready. Do not use this for entity lookup from names; use search_biomedical_entities. Next: search_biomedical_entities.",
-          "federated_name": "pubtator_get_text_annotation_results",
-          "inputSchema": {
-            "additionalProperties": false,
-            "properties": {
-              "session_id": {
-                "description": "PubTator text-annotation session ID returned by a prior request.",
-                "examples": [
-                  "session-12345678"
-                ],
-                "minLength": 8,
-                "type": "string"
-              }
-            },
-            "required": [
-              "session_id"
-            ],
-            "type": "object"
-          },
-          "name": "get_text_annotation_results",
-          "outputSchema": null,
-          "tags": [
-            "entity",
-            "literature"
-          ]
-        },
-        {
-          "annotations": {
-            "destructiveHint": false,
-            "idempotentHint": true,
-            "openWorldHint": true,
-            "readOnlyHint": true,
-            "title": null
-          },
-          "description": "Use this when a user needs persisted review indexes with preparation status, source counts, passage counts, and approximate storage size; returns one row per index with those fields.",
+          "description": "Use this when a user needs the persisted review indexes; returns one row per index with preparation status, source and passage counts and approximate storage size.",
           "federated_name": "pubtator_list_review_indexes",
           "inputSchema": {
             "additionalProperties": false,
@@ -21069,13 +20765,13 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs one persisted review index summary without loading passage samples; returns its preparation status, source counts and passage counts.",
+          "description": "Use this when a user needs one review index summary without passage samples; returns its preparation status, source and passage counts.",
           "federated_name": "pubtator_get_review_index_summary",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "review_id": {
-                "description": "Identifier of the persisted review index to summarize.",
+                "description": "Review index to summarize.",
                 "examples": [
                   "demo"
                 ],
@@ -21103,8 +20799,8 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs to inspect indexed PMIDs, sections, passage counts, and failures for a review_id, including source coverage; returns per-source summaries, totals and failures.",
-          "federated_name": "pubtator_inspect_review_index",
+          "description": "Use this when a user needs to inspect indexed PMIDs, sections, passage counts, and failures for a review_id; returns per-source coverage summaries, totals and failures.",
+          "federated_name": "pubtator_get_review_index_status",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
@@ -21131,7 +20827,7 @@
               },
               "metadata": {
                 "default": "basic",
-                "description": "Metadata depth when included: 'basic' (default) or 'full'.",
+                "description": "Metadata depth when included.",
                 "enum": [
                   "basic",
                   "full"
@@ -21160,7 +20856,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Payload verbosity: 'compact' (default) or 'full'.",
+                "description": "Payload verbosity.",
                 "enum": [
                   "compact",
                   "full"
@@ -21184,7 +20880,7 @@
               },
               "sample_section_policy": {
                 "default": "evidence_first",
-                "description": "Sampling order: 'evidence_first' (default) or 'original_order'.",
+                "description": "Sampling order.",
                 "enum": [
                   "evidence_first",
                   "original_order"
@@ -21192,7 +20888,7 @@
                 "type": "string"
               },
               "session_id": {
-                "description": "Optional staged session to scope the inspection to.",
+                "description": "Staged session to scope to.",
                 "type": "string"
               }
             },
@@ -21201,7 +20897,7 @@
             ],
             "type": "object"
           },
-          "name": "inspect_review_index",
+          "name": "get_review_index_status",
           "outputSchema": null,
           "tags": [
             "entity",
@@ -21216,7 +20912,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs user-supplied evidence certainty judgments for a review; returns the stored judgments for that review.",
+          "description": "Use this when a user needs a review's user-supplied evidence certainty judgments; returns the stored judgments.",
           "federated_name": "pubtator_list_evidence_certainty",
           "inputSchema": {
             "additionalProperties": false,
@@ -21256,9 +20952,9 @@
             "additionalProperties": false,
             "properties": {
               "certainty_id": {
-                "description": "Identifier of the stored certainty judgment to fetch.",
+                "description": "UUID of the stored certainty judgment.",
                 "examples": [
-                  "certainty-1"
+                  "3f2b8c1e-5d47-4a9b-8c21-6e0f4d2a9b17"
                 ],
                 "minLength": 1,
                 "type": "string"
@@ -21293,19 +20989,19 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs PMID source coverage, PMC fallback availability, and likely full-text versus abstract-only retrieval before indexing review evidence; returns per-PMID source coverage and fallback availability.",
-          "federated_name": "pubtator_preflight_review_sources",
+          "description": "Use this when a user needs PMID source coverage before indexing review evidence; returns per-PMID coverage, PMC fallback availability and likely full-text versus abstract-only retrieval.",
+          "federated_name": "pubtator_get_review_source_coverage",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "pmid": {
-                "description": "Single-PMID convenience alias, merged with `pmids`.",
+                "description": "Single-PMID alias, merged with `pmids`.",
                 "minLength": 1,
                 "pattern": "^\\s*(?:[Pp][Mm][Ii][Dd]:\\s*)?([0-9]+)\\s*$",
                 "type": "string"
               },
               "pmids": {
-                "description": "PubMed IDs to check source coverage and full-text availability for.",
+                "description": "PMIDs to check source coverage for.",
                 "examples": [
                   [
                     "25741868"
@@ -21324,7 +21020,7 @@
             ],
             "type": "object"
           },
-          "name": "preflight_review_sources",
+          "name": "get_review_source_coverage",
           "outputSchema": null,
           "tags": [
             "entity",
@@ -21339,7 +21035,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs staged candidate, coverage, and preparation status for a research session; returns staged candidate PMIDs, coverage hints and preparation status.",
+          "description": "Use this when a user needs a research session's status; returns staged candidate PMIDs, coverage hints and preparation status.",
           "federated_name": "pubtator_get_research_session_status",
           "inputSchema": {
             "additionalProperties": false,
@@ -21378,13 +21074,13 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs staged research sessions for orientation or one review ID; returns session IDs with review IDs and status.",
+          "description": "Use this when a user needs staged research sessions, globally or for one review ID; returns session IDs with review IDs and status.",
           "federated_name": "pubtator_list_research_sessions",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "cursor": {
-                "description": "Opaque cursor returned by a previous session-list page.",
+                "description": "Cursor from the previous page.",
                 "minLength": 1,
                 "type": "string"
               },
@@ -21396,7 +21092,7 @@
                 "type": "integer"
               },
               "review_id": {
-                "description": "Optional review index to list sessions for; omit for recent global sessions.",
+                "description": "Review index to list sessions for; omit for recent sessions.",
                 "minLength": 1,
                 "type": "string"
               }
@@ -21418,7 +21114,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs exact prepared review passages by stable passage IDs from prior context packs or audit bundles; returns those passages with text and citation metadata. This only reads the review index and does not call upstream APIs.",
+          "description": "Use this when a user needs prepared review passages by stable passage ID; returns them with text and citation metadata. Reads only the review index (no upstream calls).",
           "federated_name": "pubtator_get_review_passages_by_id",
           "inputSchema": {
             "additionalProperties": false,
@@ -21453,7 +21149,7 @@
                 "type": "string"
               },
               "session_id": {
-                "description": "Optional staged session to scope the lookup to.",
+                "description": "Staged session to scope to.",
                 "type": "string"
               }
             },
@@ -21478,7 +21174,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs a copy-ready audit block for selected prepared review passage IDs or the latest recorded audit passages without calling upstream APIs; returns that audit block.",
+          "description": "Use this when a user needs a copy-ready audit block for selected or the latest recorded review passage IDs; returns that block without upstream calls.",
           "federated_name": "pubtator_get_review_audit_trail",
           "inputSchema": {
             "additionalProperties": false,
@@ -21491,7 +21187,7 @@
                 "type": "integer"
               },
               "passage_ids": {
-                "description": "Specific prepared passage IDs to audit; omit for the latest recorded set.",
+                "description": "Passage IDs to audit; omit for the latest recorded set.",
                 "examples": [
                   [
                     "p1"
@@ -21511,7 +21207,7 @@
                 "type": "string"
               },
               "session_id": {
-                "description": "Optional staged session to scope the audit to.",
+                "description": "Staged session to scope to.",
                 "type": "string"
               }
             },
@@ -21535,7 +21231,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user needs prepared review passages near a cited stable passage ID for local context expansion; returns the neighboring passages with stable passage IDs and text. This only reads the review index and does not call upstream APIs.",
+          "description": "Use this when a user needs prepared review passages near a cited passage ID; returns the neighbors with stable IDs and text. Reads only the review index (no upstream calls).",
           "federated_name": "pubtator_get_neighboring_review_passages",
           "inputSchema": {
             "additionalProperties": false,
@@ -21583,7 +21279,7 @@
                 "type": "boolean"
               },
               "session_id": {
-                "description": "Optional staged session to scope the lookup to.",
+                "description": "Staged session to scope to.",
                 "type": "string"
               }
             },
@@ -21608,14 +21304,14 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a review needs compact citable context from prepared review passages instead of raw BioC export; returns ranked citable passages with stable passage IDs and PMIDs. Use a short keyword query and PMID filters. If zero passages are returned, simplify the query, inspect the review index, or fall back to get_publication_annotations.",
+          "description": "Use this when a review needs compact citable context from prepared passages; returns ranked passages with stable passage IDs and PMIDs. Use a short keyword query and PMID filters. If zero passages are returned, simplify the query, inspect the index, or fall back to get_publication_annotations.",
           "federated_name": "pubtator_get_review_context",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "allow_truncated_passages": {
                 "default": true,
-                "description": "Allow per-passage truncation to fit the char budget.",
+                "description": "Truncate passages to fit the char budget.",
                 "type": "boolean"
               },
               "entity_ids": {
@@ -21632,12 +21328,12 @@
               },
               "include_diagnostics": {
                 "default": false,
-                "description": "Include retrieval diagnostics in the response.",
+                "description": "Include retrieval diagnostics.",
                 "type": "boolean"
               },
               "include_meta": {
                 "default": true,
-                "description": "Include the _meta orientation block.",
+                "description": "Include the _meta block.",
                 "type": "boolean"
               },
               "include_references": {
@@ -21647,7 +21343,7 @@
               },
               "include_resolver_trace": {
                 "default": false,
-                "description": "Include the source-resolver trace for auditing.",
+                "description": "Include the source-resolver trace.",
                 "type": "boolean"
               },
               "include_tables": {
@@ -21698,7 +21394,7 @@
                 "type": "string"
               },
               "review_id": {
-                "description": "Prepared review index to retrieve citable context from.",
+                "description": "Prepared review index to retrieve from.",
                 "examples": [
                   "demo"
                 ],
@@ -21707,7 +21403,7 @@
               },
               "section_policy": {
                 "default": "evidence_first",
-                "description": "Passage ordering: 'evidence_first' (default) or 'original_order'.",
+                "description": "Passage ordering.",
                 "enum": [
                   "evidence_first",
                   "original_order"
@@ -21727,12 +21423,12 @@
                 "type": "array"
               },
               "session_id": {
-                "description": "Optional staged session to scope retrieval to.",
+                "description": "Staged session to scope to.",
                 "type": "string"
               },
               "table_mode": {
                 "default": "preview",
-                "description": "Table rendering: 'off', 'preview' (default), or 'full'.",
+                "description": "Table rendering.",
                 "enum": [
                   "off",
                   "preview",
@@ -21762,19 +21458,19 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when a user wants multiple short review retrieval query variants in one call; returns merged citable passages and per-query summaries. Compact (default): query_fair budgeting, next_steps for zero-result queries. Use response_mode=\"quotes\" for short citable snippets or dry_run for diagnostics without passage text.",
+          "description": "Use this when a user wants multiple short review retrieval query variants in one call; returns merged citable passages and per-query summaries. response_mode='quotes' gives short snippets; dry_run gives diagnostics without text.",
           "federated_name": "pubtator_get_review_context_batch",
           "inputSchema": {
             "additionalProperties": false,
             "properties": {
               "allow_truncated_passages": {
                 "default": true,
-                "description": "Allow per-passage truncation to fit the char budget.",
+                "description": "Truncate passages to fit the char budget.",
                 "type": "boolean"
               },
               "budget_strategy": {
                 "default": "query_fair",
-                "description": "Passage budget split (default 'query_fair').",
+                "description": "Passage budget split.",
                 "enum": [
                   "query_fair",
                   "source_fair",
@@ -21789,7 +21485,7 @@
               },
               "dry_run": {
                 "default": false,
-                "description": "Return budgeting diagnostics without passage text.",
+                "description": "Budgeting diagnostics only, no passage text.",
                 "type": "boolean"
               },
               "entity_ids": {
@@ -21806,12 +21502,12 @@
               },
               "include_diagnostics": {
                 "default": false,
-                "description": "Include retrieval diagnostics in the response.",
+                "description": "Include retrieval diagnostics.",
                 "type": "boolean"
               },
               "include_meta": {
                 "default": true,
-                "description": "Include the _meta orientation block.",
+                "description": "Include the _meta block.",
                 "type": "boolean"
               },
               "include_references": {
@@ -21821,7 +21517,7 @@
               },
               "include_resolver_trace": {
                 "default": false,
-                "description": "Include the source-resolver trace for auditing.",
+                "description": "Include the source-resolver trace.",
                 "type": "boolean"
               },
               "include_tables": {
@@ -21830,7 +21526,7 @@
                 "type": "boolean"
               },
               "max_chars": {
-                "description": "Optional soft total character budget.",
+                "description": "Soft total character budget.",
                 "maximum": 200000,
                 "minimum": 200,
                 "type": "integer"
@@ -21860,7 +21556,7 @@
                   }
                 ],
                 "default": "auto",
-                "description": "Response character budget: 'auto' (default) or an integer cap."
+                "description": "Response character cap, or 'auto'."
               },
               "max_total_passages": {
                 "default": 20,
@@ -21910,7 +21606,7 @@
                 "type": "array"
               },
               "queries": {
-                "description": "Short keyword query variants to retrieve context for in one call.",
+                "description": "Short keyword query variants.",
                 "examples": [
                   [
                     "EGFR resistance",
@@ -21925,7 +21621,7 @@
               },
               "response_mode": {
                 "default": "compact",
-                "description": "Payload shape (default 'compact'); 'quotes' for short snippets.",
+                "description": "Payload shape; 'quotes' gives short snippets.",
                 "enum": [
                   "compact",
                   "merged_only",
@@ -21936,7 +21632,7 @@
                 "type": "string"
               },
               "review_id": {
-                "description": "Prepared review index to retrieve citable context from.",
+                "description": "Prepared review index to retrieve from.",
                 "examples": [
                   "demo"
                 ],
@@ -21945,7 +21641,7 @@
               },
               "section_policy": {
                 "default": "evidence_first",
-                "description": "Passage ordering: 'evidence_first' (default) or 'original_order'.",
+                "description": "Passage ordering.",
                 "enum": [
                   "evidence_first",
                   "original_order"
@@ -21965,12 +21661,12 @@
                 "type": "array"
               },
               "session_id": {
-                "description": "Optional staged session to scope retrieval to.",
+                "description": "Staged session to scope to.",
                 "type": "string"
               },
               "table_mode": {
                 "default": "preview",
-                "description": "Table rendering: 'off', 'preview' (default), or 'full'.",
+                "description": "Table rendering.",
                 "enum": [
                   "off",
                   "preview",
@@ -21980,7 +21676,7 @@
               },
               "verbosity": {
                 "default": "standard",
-                "description": "Field verbosity: 'lean', 'standard' (default), or 'full'.",
+                "description": "Field verbosity.",
                 "enum": [
                   "lean",
                   "standard",
@@ -22003,7 +21699,7 @@
           ]
         }
       ],
-      "tools_count": 35
+      "tools_count": 34
     },
     {
       "database_provenance": {
@@ -22021,11 +21717,11 @@
       "name": "spliceai",
       "namespace": "spliceai",
       "release": {
-        "commit": "194eb2abfa85e76a10aeada8317aa80a8f7052fd",
+        "commit": "71a8b04c50540b4fee0edf27d7e2dc56b4ca4eab",
         "definitions_sha256": "491bfa94d559ef28ab4d74b30db934414edd10cd2063d2ecf16453f83c24ea9c",
-        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:964a4fb90b90f0fd17e4dac128872397cf392b9538d6281f5276401c592fa3b6",
-        "tag": "v4.3.4",
-        "version": "4.3.4"
+        "image": "ghcr.io/berntpopp/spliceailookup-link@sha256:f3acc0bfa3b3a00d616455ecfbf8e7a07a2da2c69bc4cbd41478dcd7408c17d0",
+        "tag": "v4.4.1",
+        "version": "4.4.1"
       },
       "repository": "berntpopp/spliceailookup-link",
       "repository_url": "https://github.com/berntpopp/spliceailookup-link",
@@ -22688,18 +22384,18 @@
         "release_tag": "strchive-e964fa88df3b2189ee478cbd6eaad15bb28e3a0a",
         "schema_compatibility": [],
         "status": "live-upstream",
-        "updated_at": "2026-11-19T07:06:49.809946Z"
+        "updated_at": "2026-11-26T07:04:32.419054Z"
       },
       "domain": "Tandem-repeat (STR) disease loci & repeat ranges",
       "entrypoints": [],
       "name": "strchive",
       "namespace": "strchive",
       "release": {
-        "commit": "69398f986fa95dc6f0d8c9f92e3b77cfe699a69c",
+        "commit": "999a58887cf60e8cc29a7bab14cbcc983aafcd7a",
         "definitions_sha256": "0276853fce5f114b826cf645e1aa281369d31b4af29036b05cc0805c787962e0",
-        "image": "ghcr.io/berntpopp/strchive-link@sha256:511e06a44a7168c1e7d992c8093e332cfe41607fb6f2f14a4e64e457e67c9147",
-        "tag": "v0.3.0",
-        "version": "0.3.0"
+        "image": "ghcr.io/berntpopp/strchive-link@sha256:42cee1e96cec9fc5ef21d3b1e1820d6aa3d36a88df053fdef09628935848cddd",
+        "tag": "v0.4.1",
+        "version": "0.4.1"
       },
       "repository": "berntpopp/strchive-link",
       "repository_url": "https://github.com/berntpopp/strchive-link",
@@ -22973,11 +22669,11 @@
       "name": "stringdb",
       "namespace": "stringdb",
       "release": {
-        "commit": "38fbe0e1a07dd0ce9fb7d08374e4be10910d6413",
+        "commit": "0353e7fd18ae2be18b16fed414cb2fce132ff525",
         "definitions_sha256": "e7eb83412332702dded220bc915f14f80276deb94526230b1530331dd636153f",
-        "image": "ghcr.io/berntpopp/stringdb-link@sha256:b042a9a6777073867b52437fb5b809c8b6f5a88903f830d880153d032eccea5b",
-        "tag": "v4.5.2",
-        "version": "4.5.2"
+        "image": "ghcr.io/berntpopp/stringdb-link@sha256:45dd7a2f64874eaf213e480659935337fae7be19be59eaeefe8dd39eda2695a8",
+        "tag": "v4.7.1",
+        "version": "4.7.1"
       },
       "repository": "berntpopp/stringdb-link",
       "repository_url": "https://github.com/berntpopp/stringdb-link",
@@ -23959,11 +23655,11 @@
       "name": "ucsc",
       "namespace": "ucsc",
       "release": {
-        "commit": "e0dd159e9a3bfc45087990cbe2818cec114b9627",
+        "commit": "ca4b9b1ee6ddd4526310eab677cb43c0faac3bf5",
         "definitions_sha256": "9f5ef426852e70e25c4e159770ed2f0ac11e3648587bd3c4a42ab67e172326e7",
-        "image": "ghcr.io/berntpopp/ucsc-link@sha256:e2b42fd4611f838bb866bf90828efe319ce9a0b3c941c2880ab1e04bf2990ba2",
-        "tag": "v0.6.3",
-        "version": "0.6.3"
+        "image": "ghcr.io/berntpopp/ucsc-link@sha256:911b7c55c04e0bd9aced0ad312a3c66965235ce0e01101726c3d12d1ec2c7969",
+        "tag": "v0.8.0",
+        "version": "0.8.0"
       },
       "repository": "berntpopp/ucsc-link",
       "repository_url": "https://github.com/berntpopp/ucsc-link",
@@ -24497,11 +24193,11 @@
       "name": "uniprot",
       "namespace": "uniprot",
       "release": {
-        "commit": "4a56f94bdb0ff48b5764900871999132483f4016",
-        "definitions_sha256": "5f5e86accc11ee679ed714e5e0ab86fe717697dc78caaee7f2d5619fce434010",
-        "image": "ghcr.io/berntpopp/uniprot-link@sha256:ab490e61fe75fd446717535b65bc5d965733acd8627ca12376f9ff95b0c3631f",
-        "tag": "v5.5.0",
-        "version": "5.5.0"
+        "commit": "6be89f781186007a767a84484aa0cb4babbad88e",
+        "definitions_sha256": "e26ca491b5dd0e05629dc057162385308cef4cf4e0c25001d01e63da28b1de42",
+        "image": "ghcr.io/berntpopp/uniprot-link@sha256:2dba25044598067e902430adb3ade202d629df6c552c8e79605220c933ab5e5c",
+        "tag": "v6.0.3",
+        "version": "6.0.3"
       },
       "repository": "berntpopp/uniprot-link",
       "repository_url": "https://github.com/berntpopp/uniprot-link",
@@ -24839,7 +24535,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, unresolved_genes and unresolved_reasons (not_found, or unsupported_identifier with its converter in next_commands; HGNC:<n> and NCBIGene:<n> are accepted). Optionally scope by organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name) and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
+          "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, unresolved_genes and unresolved_reasons (not_found, or unsupported_identifier with its converter in next_commands; HGNC:<n>, NCBIGene:<n> accepted; no supported item at all = invalid_input). Optionally scope by organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name) and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
           "federated_name": "uniprot_find_proteins_batch",
           "inputSchema": {
             "additionalProperties": false,
@@ -25504,11 +25200,11 @@
       "name": "vep",
       "namespace": "vep",
       "release": {
-        "commit": "a774d20df059164488c281a1751be4bf0c6a5c75",
-        "definitions_sha256": "092e4b2c2f3a5a903b58242f79ddf020fe92d00b23fc959a4cd34b4b316a714e",
-        "image": "ghcr.io/berntpopp/vep-link@sha256:f21aae204b1f8b2042b11a0b8db1f7fbfddf8abc486b5ebaf56181900adb15b3",
-        "tag": "v1.2.7",
-        "version": "1.2.7"
+        "commit": "b8d036b75b82ba6b458c027cdff786a9eba3d5f1",
+        "definitions_sha256": "647d0bff1481c12ea15a0acd34c0b05ac1810ae0d5730eac0e30c1c31e4be4bb",
+        "image": "ghcr.io/berntpopp/vep-link@sha256:caffc0cdd2825d8fc9ffbe9cf6f238d939eecf48dbecd6c4bb1fc3bd6f0477fd",
+        "tag": "v1.3.1",
+        "version": "1.3.1"
       },
       "repository": "berntpopp/vep-link",
       "repository_url": "https://github.com/berntpopp/vep-link",
@@ -25552,7 +25248,7 @@
             "readOnlyHint": true,
             "title": null
           },
-          "description": "Use this when the caller's variant is an rsID, HGVS, SPDI, or loosely formatted: returns a variants[] list (one entry per ALT allele) with the canonical CHR-POS-REF-ALT variant_id, gene_symbol and most_severe_consequence that the annotation tools build on, plus a top-level warnings[] (a multi-allelic input carries a multiple_alts warning). Coordinates are normalized locally; rsIDs/HGVS are recoded via Ensembl. Cheap (<1kB). Then call annotate_variant for the full VEP annotation.",
+          "description": "Use this when the caller's variant is an rsID, HGVS, SPDI, or loosely formatted: returns a results[] list (one entry per ALT allele) with the canonical CHR-POS-REF-ALT variant_id, gene_symbol and most_severe_consequence that the annotation tools build on, plus a top-level warnings[] (a multi-allelic input carries a multiple_alts warning). Coordinates are normalized locally; rsIDs/HGVS are recoded via Ensembl. Cheap (<1kB). Then call annotate_variant for the full VEP annotation.",
           "federated_name": "vep_resolve_variant",
           "inputSchema": {
             "additionalProperties": false,
@@ -25567,7 +25263,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Optional ALT filter for a multi-allelic input: an ALT base (e.g. 'A') or a full CHR-POS-REF-ALT. Omit to return every ALT allele in variants[]."
+                "description": "Optional ALT filter for a multi-allelic input: an ALT base (e.g. 'A') or a full CHR-POS-REF-ALT. Omit to return every ALT allele in results[]."
               },
               "assembly": {
                 "default": "GRCh38",
@@ -25698,7 +25394,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Optional ALT filter for a multi-allelic input: an ALT base (e.g. 'A') or a full CHR-POS-REF-ALT. Omit to annotate every ALT allele (each as an entry in variants[])."
+                "description": "Optional ALT filter for a multi-allelic input: an ALT base (e.g. 'A') or a full CHR-POS-REF-ALT. Omit to annotate every ALT allele (each as an entry in results[])."
               },
               "assembly": {
                 "default": "GRCh38",
@@ -25953,7 +25649,7 @@
     "homepage": "https://genefoundry.org",
     "total_backends": 30,
     "total_repositories": 31,
-    "total_tools": 345,
+    "total_tools": 344,
     "universal_topics": []
   },
   "router": {

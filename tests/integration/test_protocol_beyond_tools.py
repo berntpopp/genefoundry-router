@@ -5,7 +5,7 @@ Verifies:
    cleanly federating backend resources and prompts when exposed.
 2. `build_app` advertises resources and prompts capabilities on discovery and serves clean
    protocol responses.
-3. `tools/list` across all 30 backends (345 tools) in fleet-baseline.json produces deterministic,
+3. `tools/list` across all 30 backends (344 tools) in fleet-baseline.json produces deterministic,
    collision-free qualified names within the 64-character ceiling, both statically and in live
    router composition.
 """
@@ -115,7 +115,7 @@ async def test_build_app_serves_valid_resources_and_prompts_protocol(
 
 
 def test_fleet_baseline_tool_names_are_collision_free_and_within_client_ceiling() -> None:
-    """All 345 tools across 30 backends produce collision-free names <= 64 characters."""
+    """All 344 tools across 30 backends produce collision-free names <= 64 characters."""
     manifest = load_manifest(BASELINE_PATH)
     assert len(manifest.backends) == 30
 
@@ -128,16 +128,16 @@ def test_fleet_baseline_tool_names_are_collision_free_and_within_client_ceiling(
                 f"Tool name {qualified!r} exceeds 64-char ceiling ({len(qualified)} > 64)"
             )
 
-    assert len(qualified_names) == 345
+    assert len(qualified_names) == 344
     # Deterministic and collision-free
-    assert len(set(qualified_names)) == 345
+    assert len(set(qualified_names)) == 344
     # Longest tool name remains well within budget
     max_len_tool = max(qualified_names, key=len)
     assert len(max_len_tool) <= 64
 
 
 async def test_live_router_composition_lists_all_baseline_tools_without_collisions() -> None:
-    """Live Client(server) composition across all 30 backends lists 345 tools without collision."""
+    """Live Client(server) composition across all 30 backends lists 344 tools without collision."""
     manifest = load_manifest(BASELINE_PATH)
     settings = RouterSettings(_env_file=None)  # type: ignore[call-arg]
 
@@ -153,8 +153,8 @@ async def test_live_router_composition_lists_all_baseline_tools_without_collisio
         tools = await client.list_tools()
         names = [t.name for t in tools]
 
-        assert len(names) == 345
-        assert len(set(names)) == 345
+        assert len(names) == 344
+        assert len(set(names)) == 344
         assert all(len(name) <= 64 for name in names)
 
         # Confirm representation across independent backends

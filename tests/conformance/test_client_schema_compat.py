@@ -68,11 +68,11 @@ def test_baseline_backend_and_tool_counts() -> None:
     manifest = load_manifest(BASELINE_PATH)
     assert len(manifest.backends) == 30
     total_tools = sum(len(b.tools) for b in manifest.backends.values())
-    assert total_tools == 345
+    assert total_tools == 344
 
 
 def test_baseline_input_schemas_are_valid_draft_2020_12_objects() -> None:
-    """All 345 tools must advertise valid Draft 2020-12 object input schemas."""
+    """All 344 tools must advertise valid Draft 2020-12 object input schemas."""
     manifest = load_manifest(BASELINE_PATH)
     for namespace, backend in manifest.backends.items():
         for tool in backend.tools:
@@ -101,8 +101,9 @@ def test_baseline_output_schemas_are_valid_draft_2020_12_when_declared() -> None
                 )
                 Draft202012Validator.check_schema(schema)
 
-    # In baseline, 1 tool explicitly advertises an outputSchema (metadome dropped its 11 in 0.5.x)
-    assert output_schema_count == 1
+    # No baseline tool advertises an outputSchema: metadome dropped its 11 in 0.5.x and
+    # panelapp v0.11.1 dropped get_panelapp_diagnostics' (GTS-CORE-SCH-04).
+    assert output_schema_count == 0
 
 
 def test_baseline_schemas_contain_no_dangling_or_external_refs() -> None:
