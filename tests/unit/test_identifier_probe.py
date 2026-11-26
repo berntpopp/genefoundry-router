@@ -55,6 +55,20 @@ CASES = [
     ("resolved", ok(diseases=[{"disease": "x"}], total=1, resolved_from=RESOLVED_FROM)),
     ("resolved", ok(query=ENSG, hgnc_id="HGNC:6407", approved_symbol="KRAS")),
     ("resolved", ok(genes=[{"gene": "KRAS", "input_id": ENSG}], total=1)),
+    # ... and the same two markers inside `result` (Response-Envelope v1.2 payload object)
+    (
+        "resolved",
+        ok(result={"diseases": [{"disease": "x"}], "total": 1, "resolved_from": RESOLVED_FROM}),
+    ),
+    ("flagged", ok(result={"results": [], "count": 0, "unsupported_identifiers": [ENSG]})),
+    # a top-level `resolved_from` wins over the one inside `result`
+    (
+        "wrong_entity",
+        ok(
+            resolved_from={"input": ENSG, "resolved_to": "TP53"},
+            result={"diseases": [{"disease": "x"}], "total": 1, "resolved_from": RESOLVED_FROM},
+        ),
+    ),
     # PASS — rejected with a converter (a loop or a meta tool beside it does not spoil it)
     ("rejected", err("invalid_input", [CONVERTER], **FIELDS)),
     ("rejected", err("invalid_input", [step("get_x"), CONVERTER, META], **FIELDS)),

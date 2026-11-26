@@ -206,16 +206,22 @@ def classify(
 
     answer = body(env, param, sent)
     others = [i for i in ids if i.lower() != sent.lower()]
+    # `resolved_from` and the flagged keys sit at the envelope top level or, where the payload
+    # is an object under `result`, inside it. The top level is read first, so its value wins.
+    inner = env.get("result")
+    frames = [env, inner] if isinstance(inner, dict) else [env]
+    resolved_from = [f["resolved_from"] for f in frames if "resolved_from" in f]
     if answer and count_of(env) != 0:
         if answer == control:
             return Verdict("resolved", "same rows as the control")
-        if _mentions(env.get("resolved_from") or "", others):
+        if resolved_from and _mentions(resolved_from[0] or "", others):
             return Verdict("resolved", "resolved_from names the gene")
         if _mentions(answer, others):
-            return Verdict("resolved", "" if "resolved_from" in env else "no resolved_from")
-    for key, value in env.items():
-        if _FLAGGED_KEY.search(key) and _mentions(value, [sent]):
-            return Verdict("flagged", f"listed under {key}")
+            return Verdict("resolved", "" if resolved_from else "no resolved_from")
+    for frame in frames:
+        for key, value in frame.items():
+            if _FLAGGED_KEY.search(key) and _mentions(value, [sent]):
+                return Verdict("flagged", f"listed under {key}")
     if not answer or count_of(env) == 0:
         return Verdict("silent_empty", "success with no rows and no unsupported-identifier marker")
     return Verdict(
