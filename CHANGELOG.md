@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.13] - 2026-11-26
+
+### Fixed
+
+- **The identifier gate reads `resolved_from` and the flagged keys inside `result` too.** A backend that carries its payload as an object under `result` (Response-Envelope v1.2) puts `resolved_from` and keys such as `unsupported_identifiers` there. `identifiers.py` read them at the envelope top level only and reported such an answer as `wrong_entity` or `silent_empty`. Both places are now read; a top-level value wins.
+
 ## [0.14.12] - 2026-11-26
 
 ### Fixed
