@@ -82,6 +82,8 @@ class BackendDef(BaseModel):
     contact: str | None = None
     ownership: str | None = None
     data_egress: DataEgress | None = None
+    # Federation v1 §6: a community call's total timeout; unset means 12 s. Core ignores it.
+    timeout: float | None = Field(default=None, ge=10, le=15)
 
     @field_validator("namespace")
     @classmethod

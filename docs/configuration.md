@@ -59,9 +59,10 @@ starts.
 | `GF_KILL_SWITCH_FILE` | unset | Community namespaces to quarantine, one per line; re-read every poll and at most every 5 s on calls. Removing a line does not release |
 | `GF_QUARANTINE_FILE` | unset | Latched community quarantines; cleared only by a changed pin file or `genefoundry-router release <namespace>`. Required when `GF_ALLOW_COMMUNITY_BACKENDS=true` (startup fails otherwise). A community instance also requires `GF_POLL_INTERVAL` equal to each backend's `cache_ttl` (300) |
 | `GF_PRIVACY_PROFILE` | `default` | `patient` refuses startup with community backends or a reranker URL that is not loopback/private |
-| `GF_COMMUNITY_MAX_RESPONSE_BYTES` | `262144` | Community response cap (raw and decoded); exceeding it quarantines the backend |
+| `GF_COMMUNITY_MAX_RESPONSE_BYTES` | `262144` | Community response cap per JSON-RPC message (raw and decoded; per event on an SSE stream); exceeding it quarantines the backend |
 | `GF_COMMUNITY_MAX_TOOLS` | `32` | Community `tools/list` cap; exceeding it quarantines the backend |
 | `GF_COMMUNITY_MAX_ARG_BYTES` | `8192` | Community call arguments above this size are refused before any upstream request |
+| `GF_COMMUNITY_MAX_INFLIGHT` | `4` | Concurrent calls per community backend; excess calls fail fast with `unavailable` |
 | `GF_DRIFT_BASELINE` | _(packaged)_ | Optional path override for the reviewed packaged baseline |
 | `GF_<NAME>_URL` | _(unset)_ | Per-backend `/mcp` URL (e.g. `GF_GNOMAD_URL`) |
 

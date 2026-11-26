@@ -10,7 +10,13 @@ All notable changes to genefoundry-router are documented here.
 
 ### Added
 
+- **Federation Standard v1 §6: per-backend bulkhead, timeouts and circuit breaker for community backends (#413).** `genefoundry_router/community_breaker.py` allows at most `GF_COMMUNITY_MAX_INFLIGHT` (4) concurrent calls per community backend; excess calls fail fast with `unavailable` and make no upstream request. Every community call has a 12 s total timeout (an entry may set `timeout`, 10–15 s), so a byte-trickling backend cannot outlast it; the connect timeout is 3 s (now forced in the community client, which previously took fastmcp's 30 s); the harvest stays at 5 s. Five consecutive failures or timeouts open the breaker for 60 s, then one half-open probe closes it on success or reopens it on failure; only the call path feeds it, so a healthy `tools/list` cannot hold it closed. The state is in `/health` (`backends.circuit`, community instances only) and in the `genefoundry_community_breaker_state` gauge (0 closed, 1 open, 2 half-open). Core backends are unchanged.
+
 - **Federation Standard v1 §5: gateway-side response hardening for community backends (#412).** `genefoundry_router/community_guard.py` streams every community response through a byte cap (`GF_COMMUNITY_MAX_RESPONSE_BYTES`, 262,144, counted raw and decoded, so a gzip bomb stops at the cap; encodings other than gzip/deflate are `invalid_response`) and caps `tools/list` at `GF_COMMUNITY_MAX_TOOLS` (32); either breach quarantines the backend. Every string of `content`, `structuredContent` and `_meta` is NFC-normalised with the Response Envelope v1.2 removal set, tag characters U+E0000–U+E007F and the #398 invisible marks removed; every text block is wrapped in a per-call nonce fence (`<<<GF-UNTRUSTED ...>>>` / `<<<GF-END ...>>>`) with `<<<GF-` escaped in the payload. Upstream failures map to fixed codes (`upstream_error`, `upstream_timeout`, `rate_limited`, `unavailable`, `invalid_response`) with router-written messages; the backend's error text is dropped. Arguments above `GF_COMMUNITY_MAX_ARG_BYTES` (8,192) are refused before any upstream request. Core backends are unchanged.
+
+### Fixed
+
+- **The community response cap is per JSON-RPC message (#412 follow-up).** On a `text/event-stream` body the byte count restarts at every SSE event boundary, so a long-lived stream of small messages no longer trips the 262,144-byte cap and quarantines a healthy backend; one oversized message still does.
 
 ## [0.14.16] - 2026-11-26
 

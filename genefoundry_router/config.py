@@ -100,6 +100,7 @@ class RouterSettings(BaseSettings):
     GF_COMMUNITY_MAX_RESPONSE_BYTES: int = Field(default=262_144, ge=1)
     GF_COMMUNITY_MAX_TOOLS: int = Field(default=32, ge=1)
     GF_COMMUNITY_MAX_ARG_BYTES: int = Field(default=8_192, ge=1)
+    GF_COMMUNITY_MAX_INFLIGHT: int = Field(default=4, ge=1)
 
     # Tool search
     GF_SEARCH_MAX_RESULTS: int = 5

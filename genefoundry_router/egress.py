@@ -168,7 +168,8 @@ def community_httpx_client_factory(transport: httpx2.AsyncBaseTransport | None =
     def factory(**kwargs: Any) -> httpx2.AsyncClient:
         kwargs["follow_redirects"] = False
         kwargs["trust_env"] = False
-        kwargs.setdefault("timeout", httpx2.Timeout(12.0, connect=3.0))
+        # Forced, not a default: fastmcp passes its own 30 s connect timeout (§6: 3 s).
+        kwargs["timeout"] = httpx2.Timeout(12.0, connect=3.0)
         return httpx2.AsyncClient(
             transport=_RejectRedirects(transport or community_transport()), **kwargs
         )

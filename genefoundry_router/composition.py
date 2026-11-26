@@ -19,7 +19,7 @@ from fastmcp.server.providers.proxy import (
 )
 from fastmcp.tools import Tool
 
-from genefoundry_router import community_guard
+from genefoundry_router import community_breaker, community_guard
 from genefoundry_router.egress import check_community_url, community_httpx_client_factory
 from genefoundry_router.observability import set_backend_up
 from genefoundry_router.registry import BackendDef
@@ -249,6 +249,7 @@ def _register_via_provider(
     if httpx_client_factory is None and backend.trust == "community":
         httpx_client_factory = community_httpx_client_factory()
     if backend.trust == "community":
+        community_breaker.get(backend.namespace, backend.timeout or community_breaker.TOTAL_TIMEOUT)
         httpx_client_factory = community_guard.cap_responses(
             httpx_client_factory, backend.namespace
         )
