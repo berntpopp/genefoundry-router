@@ -442,7 +442,6 @@ def register_health(
 ) -> None:
     """Attach GET /health returning liveness + a per-backend summary."""
     enabled = [b for b in backends if b.enabled]
-    community = [b.namespace for b in enabled if b.trust == "community"]
 
     @app.get("/health")
     async def health() -> dict[str, object]:
@@ -462,12 +461,10 @@ def register_health(
             "tools": {b.namespace: BACKEND_TOOL_COUNT.get(b.namespace, 0) for b in enabled},
             "degraded": degraded,
         }
-        if community:
-            from genefoundry_router import community_breaker
+        if community := [b.namespace for b in enabled if b.trust == "community"]:
+            from genefoundry_router.community_breaker import get as breaker  # imports us
 
-            backends_summary["circuit"] = {
-                ns: community_breaker.get(ns).state() for ns in community
-            }
+            backends_summary["circuit"] = {ns: breaker(ns).state() for ns in community}
         return {
             "status": "degraded" if degraded or drift_degraded else "healthy",
             "service": "genefoundry",
