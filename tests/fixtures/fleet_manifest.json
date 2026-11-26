@@ -1,6 +1,6 @@
 {
   "snapshot_meta": {
-    "captured_at": "2026-11-26T08:00:38Z",
+    "captured_at": "2026-11-26T08:48:01Z",
     "source": "local-release-tags",
     "router_servers_file": "servers.yaml",
     "release_candidate": null
@@ -2125,7 +2125,7 @@
       ]
     },
     "gtex": {
-      "version": "4.1.0",
+      "version": "4.1.1",
       "tools": [
         {
           "name": "search",
@@ -2851,7 +2851,7 @@
       ]
     },
     "hgnc": {
-      "version": "3.0.0",
+      "version": "3.1.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -8369,7 +8369,7 @@
       ]
     },
     "strchive": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -8614,7 +8614,7 @@
       ]
     },
     "autopvs1": {
-      "version": "4.3.1",
+      "version": "4.3.2",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -8685,8 +8685,8 @@
                   "hg38"
                 ],
                 "examples": [
-                  "hg38",
-                  "hg19"
+                  "hg19",
+                  "hg38"
                 ],
                 "type": "string"
               },
@@ -8833,7 +8833,7 @@
                 "examples": [
                   [
                     {
-                      "genome_build": "hg38",
+                      "genome_build": "hg19",
                       "variant_id": "X-82763936-A-T"
                     }
                   ]
@@ -17869,7 +17869,7 @@
       ]
     },
     "hpo": {
-      "version": "0.15.0",
+      "version": "0.16.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -19694,7 +19694,7 @@
       ]
     },
     "orphanet": {
-      "version": "0.9.0",
+      "version": "0.10.0",
       "tools": [
         {
           "name": "get_server_capabilities",
