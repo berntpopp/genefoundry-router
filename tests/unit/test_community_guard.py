@@ -191,7 +191,7 @@ async def test_oversized_body_aborts_at_cap_with_bounded_memory_and_quarantines(
             tracemalloc.stop()
     assert _error(result)["error_code"] == "invalid_response"
     assert peak < 8 * 1024 * 1024, peak
-    assert quarantined == [("acme", "response_too_large")]
+    assert quarantined == [("acme", "response_cap")]
 
 
 async def test_2000_tool_list_quarantines_without_parsing_it(quarantined: list[Any]) -> None:
@@ -207,7 +207,7 @@ async def test_2000_tool_list_quarantines_without_parsing_it(quarantined: list[A
     edge.attack["tools/list"] = _streamed(listing())
     async with _router(edge) as server, Client(server) as client:
         assert await client.list_tools() == []
-    assert quarantined and quarantined[0] == ("acme", "response_too_large")
+    assert quarantined and quarantined[0] == ("acme", "response_cap")
 
 
 async def test_more_tools_than_the_cap_quarantines(
@@ -216,7 +216,7 @@ async def test_more_tools_than_the_cap_quarantines(
     monkeypatch.setattr(community_guard, "MAX_TOOLS", 1)
     async with _router(Edge(_backend_app())) as server, Client(server) as client:  # two tools
         assert await client.list_tools() == []
-    assert quarantined == [("acme", "too_many_tools")]
+    assert quarantined == [("acme", "tool_cap")]
 
 
 async def test_upstream_500_drops_the_backend_message() -> None:
@@ -293,3 +293,28 @@ async def test_small_gzip_reply_passes_the_cap_intact(quarantined: list[Any]) ->
     result = await _call(edge)
     assert not result.is_error and "\nok\n" in result.content[0].text
     assert quarantined == []
+
+
+async def test_cap_breach_latches_the_backend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fastmcp.server.providers.proxy import ProxyClient
+
+    from genefoundry_router import runtime_drift
+    from genefoundry_router.runtime_drift import harvest_upstream, pin_json
+
+    monkeypatch.setattr(runtime_drift, "_active", None)  # bind_community sets it
+    (tmp_path / "acme.json").write_text(
+        pin_json("acme", await harvest_upstream(lambda: ProxyClient(_backend_app())))
+    )
+    backend = BackendDef(name="acme", namespace="acme", url_env="X", url=URL)
+    object.__setattr__(backend, "trust", "community")
+    guard = runtime_drift.RuntimeDriftGuard({}, "enforce")
+    guard.bind_community([backend], pins_dir=tmp_path, state_file=tmp_path / "quarantine.json")
+    edge = Edge(_backend_app())
+    edge.attack["tools/call"] = _streamed(_huge_plain(1 << 20))
+    assert _error(await _call(edge))["error_code"] == "invalid_response"
+    assert guard.latched["acme"]["reason"] == "response_cap"
+    assert (
+        json.loads((tmp_path / "quarantine.json").read_text())["acme"]["reason"] == "response_cap"
+    )

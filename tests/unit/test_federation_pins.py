@@ -339,6 +339,7 @@ async def test_unreachable_community_backend_does_not_delay_startup(
     settings = _settings(
         GF_COMMUNITY_SERVERS_FILE=str(community),
         GF_ALLOW_COMMUNITY_BACKENDS=True,
+        GF_QUARANTINE_FILE=str(tmp_path / "quarantine.json"),
         GF_COMMUNITY_PINS_DIR=str(tmp_path / "pins"),
         GF_POLL_INTERVAL=300,
     )
@@ -353,6 +354,7 @@ def test_community_instance_requires_poll_interval_equal_to_cache_ttl(tmp_path: 
     settings = _settings(
         GF_COMMUNITY_SERVERS_FILE=str(_community_file(tmp_path)),
         GF_ALLOW_COMMUNITY_BACKENDS=True,
+        GF_QUARANTINE_FILE=str(tmp_path / "quarantine.json"),
         GF_POLL_INTERVAL=0,
     )
     with pytest.raises(Exception, match="GF_POLL_INTERVAL"):

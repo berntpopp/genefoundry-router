@@ -326,6 +326,9 @@ class RouterSettings(BaseSettings):
                 )
             if self.GF_DRIFT_MODE != "enforce":
                 raise ValueError("community backends require GF_DRIFT_MODE=enforce")
+        if self.GF_ALLOW_COMMUNITY_BACKENDS and not self.GF_QUARANTINE_FILE:
+            # #411: an in-memory latch would be cleared by a restart.
+            raise ValueError("GF_ALLOW_COMMUNITY_BACKENDS=true requires GF_QUARANTINE_FILE")
         if self.GF_PRIVACY_PROFILE == "patient":
             if self.GF_COMMUNITY_SERVERS_FILE:
                 raise ValueError("GF_PRIVACY_PROFILE=patient forbids community backends")

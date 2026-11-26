@@ -28,6 +28,7 @@ from pydantic import PrivateAttr, ValidationError
 
 from genefoundry_router.egress import InvalidResponseError
 from genefoundry_router.notfound_guard import _envelope
+from genefoundry_router.runtime_drift import quarantine_backend
 from genefoundry_router.tool_error_taxonomy import transport_failure, upstream_status
 
 log = structlog.get_logger(__name__)
@@ -38,9 +39,8 @@ MAX_TOOLS = 32
 MAX_ARG_BYTES = 8_192
 
 
-# The latch lives in runtime_drift (#411); this no-op seam is replaced when it merges.
-def quarantine(namespace: str, reason: str) -> None:
-    return None
+# The latch (#411); reasons are fixed metric labels, never request data.
+quarantine = quarantine_backend
 
 
 # Response Envelope v1.2 removal set (C0 except tab/LF/CR, C1, zero-width, bidi) plus the
@@ -139,7 +139,7 @@ class _CappedStream(httpx2.AsyncByteStream):
                 data = self._decoder.unconsumed_tail
             if max(raw, decoded) > MAX_RESPONSE_BYTES:
                 log.warning("community_response_too_large", namespace=self._namespace)
-                quarantine(self._namespace, "response_too_large")
+                quarantine(self._namespace, "response_cap")
                 raise ResponseTooLargeError("community response exceeds the byte cap")
             yield chunk
 
@@ -202,7 +202,7 @@ def harden_tools(tools: Any, namespace: str) -> Any:
     """Enforce GF_COMMUNITY_MAX_TOOLS and make every listed tool a ``CommunityProxyTool``."""
     if len(tools) > MAX_TOOLS:
         log.warning("community_too_many_tools", namespace=namespace, tools=len(tools))
-        quarantine(namespace, "too_many_tools")
+        quarantine(namespace, "tool_cap")
         raise InvalidResponseError("community tools/list exceeds the tool cap")
     for tool in tools:
         if isinstance(tool, ProxyTool):
