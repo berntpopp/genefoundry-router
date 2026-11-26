@@ -96,6 +96,10 @@ class RouterSettings(BaseSettings):
     GF_DISABLED_BACKENDS: Annotated[list[str], NoDecode] = []
     # patient: no community backends and no reranker that sends queries off the host.
     GF_PRIVACY_PROFILE: Literal["default", "patient"] = "default"
+    # Federation Standard v1 §5 (#412): community response, tool-list and argument caps.
+    GF_COMMUNITY_MAX_RESPONSE_BYTES: int = Field(default=262_144, ge=1)
+    GF_COMMUNITY_MAX_TOOLS: int = Field(default=32, ge=1)
+    GF_COMMUNITY_MAX_ARG_BYTES: int = Field(default=8_192, ge=1)
 
     # Tool search
     GF_SEARCH_MAX_RESULTS: int = 5

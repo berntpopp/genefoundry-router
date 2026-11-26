@@ -18,7 +18,7 @@ from fastmcp.skills.provider import SkillsDirectoryProvider
 from fastmcp.tools import Tool
 from starlette.responses import JSONResponse
 
-from genefoundry_router import __version__
+from genefoundry_router import __version__, community_guard
 from genefoundry_router.argument_guard import ArgumentGuard
 from genefoundry_router.auth import build_auth, resolve_refresh_observability_hmac_key
 from genefoundry_router.authorization import WriteAuthorizationMiddleware
@@ -130,6 +130,8 @@ def build_server(
     ):
         # Federation Standard v1 §2: the core endpoint never serves community backends.
         raise ConfigurationError(f"community backends {community} on a non-community instance")
+    if community:
+        community_guard.configure(settings)
     # Keep the historical one-argument call when observability is disabled so existing
     # auth factories and tests remain compatible.
     auth = (
