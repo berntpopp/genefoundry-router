@@ -159,3 +159,28 @@ def test_d1_is_flagged_but_advisory() -> None:
     tool = {"name": "search_literature", "description": D1_FAIL[0], "inputSchema": {}}
     assert [v.rule for v in lint_tool_schema(tool)] == ["D1"]
     assert "D1" in ADVISORY
+
+
+def _backend_of_size(chars: int) -> dict[str, Any]:
+    """One documented, zero-argument tool whose serialized entry is about ``chars`` long."""
+    return {"tools": [{"name": "t", "description": "Returns x. " + "a" * chars, "inputSchema": {}}]}
+
+
+def test_pubtator_b2_exception_is_the_only_one_and_capped_at_13000() -> None:
+    from check_tool_surface import SERVER_TOKEN_CAPS
+
+    assert SERVER_TOKEN_CAPS == {"pubtator": 13_000}
+    doc = (
+        Path(__file__).resolve().parents[2] / "docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md"
+    ).read_text()
+    assert "pubtator-link" in doc and "13,000 tokens" in doc
+
+
+def test_pubtator_surface_passes_under_cap_and_fails_above_it() -> None:
+    def b2(namespace: str, tokens: int) -> list[str]:
+        return [v.rule for v in check_backend(namespace, _backend_of_size(tokens * 4))]
+
+    assert "B2" not in b2("pubtator", 12_900)
+    assert "B2" in b2("pubtator", 13_100)
+    # No other server gets the exception.
+    assert "B2" in b2("metadome", 10_100)

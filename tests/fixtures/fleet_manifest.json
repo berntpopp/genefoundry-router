@@ -11383,7 +11383,7 @@
           ]
         },
         {
-          "name": "suggest_corpus",
+          "name": "find_review_corpus",
           "description": "Use this when a user needs a compact, review-feeding PMID corpus for a research question: returns candidate PMIDs, roles, coverage hints, metadata, and next commands.",
           "inputSchema": {
             "type": "object",
@@ -11460,7 +11460,7 @@
           ]
         },
         {
-          "name": "convert_article_ids",
+          "name": "map_article_ids",
           "description": "Use this when a user provides article identifiers such as PMIDs, PMCIDs, or DOIs and needs normalized candidate PMIDs for research workflows; returns the normalized PMID, PMCID and DOI for each input identifier.",
           "inputSchema": {
             "type": "object",
@@ -11736,7 +11736,7 @@
           ]
         },
         {
-          "name": "build_topic_literature_map",
+          "name": "generate_topic_literature_map",
           "description": "Use this when a user needs a bounded topic-level literature map from a topic query, optionally seeded with PMIDs: returns candidate PMID lanes with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
           "inputSchema": {
             "type": "object",
@@ -12350,7 +12350,7 @@
           ]
         },
         {
-          "name": "estimate_publication_context",
+          "name": "compute_publication_context",
           "description": "Use this when a user needs to estimate passage count and context size before fetching publication passages; returns estimated passage and character counts plus a recommended passage mode. Do not use this for text retrieval; use get_publication_passages. Next: get_publication_passages.",
           "inputSchema": {
             "type": "object",
@@ -12568,7 +12568,7 @@
           ]
         },
         {
-          "name": "inspect_review_index",
+          "name": "get_review_index_status",
           "description": "Use this when a user needs to inspect indexed PMIDs, sections, passage counts, and failures for a review_id, including source coverage; returns per-source summaries, totals and failures.",
           "inputSchema": {
             "type": "object",
@@ -12758,7 +12758,7 @@
           ]
         },
         {
-          "name": "preflight_review_sources",
+          "name": "get_review_source_coverage",
           "description": "Use this when a user needs PMID source coverage, PMC fallback availability, and likely full-text versus abstract-only retrieval before indexing review evidence; returns per-PMID source coverage and fallback availability.",
           "inputSchema": {
             "type": "object",
@@ -19119,7 +19119,7 @@
         },
         {
           "name": "resolve_transcript",
-          "description": "Resolve a gene symbol or versioned ENST id to the MetaDome transcript (GRCh37 or GRCh38 build) to use for its missense tolerance landscape; for a gene returns its transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then request_tolerance_landscape.",
+          "description": "Resolve a gene symbol or versioned ENST id to the MetaDome transcript (GRCh37 or GRCh38 build) to use for its missense tolerance landscape; for a gene returns its transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then submit_tolerance_landscape.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19163,7 +19163,7 @@
           ]
         },
         {
-          "name": "request_tolerance_landscape",
+          "name": "submit_tolerance_landscape",
           "description": "Start the MetaDome tolerance-landscape build for a transcript (async, idempotent); returns job_id and status ready or processing. Cold builds can take up to ~1 h. Every read tool needs this first; then poll get_tolerance_landscape.",
           "inputSchema": {
             "type": "object",
@@ -19209,7 +19209,7 @@
         },
         {
           "name": "get_tolerance_landscape",
-          "description": "Get per-residue missense tolerance (sw_dn_ds, lower = more intolerant) and Pfam domains for a transcript, paginated. Call request_tolerance_landscape first. status processing with poll_after_s is not an error: wait and poll again. not_found = MetaDome has no landscape or build job for the id.",
+          "description": "Get per-residue missense tolerance (sw_dn_ds, lower = more intolerant) and Pfam domains for a transcript, paginated. Call submit_tolerance_landscape first. status processing with poll_after_s is not an error: wait and poll again. not_found = MetaDome has no landscape or build job for the id.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19283,7 +19283,7 @@
         },
         {
           "name": "get_position_tolerance",
-          "description": "Get the tolerance score, Pfam domain and ClinVar variants at one protein residue. Needs a built landscape (request_tolerance_landscape). For several residues use compare_positions.",
+          "description": "Get the tolerance score, Pfam domain and ClinVar variants at one protein residue. Needs a built landscape (submit_tolerance_landscape). For several residues use compare_positions.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19338,7 +19338,7 @@
         },
         {
           "name": "get_variant_counts",
-          "description": "Get residue ClinVar variants plus Pfam meta-domain homolog aggregates for one residue or a range. Aggregates can include other genes; MetaDome has no per-residue gnomAD counts. Needs a built landscape (request_tolerance_landscape).",
+          "description": "Get residue ClinVar variants plus Pfam meta-domain homolog aggregates for one residue or a range. Aggregates can include other genes; MetaDome has no per-residue gnomAD counts. Needs a built landscape (submit_tolerance_landscape).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19431,7 +19431,7 @@
         },
         {
           "name": "compare_positions",
-          "description": "Compare several residues of one transcript; returns a side-by-side tolerance, domain and ClinVar table. Needs a built landscape (request_tolerance_landscape). For one residue use get_position_tolerance.",
+          "description": "Compare several residues of one transcript; returns a side-by-side tolerance, domain and ClinVar table. Needs a built landscape (submit_tolerance_landscape). For one residue use get_position_tolerance.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19492,7 +19492,7 @@
         },
         {
           "name": "get_protein_domains",
-          "description": "List Pfam domains (id, name, residue range) of a transcript. Needs a built landscape (request_tolerance_landscape). Then get_meta_domain for homolog variants.",
+          "description": "List Pfam domains (id, name, residue range) of a transcript. Needs a built landscape (submit_tolerance_landscape). Then get_meta_domain for homolog variants.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19537,7 +19537,7 @@
         },
         {
           "name": "get_meta_domain",
-          "description": "Get variants at the aligned position of homologous Pfam domains (meta-domain) for one residue; these span other genes, not this gene alone. Needs a built landscape (request_tolerance_landscape). Paginated.",
+          "description": "Get variants at the aligned position of homologous Pfam domains (meta-domain) for one residue; these span other genes, not this gene alone. Needs a built landscape (submit_tolerance_landscape). Paginated.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -19629,8 +19629,8 @@
           ]
         },
         {
-          "name": "summarize_intolerant_regions",
-          "description": "Find ranked runs of missense-intolerant residues (sw_dn_ds below threshold) with Pfam overlap and scoped variant evidence. Needs a built landscape (request_tolerance_landscape). For raw per-residue scores use get_tolerance_landscape.",
+          "name": "find_intolerant_regions",
+          "description": "Find ranked runs of missense-intolerant residues (sw_dn_ds below threshold) with Pfam overlap and scoped variant evidence. Needs a built landscape (submit_tolerance_landscape). For raw per-residue scores use get_tolerance_landscape.",
           "inputSchema": {
             "type": "object",
             "properties": {

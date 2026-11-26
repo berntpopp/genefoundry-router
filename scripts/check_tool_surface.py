@@ -50,6 +50,9 @@ from surface import (
     tokens,
 )
 
+# Owner-approved B2 exceptions (docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md, "Exceptions"): hard caps.
+SERVER_TOKEN_CAPS = {"pubtator": 13_000}
+
 ADVISORY = {"D1"}  # warn-only until a repo opts in with --strict-lead
 
 
@@ -117,14 +120,15 @@ def check_backend(namespace: str, entry: dict[str, Any]) -> list[Violation]:
     server = f"{namespace}-link"
     bad: list[Violation] = []
     metrics = surface_metrics(tools)
+    limit = SERVER_TOKEN_CAPS.get(namespace, MAX_SERVER_TOKENS)
 
-    if metrics["surface"] > MAX_SERVER_TOKENS:
+    if metrics["surface"] > limit:
         bad.append(
             Violation(
                 server,
                 "B2",
                 f"tool surface {metrics['surface']:,}t exceeds "
-                f"{MAX_SERVER_TOKENS:,}t ({metrics['out_pct']}% of it is outputSchema)",
+                f"{limit:,}t ({metrics['out_pct']}% of it is outputSchema)",
             )
         )
 
@@ -191,7 +195,7 @@ def main() -> int:
     if not violations:
         print(
             f"\nCONFORMANT — every tool <= {MAX_TOOL_TOKENS:,}t, every server <= "
-            f"{MAX_SERVER_TOKENS:,}t, {MIN_DOCUMENTED_PCT}% of params documented."
+            f"{MAX_SERVER_TOKENS:,}t (or its approved cap), {MIN_DOCUMENTED_PCT}% of params documented."
         )
         return 0
 

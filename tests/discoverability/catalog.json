@@ -4491,7 +4491,7 @@
   },
   {
     "name": "metadome_compare_positions",
-    "description": "Compare several residues of one transcript; returns a side-by-side tolerance, domain and ClinVar table. Needs a built landscape (request_tolerance_landscape). For one residue use get_position_tolerance.",
+    "description": "Compare several residues of one transcript; returns a side-by-side tolerance, domain and ClinVar table. Needs a built landscape (submit_tolerance_landscape). For one residue use get_position_tolerance.",
     "tags": [
       "domain",
       "positions",
@@ -4527,7 +4527,7 @@
   },
   {
     "name": "metadome_get_meta_domain",
-    "description": "Get variants at the aligned position of homologous Pfam domains (meta-domain) for one residue; these span other genes, not this gene alone. Needs a built landscape (request_tolerance_landscape). Paginated.",
+    "description": "Get variants at the aligned position of homologous Pfam domains (meta-domain) for one residue; these span other genes, not this gene alone. Needs a built landscape (submit_tolerance_landscape). Paginated.",
     "tags": [
       "domain",
       "domains",
@@ -4554,7 +4554,7 @@
   },
   {
     "name": "metadome_get_position_tolerance",
-    "description": "Get the tolerance score, Pfam domain and ClinVar variants at one protein residue. Needs a built landscape (request_tolerance_landscape). For several residues use compare_positions.",
+    "description": "Get the tolerance score, Pfam domain and ClinVar variants at one protein residue. Needs a built landscape (submit_tolerance_landscape). For several residues use compare_positions.",
     "tags": [
       "domain",
       "positions",
@@ -4578,7 +4578,7 @@
   },
   {
     "name": "metadome_get_protein_domains",
-    "description": "List Pfam domains (id, name, residue range) of a transcript. Needs a built landscape (request_tolerance_landscape). Then get_meta_domain for homolog variants.",
+    "description": "List Pfam domains (id, name, residue range) of a transcript. Needs a built landscape (submit_tolerance_landscape). Then get_meta_domain for homolog variants.",
     "tags": [
       "domain",
       "domains",
@@ -4621,7 +4621,7 @@
   },
   {
     "name": "metadome_get_tolerance_landscape",
-    "description": "Get per-residue missense tolerance (sw_dn_ds, lower = more intolerant) and Pfam domains for a transcript, paginated. Call request_tolerance_landscape first. status processing with poll_after_s is not an error: wait and poll again. not_found = MetaDome has no landscape or build job for the id.",
+    "description": "Get per-residue missense tolerance (sw_dn_ds, lower = more intolerant) and Pfam domains for a transcript, paginated. Call submit_tolerance_landscape first. status processing with poll_after_s is not an error: wait and poll again. not_found = MetaDome has no landscape or build job for the id.",
     "tags": [
       "domain",
       "landscape",
@@ -4648,7 +4648,7 @@
   },
   {
     "name": "metadome_get_variant_counts",
-    "description": "Get residue ClinVar variants plus Pfam meta-domain homolog aggregates for one residue or a range. Aggregates can include other genes; MetaDome has no per-residue gnomAD counts. Needs a built landscape (request_tolerance_landscape).",
+    "description": "Get residue ClinVar variants plus Pfam meta-domain homolog aggregates for one residue or a range. Aggregates can include other genes; MetaDome has no per-residue gnomAD counts. Needs a built landscape (submit_tolerance_landscape).",
     "tags": [
       "domain",
       "positions",
@@ -4681,7 +4681,7 @@
     }
   },
   {
-    "name": "metadome_request_tolerance_landscape",
+    "name": "metadome_submit_tolerance_landscape",
     "description": "Start the MetaDome tolerance-landscape build for a transcript (async, idempotent); returns job_id and status ready or processing. Cold builds can take up to ~1 h. Every read tool needs this first; then poll get_tolerance_landscape.",
     "tags": [
       "domain",
@@ -4705,7 +4705,7 @@
   },
   {
     "name": "metadome_resolve_transcript",
-    "description": "Resolve a gene symbol or versioned ENST id to the MetaDome transcript (GRCh37 or GRCh38 build) to use for its missense tolerance landscape; for a gene returns its transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then request_tolerance_landscape.",
+    "description": "Resolve a gene symbol or versioned ENST id to the MetaDome transcript (GRCh37 or GRCh38 build) to use for its missense tolerance landscape; for a gene returns its transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then submit_tolerance_landscape.",
     "tags": [
       "domain",
       "protein",
@@ -4727,8 +4727,8 @@
     }
   },
   {
-    "name": "metadome_summarize_intolerant_regions",
-    "description": "Find ranked runs of missense-intolerant residues (sw_dn_ds below threshold) with Pfam overlap and scoped variant evidence. Needs a built landscape (request_tolerance_landscape). For raw per-residue scores use get_tolerance_landscape.",
+    "name": "metadome_find_intolerant_regions",
+    "description": "Find ranked runs of missense-intolerant residues (sw_dn_ds below threshold) with Pfam overlap and scoped variant evidence. Needs a built landscape (submit_tolerance_landscape). For raw per-residue scores use get_tolerance_landscape.",
     "tags": [
       "analysis",
       "domain",
@@ -6645,7 +6645,7 @@
     }
   },
   {
-    "name": "pubtator_build_topic_literature_map",
+    "name": "pubtator_generate_topic_literature_map",
     "description": "Use this when a user needs a bounded topic-level literature map from a topic query, optionally seeded with PMIDs: returns candidate PMID lanes with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
     "tags": [
       "entity",
@@ -6695,7 +6695,7 @@
     }
   },
   {
-    "name": "pubtator_convert_article_ids",
+    "name": "pubtator_map_article_ids",
     "description": "Use this when a user provides article identifiers such as PMIDs, PMCIDs, or DOIs and needs normalized candidate PMIDs for research workflows; returns the normalized PMID, PMCID and DOI for each input identifier.",
     "tags": [
       "entity",
@@ -6725,7 +6725,7 @@
     "params": {}
   },
   {
-    "name": "pubtator_estimate_publication_context",
+    "name": "pubtator_compute_publication_context",
     "description": "Use this when a user needs to estimate passage count and context size before fetching publication passages; returns estimated passage and character counts plus a recommended passage mode. Do not use this for text retrieval; use get_publication_passages. Next: get_publication_passages.",
     "tags": [
       "entity",
@@ -7268,7 +7268,7 @@
     }
   },
   {
-    "name": "pubtator_inspect_review_index",
+    "name": "pubtator_get_review_index_status",
     "description": "Use this when a user needs to inspect indexed PMIDs, sections, passage counts, and failures for a review_id, including source coverage; returns per-source summaries, totals and failures.",
     "tags": [
       "entity",
@@ -7340,7 +7340,7 @@
     }
   },
   {
-    "name": "pubtator_preflight_review_sources",
+    "name": "pubtator_get_review_source_coverage",
     "description": "Use this when a user needs PMID source coverage, PMC fallback availability, and likely full-text versus abstract-only retrieval before indexing review evidence; returns per-PMID source coverage and fallback availability.",
     "tags": [
       "entity",
@@ -7492,7 +7492,7 @@
     }
   },
   {
-    "name": "pubtator_suggest_corpus",
+    "name": "pubtator_find_review_corpus",
     "description": "Use this when a user needs a compact, review-feeding PMID corpus for a research question: returns candidate PMIDs, roles, coverage hints, metadata, and next commands.",
     "tags": [
       "entity",

@@ -4,6 +4,16 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.15] - 2026-11-26
+
+### Changed
+
+- **Router data follows the metadome-link v1.0.0 and pubtator-link v8.0.0 tool renames.** Search expansions (`tool-expansions.json`), the discoverability catalog and held-out tasks, and the `tests/fixtures/fleet_manifest.json` snapshot use the new names. Migration (old -> new): metadome `request_tolerance_landscape` -> `submit_tolerance_landscape`, `summarize_intolerant_regions` -> `find_intolerant_regions`; pubtator `suggest_corpus` -> `find_review_corpus`, `convert_article_ids` -> `map_article_ids`, `build_topic_literature_map` -> `generate_topic_literature_map`, `estimate_publication_context` -> `compute_publication_context`, `inspect_review_index` -> `get_review_index_status`, `preflight_review_sources` -> `get_review_source_coverage`. Pinned entry points are unchanged. The attested drift baseline (`fleet-baseline.json` and its companions) still pins the deployed fleet, which serves the old names; it is re-pinned after the renamed backends are deployed. No `transform.rename` bridge was added: the runtime drift guard would quarantine the renamed names because they are not in the pinned baseline.
+
+### Added
+
+- **Owner-approved `B2` exception for pubtator-link.** Its whole-server tool surface may reach a hard cap of 13,000 tokens (12,815 measured at v8.0.0) because of the per-property documentation the schema-documentation standard requires on its literature-review surface. Documented in `docs/TOOL-SURFACE-BUDGET-STANDARD-v1.md`, enforced by `SERVER_TOKEN_CAPS` in `scripts/check_tool_surface.py`, and guarded by tests (cap value, a surface above the cap fails, no other server is exempt).
+
 ## [0.14.14] - 2026-11-26
 
 ### Changed

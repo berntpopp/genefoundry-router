@@ -374,7 +374,7 @@ tasks:
   style: paraphrase
   query: which stretches of the protein never tolerate amino-acid swaps in healthy humans
   expected:
-  - metadome_summarize_intolerant_regions
+  - metadome_find_intolerant_regions
   - metadome_get_tolerance_landscape
   confidence: high
 - id: h-workflow-pm1
@@ -383,7 +383,7 @@ tasks:
   query: evaluate PM1 — is this missense in a mutational hotspot or critical domain without benign variation
   expected:
   - metadome_get_position_tolerance
-  - metadome_summarize_intolerant_regions
+  - metadome_find_intolerant_regions
   - metadome_get_meta_domain
   - metadome_get_tolerance_landscape
   - metadome_get_variant_counts
@@ -416,7 +416,7 @@ tasks:
   style: concrete
   query: start computing the tolerance landscape for ENST00000303395.4 and give me a poll handle
   expected:
-  - metadome_request_tolerance_landscape
+  - metadome_submit_tolerance_landscape
   confidence: high
 - id: h-concrete-metadome-pfam
   category: tolerance
@@ -1267,7 +1267,7 @@ tasks:
   query: find recent scientific articles on gene therapy for spinal muscular atrophy
   expected:
   - pubtator_search_literature
-  - pubtator_suggest_corpus
+  - pubtator_find_review_corpus
   confidence: high
 - id: h-paraphrase-guidelines
   category: literature
@@ -1282,7 +1282,7 @@ tasks:
   style: concrete
   query: convert DOI 10.1038/gim.2015.30 and PMC4544753 to PMIDs
   expected:
-  - pubtator_convert_article_ids
+  - pubtator_map_article_ids
   confidence: high
 - id: h-concrete-free-citation
   category: literature
@@ -1348,15 +1348,15 @@ tasks:
   style: concrete
   query: bounded literature landscape for 'ciliopathy kidney cysts' seeded with two PMIDs
   expected:
-  - pubtator_build_topic_literature_map
-  - pubtator_suggest_corpus
+  - pubtator_generate_topic_literature_map
+  - pubtator_find_review_corpus
   confidence: medium
 - id: h-concrete-fulltext-available
   category: literature
   style: concrete
   query: before indexing, which of these PMIDs have free full text vs abstract only?
   expected:
-  - pubtator_preflight_review_sources
+  - pubtator_get_review_source_coverage
   confidence: high
 - id: h-lay-lab-test-function
   category: functional_assay
