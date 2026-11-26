@@ -4,8 +4,11 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.16] - 2026-11-26
+
 ### Added
 
+- **Federation Standard v1 §6: SSRF-safe transport for community backends (#409).** `genefoundry_router/egress.py` gives `trust=community` backends their own client: every A/AAAA answer is resolved at connect time and must be a global address (IPv4-mapped, 6to4 and NAT64 forms unwrapped), the connection goes to the validated IP with SNI, `Host` and certificate verification kept, only `https` on port 443 is allowed, redirects are never followed (a 3xx is `invalid_response`), and proxies are ignored. A literal IP host or a failed resolution at mount time skips that community backend with a warning. Core backends keep the shared pool unchanged.
 - **Federation Standard v1 §3: community loader, forced trust and privacy guards (#410).** `GF_COMMUNITY_SERVERS_FILE` loads operator-hosted backends with `trust=community` forced; the loader rejects `trust`, `entrypoints`, `transform`, `url_env`, `service_token_env` and `enabled`, any URL other than `https://<host>/mcp` on port 443, core or tombstoned (`registry/tombstones.yaml`) names and namespaces, and duplicates; `operator`, `contact`, `ownership`, `server_name`, `source_name` and `data_egress` are required. Disabling uses the file's `disabled:` list or `GF_DISABLED_BACKENDS`. Startup fails unless `GF_ALLOW_COMMUNITY_BACKENDS=true` and `GF_DRIFT_MODE=enforce`; `GF_PRIVACY_PROFILE=patient` refuses community backends and a reranker URL that is not loopback or private. A core instance refuses community entries. The README inventory lists community backends in a separate generated table. Core behaviour is unchanged.
 
 ## [0.14.15] - 2026-11-26
