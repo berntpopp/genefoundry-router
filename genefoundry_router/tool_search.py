@@ -32,6 +32,7 @@ from fastmcp.server.transforms.search.bm25 import (
 from fastmcp.tools.base import Tool
 from pydantic import Field
 
+from genefoundry_router.community_search import CommunitySearch
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.pinned_mode import (
     PinPolicy,
@@ -281,7 +282,9 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         policy: PinPolicy | None = None,
         schema_mode: SchemaMode = "standard",
         skills: Sequence[Tool] = (),
+        community: Sequence[BackendDef] = (),
     ) -> None:
+        self.community = CommunitySearch(community)  # Federation v1 §7; empty on core
         self.policy = policy or PinPolicy(tuple(always_visible or ()))
         self.schema_mode = schema_mode
         depth = max(rerank_pool, max_results) if reranker is not None else max_results
@@ -305,7 +308,11 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         skills = self.skills if request_skills() else []  # X-GF-Skills: off (#368)
         names = {t.name for t in skills}
         depth = max(served, self._max_results) + len(skills)  # skills ride on top of tools
+        if self.community:  # room for the community hits the cap drops
+            depth += served
         shortlist = list(await self._search([*tools, *skills], query, depth=depth))
+        if self.community:
+            shortlist = self.community.cap(shortlist, served)
         if self.reranker is not None:
             ranked = await self.reranker.rerank(query, shortlist)
             if ranked is not None:
@@ -373,6 +380,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             hits = [skill_hit(t, strict) if t.name in skills else next(rest) for t in results]
             for hit in hits if low else ():
                 hit["low_confidence"] = True
+            if transform.community:
+                transform.community.label(hits, results)
             return hits
 
         # Bounds depend on this instance, and `from __future__ import annotations` defers
@@ -484,6 +493,9 @@ class CompactBM25SearchTransform(BM25SearchTransform):
             pad = max(0, _SKILL_DOC_TOKENS - len(text.split()))
             return text + " skillpad" * pad
         leaf = tool.name.split("_", 1)[-1] if "_" in tool.name else tool.name
+        if self.community and self.community.backend_of(tool):
+            fields = " ".join([tool.name, leaf, leaf.replace("_", " ")])
+            return self.community.document(tool, f" {fields}" * _FIELD_BOOST, _stem_text)
         fields = " ".join([tool.name, leaf, leaf.replace("_", " "), *sorted(tool.tags)])
         expansion = self.expansions.get(tool.name, "")
         return _stem_text(
@@ -500,6 +512,8 @@ class CompactBM25SearchTransform(BM25SearchTransform):
         if current_hash != self._last_hash:
             documents = [self._searchable_text(t) for t in tools]
             new_index = _BM25Index(self._index.k1, self._index.b)
+            if self.community:
+                new_index = self.community.index(self._index.k1, self._index.b, tools)
             new_index.build(documents)
             self._index, self._indexed_tools, self._last_hash = new_index, tools, current_hash
         indices = self._index.query(_stem_text(query), depth or self._max_results)
@@ -548,6 +562,7 @@ def apply_tool_search(
     settings: RouterSettings,
     always_visible: list[str] | None = None,
     slim_keep: Mapping[str, Sequence[str]] | None = None,
+    community: Sequence[BackendDef] = (),
 ) -> CompactBM25SearchTransform:
     """Replace the full tool listing with search_tools + call_tool + pinned tools.
 
@@ -567,6 +582,7 @@ def apply_tool_search(
         policy=policy,
         schema_mode=settings.GF_SCHEMA_MODE,
         skills=skill_tools(Path(settings.GF_SKILLS_DIR)),
+        community=community,
     )
     server.add_transform(transform)
     log.info(

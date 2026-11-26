@@ -193,6 +193,7 @@ def build_server(
             settings,
             always_visible=resolve_entrypoints(registry),
             slim_keep=slim_keep(registry),
+            community=[b for b in registry if b.trust == "community"],
         )
     # Layer 3 (protocol-handler backstop) + Layer 5 (log-scrub filter) of the not-found
     # guard. Installed here — after every proxy mount — so the CallTool/ReadResource/
@@ -307,6 +308,7 @@ def build_app(
                     settings,
                     always_visible=resolve_entrypoints(registry),
                     slim_keep=slim_keep(registry),
+                    community=community,
                 )
                 refresher = PollingRefresher(settings.GF_POLL_INTERVAL, _relist)
                 await refresher.start()
