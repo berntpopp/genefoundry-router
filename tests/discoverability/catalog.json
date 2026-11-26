@@ -6896,7 +6896,7 @@
     ],
     "params": {
       "review_id": "Review the certainty judgment belongs to.",
-      "certainty_id": "Identifier of the stored certainty judgment to fetch."
+      "certainty_id": "UUID of the stored certainty judgment."
     }
   },
   {
@@ -7242,17 +7242,6 @@
         "schema_policy",
         "preferred_tool_names"
       ]
-    }
-  },
-  {
-    "name": "pubtator_get_text_annotation_results",
-    "description": "Use this when a user has a PubTator text annotation session ID and needs its results; returns the annotated text with entity mentions and IDs once ready. Do not use this for entity lookup from names; use search_biomedical_entities. Next: search_biomedical_entities.",
-    "tags": [
-      "entity",
-      "literature"
-    ],
-    "params": {
-      "session_id": "PubTator text-annotation session ID returned by a prior request."
     }
   },
   {
