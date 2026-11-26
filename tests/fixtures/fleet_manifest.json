@@ -1,6 +1,6 @@
 {
   "snapshot_meta": {
-    "captured_at": "2026-11-26T07:35:39Z",
+    "captured_at": "2026-11-26T08:00:38Z",
     "source": "local-release-tags",
     "router_servers_file": "servers.yaml",
     "release_candidate": null
@@ -7410,7 +7410,7 @@
       ]
     },
     "stringdb": {
-      "version": "4.6.1",
+      "version": "4.7.0",
       "tools": [
         {
           "name": "resolve_protein_identifiers",
@@ -7746,6 +7746,15 @@
             ],
             "additionalProperties": false,
             "$defs": {
+              "NetworkType": {
+                "type": "string",
+                "enum": [
+                  "functional",
+                  "physical"
+                ],
+                "title": "NetworkType",
+                "description": "Network types supported by STRING."
+              },
               "NetworkFlavor": {
                 "type": "string",
                 "enum": [
@@ -7755,15 +7764,6 @@
                 ],
                 "title": "NetworkFlavor",
                 "description": "Network visualization styles supported by STRING."
-              },
-              "NetworkType": {
-                "type": "string",
-                "enum": [
-                  "functional",
-                  "physical"
-                ],
-                "title": "NetworkType",
-                "description": "Network types supported by STRING."
               }
             }
           },
@@ -8319,15 +8319,15 @@
             ],
             "additionalProperties": false,
             "$defs": {
-              "NetworkFlavor": {
+              "ImageFormat": {
                 "type": "string",
                 "enum": [
-                  "evidence",
-                  "confidence",
-                  "actions"
+                  "image",
+                  "highres_image",
+                  "svg"
                 ],
-                "title": "NetworkFlavor",
-                "description": "Network visualization styles supported by STRING."
+                "title": "ImageFormat",
+                "description": "Image formats for network visualization."
               },
               "NetworkType": {
                 "type": "string",
@@ -8338,15 +8338,15 @@
                 "title": "NetworkType",
                 "description": "Network types supported by STRING."
               },
-              "ImageFormat": {
+              "NetworkFlavor": {
                 "type": "string",
                 "enum": [
-                  "image",
-                  "highres_image",
-                  "svg"
+                  "evidence",
+                  "confidence",
+                  "actions"
                 ],
-                "title": "ImageFormat",
-                "description": "Image formats for network visualization."
+                "title": "NetworkFlavor",
+                "description": "Network visualization styles supported by STRING."
               }
             }
           },
@@ -10749,7 +10749,7 @@
       ]
     },
     "pubtator": {
-      "version": "7.10.0",
+      "version": "7.11.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -12498,40 +12498,6 @@
           ]
         },
         {
-          "name": "get_text_annotation_results",
-          "description": "Use this when a user has a PubTator text annotation session ID and needs its results; returns the annotated text with entity mentions and IDs once ready. Do not use this for entity lookup from names; use search_biomedical_entities. Next: search_biomedical_entities.",
-          "inputSchema": {
-            "type": "object",
-            "properties": {
-              "session_id": {
-                "description": "PubTator text-annotation session ID returned by a prior request.",
-                "examples": [
-                  "session-12345678"
-                ],
-                "minLength": 8,
-                "type": "string"
-              }
-            },
-            "required": [
-              "session_id"
-            ],
-            "additionalProperties": false
-          },
-          "outputSchema": null,
-          "annotations": {
-            "title": null,
-            "readOnlyHint": true,
-            "destructiveHint": false,
-            "idempotentHint": true,
-            "openWorldHint": true
-          },
-          "execution": null,
-          "tags": [
-            "entity",
-            "literature"
-          ]
-        },
-        {
           "name": "list_review_indexes",
           "description": "Use this when a user needs persisted review indexes with preparation status, source counts, passage counts, and approximate storage size; returns one row per index with those fields.",
           "inputSchema": {
@@ -12763,9 +12729,9 @@
                 "type": "string"
               },
               "certainty_id": {
-                "description": "Identifier of the stored certainty judgment to fetch.",
+                "description": "UUID of the stored certainty judgment.",
                 "examples": [
-                  "certainty-1"
+                  "3f2b8c1e-5d47-4a9b-8c21-6e0f4d2a9b17"
                 ],
                 "minLength": 1,
                 "type": "string"
@@ -14401,7 +14367,7 @@
       ]
     },
     "mitomap": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -16027,7 +15993,7 @@
       ]
     },
     "mondo": {
-      "version": "0.12.0",
+      "version": "0.13.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -20922,7 +20888,7 @@
       ]
     },
     "clinpgx": {
-      "version": "0.1.24",
+      "version": "0.1.25",
       "tools": [
         {
           "name": "get_api_schema",
@@ -22621,7 +22587,7 @@
       ]
     },
     "pgscatalog": {
-      "version": "0.4.0",
+      "version": "0.5.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -24261,7 +24227,7 @@
       ]
     },
     "opentargets": {
-      "version": "0.2.0",
+      "version": "0.3.0",
       "tools": [
         {
           "name": "get_server_capabilities",
@@ -24664,7 +24630,7 @@
       ]
     },
     "moalmanac": {
-      "version": "0.3.0",
+      "version": "0.4.0",
       "tools": [
         {
           "name": "get_server_capabilities",
