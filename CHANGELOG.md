@@ -4,6 +4,10 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Drift baseline re-pinned to `fleet-2026-11-26` (#402).** Strict release-candidate capture from the deployed fleet: all 30 backends at their Response-Envelope v1.2 releases, every live definition digest equal to its signed release manifest. 344 tools (was 345): metadome `request_tolerance_landscape` -> `submit_tolerance_landscape`, `summarize_intolerant_regions` -> `find_intolerant_regions`; the six pubtator v8 renames; `pubtator_get_text_annotation_results` is no longer served (the readonly profile drops it, pubtator-link #295). 79 tools changed definitions (pubtator 28, clinpgx 8, metadome 7, mgi 7, gencc 6, others fewer). Regenerated provenance, discoverability catalog, fleet manifest snapshot, README inventory, and the evidence hashes in the release-candidate test.
+
 ### Added
 
 - **Federation Standard v1 §8: community admission CI (#415).** `.github/workflows/community-admission.yml` runs on `pull_request` (never the privileged variant) for changes to `registry/community.yaml` or `registry/pins/community/`. A static job applies the §3 loader rules, requires one pin per served entry and none without, limits tool descriptions to 300 characters, lints every string for NFC and the Response Envelope v1.2 removal set (bidi, zero-width, tag, controls) and fails a PR that changes files outside the registry. For each added or changed namespace, a probe job in the protected `community-admission` environment (required reviewers, no secrets) refuses a non-global address before any request, requires an ownership proof (DNS TXT `_genefoundry.<host>` or `/.well-known/genefoundry.json`) naming the namespace, the PR author's login and probe consent, runs the GTS conformance kit v0.2.3 at core level behind a connect-time IP guard, and fails with a unified diff when the live definitions differ from the pin. Setup: `docs/community-admission.md`.

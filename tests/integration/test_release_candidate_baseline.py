@@ -13,8 +13,9 @@ RELEASE_CANDIDATE = Path("ci/release-candidate-fleet.json")
 RELEASE_INVENTORY = Path("ci/release-candidate-inventory.json")
 APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 
-# fleet-2026-11-22b: strict capture of 30 verified signed backend releases (ucsc, gtex, stringdb,
-# clinvar, spliceai, gnomad, vep, mondo re-released). Previous: fleet-2026-11-22 (autopvs1, civic,
+# fleet-2026-11-26: strict capture of 30 verified signed backend releases (all 30 re-released for
+# Response-Envelope v1.2; metadome and pubtator tool renames). Previous: fleet-2026-11-22b (ucsc,
+# gtex, stringdb, clinvar, spliceai, gnomad, vep, mondo re-released); fleet-2026-11-22 (autopvs1, civic,
 # clingen, clinpgx, clinvar, genereviews, gnomad, litvar, mavedb, moalmanac, pubtator, spliceai,
 # vep re-released); fleet-2026-11-20b (clinvar, vep, mondo, hpo, ucsc re-released; civic,
 # cbioportal, opentargets, moalmanac added); fleet-2026-11-20
@@ -24,10 +25,10 @@ APPLICATION_RELEASES = Path("ci/fleet-application-releases.json")
 # Updating these four hashes adopts the reviewed fleet atomically with its captured evidence;
 # they must never move independently merely to make a failing check pass.
 HISTORICAL_EVIDENCE_SHA256 = {
-    APPLICATION_RELEASES: "7b681e41ca812f407cbf3ab69ba6a24cbcf4c86bbbbd007812a4ce66e6f8c1db",
-    RELEASE_INVENTORY: "df2a882caed813d5b244c9c5b02994ae7406c9bbc9201d8bb6e75df2be0bfe1c",
-    RELEASE_CANDIDATE: "343174c7c13f439d7c7f3a2f31de594f923598bf7f26a5a4f484bb9911a2a45a",
-    BASELINE: "343174c7c13f439d7c7f3a2f31de594f923598bf7f26a5a4f484bb9911a2a45a",
+    APPLICATION_RELEASES: "dac0ca9d501f8c911d588fe797dba0c2b625a178690e39789f2de910fd427769",
+    RELEASE_INVENTORY: "471dbf000e3a5dac9a2552aae4d3b96bf2c87c5c62e6dc09c9f18c0ad31ae68a",
+    RELEASE_CANDIDATE: "9ea78f6adf0c1df81931496717a9d25399d464f1d8ecc5108732ed8868ffaed9",
+    BASELINE: "9ea78f6adf0c1df81931496717a9d25399d464f1d8ecc5108732ed8868ffaed9",
 }
 
 
@@ -95,7 +96,7 @@ def test_release_candidate_baseline_has_reviewed_tool_metadata() -> None:
     request = next(
         tool
         for tool in manifest.backends["metadome"].tools
-        if tool.name == "request_tolerance_landscape"
+        if tool.name == "submit_tolerance_landscape"
     )
     assert request.annotations is not None
     assert {

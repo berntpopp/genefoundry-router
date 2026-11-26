@@ -20,7 +20,7 @@ def test_load_fleet_provenance_structure() -> None:
     fleet = data["fleet"]
     assert fleet["total_backends"] == 30
     assert fleet["total_repositories"] == 31
-    assert fleet["total_tools"] == 345
+    assert fleet["total_tools"] == 344
 
     router = data["router"]
     assert router["repository"] == "berntpopp/genefoundry-router"
@@ -34,7 +34,7 @@ def test_load_fleet_provenance_structure() -> None:
     clinpgx = backends["clinpgx"]
     assert clinpgx["tools_count"] == 13
     assert len(clinpgx["tools"]) == 13
-    assert clinpgx["release"]["tag"] == "v0.1.20"
+    assert clinpgx["release"]["tag"] == "v0.1.25"
     assert clinpgx["database_provenance"]["mode"] == "external-reference"
     assert clinpgx["database_provenance"]["release_tag"] == "data-clinpgx-core-d91c0c4082f14706"
     assert clinpgx["database_provenance"]["status"] == "attested-reference"
@@ -78,14 +78,14 @@ def test_provenance_http_endpoints() -> None:
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "application/json"
         assert resp.headers["x-genefoundry-fleet-backends"] == "30"
-        assert resp.headers["x-genefoundry-fleet-tools"] == "345"
+        assert resp.headers["x-genefoundry-fleet-tools"] == "344"
         assert resp.headers["access-control-allow-origin"] == "*"
         assert "ETag" in resp.headers
         etag = resp.headers["etag"]
 
         body = resp.json()
         assert body["fleet"]["total_backends"] == 30
-        assert body["fleet"]["total_tools"] == 345
+        assert body["fleet"]["total_tools"] == 344
 
         # Test HEAD request
         head_resp = client.head(path)

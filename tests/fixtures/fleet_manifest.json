@@ -1,7 +1,7 @@
 {
   "snapshot_meta": {
-    "captured_at": "2026-11-26T08:48:01Z",
-    "source": "local-release-tags",
+    "captured_at": "2026-11-26T14:13:07Z",
+    "source": "live",
     "router_servers_file": "servers.yaml",
     "release_candidate": null
   },

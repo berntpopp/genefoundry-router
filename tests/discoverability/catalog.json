@@ -4514,6 +4514,32 @@
     }
   },
   {
+    "name": "metadome_find_intolerant_regions",
+    "description": "Find ranked runs of missense-intolerant residues (sw_dn_ds below threshold) with Pfam overlap and scoped variant evidence. Needs a built landscape (submit_tolerance_landscape). For raw per-residue scores use get_tolerance_landscape.",
+    "tags": [
+      "analysis",
+      "domain",
+      "protein",
+      "tolerance",
+      "variant"
+    ],
+    "params": {
+      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
+      "threshold": "sw_dn_ds cutoff in (0, 2]; residues below it count as intolerant.",
+      "min_run": "Minimum consecutive intolerant residues per region.",
+      "top_n": "Maximum regions returned, most intolerant first.",
+      "response_mode": "Output verbosity; default compact, minimal = essentials only."
+    },
+    "enums": {
+      "response_mode": [
+        "minimal",
+        "compact",
+        "standard",
+        "full"
+      ]
+    }
+  },
+  {
     "name": "metadome_get_diagnostics",
     "description": "Get cache stats, request metrics and data versions of this server. Use to debug failing calls; returns no gene data (server scope: get_server_capabilities).",
     "tags": [
@@ -4681,29 +4707,6 @@
     }
   },
   {
-    "name": "metadome_submit_tolerance_landscape",
-    "description": "Start the MetaDome tolerance-landscape build for a transcript (async, idempotent); returns job_id and status ready or processing. Cold builds can take up to ~1 h. Every read tool needs this first; then poll get_tolerance_landscape.",
-    "tags": [
-      "domain",
-      "landscape",
-      "protein",
-      "tolerance",
-      "variant"
-    ],
-    "params": {
-      "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
-      "response_mode": "Output verbosity; default compact, minimal = essentials only."
-    },
-    "enums": {
-      "response_mode": [
-        "minimal",
-        "compact",
-        "standard",
-        "full"
-      ]
-    }
-  },
-  {
     "name": "metadome_resolve_transcript",
     "description": "Resolve a gene symbol or versioned ENST id to the MetaDome transcript (GRCh37 or GRCh38 build) to use for its missense tolerance landscape; for a gene returns its transcripts and canonical_transcript_id (MANE Select, else longest analyzable). Use first, then submit_tolerance_landscape.",
     "tags": [
@@ -4727,20 +4730,17 @@
     }
   },
   {
-    "name": "metadome_find_intolerant_regions",
-    "description": "Find ranked runs of missense-intolerant residues (sw_dn_ds below threshold) with Pfam overlap and scoped variant evidence. Needs a built landscape (submit_tolerance_landscape). For raw per-residue scores use get_tolerance_landscape.",
+    "name": "metadome_submit_tolerance_landscape",
+    "description": "Start the MetaDome tolerance-landscape build for a transcript (async, idempotent); returns job_id and status ready or processing. Cold builds can take up to ~1 h. Every read tool needs this first; then poll get_tolerance_landscape.",
     "tags": [
-      "analysis",
       "domain",
+      "landscape",
       "protein",
       "tolerance",
       "variant"
     ],
     "params": {
       "transcript_id": "Versioned Ensembl transcript id (with .N suffix), from resolve_transcript.",
-      "threshold": "sw_dn_ds cutoff in (0, 2]; residues below it count as intolerant.",
-      "min_run": "Minimum consecutive intolerant residues per region.",
-      "top_n": "Maximum regions returned, most intolerant first.",
       "response_mode": "Output verbosity; default compact, minimal = essentials only."
     },
     "enums": {
@@ -6645,97 +6645,17 @@
     }
   },
   {
-    "name": "pubtator_generate_topic_literature_map",
-    "description": "Use this when a user needs a bounded topic-level literature map from a topic query, optionally seeded with PMIDs: returns candidate PMID lanes with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
-    "tags": [
-      "entity",
-      "literature"
-    ],
-    "params": {
-      "query": "Topic or research question to build the literature map around.",
-      "pmids": "Optional seed PMIDs (or PMCIDs/DOIs, converted) to anchor the map on.",
-      "max_seed_papers": "Maximum seed papers to expand.",
-      "max_neighbors_per_paper": "Maximum neighbors per seed paper.",
-      "response_mode": "Payload shape: 'compact' (default), 'nodes_edges', or 'full'.",
-      "max_candidates": "Maximum ranked candidate papers.",
-      "include_demoted": "Include demoted (lower-ranked) candidates.",
-      "max_demoted": "Maximum demoted candidates to include.",
-      "bias_toward": "Bias ranking toward these evidence flavors.",
-      "max_graph_nodes": "Maximum nodes in the returned graph.",
-      "max_graph_edges": "Maximum edges in the returned graph.",
-      "include_authors": "Include author lists on graph nodes.",
-      "include_citations": "Include citation edges in the graph.",
-      "include_pubtator_entities": "Attach PubTator entity annotations to nodes.",
-      "include_related_candidates": "Include related-evidence candidates in the result.",
-      "year_min": "Earliest publication year, inclusive.",
-      "year_max": "Latest publication year, inclusive.",
-      "prefer_full_text": "Prefer open-access full-text candidates.",
-      "timeout_ms": "Overall soft timeout in milliseconds.",
-      "partial_ok": "Return a partial map if a sub-step times out.",
-      "expand_query_seeds": "Seed the map from a query search when no PMIDs are given.",
-      "citation_graph_timeout_ms": "Per-step timeout for citation-graph lookups.",
-      "related_evidence_timeout_ms": "Per-step timeout for related-evidence lookups.",
-      "metadata_backfill_timeout_ms": "Per-step timeout for metadata backfill.",
-      "include_meta": "Include the _meta orientation block."
-    },
-    "enums": {
-      "response_mode": [
-        "compact",
-        "nodes_edges",
-        "full"
-      ],
-      "bias_toward": [
-        "guideline",
-        "cohort",
-        "genotype_phenotype",
-        "treatment",
-        "pediatric",
-        "population"
-      ]
-    }
-  },
-  {
-    "name": "pubtator_map_article_ids",
-    "description": "Use this when a user provides article identifiers such as PMIDs, PMCIDs, or DOIs and needs normalized candidate PMIDs for research workflows; returns the normalized PMID, PMCID and DOI for each input identifier.",
-    "tags": [
-      "entity",
-      "literature"
-    ],
-    "params": {
-      "ids": "Article identifiers (PMIDs, PMCIDs, or DOIs) to normalize to PMIDs.",
-      "source": "Identifier kind: 'auto' (default, detect), 'pmid', 'pmcid', or 'doi'."
-    },
-    "enums": {
-      "source": [
-        "pmid",
-        "pmcid",
-        "doi",
-        "auto"
-      ]
-    }
-  },
-  {
-    "name": "pubtator_diagnostics",
-    "description": "Use this when a client needs PubTator-Link subsystem status and recovery commands: returns per-subsystem health and suggested recovery commands.",
-    "tags": [
-      "entity",
-      "literature",
-      "meta"
-    ],
-    "params": {}
-  },
-  {
     "name": "pubtator_compute_publication_context",
-    "description": "Use this when a user needs to estimate passage count and context size before fetching publication passages; returns estimated passage and character counts plus a recommended passage mode. Do not use this for text retrieval; use get_publication_passages. Next: get_publication_passages.",
+    "description": "Use this when a user needs passage-count and size estimates before fetching passages; returns estimated passage and character counts plus a recommended mode. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to estimate passage count and context size for.",
-      "sections": "Restrict to these BioC section labels (case-insensitive); omit for all. A missing section contributes no passages; a table usually yields a caption and a body passage.",
-      "mode": "Passage selection to estimate under: 'compact_passages' (default), 'full_abstract', 'abstracts', or 'section_text'.",
-      "full": "Estimate under full-text retrieval where available.",
+      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to estimate.",
+      "sections": "BioC section labels to keep (case-insensitive); omit for all. A table usually yields a caption and a body passage.",
+      "mode": "Passage selection to estimate under.",
+      "full": "Estimate under full-text retrieval.",
       "max_passages_per_pmid": "Maximum passages per PMID to assume.",
       "include_tables": "Count table passages in the estimate.",
       "include_references": "Count reference-list passages in the estimate."
@@ -6762,18 +6682,28 @@
     }
   },
   {
+    "name": "pubtator_diagnostics",
+    "description": "Use this when a client needs subsystem status; returns per-subsystem health and recovery commands.",
+    "tags": [
+      "entity",
+      "literature",
+      "meta"
+    ],
+    "params": {}
+  },
+  {
     "name": "pubtator_find_entity_relations",
-    "description": "Use this when a user has a PubTator entity ID and needs literature-derived related entities to expand a corpus; returns related PubTator entity IDs with relation types. Do not use this for canonical entity lookup; use search_biomedical_entities. Next: search_literature.",
+    "description": "Use this when a user has a PubTator entity ID and needs literature-derived related entities; returns related entity IDs with relation types. For ID lookup use search_biomedical_entities. Next: search_literature.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "entity_id": "PubTator entity ID to expand from, e.g. @CHEMICAL_remdesivir (resolve names with search_biomedical_entities first).",
-      "relation_type": "Optional relation type to keep, e.g. 'treat', 'cause', 'associate'; omit for all relation types.",
-      "target_entity_type": "Optional target concept type to keep, e.g. 'Disease' or 'Chemical'; omit for all target types.",
+      "entity_id": "PubTator entity ID to expand (from search_biomedical_entities).",
+      "relation_type": "Relation type to keep; omit for all.",
+      "target_entity_type": "Target concept type to keep; omit for all.",
       "limit": "Maximum related entities to return.",
-      "response_mode": "Payload verbosity: 'compact' (default), 'standard', or 'full'.",
+      "response_mode": "Payload verbosity.",
       "max_response_chars": "Soft character budget for the response body."
     },
     "enums": {
@@ -6810,14 +6740,14 @@
   },
   {
     "name": "pubtator_find_related_articles",
-    "description": "Use this when a user has seed PMIDs and needs similar, cited-by, or reference-linked articles to expand a research corpus; returns related PMIDs with title, journal, year and relation.",
+    "description": "Use this when a user has seed PMIDs and needs similar, cited-by or reference-linked articles; returns related PMIDs with title, journal, year and relation.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "pmids": "Seed PMIDs (or PMCIDs/DOIs, converted) to expand from.",
-      "mode": "Relation to follow: 'similar' (default), 'cited_by', or 'references'.",
+      "pmids": "Seed PMIDs (or PMCIDs/DOIs, converted).",
+      "mode": "Relation to follow.",
       "limit": "Maximum related articles to return."
     },
     "enums": {
@@ -6830,24 +6760,24 @@
   },
   {
     "name": "pubtator_find_related_evidence_candidates",
-    "description": "Use this when a user has one PMID and needs related full-text-preferred candidates: returns related candidate PMIDs with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
+    "description": "Use this when a user has one PMID and needs related candidates, full text preferred; returns candidate PMIDs with bounded summaries and response_size_class. response_mode='compact' (default) suits candidate selection; full can be large (debug). Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "pmid": "Seed PMID (or PMCID/DOI, converted) to find related evidence candidates for.",
+      "pmid": "Seed PMID (or PMCID/DOI, converted).",
       "max_results": "Maximum candidate publications to return.",
-      "response_mode": "Payload shape: 'compact' (default), 'nodes_edges', or 'full'.",
+      "response_mode": "Payload shape.",
       "prefer_full_text": "Prefer open-access full-text candidates.",
       "include_pubtator_search": "Include PubTator entity-search neighbors.",
       "include_citation_neighbors": "Include citation-graph neighbors.",
-      "publication_types": "Restrict candidates to these PubMed publication types.",
+      "publication_types": "PubMed publication types to keep.",
       "year_min": "Earliest publication year, inclusive.",
       "year_max": "Latest publication year, inclusive.",
       "citation_graph_timeout_ms": "Per-step timeout for citation-graph lookups.",
       "metadata_timeout_ms": "Per-step timeout for metadata resolution.",
-      "include_meta": "Include the _meta orientation block."
+      "include_meta": "Include the _meta block."
     },
     "enums": {
       "response_mode": [
@@ -6877,14 +6807,80 @@
     }
   },
   {
-    "name": "pubtator_get_citation",
-    "description": "Use this when a user provides free-text citations and needs candidate PMIDs for research evidence gathering; returns candidate PMID matches per citation.",
+    "name": "pubtator_find_review_corpus",
+    "description": "Use this when a user needs a compact PMID corpus for a research question; returns candidate PMIDs, roles, coverage hints, metadata and next commands.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "citations": "Free-text citation strings to resolve to candidate PMIDs."
+      "question": "Research question to build the PMID corpus for.",
+      "max_pmids": "Maximum candidate PMIDs to return.",
+      "entity_ids": "PubTator entity IDs to anchor on.",
+      "must_include_pmids": "PMIDs that MUST appear in the returned corpus.",
+      "prefer_guidelines": "Bias selection toward guideline / review articles.",
+      "include_metadata": "Attach per-PMID citation metadata."
+    }
+  },
+  {
+    "name": "pubtator_generate_topic_literature_map",
+    "description": "Use this when a user needs a bounded literature map for a topic, optionally seeded with PMIDs; returns candidate PMID lanes with bounded summaries and response_size_class. response_mode='compact' (default) suits candidate selection; full can be large (debug). Next: get_publication_passages.",
+    "tags": [
+      "entity",
+      "literature"
+    ],
+    "params": {
+      "query": "Topic or research question to map.",
+      "pmids": "Seed PMIDs (or PMCIDs/DOIs, converted) to anchor the map.",
+      "max_seed_papers": "Maximum seed papers to expand.",
+      "max_neighbors_per_paper": "Maximum neighbors per seed paper.",
+      "response_mode": "Payload shape.",
+      "max_candidates": "Maximum ranked candidate papers.",
+      "include_demoted": "Include demoted (lower-ranked) candidates.",
+      "max_demoted": "Maximum demoted candidates to include.",
+      "bias_toward": "Bias ranking toward these evidence flavors.",
+      "max_graph_nodes": "Maximum nodes in the returned graph.",
+      "max_graph_edges": "Maximum edges in the returned graph.",
+      "include_authors": "Include author lists on graph nodes.",
+      "include_citations": "Include citation edges in the graph.",
+      "include_pubtator_entities": "Attach PubTator entity annotations to nodes.",
+      "include_related_candidates": "Include related-evidence candidates in the result.",
+      "year_min": "Earliest publication year, inclusive.",
+      "year_max": "Latest publication year, inclusive.",
+      "prefer_full_text": "Prefer open-access full-text candidates.",
+      "timeout_ms": "Overall soft timeout in milliseconds.",
+      "partial_ok": "Return a partial map if a sub-step times out.",
+      "expand_query_seeds": "Seed from a query search when no PMIDs are given.",
+      "citation_graph_timeout_ms": "Per-step timeout for citation-graph lookups.",
+      "related_evidence_timeout_ms": "Per-step timeout for related-evidence lookups.",
+      "metadata_backfill_timeout_ms": "Per-step timeout for metadata backfill.",
+      "include_meta": "Include the _meta block."
+    },
+    "enums": {
+      "response_mode": [
+        "compact",
+        "nodes_edges",
+        "full"
+      ],
+      "bias_toward": [
+        "guideline",
+        "cohort",
+        "genotype_phenotype",
+        "treatment",
+        "pediatric",
+        "population"
+      ]
+    }
+  },
+  {
+    "name": "pubtator_get_citation",
+    "description": "Use this when a user has free-text citations; returns candidate PMID matches per citation.",
+    "tags": [
+      "entity",
+      "literature"
+    ],
+    "params": {
+      "citations": "Free-text citation strings."
     }
   },
   {
@@ -6901,20 +6897,20 @@
   },
   {
     "name": "pubtator_get_mesh",
-    "description": "Use this when a user needs MeSH descriptors and candidate PubMed search terms for a biomedical research query; returns matching MeSH descriptors and suggested PubMed query terms.",
+    "description": "Use this when a user needs MeSH descriptors for a biomedical query; returns matching descriptors and suggested PubMed query terms.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "query": "Term to resolve to MeSH descriptors and candidate search terms.",
+      "query": "Term to resolve to MeSH descriptors.",
       "limit": "Maximum MeSH descriptors to return.",
-      "exact": "Require an exact descriptor match instead of prefix/fuzzy."
+      "exact": "Exact descriptor match only (no prefix/fuzzy)."
     }
   },
   {
     "name": "pubtator_get_neighboring_review_passages",
-    "description": "Use this when a user needs prepared review passages near a cited stable passage ID for local context expansion; returns the neighboring passages with stable passage IDs and text. This only reads the review index and does not call upstream APIs.",
+    "description": "Use this when a user needs prepared review passages near a cited passage ID; returns the neighbors with stable IDs and text. Reads only the review index (no upstream calls).",
     "tags": [
       "entity",
       "literature"
@@ -6922,7 +6918,7 @@
     "params": {
       "review_id": "Review index the passage belongs to.",
       "passage_id": "Anchor passage ID to expand context around.",
-      "session_id": "Optional staged session to scope the lookup to.",
+      "session_id": "Staged session to scope to.",
       "before": "Neighboring passages to include before the anchor.",
       "after": "Neighboring passages to include after the anchor.",
       "same_section": "Restrict neighbors to the anchor's section.",
@@ -6931,14 +6927,14 @@
   },
   {
     "name": "pubtator_get_pmc_annotations",
-    "description": "Use this when a user provides PMC IDs and needs raw PubTator full-text BioC annotation export; returns BioC documents with passages and entity annotations. Do not use this for compact grounded answers; use get_publication_passages. Next: get_publication_passages.",
+    "description": "Use this when a user needs raw PubTator full-text BioC annotations for PMC IDs; returns BioC documents with passages and entity annotations. For grounded answers use get_publication_passages. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "pmcids": "PMC IDs to export raw PubTator full-text BioC annotations for.",
-      "format": "Export serialization: 'biocjson' (default) or 'biocxml'."
+      "pmcids": "PMC IDs to export.",
+      "format": "Export format."
     },
     "enums": {
       "format": [
@@ -6949,15 +6945,15 @@
   },
   {
     "name": "pubtator_get_publication_annotations",
-    "description": "Use this when a user provides PubMed IDs and needs raw PubTator BioC annotation export; returns BioC documents with passages and entity annotations. Do not use this for compact grounded answers; use get_publication_passages. Next: get_publication_passages.",
+    "description": "Use this when a user needs raw PubTator BioC annotations for PMIDs; returns BioC documents with passages and entity annotations. For grounded answers use get_publication_passages. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to export raw PubTator BioC annotations for.",
-      "format": "Export serialization: 'biocjson' (default), 'biocxml', or 'pubtator'.",
-      "full": "Request full-text annotations where available (else abstract)."
+      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to export.",
+      "format": "Export format.",
+      "full": "Full-text annotations where available (else abstract)."
     },
     "enums": {
       "format": [
@@ -6969,15 +6965,15 @@
   },
   {
     "name": "pubtator_get_publication_citation_graph",
-    "description": "Use this when a user needs reference or cited-by neighbors for one publication: returns reference and cited-by PMIDs with bounded summaries. Returns response_size_class. response_mode='compact' is the MCP default for LLM candidate selection; full can be large and is for explicit debug graph inspection. Next: get_publication_passages.",
+    "description": "Use this when a user needs reference or cited-by neighbors of one publication; returns their PMIDs with bounded summaries and response_size_class. response_mode='compact' (default) suits candidate selection; full can be large (debug). Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "pmid": "PMID (or PMCID/DOI, converted) of the publication whose citation neighbors are wanted.",
-      "direction": "Which neighbors: 'references', 'cited_by', or 'both' (default).",
-      "response_mode": "Payload shape: 'compact' (default), 'nodes_edges', or 'full'.",
+      "pmid": "PMID (or PMCID/DOI, converted) to get citation neighbors for.",
+      "direction": "Neighbors to return.",
+      "response_mode": "Payload shape.",
       "resolve_metadata": "Resolve title/author metadata for neighbor PMIDs.",
       "resolve_reference_pmids": "Resolve DOIs in the reference list back to PMIDs.",
       "max_reference_resolution": "Maximum reference DOIs to resolve.",
@@ -7000,16 +6996,16 @@
   },
   {
     "name": "pubtator_get_publication_metadata",
-    "description": "Use this when a user needs citation-grade metadata for known PMIDs: returns title, authors, journal, year, DOI and formatted citations per PMID. Do not use this for article text or annotations; use get_publication_passages. Next: get_publication_passages.",
+    "description": "Use this when a user needs citation metadata for known PMIDs; returns title, authors, journal, year, DOI and formatted citations. For text use get_publication_passages. Next: get_publication_passages.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to fetch citation-grade metadata for.",
+      "pmids": "PMIDs (or PMCIDs/DOIs, converted).",
       "include_mesh": "Include MeSH descriptors.",
       "include_publication_types": "Include PubMed publication types.",
-      "include_citations": "Citation rendering: 'none', 'nlm', 'bibtex', or 'both' (default).",
+      "include_citations": "Citation format.",
       "include_coverage": "Include per-PMID source-coverage hints."
     },
     "enums": {
@@ -7023,22 +7019,22 @@
   },
   {
     "name": "pubtator_get_publication_passages",
-    "description": "Use this when a user needs the text of a PubMed/PMC article by PMID: returns citable passages (title, abstract and, for open-access PMC articles, full text incl. figure captions and tables), not raw BioC. For article-local answering use mode='full_abstract' first (untruncated); sections (FIG, TABLE, RESULTS, ...) selects full text; check coverage_by_pmid. Not for prepared review RAG; use get_review_context_batch.",
+    "description": "Use this when a user needs article text by PMID; returns citable passages (title, abstract and, for open-access PMC articles, full text incl. figure captions and tables), not raw BioC. For article-local answers use mode='full_abstract' first (untruncated); sections (FIG, TABLE, RESULTS, ...) select full text; check coverage_by_pmid. For prepared reviews use get_review_context_batch.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to fetch compact citable passages for.",
-      "sections": "Restrict to these BioC section labels (case-insensitive); omit for all. A missing section contributes no passages; a table usually yields a caption and a body passage.",
-      "mode": "Passage selection: 'compact_passages' (default), 'full_abstract' (all title/abstract passages), 'abstracts', or 'section_text'.",
-      "full": "Prefer full-text passages where the article is open-access.",
+      "pmids": "PMIDs (or PMCIDs/DOIs, converted) to fetch passages for.",
+      "sections": "BioC section labels to keep (case-insensitive); omit for all. A table usually yields a caption and a body passage.",
+      "mode": "Passage selection; 'full_abstract' returns all title/abstract passages.",
+      "full": "Prefer open-access full-text passages.",
       "max_passages_per_pmid": "Max passages per PMID (or PMID+section).",
       "max_chars": "Soft total character budget for passages.",
       "include_tables": "Include table passages.",
       "include_references": "Include reference-list passages.",
-      "dry_run": "Return a size/coverage estimate without passage text.",
-      "verbosity": "'lean', 'standard' (default), or 'full' (+ each dropped row)."
+      "dry_run": "Size/coverage estimate only, no passage text.",
+      "verbosity": "Field verbosity; 'full' lists each dropped row."
     },
     "enums": {
       "sections": [
@@ -7068,7 +7064,7 @@
   },
   {
     "name": "pubtator_get_research_session_status",
-    "description": "Use this when a user needs staged candidate, coverage, and preparation status for a research session; returns staged candidate PMIDs, coverage hints and preparation status.",
+    "description": "Use this when a user needs a research session's status; returns staged candidate PMIDs, coverage hints and preparation status.",
     "tags": [
       "entity",
       "literature"
@@ -7080,43 +7076,43 @@
   },
   {
     "name": "pubtator_get_review_audit_trail",
-    "description": "Use this when a user needs a copy-ready audit block for selected prepared review passage IDs or the latest recorded audit passages without calling upstream APIs; returns that audit block.",
+    "description": "Use this when a user needs a copy-ready audit block for selected or the latest recorded review passage IDs; returns that block without upstream calls.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
       "review_id": "Review index to build the audit block for.",
-      "passage_ids": "Specific prepared passage IDs to audit; omit for the latest recorded set.",
-      "session_id": "Optional staged session to scope the audit to.",
+      "passage_ids": "Passage IDs to audit; omit for the latest recorded set.",
+      "session_id": "Staged session to scope to.",
       "max_chars_per_passage": "Character cap per audited passage."
     }
   },
   {
     "name": "pubtator_get_review_context",
-    "description": "Use this when a review needs compact citable context from prepared review passages instead of raw BioC export; returns ranked citable passages with stable passage IDs and PMIDs. Use a short keyword query and PMID filters. If zero passages are returned, simplify the query, inspect the review index, or fall back to get_publication_annotations.",
+    "description": "Use this when a review needs compact citable context from prepared passages; returns ranked passages with stable passage IDs and PMIDs. Use a short keyword query and PMID filters. If zero passages are returned, simplify the query, inspect the index, or fall back to get_publication_annotations.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "review_id": "Prepared review index to retrieve citable context from.",
+      "review_id": "Prepared review index to retrieve from.",
       "question": "Short keyword retrieval question or query.",
-      "session_id": "Optional staged session to scope retrieval to.",
+      "session_id": "Staged session to scope to.",
       "pmids": "Restrict retrieval to these PMIDs.",
       "entity_ids": "Restrict retrieval to these PubTator entity IDs.",
       "sections": "Restrict retrieval to these article sections.",
       "max_passages": "Maximum passages to return.",
       "max_chars": "Soft total character budget for passages.",
-      "include_diagnostics": "Include retrieval diagnostics in the response.",
+      "include_diagnostics": "Include retrieval diagnostics.",
       "include_tables": "Include table passages.",
       "include_references": "Include reference-list passages.",
-      "table_mode": "Table rendering: 'off', 'preview' (default), or 'full'.",
-      "section_policy": "Passage ordering: 'evidence_first' (default) or 'original_order'.",
-      "allow_truncated_passages": "Allow per-passage truncation to fit the char budget.",
+      "table_mode": "Table rendering.",
+      "section_policy": "Passage ordering.",
+      "allow_truncated_passages": "Truncate passages to fit the char budget.",
       "max_chars_per_passage": "Character cap per returned passage.",
-      "include_resolver_trace": "Include the source-resolver trace for auditing.",
-      "include_meta": "Include the _meta orientation block."
+      "include_resolver_trace": "Include the source-resolver trace.",
+      "include_meta": "Include the _meta block."
     },
     "enums": {
       "table_mode": [
@@ -7132,39 +7128,39 @@
   },
   {
     "name": "pubtator_get_review_context_batch",
-    "description": "Use this when a user wants multiple short review retrieval query variants in one call; returns merged citable passages and per-query summaries. Compact (default): query_fair budgeting, next_steps for zero-result queries. Use response_mode=\"quotes\" for short citable snippets or dry_run for diagnostics without passage text.",
+    "description": "Use this when a user wants multiple short review retrieval query variants in one call; returns merged citable passages and per-query summaries. response_mode='quotes' gives short snippets; dry_run gives diagnostics without text.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "review_id": "Prepared review index to retrieve citable context from.",
-      "queries": "Short keyword query variants to retrieve context for in one call.",
-      "session_id": "Optional staged session to scope retrieval to.",
+      "review_id": "Prepared review index to retrieve from.",
+      "queries": "Short keyword query variants.",
+      "session_id": "Staged session to scope to.",
       "pmids": "Restrict retrieval to these PMIDs.",
       "entity_ids": "Restrict retrieval to these PubTator entity IDs.",
       "sections": "Restrict retrieval to these article sections.",
-      "response_mode": "Payload shape (default 'compact'); 'quotes' for short snippets.",
+      "response_mode": "Payload shape; 'quotes' gives short snippets.",
       "max_passages_per_query": "Maximum passages per query variant.",
       "max_total_passages": "Maximum passages across all queries.",
-      "max_chars": "Optional soft total character budget.",
-      "max_response_chars": "Response character budget: 'auto' (default) or an integer cap.",
-      "verbosity": "Field verbosity: 'lean', 'standard' (default), or 'full'.",
+      "max_chars": "Soft total character budget.",
+      "max_response_chars": "Response character cap, or 'auto'.",
+      "verbosity": "Field verbosity.",
       "deduplicate_passages": "Merge duplicate passages across query variants.",
-      "budget_strategy": "Passage budget split (default 'query_fair').",
+      "budget_strategy": "Passage budget split.",
       "min_passages_per_source": "Guaranteed minimum passages per source.",
       "min_passages_per_pmid": "Guaranteed minimum passages per PMID.",
       "prioritize_pmids": "PMIDs to prioritize in budgeting.",
-      "include_diagnostics": "Include retrieval diagnostics in the response.",
+      "include_diagnostics": "Include retrieval diagnostics.",
       "include_tables": "Include table passages.",
       "include_references": "Include reference-list passages.",
-      "table_mode": "Table rendering: 'off', 'preview' (default), or 'full'.",
-      "section_policy": "Passage ordering: 'evidence_first' (default) or 'original_order'.",
-      "allow_truncated_passages": "Allow per-passage truncation to fit the char budget.",
+      "table_mode": "Table rendering.",
+      "section_policy": "Passage ordering.",
+      "allow_truncated_passages": "Truncate passages to fit the char budget.",
       "max_chars_per_passage": "Character cap per returned passage.",
-      "dry_run": "Return budgeting diagnostics without passage text.",
-      "include_resolver_trace": "Include the source-resolver trace for auditing.",
-      "include_meta": "Include the _meta orientation block."
+      "dry_run": "Budgeting diagnostics only, no passage text.",
+      "include_resolver_trace": "Include the source-resolver trace.",
+      "include_meta": "Include the _meta block."
     },
     "enums": {
       "response_mode": [
@@ -7196,95 +7192,23 @@
     }
   },
   {
-    "name": "pubtator_get_review_index_summary",
-    "description": "Use this when a user needs one persisted review index summary without loading passage samples; returns its preparation status, source counts and passage counts.",
-    "tags": [
-      "entity",
-      "literature"
-    ],
-    "params": {
-      "review_id": "Identifier of the persisted review index to summarize."
-    }
-  },
-  {
-    "name": "pubtator_get_review_passages_by_id",
-    "description": "Use this when a user needs exact prepared review passages by stable passage IDs from prior context packs or audit bundles; returns those passages with text and citation metadata. This only reads the review index and does not call upstream APIs.",
-    "tags": [
-      "entity",
-      "literature"
-    ],
-    "params": {
-      "review_id": "Review index the passages belong to.",
-      "passage_ids": "Stable prepared passage IDs to fetch verbatim.",
-      "session_id": "Optional staged session to scope the lookup to.",
-      "max_chars_per_passage": "Character cap per returned passage."
-    }
-  },
-  {
-    "name": "pubtator_get_server_capabilities",
-    "description": "Use this when a client needs supported tools, transports, formats, and limitations; returns those lists in one capability record. Do not use this for task-specific workflow guidance; use workflow_help. Next: workflow_help.",
-    "tags": [
-      "entity",
-      "literature"
-    ],
-    "params": {
-      "details": "Optional capability sections to expand (e.g. 'tools', 'workflow_help'); omit for the default summary."
-    },
-    "enums": {
-      "details": [
-        "server",
-        "transport",
-        "endpoint",
-        "llm_driver_contract",
-        "tools",
-        "workflow_help",
-        "sample_calls",
-        "schema_policy",
-        "preferred_tool_names"
-      ]
-    }
-  },
-  {
-    "name": "pubtator_get_variant_evidence",
-    "description": "Use this when a user needs source-attributed variant records and literature evidence for a gene and variant; returns source-attributed variant records plus PMID literature evidence. Does not compute clinical classification.",
-    "tags": [
-      "entity",
-      "literature"
-    ],
-    "params": {
-      "gene": "HGNC gene symbol the variant sits in.",
-      "variant": "cDNA/HGVS or rsID variant string. Required; use `protein`/`condition` to refine.",
-      "protein": "Protein-level change, e.g. p.Glu23fs, if known.",
-      "condition": "Optional condition/phenotype to scope the evidence.",
-      "sources": "Evidence sources to include; omit for all.",
-      "max_literature_pmids": "Maximum supporting literature PMIDs to attach.",
-      "include_citations": "Attach formatted citations for the supporting PMIDs."
-    },
-    "enums": {
-      "sources": [
-        "clinvar",
-        "pubtator"
-      ]
-    }
-  },
-  {
     "name": "pubtator_get_review_index_status",
-    "description": "Use this when a user needs to inspect indexed PMIDs, sections, passage counts, and failures for a review_id, including source coverage; returns per-source summaries, totals and failures.",
+    "description": "Use this when a user needs to inspect indexed PMIDs, sections, passage counts, and failures for a review_id; returns per-source coverage summaries, totals and failures.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
       "review_id": "Review index to inspect.",
-      "session_id": "Optional staged session to scope the inspection to.",
+      "session_id": "Staged session to scope to.",
       "pmids": "Restrict the inspection to these indexed PMIDs.",
       "include_passage_samples": "Include a few sample passages per PMID.",
       "sample_per_pmid": "Sample passages to include per PMID.",
       "min_sample_chars": "Minimum characters for a sampled passage.",
-      "sample_section_policy": "Sampling order: 'evidence_first' (default) or 'original_order'.",
+      "sample_section_policy": "Sampling order.",
       "include_metadata": "Include per-PMID citation metadata.",
-      "metadata": "Metadata depth when included: 'basic' (default) or 'full'.",
-      "response_mode": "Payload verbosity: 'compact' (default) or 'full'.",
+      "metadata": "Metadata depth when included.",
+      "response_mode": "Payload verbosity.",
       "limit": "Maximum indexed PMIDs to page over.",
       "cursor": "Opaque pagination cursor from a prior page."
     },
@@ -7304,8 +7228,92 @@
     }
   },
   {
+    "name": "pubtator_get_review_index_summary",
+    "description": "Use this when a user needs one review index summary without passage samples; returns its preparation status, source and passage counts.",
+    "tags": [
+      "entity",
+      "literature"
+    ],
+    "params": {
+      "review_id": "Review index to summarize."
+    }
+  },
+  {
+    "name": "pubtator_get_review_passages_by_id",
+    "description": "Use this when a user needs prepared review passages by stable passage ID; returns them with text and citation metadata. Reads only the review index (no upstream calls).",
+    "tags": [
+      "entity",
+      "literature"
+    ],
+    "params": {
+      "review_id": "Review index the passages belong to.",
+      "passage_ids": "Stable prepared passage IDs to fetch verbatim.",
+      "session_id": "Staged session to scope to.",
+      "max_chars_per_passage": "Character cap per returned passage."
+    }
+  },
+  {
+    "name": "pubtator_get_review_source_coverage",
+    "description": "Use this when a user needs PMID source coverage before indexing review evidence; returns per-PMID coverage, PMC fallback availability and likely full-text versus abstract-only retrieval.",
+    "tags": [
+      "entity",
+      "literature"
+    ],
+    "params": {
+      "pmids": "PMIDs to check source coverage for.",
+      "pmid": "Single-PMID alias, merged with `pmids`."
+    }
+  },
+  {
+    "name": "pubtator_get_server_capabilities",
+    "description": "Use this when a client needs supported tools, transports, formats and limitations; returns one capability record. Not for workflow guidance. Next: workflow_help.",
+    "tags": [
+      "entity",
+      "literature"
+    ],
+    "params": {
+      "details": "Capability sections to expand; omit for the summary."
+    },
+    "enums": {
+      "details": [
+        "server",
+        "transport",
+        "endpoint",
+        "llm_driver_contract",
+        "tools",
+        "workflow_help",
+        "sample_calls",
+        "schema_policy",
+        "preferred_tool_names"
+      ]
+    }
+  },
+  {
+    "name": "pubtator_get_variant_evidence",
+    "description": "Use this when a user needs evidence for a gene variant; returns source-attributed variant records plus PMID literature evidence. No clinical classification.",
+    "tags": [
+      "entity",
+      "literature"
+    ],
+    "params": {
+      "gene": "HGNC gene symbol the variant sits in.",
+      "variant": "cDNA/HGVS or rsID; refine with `protein`/`condition`.",
+      "protein": "Protein-level change, e.g. p.Glu23fs, if known.",
+      "condition": "Condition/phenotype to scope the evidence.",
+      "sources": "Evidence sources to include; omit for all.",
+      "max_literature_pmids": "Maximum supporting literature PMIDs to attach.",
+      "include_citations": "Attach formatted citations."
+    },
+    "enums": {
+      "sources": [
+        "clinvar",
+        "pubtator"
+      ]
+    }
+  },
+  {
     "name": "pubtator_list_evidence_certainty",
-    "description": "Use this when a user needs user-supplied evidence certainty judgments for a review; returns the stored judgments for that review.",
+    "description": "Use this when a user needs a review's user-supplied evidence certainty judgments; returns the stored judgments.",
     "tags": [
       "entity",
       "literature"
@@ -7316,20 +7324,20 @@
   },
   {
     "name": "pubtator_list_research_sessions",
-    "description": "Use this when a user needs staged research sessions for orientation or one review ID; returns session IDs with review IDs and status.",
+    "description": "Use this when a user needs staged research sessions, globally or for one review ID; returns session IDs with review IDs and status.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "review_id": "Optional review index to list sessions for; omit for recent global sessions.",
+      "review_id": "Review index to list sessions for; omit for recent sessions.",
       "limit": "Maximum compact session summaries to return.",
-      "cursor": "Opaque cursor returned by a previous session-list page."
+      "cursor": "Cursor from the previous page."
     }
   },
   {
     "name": "pubtator_list_review_indexes",
-    "description": "Use this when a user needs persisted review indexes with preparation status, source counts, passage counts, and approximate storage size; returns one row per index with those fields.",
+    "description": "Use this when a user needs the persisted review indexes; returns one row per index with preparation status, source and passage counts and approximate storage size.",
     "tags": [
       "entity",
       "literature"
@@ -7340,27 +7348,35 @@
     }
   },
   {
-    "name": "pubtator_get_review_source_coverage",
-    "description": "Use this when a user needs PMID source coverage, PMC fallback availability, and likely full-text versus abstract-only retrieval before indexing review evidence; returns per-PMID source coverage and fallback availability.",
+    "name": "pubtator_map_article_ids",
+    "description": "Use this when a user has PMIDs, PMCIDs or DOIs to normalize; returns the PMID, PMCID and DOI for each input.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "pmids": "PubMed IDs to check source coverage and full-text availability for.",
-      "pmid": "Single-PMID convenience alias, merged with `pmids`."
+      "ids": "PMIDs, PMCIDs or DOIs to normalize.",
+      "source": "Identifier kind; 'auto' detects."
+    },
+    "enums": {
+      "source": [
+        "pmid",
+        "pmcid",
+        "doi",
+        "auto"
+      ]
     }
   },
   {
     "name": "pubtator_search_biomedical_entities",
-    "description": "Use this when a user needs canonical PubTator biomedical entity IDs for genes, diseases, chemicals, species, variants, or cell lines; returns matching entity IDs with names and types.",
+    "description": "Use this when a user needs canonical PubTator entity IDs for genes, diseases, chemicals, species, variants or cell lines; returns matching IDs with names and types.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "query": "Entity name or fragment to resolve, e.g. a gene symbol or disease name.",
-      "concept": "Restrict autocomplete to one PubTator concept type; omit for all types.",
+      "query": "Entity name or fragment, e.g. a gene symbol.",
+      "concept": "Concept type to restrict to; omit for all.",
       "limit": "Maximum entity candidates to return."
     },
     "enums": {
@@ -7377,21 +7393,21 @@
   },
   {
     "name": "pubtator_search_guidelines",
-    "description": "Use this when a user needs guideline, recommendation, consensus, or systematic review papers for a biomedical research question; returns ranked candidate PMIDs with titles. Wraps search_literature with guideline/systematic-review filters and guideline boosting; not an independent guideline database.",
+    "description": "Use this when a user needs guideline, consensus or systematic-review papers for a research question; returns ranked candidate PMIDs with titles. Wraps search_literature with guideline filters and boosting; not a guideline database.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "text": "Free-text research question to find guideline, recommendation, consensus, or systematic-review articles for.",
-      "page": "1-based PubTator3 result page (10 hits each). To continue, use `next_page`/`next_offset` from the previous response.",
-      "offset": "0-based start position inside `page`; set it from `next_offset`.",
+      "text": "Research question to find guideline, consensus or systematic-review articles for.",
+      "page": "1-based result page (10 hits each); continue with `next_page`/`next_offset`.",
+      "offset": "0-based start within `page`, from `next_offset`.",
       "year_min": "Earliest publication year, inclusive.",
       "year_max": "Latest publication year, inclusive.",
-      "sections": "Restrict the text match to these article sections (lowercase).",
+      "sections": "Article sections to match the text in.",
       "limit": "Max hits to return, at most the rest of `page`.",
-      "entity_ids": "Restrict to articles mentioning these PubTator entity IDs (resolve them first with search_biomedical_entities).",
-      "coverage": "'preflight' (default) or 'none' to skip source-coverage hints."
+      "entity_ids": "PubTator entity IDs (from search_biomedical_entities) articles must mention.",
+      "coverage": "'none' skips source-coverage hints."
     },
     "enums": {
       "sections": [
@@ -7410,30 +7426,30 @@
   },
   {
     "name": "pubtator_search_literature",
-    "description": "Use this when a user needs PubMed biomedical literature search via PubTator3: returns ranked articles (PMID, title, journal, year, citation). Supports flat and section filters and coverage='preflight'. If preflight_error_code is coverage_preflight_internal_error, retryable=false: continue with results or inspect diagnostics.",
+    "description": "Use this when a user needs PubMed literature search via PubTator3; returns ranked articles (PMID, title, journal, year, citation). On preflight_error_code coverage_preflight_internal_error (retryable=false) continue with the results.",
     "tags": [
       "entity",
       "literature"
     ],
     "params": {
-      "text": "Free-text PubMed/PubTator3 query: entity names, gene symbols, HGVS, or a natural-language topic. PubTator3 matches across title, abstract, and, for open-access articles, full text.",
-      "page": "1-based PubTator3 result page (10 hits each). To continue, use `next_page`/`next_offset` from the previous response.",
-      "offset": "0-based start position inside `page`; set it from `next_offset`.",
-      "sort": "Sort order. Accepts 'date desc' (newest first), 'score desc' (relevance, default), or '_id desc'. Synonyms such as 'date' or 'relevance' are normalized; PubTator3 sorts descending only.",
-      "filters": "Filter object (or JSON string), e.g. {\"type\":[\"Retracted Publication\"]}; keys type/journal/year. Prefer publication_types/year_min/year_max.",
-      "publication_types": "Restrict to these PubMed publication types (case-sensitive, Title-Case), AND-combined with the query.",
+      "text": "PubMed query: entity names, gene symbols, HGVS or a topic; matches title, abstract and open-access full text.",
+      "page": "1-based result page (10 hits each); continue with `next_page`/`next_offset`.",
+      "offset": "0-based start within `page`, from `next_offset`.",
+      "sort": "'score desc' (relevance, default), 'date desc' (newest first) or '_id desc'; descending only.",
+      "filters": "Filter object or JSON (keys type/journal/year), e.g. {\"type\":[\"Review\"]}; prefer publication_types/year_min/year_max.",
+      "publication_types": "PubMed publication types (Title-Case), AND-ed with the query.",
       "year_min": "Earliest publication year, inclusive.",
       "year_max": "Latest publication year, inclusive.",
-      "sections": "Restrict the text match to these article sections (lowercase, case-sensitive).",
-      "response_mode": "Payload verbosity: 'compact' (default, LLM-friendly), 'standard', or 'full'.",
-      "include_citations": "Citation rendering per hit: 'none' (default), 'nlm', 'bibtex', or 'both'.",
-      "text_hl_format": "Match-highlight rendering: 'none', 'plain' (default), or 'annotated'.",
-      "limit": "Max hits to return, at most the rest of `page`; `returned` and `has_more` report what was cut.",
-      "entity_ids": "Restrict to articles mentioning these PubTator entity IDs (resolve them first with search_biomedical_entities), AND-combined with the query.",
-      "guideline_boost": "Boost guideline / systematic-review / consensus articles in ranking.",
-      "coverage": "'none' (default) or 'preflight' to attach source-coverage hints.",
-      "metadata": "Metadata enrichment per hit: 'none', 'basic' (default), 'with_abstract' (abstract preview, max 640 chars), or 'full'.",
-      "include_meta": "Include the _meta orientation block (next_commands, provenance)."
+      "sections": "Article sections to match the text in.",
+      "response_mode": "Payload verbosity.",
+      "include_citations": "Citation format per hit.",
+      "text_hl_format": "Match-highlight format.",
+      "limit": "Max hits, at most the rest of `page`; see `returned`/`has_more`.",
+      "entity_ids": "PubTator entity IDs (from search_biomedical_entities) articles must mention; AND-ed with the query.",
+      "guideline_boost": "Boost guideline/systematic-review/consensus articles.",
+      "coverage": "'preflight' attaches source-coverage hints.",
+      "metadata": "Per-hit metadata; 'with_abstract' adds an abstract preview (max 640 chars).",
+      "include_meta": "Include the _meta block (next_commands, provenance)."
     },
     "enums": {
       "publication_types": [
@@ -7492,31 +7508,15 @@
     }
   },
   {
-    "name": "pubtator_find_review_corpus",
-    "description": "Use this when a user needs a compact, review-feeding PMID corpus for a research question: returns candidate PMIDs, roles, coverage hints, metadata, and next commands.",
-    "tags": [
-      "entity",
-      "literature"
-    ],
-    "params": {
-      "question": "Research question to assemble a compact candidate PMID corpus for.",
-      "max_pmids": "Maximum candidate PMIDs to return.",
-      "entity_ids": "Optional PubTator entity IDs to anchor the corpus on.",
-      "must_include_pmids": "PMIDs that MUST appear in the returned corpus.",
-      "prefer_guidelines": "Bias selection toward guideline / review articles.",
-      "include_metadata": "Attach per-PMID citation metadata to each candidate."
-    }
-  },
-  {
     "name": "pubtator_workflow_help",
-    "description": "Use this when a fresh context needs the canonical PubTator-Link research workflow: returns ordered workflow steps with the tool to call at each.",
+    "description": "Use this when a fresh context needs the canonical research workflow; returns ordered steps with the tool to call at each.",
     "tags": [
       "entity",
       "literature",
       "meta"
     ],
     "params": {
-      "task": "Workflow to describe; defaults to the canonical 'clinical_genetics_review' pipeline."
+      "task": "Workflow to describe."
     }
   },
   {

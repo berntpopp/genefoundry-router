@@ -69,11 +69,11 @@ bite MCP clients.
 ### Federated backends
 
 <!-- BEGIN GENERATED: fleet-inventory -->
-**30 backends, 345 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
+**30 backends, 344 tools**, each surfaced namespaced — e.g. `gnomad_search_genes`.
 
 | Namespace | Domain | Data source | Tools | Repo |
 |-----------|--------|-------------|------:|------|
-| `pubtator` | Literature & entity annotation | [PubTator3](https://www.ncbi.nlm.nih.gov/research/pubtator3/) | 35 | [pubtator-link](https://github.com/berntpopp/pubtator-link) |
+| `pubtator` | Literature & entity annotation | [PubTator3](https://www.ncbi.nlm.nih.gov/research/pubtator3/) | 34 | [pubtator-link](https://github.com/berntpopp/pubtator-link) |
 | `gnomad` | Variant / gene / population frequency | [gnomAD](https://gnomad.broadinstitute.org/) | 22 | [gnomad-link](https://github.com/berntpopp/gnomad-link) |
 | `hpo` | Phenotype ontology & associations | [Human Phenotype Ontology](https://hpo.jax.org/) | 19 | [hpo-link](https://github.com/berntpopp/hpo-link) |
 | `orphanet` | Rare disease ontology & associations | [Orphadata](https://www.orphadata.com/) | 19 | [orphanet-link](https://github.com/berntpopp/orphanet-link) |
