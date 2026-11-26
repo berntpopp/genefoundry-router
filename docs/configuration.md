@@ -56,7 +56,7 @@ starts.
 | `GF_TOMBSTONES_FILE` | `registry/tombstones.yaml` | Delisted community namespaces, never reassigned |
 | `GF_DISABLED_BACKENDS` | empty | CSV of community backend names/namespaces to disable |
 | `GF_COMMUNITY_PINS_DIR` | `registry/pins/community` | Reviewed pin per community backend (`<namespace>.json`, written by `genefoundry-router pin <namespace> --output <file>`); a missing pin or one holding another namespace fails startup (§4) |
-| `GF_KILL_SWITCH_FILE` | unset | Community namespaces to quarantine, one per line; re-read every poll and at most every 5 s on calls. Removing a line does not release |
+| `GF_KILL_SWITCH_FILE` | unset | Community namespaces to quarantine, one per line; re-read every poll and at most every 5 s on calls. Removing a line does not release. `scripts/community_nightly.py run` appends to it (§8); run it where the instance reads this file for an immediate cut-off |
 | `GF_QUARANTINE_FILE` | unset | Latched community quarantines; cleared only by a changed pin file or `genefoundry-router release <namespace>`. Required when `GF_ALLOW_COMMUNITY_BACKENDS=true` (startup fails otherwise). A community instance also requires `GF_POLL_INTERVAL` equal to each backend's `cache_ttl` (300) |
 | `GF_PRIVACY_PROFILE` | `default` | `patient` refuses startup with community backends or a reranker URL that is not loopback/private |
 | `GF_COMMUNITY_MAX_RESPONSE_BYTES` | `262144` | Community response cap per JSON-RPC message (raw and decoded; per event on an SSE stream); exceeding it quarantines the backend |
