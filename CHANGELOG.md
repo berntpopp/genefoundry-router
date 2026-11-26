@@ -4,6 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.12] - 2026-11-26
+
+### Fixed
+
+- **The behaviour gate no longer reads a record's sub-object as a row list.** v0.14.11 looked for a grouped collection (a dict of lists) inside `result`. In spliceailookup-link this matched `result.consequence.aberrations`, record detail that `response_mode=minimal` rightly omits, and the gate reported the payload as destroyed. A grouped collection is now read at the envelope top level only, where `result` itself can be the dict of lists (`map_cross_ontology` in mondo-link, orphanet-link and hpo-link). Counted lists inside `result` are still read.
+
 ## [0.14.11] - 2026-11-26
 
 ### Changed

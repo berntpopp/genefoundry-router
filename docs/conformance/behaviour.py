@@ -276,13 +276,13 @@ def rows(env: dict[str, Any]) -> list[Any] | None:
     best = _grouped_collection(env)
 
     # Response-Envelope v1 §1 names the payload `results` (a list) or `result` (an object). A
-    # backend that moved its flat payload under `result` (`result.variants`, `result.mappings`)
-    # still returns a collection: read it there exactly as at the top level.
+    # backend that moved its flat payload under `result` (`result.variants` beside
+    # `result.total`) still returns a collection: counted lists are read there as at the top
+    # level. A GROUPED collection is read at the top level only, where `result` itself can be
+    # the dict of lists (mondo, orphanet and hpo `map_cross_ontology`). One level down it cannot
+    # be told from a record's sub-object: spliceailookup's `result.consequence.aberrations` read
+    # as one row that `response_mode=minimal` then "destroyed" — a false accusation.
     frames = _frames(env)
-    for inner in frames[1:]:
-        nested = _grouped_collection(inner)
-        if nested is not None and (best is None or len(nested) > len(best)):
-            best = nested
 
     # 2. Otherwise, a top-level list of objects — but a bare list is ambiguous. A COLLECTION
     #    declares how many things it holds (Response-Envelope v1: "Always populate
