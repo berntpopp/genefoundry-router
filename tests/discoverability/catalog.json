@@ -933,16 +933,7 @@
       "reference"
     ],
     "params": {
-      "query": "Filter by expert-panel label text (FTS).",
-      "response_mode": "compact (default) is the same compact list; full is identical."
-    },
-    "enums": {
-      "response_mode": [
-        "minimal",
-        "compact",
-        "standard",
-        "full"
-      ]
+      "query": "Filter by expert-panel label text (FTS)."
     }
   },
   {
@@ -1055,16 +1046,7 @@
       "gene-disease"
     ],
     "params": {
-      "query": "Gene symbol, HGNC id, or alias to resolve (e.g. BRCA1, HGNC:1100).",
-      "response_mode": "compact (default) trims null fields; full keeps everything."
-    },
-    "enums": {
-      "response_mode": [
-        "minimal",
-        "compact",
-        "standard",
-        "full"
-      ]
+      "query": "Gene symbol, HGNC id, or alias to resolve (e.g. BRCA1, HGNC:1100)."
     }
   },
   {
@@ -1170,20 +1152,13 @@
       "namespace": "Website includes linked CPIC reference routes.",
       "limit": "Maximum operation entries.",
       "offset": "Zero-based entry offset.",
-      "cursor": "Previous page cursor.",
-      "response_mode": "Detail mode; schemas remain reachable."
+      "cursor": "Previous page cursor."
     },
     "enums": {
       "namespace": [
         "all",
         "api",
         "website"
-      ],
-      "response_mode": [
-        "minimal",
-        "compact",
-        "standard",
-        "full"
       ]
     }
   },
@@ -1277,12 +1252,12 @@
     ],
     "params": {
       "entity_type": "Entity family owning the requested identifier.",
-      "record_id": "Exact ClinPGx identifier or returned local record_id; numeric-detail families reuse the decimal id returned by search_records.",
+      "record_id": "ClinPGx ID or returned local record_id; numeric-detail families use the decimal id from search_records.",
       "source": "Exact source to query; this tool never silently switches.",
-      "view": "ClinPGx upstream projection for live API reads.",
+      "view": "Upstream projection for API reads.",
       "pointer": "RFC 6901 pointer in decoded API data or the normalized local record.",
       "pointers": "Ordered scalar RFC 6901 pointers; mutually exclusive with pointer.",
-      "response_mode": "Detail tier; never changes source identity. minimal|compact|standard project verified fields per family. Rows of families without a verified profile return deferred_content=true (retrieved but withheld, not missing); recovery_action=retry_with_response_mode_full means full inlines them, otherwise read them with get_source_content."
+      "response_mode": "Detail tier; same source identity. minimal|compact|standard project verified fields per family. deferred_content=true rows are withheld, not missing: follow their recovery_action."
     },
     "enums": {
       "entity_type": [
@@ -1322,7 +1297,7 @@
   },
   {
     "name": "clinpgx_get_related_records",
-    "description": "Get records linked to known ClinPGx IDs: gene+drug guideline, label, summary or variant annotations (pair mode, other_id), or all objects connected to one ID (relationship). See result_type for modes. For gene+drug guidelines prefer search_records(entity_type='guideline_annotation', filters={gene, chemical: PA accessions}); the live pair report can omit CPIC/DPWG. Guideline URLs: get_record(source='website').",
+    "description": "Get records linked to known ClinPGx IDs: gene+drug guideline, label, summary or variant annotations (pair mode, other_id), or all objects connected to one ID (relationship). For gene+drug guidelines prefer search_records(entity_type='guideline_annotation', filters={gene, chemical: PA accessions}); the live pair report can omit CPIC/DPWG. Guideline URLs: get_record(source='website').",
     "tags": [
       "dosing",
       "drug",
@@ -1334,18 +1309,18 @@
       "variant"
     ],
     "params": {
-      "record_id": "Exact ClinPGx identifier or returned local record_id; numeric-detail families reuse the decimal id returned by search_records.",
-      "result_type": "Mode is chosen by arguments. API connected-object (omit other_id): relationship, lists objects of other_type linked to record_id. API pair (other_id required): guideline_annotation|label|multilink_annotation|pathway|summary_annotation|variant_annotation, records linking both IDs (e.g. gene PA124 + chemical PA449053). source='download' (installed snapshot only): allele|evidence|literature|relationship.",
-      "other_id": "Second exact ClinPGx ID; when supplied, selects live API pair mode.",
-      "entity_type": "Object class owning record_id; documentation-only and cursor-bound, not sent upstream as a pair filter.",
-      "other_type": "Target connected-object type sent upstream without other_id; documentation-only and cursor-bound in pair mode, not an upstream pair filter.",
+      "record_id": "ClinPGx ID or returned local record_id; numeric-detail families use the decimal id from search_records.",
+      "result_type": "API connected-object mode (no other_id): relationship lists other_type objects linked to record_id. API pair mode (other_id set): guideline_annotation|label|multilink_annotation|pathway|summary_annotation|variant_annotation, records linking both IDs. source='download': allele|evidence|literature|relationship.",
+      "other_id": "Second exact ClinPGx ID; selects live API pair mode.",
+      "entity_type": "Object class of record_id; documentation-only.",
+      "other_type": "Target connected-object type, sent upstream without other_id; documentation-only in pair mode.",
       "source": "Exact live connected/pair or installed join source.",
-      "view": "API pair upstream projection; not sent upstream in connected-object mode, but remains cursor-bound.",
-      "limit": "Maximum rows returned on this page.",
-      "offset": "Zero-based offset; cannot accompany cursor.",
-      "cursor": "Opaque continuation returned for the same selectors and source identity.",
-      "response_mode": "Detail tier; never changes source identity. minimal|compact|standard project verified fields per family. Rows of families without a verified profile return deferred_content=true (retrieved but withheld, not missing); recovery_action=retry_with_response_mode_full means full inlines them, otherwise read them with get_source_content.",
-      "shape": "Opt-in, API only: shapes the whole row list fetched with filters, not just this page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts. See _meta.shaping."
+      "view": "API pair upstream projection; not sent upstream in connected-object mode but cursor-bound.",
+      "limit": "Max rows per page.",
+      "offset": "Zero-based; not with cursor.",
+      "cursor": "Opaque continuation; same selectors and source only.",
+      "response_mode": "Detail tier; same source identity. minimal|compact|standard project verified fields per family. deferred_content=true rows are withheld, not missing: follow their recovery_action.",
+      "shape": "API only: shapes all fetched rows, not one page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts; see _meta.shaping."
     },
     "enums": {
       "result_type": [
@@ -1549,7 +1524,7 @@
   },
   {
     "name": "clinpgx_search_records",
-    "description": "Find pharmacogenomic gene-drug (PharmGKB/ClinPGx) records (genes, drugs (chemical), variants, alleles/haplotypes, clinical (summary)/variant annotations, guidelines, labels) by exact live filters or installed dataset memberships; returns PA accessions for get_record/get_related_records. Not drug-drug interactions. Filter keys are per entity_type (see filters); summary_annotation accepts level_of_evidence. Star alleles: query='CYP2D6*10' (allele) or get_record(entity_type='haplotype', source='website').",
+    "description": "Find pharmacogenomic gene-drug (PharmGKB/ClinPGx) records (genes, drugs (chemical), variants, alleles/haplotypes, clinical (summary)/variant annotations, guidelines, labels) by exact live filters or installed dataset memberships; returns PA accessions for get_record/get_related_records. Not drug-drug interactions. Star alleles: query='CYP2D6*10' (allele) or get_record(entity_type='haplotype', source='website').",
     "tags": [
       "dosing",
       "drug",
@@ -1561,16 +1536,16 @@
       "variant"
     ],
     "params": {
-      "entity_type": "Entity family to search in the selected source.",
-      "query": "Literal AND-token local text query; unavailable for API searches. Rejected (invalid_input) for guideline_annotation, label, pathway, summary_annotation, variant_annotation: use filters.",
-      "filters": "ANDed exact filters; keys depend on entity_type. API keys: pathway: id; gene: gene|id; chemical: chemical|id|name; disease: id; variant: variant; literature: id|resource_id; guideline_annotation: chemical|gene|source; label: chemical|gene|source; summary_annotation: annotation_id|chemical|gene|id|level_of_evidence|variant; variant_annotation: gene|variant. A PA accession is accepted by gene/chemical/name on gene, chemical and label and by chemical on summary_annotation; guideline_annotation gene/chemical take PA accessions only; other name/symbol keys reject PA values. level_of_evidence: 1A|1B|2A|2B|3|4. Download keys: annotation_id|chemical|gene|id|name|source|variant.",
-      "source": "Source policy: auto routes exact filters to API and broad queries locally.",
-      "view": "ClinPGx upstream projection for live API reads.",
-      "limit": "Maximum rows returned on this page.",
-      "offset": "Zero-based offset; cannot accompany cursor.",
-      "cursor": "Opaque continuation returned for the same selectors and source identity.",
-      "response_mode": "Detail tier; never changes source identity. minimal|compact|standard project verified fields per family. Rows of families without a verified profile return deferred_content=true (retrieved but withheld, not missing); recovery_action=retry_with_response_mode_full means full inlines them, otherwise read them with get_source_content.",
-      "shape": "Opt-in, API only: shapes the whole row list fetched with filters, not just this page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts. See _meta.shaping."
+      "entity_type": "Entity family to search.",
+      "query": "Local literal AND-token text query; invalid_input for guideline_annotation, label, pathway, summary_annotation, variant_annotation: use filters.",
+      "filters": "ANDed exact filters. API keys by entity_type: pathway: id; gene: gene|id; chemical: chemical|id|name; disease: id; variant: variant; literature: id|resource_id; guideline_annotation: chemical|gene|source; label: chemical|gene|source; summary_annotation: annotation_id|chemical|gene|id|level_of_evidence|variant; variant_annotation: gene|variant. PA accessions: accepted by gene/chemical/name on gene, chemical, label and by chemical on summary_annotation; required by guideline_annotation gene/chemical; rejected by other name/symbol keys. level_of_evidence: 1A|1B|2A|2B|3|4. Download keys: annotation_id|chemical|gene|id|name|source|variant.",
+      "source": "auto: exact filters go to the API, text queries local.",
+      "view": "Upstream projection for API reads.",
+      "limit": "Max rows per page.",
+      "offset": "Zero-based; not with cursor.",
+      "cursor": "Opaque continuation; same selectors and source only.",
+      "response_mode": "Detail tier; same source identity. minimal|compact|standard project verified fields per family. deferred_content=true rows are withheld, not missing: follow their recovery_action.",
+      "shape": "API only: shapes all fetched rows, not one page. filter: AND across keys, OR within; dicts match term/name, lists any item; case-insensitive. sort: stable, missing last. fields: projection. facet: counts; see _meta.shaping."
     },
     "enums": {
       "entity_type": [
@@ -1618,7 +1593,7 @@
       "variant"
     ],
     "params": {
-      "gene_symbol": "An HGNC gene symbol (case-insensitive), e.g. BRCA1, TP53, CFTR. A symbol with no ClinVar variants in the local index returns not_found, never an empty success.",
+      "gene_symbol": "An HGNC gene symbol (case-insensitive, e.g. BRCA1) or HGNC id (HGNC:1100). An Ensembl or NCBI Gene id is rejected with the call that converts it. A gene with no ClinVar variants in the local index returns not_found, never an empty success.",
       "response_mode": "Payload verbosity, cheapest first: minimal = ids + classification + stars; compact (default) adds name, review status, traits; standard adds coordinates, RCVs, consequence; full adds all fields. Citations and submissions appear from compact up; minimal drops submission text. Start compact, widen if needed.",
       "request_id": "Opaque id echoed back in _meta.request_id to correlate a response with server logs. Omit and the server mints one."
     },
@@ -1718,7 +1693,7 @@
       "variant"
     ],
     "params": {
-      "gene_symbol": "An HGNC gene symbol (case-insensitive), e.g. BRCA1, TP53, CFTR. A symbol with no ClinVar variants in the local index returns not_found, never an empty success.",
+      "gene_symbol": "An HGNC gene symbol (case-insensitive, e.g. BRCA1) or HGNC id (HGNC:1100). An Ensembl or NCBI Gene id is rejected with the call that converts it. A gene with no ClinVar variants in the local index returns not_found, never an empty success.",
       "classification": "Filter by normalized ClinVar classification (accepted tokens are the enum). ClinVar's own wording is accepted and normalized ('Likely pathogenic' -> likely_pathogenic). Any other value is REJECTED with invalid_input \u2014 an unrecognized classification never silently returns zero rows. Omit for all.",
       "min_stars": "Keep only variants with at least this many ClinVar review-status gold stars (0-4): 2 = multiple submitters, no conflicts; 3 = expert panel; 4 = practice guideline.",
       "sort": "Row order. stars_desc (default) puts the highest review confidence first; stars_asc reverses it; name sorts by variant name; variation_id by ClinVar ID.",
@@ -1787,7 +1762,7 @@
       "variant"
     ],
     "params": {
-      "gene_symbol": "Restrict to this HGNC gene symbol (case-insensitive). A symbol with no ClinVar variants is rejected with invalid_input; a known gene with no somatic call returns an empty page.",
+      "gene_symbol": "Restrict to this HGNC gene symbol (case-insensitive) or HGNC id; an Ensembl or NCBI Gene id is rejected with the call that converts it. A symbol with no ClinVar variants is rejected with invalid_input; a known gene with no somatic call returns an empty page.",
       "tier": "Filter by the aggregate AMP/ASCO/CAP somatic clinical-impact tier: tier_i strong, tier_ii potential, tier_iii unknown, tier_iv benign/likely benign. ClinVar's wording ('Tier I - Strong', 'Tier 1') is accepted; anything else is invalid_input.",
       "oncogenicity": "Filter by the aggregate ClinGen/CGC/VICC oncogenicity classification (a somatic scale, not germline pathogenicity). ClinVar's wording ('Likely oncogenic') is accepted; anything else is invalid_input.",
       "tumour_type": "Keep variants with at least one somatic submission naming this tumour type: a case-insensitive substring of ClinVar's MedGen name ('melanoma') or an exact MedGen id ('C0025202'); standard/full then show only that tumour's assertions (other_assertions counts the rest). tier / oncogenicity still filter the variant's aggregate, so that tumour's own submission may carry a lower tier. A value no submission names is rejected with invalid_input, never an empty page.",
@@ -1822,7 +1797,7 @@
   },
   {
     "name": "clinvar_search_variants",
-    "description": "Free-text search across ClinVar variant names, genes, and traits; returns matching variants (vcv_accession, gene, classification, star rating) as a paginated list. Use this to locate a record when you only have a gene symbol plus a change (BRAF V600E reads as p.Val600Glu) or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, so results never wander into an unrelated gene, and _meta.search declares what was inferred and whether the match degraded. Pagination: total_count / has_more / next_offset; in minimal/compact mode the citation is hoisted once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
+    "description": "Free-text search across ClinVar variant names, genes, and traits; returns matching variants (vcv_accession, gene, classification, star rating) as a paginated list. Use this to locate a record when you only have a gene symbol plus a change (BRAF V600E reads as p.Val600Glu) or other loose text, then re-call get_variant with the returned vcv_accession. A gene symbol written in the query is applied as a filter automatically, and _meta.search declares what was inferred and whether the match degraded. Paginated (total_count / has_more / next_offset); minimal/compact hoist the citation once to _meta.citation_template (fill {variation_id}/{vcv_accession} per row).",
     "tags": [
       "classification",
       "clinical-significance",
@@ -1830,7 +1805,7 @@
     ],
     "params": {
       "query": "Free text matched against variant names, gene symbols and trait names \u2014 typically a gene symbol plus a change ('BRCA1 c.5266dup'). Terms are ANDed, degrading to OR (and then to gene-only) when nothing matches all of them; any degradation is declared in _meta.search, never presented as a confident ranking.",
-      "gene_symbol": "Restrict the search to this HGNC gene symbol. An explicit value always wins; when omitted, a symbol in the query text is applied automatically (reported as _meta.search.gene_symbol_inferred) so loose text narrows within the gene, not into unrelated ones. An unknown symbol is not_found, never an empty page.",
+      "gene_symbol": "Restrict the search to this HGNC gene symbol or HGNC id (an Ensembl or NCBI Gene id is rejected with the call that converts it). An explicit value always wins; when omitted, a symbol in the query text is applied automatically (reported as _meta.search.gene_symbol_inferred). An unknown symbol is not_found, never an empty page.",
       "classification": "Filter by normalized ClinVar classification (accepted tokens are the enum). ClinVar's own wording is accepted and normalized ('Likely pathogenic' -> likely_pathogenic). Any other value is REJECTED with invalid_input \u2014 an unrecognized classification never silently returns zero rows. Omit for all.",
       "min_stars": "Keep only variants with at least this many ClinVar review-status gold stars (0-4): 2 = multiple submitters, no conflicts; 3 = expert panel; 4 = practice guideline.",
       "assembly": "Filter to variants that have coordinates on this reference assembly. GRCh38 or GRCh37 ('hg38'/'hg19' are accepted and normalized). Omit for either.",
@@ -1883,7 +1858,7 @@
       "search"
     ],
     "params": {
-      "gene_symbol": "Restrict to one gene (approved symbol or HGNC CURIE); unresolvable -> not_found.",
+      "gene_symbol": "Restrict to one gene (approved symbol or HGNC CURIE); unresolvable -> not_found, an Ensembl or NCBI Gene id -> invalid_input.",
       "disease": "Restrict to one disease (MONDO/OMIM CURIE or exact title); unresolvable -> not_found.",
       "classification": "Restrict to submissions carrying one of these GenCC classification titles (closed vocabulary; case-insensitive).",
       "submitter": "Restrict to these submitters by title (e.g. ClinGen) or GenCC submitter CURIE; validated case-insensitively against the live roster (see list_submitters).",
@@ -1981,7 +1956,7 @@
       "gene-disease"
     ],
     "params": {
-      "gene_symbol": "Gene identifier: an approved HGNC symbol (e.g. SKI) or an HGNC CURIE (e.g. HGNC:10896). Exact match; resolve free text with search_genes first.",
+      "gene_symbol": "Gene identifier: an approved HGNC symbol (e.g. SKI) or an HGNC CURIE (e.g. HGNC:10896). Exact match; resolve free text with search_genes first. An Ensembl or NCBI Gene id is rejected with the call that converts it.",
       "response_mode": "Verbosity: minimal | compact | standard | full.",
       "limit": "Rows per page (1-200; above 200 is clamped).",
       "offset": "Zero-based row offset for paging.",
@@ -2005,8 +1980,8 @@
       "gene-disease"
     ],
     "params": {
-      "gene_symbol": "Gene identifier: an approved HGNC symbol (e.g. GLA) or an HGNC CURIE (e.g. HGNC:4296). Exact match; resolve free text with search_genes first.",
-      "disease": "Disease identifier: a MONDO CURIE (MONDO:0010526), an OMIM CURIE (OMIM:301500), or an exact harmonized disease title.",
+      "gene_symbol": "Gene identifier: an approved HGNC symbol (e.g. BRCA2) or an HGNC CURIE (e.g. HGNC:1101). Exact match; resolve free text with search_genes first. An Ensembl or NCBI Gene id is rejected with the call that converts it.",
+      "disease": "Disease identifier: a MONDO CURIE (MONDO:0012933), an OMIM CURIE (OMIM:612555), or an exact harmonized disease title.",
       "response_mode": "Verbosity: minimal | compact | standard | full."
     },
     "enums": {
@@ -2028,7 +2003,7 @@
       "gene-disease"
     ],
     "params": {
-      "genes": "Gene symbols or HGNC ids (max 20).",
+      "genes": "Gene symbols or HGNC ids (max 20). An Ensembl or NCBI Gene id is listed under `unsupported`, with the call that converts it.",
       "response_mode": "Verbosity: minimal | compact | standard | full.",
       "limit_per_gene": "Max diseases returned per gene (1-200)."
     },
@@ -2092,7 +2067,7 @@
     ],
     "params": {
       "query": "Disease title (natural language ok), MONDO id, or OMIM id.",
-      "response_mode": "Verbosity: minimal | compact | standard | full.",
+      "response_mode": "Verbosity: minimal | compact.",
       "limit": "Rows per page (1-200; above 200 is clamped).",
       "offset": "Zero-based row offset for paging.",
       "cursor": "Opaque, release-bound page token from a prior truncated.next_cursor."
@@ -2100,9 +2075,7 @@
     "enums": {
       "response_mode": [
         "minimal",
-        "compact",
-        "standard",
-        "full"
+        "compact"
       ]
     }
   },
@@ -2116,8 +2089,8 @@
       "search"
     ],
     "params": {
-      "query": "Gene symbol, partial symbol, or HGNC id to search for.",
-      "response_mode": "Verbosity: minimal | compact | standard | full.",
+      "query": "Gene symbol, partial symbol, or HGNC id to search for. An Ensembl or NCBI Gene id is rejected with the call that converts it.",
+      "response_mode": "Verbosity: minimal | compact.",
       "limit": "Rows per page (1-200; above 200 is clamped).",
       "offset": "Zero-based row offset for paging.",
       "cursor": "Opaque, release-bound page token from a prior truncated.next_cursor."
@@ -2125,9 +2098,7 @@
     "enums": {
       "response_mode": [
         "minimal",
-        "compact",
-        "standard",
-        "full"
+        "compact"
       ]
     }
   },
@@ -2489,7 +2460,7 @@
   },
   {
     "name": "gnomad_get_clinvar_variant_details",
-    "description": "Use this when a caller has a single variant id; returns its ClinVar clinical significance, review status, gold stars, and submissions. Complementary to get_variant_frequencies for clinical workflows. compact (default) drops per-submission provenance bookkeeping; response_mode='full' keeps it. Returns ~2-8kB compact, larger with full or a high submissions_limit.",
+    "description": "Use this when a caller has a single variant id; returns its ClinVar clinical significance, review status, gold stars, and submissions. Complementary to get_variant_frequencies for clinical workflows. Returns ~0.8kB per submission (default 25); lower submissions_limit for a smaller payload.",
     "tags": [
       "clinical",
       "frequency",
@@ -2501,7 +2472,7 @@
       "variant_id": "CHROM-POS-REF-ALT id (autosomes, X, Y, M/MT), e.g. 7-117559590-ATCT-A. Match the build to reference_genome (GRCh38 default).",
       "reference_genome": "Lookup build for the variant id. GRCh38 (default) or GRCh37.",
       "submissions_limit": "Cap on submissions[] returned. Default 25.",
-      "response_mode": "compact (default) drops the per-submission sha256/retrieved_at integrity bookkeeping (keeps the fenced condition/submitter text); full returns the complete fenced provenance."
+      "response_mode": "Accepted for compatibility: both modes return the same payload. Every fenced text keeps raw_sha256 and provenance.retrieved_at."
     },
     "enums": {
       "reference_genome": [
@@ -2968,14 +2939,14 @@
   },
   {
     "name": "gtex_get_gene_information",
-    "description": "Retrieve detailed gene information from GTEx Portal for one or more GENCODE IDs or gene symbols. Returns chromosome, coordinates, gene type, Entrez ID, and description. Use when you already know the gene identifier. Inputs that match no gene are listed in `not_found` (`not_returned` when `truncated`).",
+    "description": "Retrieve detailed gene information from GTEx Portal for one or more GENCODE IDs or gene symbols. Returns chromosome, coordinates, gene type, Entrez ID, and description. Use when you already know the gene identifier. Inputs that match no gene are listed in `not_found` (`not_returned` when `truncated`); HGNC / NCBI Gene ids are not accepted (`unsupported_identifiers`).",
     "tags": [
       "expression",
       "reference",
       "tissue"
     ],
     "params": {
-      "gene_id": "One or more gene symbols or GENCODE IDs; symbols are auto-resolved (e.g. UMOD or ENSG00000169344.15).",
+      "gene_id": "One or more gene symbols or GENCODE IDs; symbols are auto-resolved (e.g. UMOD or ENSG00000169344.15). For an HGNC or NCBI Gene id, call hgnc_resolve_symbol first.",
       "gencode_version": "GENCODE annotation release to resolve against; omit for the server default (v26).",
       "genome_build": "Genome assembly build; omit for the server default. GTEx reference annotations are GRCh38-only, so GRCh37 returns no rows."
     },
@@ -3302,7 +3273,7 @@
       "tissue"
     ],
     "params": {
-      "query": "Gene symbol or partial symbol to match against the GTEx catalog (e.g. 'BRCA' matches BRCA1, BRCA2).",
+      "query": "Gene symbol or partial symbol to match against the GTEx catalog (e.g. 'BRCA' matches BRCA1, BRCA2), or an Ensembl gene id. HGNC / NCBI Gene ids are rejected: hgnc_resolve_symbol converts them.",
       "offset": "Zero-based row offset for pagination (fleet canon).",
       "limit": "Maximum genes to return per page (1-1000)."
     }
@@ -3948,7 +3919,7 @@
   },
   {
     "name": "hpo_resolve_xref",
-    "description": "Resolve an external cross-reference CURIE (UMLS/SNOMEDCT_US/NCIT/MEDDRA/ICD-10/ICD-9/MONDO/DOID/ORPHA) back to the HPO term(s) that cross-reference it. Returns matches[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step (offset). Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
+    "description": "Resolve an external cross-reference CURIE (UMLS/SNOMEDCT_US/NCIT/MEDDRA/ICD-10/ICD-9/MONDO/DOID/ORPHA) back to the HPO term(s) that cross-reference it. Returns results[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step (offset). Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
     "tags": [
       "disease",
       "gene",
@@ -4399,7 +4370,7 @@
   },
   {
     "name": "mavedb_get_variant_score",
-    "description": "Look up the functional score for ONE variant without paging the whole table. Pass a full variant URN (urn:mavedb:...-a-1#2) to resolve it directly, OR a score-set URN plus hgvs= (e.g. 'c.8168A>G' or 'p.Arg1699Trp') to scan that score set's table for the matching row(s). BOTH paths return the same shape: {urn, query, resolved_by, match_count, variants:[{variant_urn, variant_index, hgvs_nt, hgvs_pro, score, classifications?}], calibrations?}. mapped_variants are opt-in (standard/full) and current-only unless full. The fast path for 'what is the score (and calibrated class) for this variant?'. Signature: get_variant_score(urn, hgvs=, response_mode=).",
+    "description": "Look up the functional score for ONE variant without paging the whole table. Pass a full variant URN (urn:mavedb:...-a-1#2) to resolve it directly, OR a score-set URN plus hgvs= (e.g. 'c.8168A>G' or 'p.Arg1699Trp') to scan that score set's table for the matching row(s). BOTH paths return the same shape: {urn, query, resolved_by, match_count, results:[{variant_urn, variant_index, hgvs_nt, hgvs_pro, score, classifications?}], calibrations?}. mapped_variants are opt-in (standard/full) and current-only unless full. The fast path for 'what is the score (and calibrated class) for this variant?'. Signature: get_variant_score(urn, hgvs=, response_mode=).",
     "tags": [
       "functional-assay",
       "mave",
@@ -4817,7 +4788,7 @@
       "phenotype"
     ],
     "params": {
-      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
     },
     "enums": {
@@ -4840,7 +4811,7 @@
       "phenotype"
     ],
     "params": {
-      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
       "allele_type": "Optional generation-method filter. Accepts a canonical MGI allele type or a friendly token (knockout, crispr, cre, enu); an unrecognised value is rejected with invalid_input.",
       "limit": "Max alleles returned (default 200).",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
@@ -4901,7 +4872,7 @@
       "phenotype"
     ],
     "params": {
-      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog."
+      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first."
     }
   },
   {
@@ -4915,7 +4886,7 @@
       "xref"
     ],
     "params": {
-      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
     },
     "enums": {
@@ -4936,7 +4907,7 @@
       "phenotype"
     ],
     "params": {
-      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
       "mp_system": "Optional top-level MP system filter (name or MP id).",
       "limit": "Max rows \u2014 distinct terms, or genotype rows in full mode (default 250).",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
@@ -4972,7 +4943,7 @@
       "phenotype"
     ],
     "params": {
-      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog."
+      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first."
     }
   },
   {
@@ -5004,7 +4975,7 @@
       "resolve"
     ],
     "params": {
-      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id for the ortholog.",
+      "query": "A mouse marker symbol (current or synonym, case-insensitive), an MGI id (MGI:98968 or 98968), or a human gene symbol / HGNC id / NCBIGene:<id> for the ortholog. A human Ensembl id (ENSG...) is rejected: convert it with hgnc_resolve_symbol first.",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
     },
     "enums": {
@@ -6127,7 +6098,7 @@
   },
   {
     "name": "orphanet_map_cross_ontology",
-    "description": "List an Orphanet disorder's cross-references to other ontologies, grouped by source (OMIM/MONDO/ICD-10/ICD-11/UMLS/GARD/MeSH/MedDRA), each with its mapping relation. Returns them under `mappings` (get_disease returns the same data under `xrefs`). Use prefixes=['OMIM'] to restrict to a subset of sources. count is the number of leaf mapping rows (individual targets), not the number of source groups. Signature: map_cross_ontology(term, prefixes=, response_mode=).",
+    "description": "List an Orphanet disorder's cross-references to other ontologies, grouped by source (OMIM/MONDO/ICD-10/ICD-11/UMLS/GARD/MeSH/MedDRA), each with its mapping relation. Returns them under `result` (get_disease returns the same data under `result.xrefs`). Use prefixes=['OMIM'] to restrict to a subset of sources. count is the number of leaf mapping rows (individual targets), not the number of source groups. Signature: map_cross_ontology(term, prefixes=, response_mode=).",
     "tags": [
       "disease",
       "epidemiology",
@@ -6204,7 +6175,7 @@
   },
   {
     "name": "orphanet_resolve_xref",
-    "description": "Resolve an external cross-reference CURIE (OMIM/MONDO/ICD-10/ICD-11/UMLS/GARD/MeSH/MedDRA) back to the Orphanet disorder(s) that map to it. Returns matches[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step. Miss semantics (list-shaped, unlike resolve_disease): a malformed CURIE is rejected with invalid_input, while a well-formed but unmapped CURIE returns an empty page (total: 0), not not_found. Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
+    "description": "Resolve an external cross-reference CURIE (OMIM/MONDO/ICD-10/ICD-11/UMLS/GARD/MeSH/MedDRA) back to the Orphanet disorder(s) that map to it. Returns results[] plus a pagination block {total, returned, limit, offset, truncated, next_offset}; when truncated, next_commands carries a forward-page step. Miss semantics (list-shaped, unlike resolve_disease): a malformed CURIE is rejected with invalid_input, while a well-formed but unmapped CURIE returns an empty page (total: 0), not not_found. Signature: resolve_xref(xref_id, limit=, offset=, response_mode=).",
     "tags": [
       "disease",
       "epidemiology",
@@ -6297,7 +6268,7 @@
       "gene-panel"
     ],
     "params": {
-      "gene_symbol": "Approved gene symbol (e.g. PKD1). Required: PanelApp queries by symbol.",
+      "gene_symbol": "Approved gene symbol (e.g. PKD1). Required: PanelApp queries by symbol; an HGNC, Ensembl or NCBI Gene id is rejected with the call that converts it.",
       "hgnc_id": "HGNC CURIE (e.g. HGNC:1100). OPTIONAL filter over the hits -- it cannot stand alone as a query; pass gene_symbol.",
       "region": "uk (Genomics England) | australia | both (default).",
       "min_confidence": "green | amber | red rank floor; default no filter.",
@@ -6415,7 +6386,7 @@
       "gene-panel"
     ],
     "params": {
-      "gene_symbols": "Approved gene symbols (e.g. PKD1); capped at 20 per call.",
+      "gene_symbols": "Approved gene symbols (e.g. PKD1); capped at 20 per call. An HGNC, Ensembl or NCBI Gene id is listed under `unsupported` with the call that converts it.",
       "region": "uk | australia | both (default).",
       "min_confidence": "green | amber | red rank floor; default no filter.",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
@@ -6461,7 +6432,7 @@
       "search"
     ],
     "params": {
-      "query": "Approved gene symbol or free text to resolve to one rolled-up gene (e.g. SCN1A). An HGNC id is not a lookup key here.",
+      "query": "Approved gene symbol or free text to resolve to one rolled-up gene (e.g. SCN1A). An HGNC, Ensembl or NCBI Gene id is not a lookup key here: it is rejected with the call that converts it.",
       "region": "uk (Genomics England) | australia | both (default).",
       "response_mode": "Verbosity: minimal | compact | standard | full (default compact)."
     },
@@ -8415,7 +8386,7 @@
   },
   {
     "name": "uniprot_find_proteins_batch",
-    "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, unresolved_genes and unresolved_reasons (not_found, or unsupported_identifier with its converter in next_commands; HGNC:<n> and NCBIGene:<n> are accepted). Optionally scope by organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name) and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
+    "description": "Resolve SEVERAL gene symbols to UniProtKB entries in ONE call, running the lookups concurrently -- so N genes cost about one cold round-trip instead of N sequential ones. Use this for multi-gene tasks (e.g. 'get domains for PNKP and NAA10'). Returns by_gene (gene -> accessions, reviewed-first), a flat proteins list tagged with matched_gene, resolved_genes, unresolved_genes and unresolved_reasons (not_found, or unsupported_identifier with its converter in next_commands; HGNC:<n>, NCBIGene:<n> accepted; no supported item at all = invalid_input). Optionally scope by organism_taxon (a positive NCBI taxon id or an exact common/scientific organism name) and reviewed. next_commands fan out to get_protein on each resolved gene's top hit. For a single gene use find_proteins. Signature: find_proteins_batch(gene_symbols, organism_taxon=, reviewed=, limit_per_gene=).",
     "tags": [
       "batch",
       "function",
@@ -8735,7 +8706,7 @@
       "assembly": "Reference build for annotation. GRCh38 default.",
       "response_mode": "Verbosity tier: minimal (identity only), compact (default; representative transcript + frequencies), standard (filtered transcripts), or full (raw-ish payload). Position scores (CADD/GERP) appear once under position_scores at all tiers above minimal.",
       "transcripts": "standard-tier only: 'auto' (default) drops uninformative MODIFIER neighbour transcripts, collapses identical-effect isoforms (equivalent_transcript_ids), and caps to the most severe; 'all' returns every transcript uncollapsed. Each variant carries its own transcripts_summary {shown,collapsed,total} when filtered.",
-      "allele": "Optional ALT filter for a multi-allelic input: an ALT base (e.g. 'A') or a full CHR-POS-REF-ALT. Omit to annotate every ALT allele (each as an entry in variants[]).",
+      "allele": "Optional ALT filter for a multi-allelic input: an ALT base (e.g. 'A') or a full CHR-POS-REF-ALT. Omit to annotate every ALT allele (each as an entry in results[]).",
       "vep_options": "Optional VEP flag overrides (keys must be in the allowlist; call get_capabilities for the set). Plugins like SpliceAI / dbNSFP are instance-dependent."
     },
     "enums": {
@@ -8861,7 +8832,7 @@
   },
   {
     "name": "vep_resolve_variant",
-    "description": "Use this when the caller's variant is an rsID, HGVS, SPDI, or loosely formatted: returns a variants[] list (one entry per ALT allele) with the canonical CHR-POS-REF-ALT variant_id, gene_symbol and most_severe_consequence that the annotation tools build on, plus a top-level warnings[] (a multi-allelic input carries a multiple_alts warning). Coordinates are normalized locally; rsIDs/HGVS are recoded via Ensembl. Cheap (<1kB). Then call annotate_variant for the full VEP annotation.",
+    "description": "Use this when the caller's variant is an rsID, HGVS, SPDI, or loosely formatted: returns a results[] list (one entry per ALT allele) with the canonical CHR-POS-REF-ALT variant_id, gene_symbol and most_severe_consequence that the annotation tools build on, plus a top-level warnings[] (a multi-allelic input carries a multiple_alts warning). Coordinates are normalized locally; rsIDs/HGVS are recoded via Ensembl. Cheap (<1kB). Then call annotate_variant for the full VEP annotation.",
     "tags": [
       "annotation",
       "consequence",
@@ -8871,7 +8842,7 @@
     "params": {
       "variant": "A variant in any supported form: CHR-POS-REF-ALT, an rsID (e.g. rs6025), genomic/transcript HGVS, or SPDI.",
       "assembly": "Reference build for resolution. GRCh38 default.",
-      "allele": "Optional ALT filter for a multi-allelic input: an ALT base (e.g. 'A') or a full CHR-POS-REF-ALT. Omit to return every ALT allele in variants[]."
+      "allele": "Optional ALT filter for a multi-allelic input: an ALT base (e.g. 'A') or a full CHR-POS-REF-ALT. Omit to return every ALT allele in results[]."
     },
     "enums": {
       "assembly": [
