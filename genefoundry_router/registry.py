@@ -23,6 +23,16 @@ class TransformConfig(BaseModel):
     arg_rename: dict[str, dict[str, str]] = Field(default_factory=dict)
 
 
+class DataEgress(BaseModel):
+    """What a community backend does with the arguments it receives (Federation v1 §3)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    retention: str
+    subprocessors: list[str]
+    tools_sending_free_text: list[str]
+
+
 class BackendDef(BaseModel):
     """A single federated backend, resolved from servers.yaml + .env."""
 
@@ -30,7 +40,7 @@ class BackendDef(BaseModel):
 
     name: str
     namespace: str
-    url_env: str
+    url_env: str | None = None  # required for core entries (load_registry); never community
     service_token_env: str | None = None
     repo: str | None = None
     tags: list[str] = Field(default_factory=list)
@@ -66,6 +76,12 @@ class BackendDef(BaseModel):
     transform: TransformConfig | None = None
     url: str | None = None  # resolved from os.environ[url_env] at load time
     service_token: str | None = Field(default=None, repr=False)
+    # Federation Standard v1: set only by the community loader, never by a registry file.
+    trust: Literal["core", "community"] = "core"
+    operator: str | None = None
+    contact: str | None = None
+    ownership: str | None = None
+    data_egress: DataEgress | None = None
 
     @field_validator("namespace")
     @classmethod

@@ -124,6 +124,12 @@ def build_server(
     before search.
     """
     proxy_targets = proxy_targets or {}
+    community = [b.name for b in registry if b.trust == "community"]
+    if community and not (
+        settings.GF_COMMUNITY_SERVERS_FILE and settings.GF_ALLOW_COMMUNITY_BACKENDS
+    ):
+        # Federation Standard v1 §2: the core endpoint never serves community backends.
+        raise ConfigurationError(f"community backends {community} on a non-community instance")
     # Keep the historical one-argument call when observability is disabled so existing
     # auth factories and tests remain compatible.
     auth = (

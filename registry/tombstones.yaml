@@ -1,0 +1,3 @@
+# Federation Standard v1 §8: delisted community namespaces, never reassigned.
+# Entry: {namespace: <ns>, name: <name>, reason: <text>, date: YYYY-MM-DD}
+tombstones: []

@@ -105,6 +105,12 @@ bite MCP clients.
 | `mitomap` | Mitochondrial DNA (mtDNA) variants & disease associations | [MITOMAP](https://www.mitomap.org/) | 4 | [mitomap-link](https://github.com/berntpopp/mitomap-link) |
 <!-- END GENERATED: fleet-inventory -->
 
+Community backends (operator-hosted, [Federation Standard v1](docs/FEDERATION-STANDARD-v1.md)):
+
+<!-- BEGIN GENERATED: community-inventory -->
+No community backends are admitted.
+<!-- END GENERATED: community-inventory -->
+
 ## Data & provenance
 
 The router serves **no data of its own**; each backend owns its sources, licences and

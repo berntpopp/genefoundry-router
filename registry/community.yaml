@@ -1,0 +1,8 @@
+# Federation Standard v1 §3: community backends, loaded only via GF_COMMUNITY_SERVERS_FILE
+# on the community instance. Every entry is forced to trust=community.
+# Required: name, namespace, url (https://<host>/mcp), operator, contact, ownership,
+# server_name, source_name, data_egress {retention, subprocessors, tools_sending_free_text}.
+# Forbidden: trust, entrypoints, transform, url_env, service_token_env, enabled.
+# Disable by moving an entry to `disabled:` (with a `reason`) or via GF_DISABLED_BACKENDS.
+servers: []
+disabled: []
