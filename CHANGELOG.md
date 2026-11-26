@@ -4,8 +4,12 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.14] - 2026-11-26
+
 ### Changed
 
+- **Search expansions follow the current backend release descriptions.** The backends' Response-Envelope v1.2 releases rewrote 37 tool descriptions. Their entries in `genefoundry_router/data/tool-expansions.json` have been regenerated, and the expansion for pubtator `get_text_annotation_results`, which pubtator-link 7.11.0 removed, has been dropped. `hgnc_get_gene_cross_references` gets a hand-curated keyword overlay that names the identifiers it returns. `make bench-discoverability` scores 9.31/10, the same as before.
+- **Test snapshots match the current backend releases.** `tests/fixtures/fleet_manifest.json` and `tests/discoverability/catalog.json` were captured from the latest released image of all 30 backends (344 tools). The attested drift baseline (`fleet-baseline.json` and its companions) still pins the deployed fleet. It will be re-pinned after the new releases are deployed (#402).
 - **The untrusted-text inventory lists the surfaces pubtator-link fenced in 7.10.0.** The `pubtator` row of `docs/conformance/untrusted-text-inventory.yml` named `get_publication_passages` only. It now also names the `get_variant_evidence` literature snippets and, for `get_publication_annotations` and `get_pmc_annotations`, the passage text, `infons.license`, `infons.xml` and the BioC XML and PubTator-format document content. `get_publication_metadata` `bibtex` is recorded as not fenced: the server renders it from structured citation fields.
 
 ## [0.14.13] - 2026-11-26
