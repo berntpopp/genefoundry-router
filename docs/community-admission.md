@@ -55,3 +55,25 @@ PRs, and workflow permissions **Read repository contents**.
 Before approving, the reviewer confirms that the PR changes only registry files and not the
 workflow or `scripts/admission_check.py`: under `pull_request` the PR's own version of both
 runs.
+
+## Nightly checks and delisting
+
+`.github/workflows/community-nightly.yml` runs `scripts/community_nightly.py run` every night
+with only `GITHUB_TOKEN` (`issues`, `pull-requests` and `contents: write`, the last to push the
+PR branch; Settings → Actions → General must allow GitHub Actions to create pull requests).
+For every served community entry it repeats steps 1–4 above, except that the ownership proof
+is not matched against a login. A host that does not answer is unreachable, not a lost proof.
+
+- Any failure opens or updates the issue `Community backend <namespace>: nightly check
+  failed` (label `community-nightly`) and mentions `contact` when it is a `@login`; no email
+  is sent. A later passing run closes the issue.
+- Two consecutive failed conformance runs, a lost ownership proof or 7 days unreachable
+  append the namespace to the kill-switch file (`GF_KILL_SWITCH_FILE`, uploaded as the
+  `kill-switch` artifact) and open one PR, `community/disable-<namespace>`, that moves the
+  entry to `disabled:` with the reason. For an immediate cut-off, run the same command where
+  the community instance reads its kill-switch file. Recovery never removes a kill-switch
+  line.
+- The job keeps its state in a marker in the open issue; a rerun on the same day changes
+  nothing and opens no second issue or PR.
+- Final removal: `scripts/community_nightly.py delist <namespace> --reason "..."` drops the
+  disabled entry and adds it to `registry/tombstones.yaml`; the namespace is never reassigned.

@@ -201,12 +201,12 @@ def _parse_txt(text: str) -> dict[str, Any]:
     return {**fields, "probe_consent": fields.get("probe_consent") == "true"}
 
 
-def _mismatch(proof: Any, namespace: str, author: str) -> str | None:
+def _mismatch(proof: Any, namespace: str, author: str | None) -> str | None:
     if not isinstance(proof, dict):
         return "not a JSON object"
     if proof.get("namespace") != namespace:
         return f"names namespace {proof.get('namespace')!r}"
-    if str(proof.get("github_login", "")).lower() != author.lower():
+    if author is not None and str(proof.get("github_login", "")).lower() != author.lower():
         return f"names GitHub login {proof.get('github_login')!r}"
     if proof.get("probe_consent") is not True:
         return "probe_consent is not true"
@@ -216,10 +216,11 @@ def _mismatch(proof: Any, namespace: str, author: str) -> str | None:
 def ownership_error(
     namespace: str,
     host: str,
-    author: str,
+    author: str | None,
     well_known: Callable[[str], Any],
     txt_records: Callable[[str], list[str]],
 ) -> str | None:
+    """Why no proof names ``namespace`` (and ``author``; None, as nightly, skips the login)."""
     reasons = []
     sources: list[tuple[str, Callable[[], list[Any]]]] = [
         ("DNS TXT", lambda: [_parse_txt(t) for t in txt_records(f"_genefoundry.{host}")]),
@@ -235,14 +236,31 @@ def ownership_error(
             if (reason := _mismatch(proof, namespace, author)) is None:
                 return None
             reasons.append(f"{source}: {reason}")
+    login = f", GitHub login {author!r}" if author is not None else ""
     return (
-        f"{namespace}: no ownership proof naming namespace {namespace!r}, GitHub login "
-        f"{author!r} and probe consent ({'; '.join(reasons) or 'none found'})"
+        f"{namespace}: no ownership proof naming namespace {namespace!r}{login} "
+        f"and probe consent ({'; '.join(reasons) or 'none found'})"
     )
 
 
 def _canonical(text: str) -> list[str]:
     return json.dumps(json.loads(text), sort_keys=True, indent=2, ensure_ascii=False).splitlines()
+
+
+def pin_diff(
+    backend: BackendDef, pins: Path, live_pin: Callable[[BackendDef], str] = live_pin
+) -> list[str]:
+    """Unified diff from the pin file to the live definitions; empty when they are equal."""
+    pin = pins / f"{backend.namespace}.json"
+    return list(
+        difflib.unified_diff(
+            _canonical(pin.read_text(encoding="utf-8")),
+            _canonical(live_pin(backend)),
+            fromfile=str(pin),
+            tofile=f"live {backend.url}",
+            lineterm="",
+        )
+    )
 
 
 def probe_errors(
@@ -267,17 +285,7 @@ def probe_errors(
     errors = []
     if conformance(backend) != 0:
         errors.append(f"{namespace}: GTS core conformance probe failed (report above)")
-    pin = pins / f"{namespace}.json"
-    diff = list(
-        difflib.unified_diff(
-            _canonical(pin.read_text(encoding="utf-8")),
-            _canonical(live_pin(backend)),
-            fromfile=str(pin),
-            tofile=f"live {url}",
-            lineterm="",
-        )
-    )
-    if diff:
+    if diff := pin_diff(backend, pins, live_pin):
         errors.append(f"{namespace}: pin file differs from live definitions:\n" + "\n".join(diff))
     return errors
 

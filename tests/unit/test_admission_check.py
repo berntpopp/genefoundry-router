@@ -250,3 +250,11 @@ def test_dns_guard_refuses_private_answers(monkeypatch: pytest.MonkeyPatch) -> N
         with pytest.raises(OSError, match="port"):
             socket.getaddrinfo("good.example", 80)
     assert socket.getaddrinfo is fake
+
+
+def test_ownership_without_author_skips_the_login_check() -> None:
+    """The nightly job (#416) re-checks the proof without knowing the PR author."""
+    proof = {"namespace": "acme", "github_login": "alice", "probe_consent": True}
+    args = ("acme", "mcp.acme.example")
+    assert adm.ownership_error(*args, None, lambda h: proof, lambda n: []) is None
+    assert adm.ownership_error(*args, None, lambda h: None, lambda n: []) is not None

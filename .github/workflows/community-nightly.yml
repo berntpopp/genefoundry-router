@@ -1,0 +1,63 @@
+name: Community nightly (Federation v1 §8)
+
+# Ownership proof, conformance probe and pin comparison for every community backend.
+# Failures open or update one issue per namespace; a kill condition appends the namespace
+# to the kill-switch file (uploaded as an artifact) and opens one PR moving the entry to
+# `disabled:`. Only GITHUB_TOKEN is used. `contents: write` is needed to push the PR branch.
+# The repository setting "Allow GitHub Actions to create pull requests" must be on.
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-nightly
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          version: "0.8.7"
+      - name: Install router and conformance kit
+        run: |
+          uv sync --frozen --no-dev
+          # gts-conformance v0.2.3 (as community-admission.yml)
+          uv pip install "gts-conformance @ git+https://github.com/berntpopp/gts-conformance@cb25c54c23e011d7af6085d7f98f674af589edb9"
+      - name: Nightly community checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh auth setup-git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          GF_KILL_SWITCH_FILE="$RUNNER_TEMP/kill-switch.txt" uv run --no-sync python scripts/community_nightly.py run
+      - name: Upload kill-switch file
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: kill-switch
+          path: ${{ runner.temp }}/kill-switch.txt
+          if-no-files-found: ignore
