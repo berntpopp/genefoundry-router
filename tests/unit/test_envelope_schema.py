@@ -17,6 +17,12 @@ SANITIZE = json.loads((ROOT / "envelope/vectors/sanitize.json").read_text())
 TEXT = SCHEMA["$defs"]["untrusted_text"]["properties"]
 
 
+def test_schema_is_the_released_genefoundry_envelope_file():
+    # update together with a genefoundry-envelope release
+    digest = hashlib.sha256((ROOT / "envelope/envelope-v1.2.schema.json").read_bytes()).hexdigest()
+    assert digest == "c3c47e20d7dd189aac2568fc963b5514d7a5ac2c3e5f21d126f42c96d1ad1ae3"
+
+
 def test_schema_is_valid_draft_2020_12():
     Draft202012Validator.check_schema(SCHEMA)
     assert {p.parent.name for p in VECTORS} == {"valid", "invalid"}
