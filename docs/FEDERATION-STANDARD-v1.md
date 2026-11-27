@@ -1,9 +1,8 @@
 # GeneFoundry Federation Standard v1: operator-hosted servers in the public gateway
 
-> **Status: PROPOSED, 2026-11-26.** Nothing here is implemented yet. No community server is
-> loaded on genefoundry.org until every item of the go-live checklist issue passes. A standard
-> must not claim an enforcement it does not have; each section names the component issue that
-> will enforce it.
+> **Status: PROPOSED, 2026-11-26.** [§10](#10-conformance-must--test) maps each MUST to the test
+> that asserts it and lists the gaps, including requirements not yet implemented. The status moves to NORMATIVE only when no gap remains. No community server is loaded
+> on genefoundry.org until every item of the go-live checklist issue passes.
 
 Keywords MUST / SHOULD / MAY per [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 Companion standards: [MCP Transport v1](MCP-TRANSPORT-STANDARD-v1.md),
@@ -139,3 +138,46 @@ On every community result and error, in order:
 Reading the MCP Registry or Server Cards at runtime; signed metadata; per-user OAuth
 brokering; static service keys on the public community endpoint; hot reload of the community
 file.
+
+## 10. Conformance: MUST → test
+
+Each MUST of §§2–8 and the test that asserts it (`tests/unit/` unless a path is given).
+**Gap** rows have no asserting test yet; while any remain, this standard stays PROPOSED.
+
+| § | Requirement | Test |
+|---|---|---|
+| 2 | Core endpoint loads no community backends | `test_community_registry.py::test_core_instance_refuses_community_entries`, `::test_serving_registry_adds_community_entries_only_when_configured`; `docker/test_compose.py::test_core_endpoint_never_allows_community_backends` |
+| 2 | Separate instance: same image, enforce, own bridge only, no core secrets | `docker/test_compose.py::test_community_service_is_isolated_and_enforcing` |
+| 2 | No route to core, identity provider, Docker host, metadata | CI job `community-egress` (`scripts/community_firewall.sh` + `scripts/community_egress_check.py`); `test_community_egress_check.py`. **Gap:** not yet run on the deployed instance |
+| 3 | Loader forces `trust=community`, rejects a `trust` key | `test_community_registry.py::test_entry_without_trust_loads_as_community`, `::test_trust_key_is_a_load_error` |
+| 3 | Community entries only from `GF_COMMUNITY_SERVERS_FILE` | **Gap:** `servers.yaml` accepts `trust: community` (`config.py:load_registry`) |
+| 3 | Rejects `entrypoints`, `transform`, `url_env`, `service_token_env` | `test_community_registry.py::test_forbidden_key_is_a_load_error` |
+| 3 | Rejects a URL that is not `https://<host>/mcp` on 443 | `test_community_registry.py::test_non_conforming_url_is_a_load_error`, `::test_explicit_port_443_is_accepted`; `test_egress.py::test_bad_url_rejected_at_load` |
+| 3 | Rejects a core or tombstoned name/namespace | `test_community_registry.py::test_core_name_or_namespace_is_a_load_error`, `::test_tombstoned_namespace_is_a_load_error` (**gap:** tombstoned `name`) |
+| 3 | Required keys | `test_community_registry.py::test_missing_required_key_is_a_load_error`, `::test_incomplete_data_egress_is_a_load_error` (**gap:** `name`, `namespace`, `server_name`, `source_name` not exercised) |
+| 3 | Duplicate name/namespace fatal; disable only via `disabled:` / env | `test_community_registry.py::test_duplicate_within_community_and_disabled_lists_is_fatal`, `::test_disabled_list_and_env_disable_backends` |
+| 3 | Allow flag defaults false; file without it, or without enforce, fails | `test_community_registry.py::test_defaults_keep_community_off`, `::test_community_file_without_allow_fails_startup`, `::test_community_file_requires_enforced_drift` |
+| 3 | `patient` refuses community backends and a public reranker | `test_community_registry.py::test_patient_profile_refuses_community_backends`, `::test_patient_profile_requires_a_local_reranker` |
+| 4 | Pin file holds only its namespace; `pin` writes atomically | `test_federation_pins.py::test_pin_file_with_another_namespace_is_a_load_error`, `::test_pin_output_is_deterministic_and_atomic` |
+| 4 | Pins computed before router transforms | `test_federation_pins.py::test_fastmcp_transform_does_not_alter_community_pins` |
+| 4 | Any change quarantines the whole backend; the latch holds | `test_federation_pins.py::test_drift_quarantines_whole_backend_with_zero_upstream_calls`, `::test_revert_to_pinned_definition_stays_quarantined`, `::test_latch_survives_restart_with_unchanged_pin`, `::test_new_pin_file_clears_latch`, `::test_release_command_clears_latch` |
+| 4 | Each latch emits a high-severity log event and metric | **Gap** (implemented in `runtime_drift.py:RuntimeDriftGuard.latch`) |
+| 4 | Kill switch re-read on every poll and ≤ 5 s on the call path | `test_federation_pins.py::test_kill_switch_blocks_within_5s_and_removal_does_not_release`, `::test_call_path_reload_bound_is_5s` (**gap:** the per-poll re-read) |
+| 4 | `GF_POLL_INTERVAL` = `cache_ttl`; 5 s harvest does not block startup | `test_federation_pins.py::test_community_instance_requires_poll_interval_equal_to_cache_ttl`, `::test_unreachable_community_backend_does_not_delay_startup` |
+| 4 | No community tools in the LLM expansion generator or stale guard | **Gap** (safe by construction: both read only the core catalog) |
+| 5.1 | Body cap (compressed and decoded) and tool cap quarantine | `test_community_guard.py::test_oversized_body_aborts_at_cap_with_bounded_memory_and_quarantines`, `::test_2000_tool_list_quarantines_without_parsing_it`, `::test_more_tools_than_the_cap_quarantines`, `::test_cap_breach_latches_the_backend` |
+| 5.2 | NFC and removal set in `content`, `structuredContent`, `_meta` | `test_community_guard.py::test_envelope_sanitize_vectors`, `::test_nfd_comes_out_nfc`, `::test_structured_content_and_meta_strings_are_sanitized` (**gap:** `_meta` strings) |
+| 5.3 | Nonce fence, fresh per call, forged end escaped | `test_community_guard.py::test_text_is_sanitized_and_fenced_and_a_forged_end_cannot_close_it` |
+| 5.4 | Fixed error codes; backend text dropped | `test_community_guard.py::test_upstream_500_drops_the_backend_message`, `::test_in_band_backend_error_text_is_dropped`, `::test_non_json_body_is_invalid_response` (**gap:** `rate_limited` on 429) |
+| 5.5 | Oversized arguments refused before any upstream request | `test_community_guard.py::test_oversized_arguments_are_refused_with_zero_upstream_requests` |
+| 6 | Connect-time resolution; every address global, wrapped forms unwrapped | `test_egress.py::test_refused_address_opens_no_socket`, `::test_mixed_dns_answer_is_refused`, `::test_dns_rebinding_is_refused_at_call_time` (**gap:** reserved and unspecified addresses) |
+| 6 | Validated IP dialled, SNI/`Host` kept, 443, verify, no redirects | `test_egress.py::test_public_address_is_dialled_as_ip_literal`, `::test_tls_sni_and_host_preserved_and_bad_cert_fails`, `::test_non_443_port_refused_at_connect`, `::test_follow_redirects_locked_off_for_core_and_community`, `::test_redirect_is_invalid_response_without_second_request` |
+| 6 | 4 in flight, fail fast; 3 s connect, 12 s total | `test_community_resilience.py::test_fifth_concurrent_call_fails_fast_and_core_latency_is_unchanged`, `::test_unroutable_host_fails_at_three_seconds`, `::test_byte_trickle_hits_the_total_timeout`, `::test_entry_timeout_is_bounded_and_used` |
+| 6 | Breaker 5 / 60 s / one half-open probe; in `/health` and metrics | `test_community_resilience.py::test_breaker_opens_probes_once_and_closes_or_reopens`, `::test_only_one_half_open_probe_at_a_time`, `::test_breaker_state_in_health_and_metrics` |
+| 7 | `_meta.gf_backend` / `source` overwritten; visible header | `test_federation_provenance.py::test_router_overwrites_forged_provenance`, `::test_header_is_the_first_block_of_every_result`, `::test_errors_carry_the_header_and_router_provenance` |
+| 7 | Search labels; core wins within 10 %; truncation; ≤ half community | `test_federation_provenance.py::test_community_hits_are_labelled`, `::test_core_wins_a_tie`, `::test_at_most_half_the_hits_are_community` (**gap:** a 10 % margin and the truncation) |
+| 7 | Instructions list community backends separately | `test_federation_provenance.py::test_instructions_list_community_backends_on_their_own_line` |
+| 8 | Ownership proof (DNS TXT, well-known), conformance, pin review | `test_admission_check.py::test_dns_txt_proof_is_accepted`, `::test_ownership_proof_naming_a_different_login_fails`, `::test_proof_without_probe_consent_fails`, `::test_conformance_failure_fails`, `::test_pin_differing_from_live_definitions_fails_with_a_readable_diff` (**gap:** MCP Registry domain proof is not implemented) |
+| 8 | `pull_request` only; protected environment, no secrets, same IP guard | `test_admission_check.py::test_workflow_uses_pull_request_never_pull_request_target`, `::test_network_job_requires_the_protected_environment_and_has_no_secrets`, `::test_private_address_fails_before_any_request` |
+| 8 | Nightly checks, issue + contact; kill switch and disable PR | `test_community_nightly.py::test_check_conformance_and_pin`, `::test_one_failure_opens_only_the_issue_and_mentions_the_contact`, `::test_two_consecutive_failures_kill_switch_and_disable_pr`, `::test_removed_ownership_record_kills_on_the_next_run`, `::test_seven_days_unreachable_kills` (**gap:** PR after 7 days unreachable) |
+| 8 | Tombstoned namespaces never reassigned; at most 10 backends | `test_community_nightly.py::test_tombstoned_namespace_cannot_be_re_registered` (**gap:** the cap of 10 is not enforced) |

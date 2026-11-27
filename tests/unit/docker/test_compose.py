@@ -126,3 +126,36 @@ def test_npm_overlay_image_works_with_either_variable_alone():
     service = _load("docker-compose.npm.yml")["services"]["genefoundry-router"]
     assert service["image"] == "${GF_IMAGE:-${GENEFOUNDRY_IMAGE}}"
     assert "build" not in service  # an empty image must fail, not build locally
+
+
+def test_core_endpoint_never_allows_community_backends():
+    # Federation Standard v1 §2: pinned in the compose files, so a stray .env cannot flip it.
+    for name in ("docker-compose.prod.yml", "docker-compose.npm.yml"):
+        env = _load(name)["services"]["genefoundry-router"]["environment"]
+        assert env["GF_ALLOW_COMMUNITY_BACKENDS"] == "false", name
+
+
+def test_community_service_is_isolated_and_enforcing():
+    data = _load("docker-compose.prod.yml")
+    core = data["services"]["genefoundry-router"]
+    svc = data["services"]["genefoundry-community"]
+    env = svc["environment"]
+    assert svc["profiles"] == ["community"]  # kept out of the release gate's render
+    assert svc["image"] == core["image"]
+    assert env["GF_ALLOW_COMMUNITY_BACKENDS"] == "true"
+    assert env["GF_DRIFT_MODE"] == "enforce"
+    assert env["GF_POLL_INTERVAL"] == "300"
+    assert env["GF_MCP_PATH"] == "/community/mcp"
+    assert env["GF_QUARANTINE_FILE"].startswith("/data/")
+    assert f"./community/kill-switch:{env['GF_KILL_SWITCH_FILE']}:ro" in svc["volumes"]
+    assert 0 < int(env["GF_RATE_LIMIT_RPM"]) < 60  # below the core recommendation
+    # Own bridge only, no core secrets: just the public, non-secret core backend URLs.
+    assert svc["networks"] == ["community"]
+    assert "networks" not in core
+    assert data["networks"]["community"]["driver_opts"] == {
+        "com.docker.network.bridge.name": "gf-community"
+    }
+    assert [e["path"] for e in svc["env_file"]] == ["../ci/fleet-urls.env"]
+    for key in ("read_only", "security_opt", "cap_drop", "tmpfs", "init"):
+        assert svc[key] == core[key], key
+    assert (DOCKER / "community" / "kill-switch").is_file()
