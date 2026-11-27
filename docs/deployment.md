@@ -21,6 +21,95 @@ which may use a different uid. `user` must NOT appear in `docker/docker-compose.
 validate-compose`) forbids `user` there. `tests/unit/docker/test_compose.py` guards both
 halves of this split.
 
+## Community router instance
+
+[Federation Standard v1 §2](FEDERATION-STANDARD-v1.md#2-deployment): community backends are
+never loaded by the core endpoint. The core service in `docker/docker-compose.prod.yml` and
+`docker/docker-compose.npm.yml` pins `GF_ALLOW_COMMUNITY_BACKENDS: "false"`, so a stray
+`.env` value cannot flip it, and a set `GF_COMMUNITY_SERVERS_FILE` then fails startup.
+Community backends are served by a second service, `genefoundry-community`, in
+`docker/docker-compose.prod.yml` under the Compose profile `community` (so a plain
+`docker compose up` and the single-service release gate never see it):
+
+- same image as the core router, `GF_MCP_PATH=/community/mcp`;
+- `GF_ALLOW_COMMUNITY_BACKENDS=true`, `GF_DRIFT_MODE=enforce`, `GF_POLL_INTERVAL=300`;
+- `GF_RATE_LIMIT_RPM` / `GF_RATE_LIMIT_IP_RPM` of 30 (anonymous, per client IP), below the
+  core recommendation;
+- kill switch `docker/community/kill-switch` mounted read-only at `GF_KILL_SWITCH_FILE`
+  (one namespace per line, re-read within 5 s without restart), latch state in
+  `GF_QUARANTINE_FILE` on its own volume;
+- its own bridge network `community` (interface `gf-community`) and nothing else: no link to
+  the core backend containers or the identity provider. It reads only the non-secret
+  `ci/fleet-urls.env`, so core backends are reached by their public URLs and none of the
+  core `.env` secrets (OAuth, service tokens) are present; a core backend that takes a
+  service token is called without one.
+
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml \
+  --profile community up -d genefoundry-community
+```
+
+### Host firewall (generic example)
+
+Docker bridges route to every private network the host can reach. `scripts/community_firewall.sh`
+(run as root on the host, idempotent) installs this rule set for the `gf-community` bridge:
+
+```bash
+iptables -N GF-COMMUNITY
+iptables -A GF-COMMUNITY -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN
+# public URLs of a reverse proxy on the same host hairpin back as DNAT to its container
+iptables -A GF-COMMUNITY -p tcp -m conntrack --ctstate DNAT --ctorigdstport 443 -j RETURN
+for p in 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10 169.254.0.0/16; do
+  iptables -A GF-COMMUNITY -d "$p" -j DROP
+done
+iptables -I DOCKER-USER -i gf-community -j GF-COMMUNITY
+iptables -I INPUT -i gf-community -m conntrack --ctstate NEW -j DROP   # the Docker host
+# IPv6: the same chain with fc00::/7 (ULA) and fe80::/10 (link-local)
+```
+
+Use `DROP`, not `REJECT`: the reachability check treats a refused connection as reachable.
+If the proxy runs natively on the host rather than in a container, its public 443 arrives
+through `INPUT`; allow exactly that port before the `INPUT` drop. Rules installed with
+`iptables` are not persistent; load them from the host's firewall service at boot. A
+separate egress IP is not configured by this repository; without one, community traffic
+leaves from the host's address (a recorded limit of §2).
+
+### Reverse proxy (generic example)
+
+The proxy joins the `community` network as the only network it shares with the community
+container:
+
+```nginx
+location /community/mcp {
+    proxy_pass http://genefoundry_community:8000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;          # streamable HTTP
+    proxy_read_timeout 60s;
+}
+```
+
+### Reachability check
+
+Run from inside the community container after every deploy and firewall change:
+
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml \
+  --profile community exec -T genefoundry-community python - \
+  --blocked genefoundry_router:8000 --blocked <core-container-ip>:8000 \
+  --blocked <identity-provider>:<port> --open genefoundry.org:443 \
+  < scripts/community_egress_check.py
+```
+
+It always adds the cloud metadata address `169.254.169.254:80` and the host gateway (ports
+22, 2375, 8000) to the blocked set. A target counts as blocked only when its name does not
+resolve, the connect times out or the network is unreachable; a refused connection means the
+host answered. Exit 0 means isolated. CI (`community-egress` job in `.github/workflows/ci.yml`)
+applies the same firewall script on throwaway bridges with stand-in core and identity-provider
+containers and runs the same check.
+
 ## Rate limits at deploy
 
 Set the rate limits in the deploy `.env`; Compose passes it through `env_file`. Since

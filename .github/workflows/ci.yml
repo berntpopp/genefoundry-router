@@ -77,3 +77,39 @@ jobs:
       - name: Coverage gate
         if: github.event_name == 'push'
         run: make test-cov
+
+  community-egress:
+    # Federation Standard v1 §2 / #417: the documented host firewall plus the reachability
+    # check, on throwaway bridges that mimic the deployment (core and IdP on their own net).
+    name: Community egress isolation smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # The router image's own pinned base (docker/Dockerfile): stdlib Python, no build.
+      PY_IMAGE: python:3.14-slim@sha256:0741d101873c12ab927e6f8653feb8862b9bd58771177acb1b885b95141f91b4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Start stand-in core and identity-provider containers
+        run: |
+          set -euo pipefail
+          docker network create gf-core
+          for name in core idp; do
+            docker run -d --name "$name" --network gf-core "$PY_IMAGE" \
+              python -m http.server 8000
+          done
+          docker network create -o com.docker.network.bridge.name=gf-community gf-community
+
+      - name: Apply the community host firewall
+        run: sudo sh scripts/community_firewall.sh gf-community
+
+      - name: Core, IdP, Docker host and metadata are unreachable; the internet is not
+        run: |
+          set -euo pipefail
+          ip_of() { docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$1"; }
+          docker run --rm --network gf-community -v "$PWD/scripts:/s:ro" "$PY_IMAGE" \
+            python /s/community_egress_check.py \
+              --blocked core:8000 --blocked "$(ip_of core):8000" \
+              --blocked idp:8000 --blocked "$(ip_of idp):8000" \
+              --open github.com:443
