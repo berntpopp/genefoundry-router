@@ -74,6 +74,10 @@ async def _get(transport: httpx2.AsyncBaseTransport, url: str = URL) -> httpx2.R
         "64:ff9b::a9fe:a9fe",
         "2002:a00:1::1",  # 6to4 wrapping 10.0.0.1
         "239.1.2.3",
+        "::",  # unspecified
+        "240.0.0.1",  # reserved
+        "255.255.255.255",
+        "::ffff:240.0.0.1",
     ],
 )
 async def test_refused_address_opens_no_socket(addr: str) -> None:

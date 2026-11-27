@@ -139,8 +139,12 @@ def test_seven_days_unreachable_kills(env: dict[str, Any]) -> None:
     for offset in range(7):
         _run(env, down, DAY + timedelta(days=offset))
     assert read_kill_switch(env["kill"]) == set()
+    assert env["gh"].prs == []
     _run(env, down, DAY + timedelta(days=7))
     assert read_kill_switch(env["kill"]) == {"acme"}
+    assert env["gh"].prs == ["community/disable-acme"]
+    [entry] = yaml.safe_load(env["community"].read_text())["disabled"]
+    assert entry["namespace"] == "acme" and "unreachable" in entry["reason"]
 
 
 def test_recovery_does_not_clear_the_kill_switch(env: dict[str, Any]) -> None:

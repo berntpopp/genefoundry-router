@@ -10,14 +10,18 @@ from typing import Any
 
 import httpx2
 import pytest
+import yaml
 from fastmcp import Client, FastMCP
 from fastmcp.tools.base import Tool, ToolResult
 from mcp.types import ImageContent, TextContent
 
+from genefoundry_router.community_search import CommunitySearch
 from genefoundry_router.composition import register_backend
-from genefoundry_router.devtools.discoverability import load_catalog, load_tasks
+from genefoundry_router.devtools.discoverability import DEFAULT_CATALOG, load_catalog, load_tasks
 from genefoundry_router.instructions import build_instructions
 from genefoundry_router.registry import BackendDef, DataEgress
+from genefoundry_router.schema_slim import TOOL_DESCRIPTION_CHARS
+from genefoundry_router.search_expansion import expansion_texts
 from genefoundry_router.tool_search import CompactBM25SearchTransform
 from tests.unit.test_community_guard import URL, Edge, _reply
 
@@ -178,6 +182,44 @@ async def test_core_wins_a_tie() -> None:
     catalog = [_tool("acme_widget_lookup", text), _tool("zeta_widget_lookup", text)]
     ranked = await _transform()._search(catalog, "frobnicated widget lookup")
     assert [t.name for t in ranked] == ["zeta_widget_lookup", "acme_widget_lookup"]
+
+
+@pytest.mark.parametrize(("community", "first"), [(1.099, "core"), (1.101, "community")])
+def test_core_wins_within_a_10_percent_margin(
+    monkeypatch: pytest.MonkeyPatch, community: float, first: str
+) -> None:
+    tools = [_tool("zeta_lookup", "x"), _tool("acme_lookup", "x")]
+    index = CommunitySearch([_community()]).index(1.5, 0.75, tools)
+    index.build(["x", "x"])
+    monkeypatch.setattr(index, "raw_scores", lambda text: [1.0, community])
+    winner = tools[index.query("x", 2)[0]].name
+    assert winner == {"core": "zeta_lookup", "community": "acme_lookup"}[first]
+
+
+def test_community_description_is_truncated_to_the_core_budget() -> None:
+    tail = "zzzunique"
+    tool = _tool("acme_lookup", "lookup " * TOOL_DESCRIPTION_CHARS + tail, q="query " * 200 + tail)
+    document = CommunitySearch([_community()]).document(tool, "", lambda text: text)
+    assert tail not in document
+
+
+def test_expansion_generator_and_stale_guard_see_only_core_tools() -> None:
+    # Both read the core catalog snapshot; the packaged expansions are keyed by it.
+    core = {e["namespace"] for e in yaml.safe_load(Path("servers.yaml").read_text())["servers"]}
+    community_file = yaml.safe_load(Path("registry/community.yaml").read_text())
+    community = {e["namespace"] for e in community_file["servers"] + community_file["disabled"]}
+    snapshot = {e["name"] for e in json.loads(DEFAULT_CATALOG.read_text(encoding="utf-8"))}
+    expanded = set(expansion_texts("builtin"))
+    for names in (snapshot, expanded):
+        namespaces = {n.split("_", 1)[0] for n in names}
+        assert namespaces <= core and not namespaces & community
+
+
+def test_community_tools_are_indexed_without_expansions() -> None:
+    transform = _transform()
+    transform.expansions = {"acme_lookup": "zzqk", "zeta_lookup": "zzqk"}
+    assert "zzqk" in transform._searchable_text(_tool("zeta_lookup", "x"))
+    assert "zzqk" not in transform._searchable_text(_tool("acme_lookup", "x"))
 
 
 async def test_at_most_half_the_hits_are_community() -> None:

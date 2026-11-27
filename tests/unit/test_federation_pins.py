@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import structlog
 import yaml
 from fastmcp import FastMCP
 from fastmcp.exceptions import NotFoundError
@@ -24,6 +25,7 @@ from genefoundry_router.cli import app as cli_app
 from genefoundry_router.config import RouterSettings
 from genefoundry_router.exceptions import RegistryError
 from genefoundry_router.normalization import apply_normalizations, insert_transform
+from genefoundry_router.observability import METRICS_REGISTRY
 from genefoundry_router.registry import BackendDef
 from genefoundry_router.runtime_drift import (
     RuntimeDriftGuard,
@@ -305,6 +307,35 @@ async def test_kill_switch_blocks_within_5s_and_removal_does_not_release(tmp_pat
     (tmp_path / "kill").write_text("")
     await _poll(server, guard)
     assert "acme" in guard.latched
+
+
+async def test_every_poll_rereads_the_kill_switch(tmp_path: Path) -> None:
+    fake = Fake()
+    _, guard = await _served(tmp_path, fake)
+    (tmp_path / "kill").write_text("acme\n")  # the call-path reload window is still open
+    guard.evaluate({}, phase="poll", unreachable=set())
+    assert guard.latched["acme"]["reason"] == "kill_switch"
+
+
+async def test_each_latch_emits_a_critical_event_and_a_metric(tmp_path: Path) -> None:
+    fake = Fake()
+    _, guard = await _served(tmp_path, fake)
+    labels = {"namespace": "acme", "reason": "response_cap"}
+    sample = "genefoundry_community_quarantine_total"
+    before = METRICS_REGISTRY.get_sample_value(sample, labels) or 0.0
+    with structlog.testing.capture_logs() as logs:
+        guard.latch("acme", "response_cap")
+        guard.latch("acme", "response_cap")  # already latched: no second event
+    events = [e for e in logs if e["event"] == "community_backend_quarantined"]
+    assert events == [
+        {
+            "event": "community_backend_quarantined",
+            "log_level": "critical",
+            "namespace": "acme",
+            "reason": "response_cap",
+        }
+    ]
+    assert METRICS_REGISTRY.get_sample_value(sample, labels) == before + 1
 
 
 def test_call_path_reload_bound_is_5s() -> None:
