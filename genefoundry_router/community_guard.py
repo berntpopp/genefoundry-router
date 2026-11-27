@@ -99,6 +99,10 @@ def failure(code: str) -> ToolResult:
     )
 
 
+class RateLimitedError(Exception):
+    """A community backend answered 429; the MCP SDK drops the status (#325), so say it here."""
+
+
 def classify(exc: BaseException) -> str:
     """Fixed code for an upstream failure; the backend's own text is never read."""
     current: BaseException | None = exc
@@ -109,6 +113,8 @@ def classify(exc: BaseException) -> str:
             isinstance(current, MCPError) and current.error.code == PARSE_ERROR
         ):
             return "invalid_response"
+        if isinstance(current, RateLimitedError):
+            return "rate_limited"
         current = current.__cause__ or current.__context__
     if upstream_status(exc) == 429:
         return "rate_limited"
@@ -182,6 +188,8 @@ def cap_responses(factory: Any, namespace: str) -> Any:
         request.headers["accept-encoding"] = "gzip, deflate"
 
     async def on_response(response: httpx2.Response) -> None:
+        if response.status_code == 429:
+            raise RateLimitedError(namespace)
         encoding = response.headers.get("content-encoding", "").strip().lower()
         sse = response.headers.get("content-type", "").lower().startswith("text/event-stream")
         response.stream = _CappedStream(response.stream, encoding, namespace, sse)

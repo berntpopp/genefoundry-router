@@ -34,7 +34,8 @@ class WeightedBM25Index(_BM25Index):
         super().__init__(k1, b)
         self.divisors = divisors
 
-    def query(self, text: str, top_k: int) -> list[int]:
+    def raw_scores(self, text: str) -> list[float]:
+        """Plain BM25 Okapi score of every document."""
         scores = [0.0] * self._n
         for token in _tokenize(text):
             if token not in self._df:
@@ -45,7 +46,11 @@ class WeightedBM25Index(_BM25Index):
                 if tf:
                     norm = 1 - self.b + self.b * self._doc_lengths[i] / self._avg_dl
                     scores[i] += idf * tf * (self.k1 + 1) / (tf + self.k1 * norm)
-        scores = [s / d for s, d in zip(scores, self.divisors, strict=True)]
+        return scores
+
+    def query(self, text: str, top_k: int) -> list[int]:
+        raw = self.raw_scores(text)
+        scores = [s / d for s, d in zip(raw, self.divisors, strict=True)]
         ranked = sorted(range(self._n), key=lambda i: scores[i], reverse=True)
         return [i for i in ranked[:top_k] if scores[i] > 0]
 

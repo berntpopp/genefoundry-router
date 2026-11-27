@@ -433,6 +433,8 @@ def load_registry(path: str | Path, environ: Mapping[str, str]) -> list[BackendD
         if not isinstance(entry, dict):
             raise RegistryError(f"each server entry must be a mapping, got {entry!r}")
         merged = {**defaults, **entry}
+        if "trust" in merged:  # Federation Standard v1 §3: community entries only via their file
+            raise RegistryError(f"{path}: no 'trust'; community goes in GF_COMMUNITY_SERVERS_FILE")
         try:
             backend = BackendDef(**merged)
         except ValidationError as exc:
@@ -474,6 +476,8 @@ COMMUNITY_REQUIRED = (
     "source_name",
     "data_egress",
 )
+# §8: the cap holds until the nightly job has run unattended for three months.
+MAX_COMMUNITY_BACKENDS = 10
 COMMUNITY_FORBIDDEN = (
     "trust",
     "entrypoints",
@@ -540,6 +544,8 @@ def load_community_registry(
         raise RegistryError(f"{path}: unknown top-level keys {sorted(unknown)}")
     servers = _mapping_list(raw, "servers", path)
     retired = _mapping_list(raw, "disabled", path)
+    if len(servers) > MAX_COMMUNITY_BACKENDS:
+        raise RegistryError(f"{path}: at most {MAX_COMMUNITY_BACKENDS} community backends")
     tombstones_path = Path(tombstones_path)
     tombs = _mapping_list(_read_yaml_mapping(tombstones_path), "tombstones", tombstones_path)
     tombstoned = {str(t[k]) for t in tombs for k in ("name", "namespace") if k in t}
