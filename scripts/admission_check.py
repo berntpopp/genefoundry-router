@@ -191,8 +191,23 @@ def well_known(host: str) -> Any:
     return fetch_json(f"https://{host}/.well-known/genefoundry.json")
 
 
-def registry_reply(name: str) -> Any:
-    return fetch_json(f"{MCP_REGISTRY}/{quote(name, safe='')}/versions/latest")
+class RegistryUnavailableError(Exception):
+    """The MCP Registry gave no verdict: network error, timeout, 5xx or a redirect."""
+
+
+def registry_reply(name: str, transport: Any = None) -> Any:
+    import httpx2
+
+    from genefoundry_router.egress import InvalidResponseError
+
+    try:
+        return fetch_json(f"{MCP_REGISTRY}/{quote(name, safe='')}/versions/latest", transport)
+    except httpx2.HTTPStatusError as exc:
+        if exc.response.status_code < 500:
+            raise  # 404 and other 4xx: the registry says the name is not there
+        raise RegistryUnavailableError(f"HTTP {exc.response.status_code}") from exc
+    except (httpx2.TransportError, InvalidResponseError, OSError) as exc:
+        raise RegistryUnavailableError(f"{type(exc).__name__}: {exc}") from exc
 
 
 def registry_proof(name: str, url: str, registry: Callable[[str], Any]) -> Any:
@@ -274,12 +289,16 @@ def ownership_error(
     ownership: str | None = None,
     url: str | None = None,
     registry: Callable[[str], Any] = registry_reply,
+    registry_outage_raises: bool = False,
 ) -> str | None:
     """Why no proof names ``namespace`` (and ``author``; None, as nightly, skips the login).
 
     The MCP Registry is asked only when the entry's ``ownership`` is ``mcp-registry:<name>``.
+    With ``registry_outage_raises`` (nightly), a registry outage and no other valid proof raises
+    ``RegistryUnavailableError`` instead of returning a lost proof; admission always fails closed.
     """
     reasons = []
+    outage: RegistryUnavailableError | None = None
     sources: list[tuple[str, Callable[[], list[Any]]]] = [
         ("DNS TXT", lambda: [_parse_txt(t) for t in txt_records(f"_genefoundry.{host}")]),
         ("well-known", lambda: [well_known(host)]),
@@ -290,6 +309,10 @@ def ownership_error(
     for source, fetch in sources:
         try:
             proofs = fetch()
+        except RegistryUnavailableError as exc:
+            outage = exc
+            reasons.append(f"{source}: unavailable: {exc}")
+            continue
         except Exception as exc:  # a candidate's answer is untrusted: any failure is "no proof"
             reasons.append(f"{source}: {type(exc).__name__}: {exc}")
             continue
@@ -297,6 +320,8 @@ def ownership_error(
             if (reason := _mismatch(proof, namespace, author)) is None:
                 return None
             reasons.append(f"{source}: {reason}")
+    if outage and registry_outage_raises:
+        raise outage
     login = f", GitHub login {author!r}" if author is not None else ""
     return (
         f"{namespace}: no ownership proof naming namespace {namespace!r}{login} "

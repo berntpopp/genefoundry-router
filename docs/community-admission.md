@@ -69,7 +69,9 @@ runs.
 with only `GITHUB_TOKEN` (`issues`, `pull-requests` and `contents: write`, the last to push the
 PR branch; Settings → Actions → General must allow GitHub Actions to create pull requests).
 For every served community entry it repeats steps 1–4 above, except that the ownership proof
-is not matched against a login. A host that does not answer is unreachable, not a lost proof.
+is not matched against a login. A host that does not answer is unreachable, not a lost proof;
+so is an MCP Registry that does not answer (network error, timeout, 5xx, redirect) when no
+other proof is valid. A registry reply that rejects the proof is a lost proof.
 
 - Any failure opens or updates the issue `Community backend <namespace>: nightly check
   failed` (label `community-nightly`) and mentions `contact` when it is a `@login`; no email

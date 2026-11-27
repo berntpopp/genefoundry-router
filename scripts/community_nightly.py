@@ -2,7 +2,8 @@
 
 For every community entry: ownership proof, conformance probe and pin comparison. A failure
 opens or updates one issue per namespace (mentioning ``contact`` when it is a ``@login``).
-Two consecutive conformance failures, a lost ownership proof or 7 days unreachable append
+Two consecutive conformance failures, a lost ownership proof or 7 days unreachable (the backend
+or, for an ``mcp-registry:`` proof, the MCP Registry itself) append
 the namespace to the kill-switch file at once and open one PR that moves the entry to
 ``disabled:``. The kill switch is append-only: recovery never removes an entry. Per-backend
 state lives in a marker in the open issue, so the job keeps no state of its own, and a
@@ -73,15 +74,21 @@ def check_backend(backend: BackendDef, pins_dir: Path) -> Outcome:
     except OSError as exc:
         out.unreachable = f"{host}:443: {type(exc).__name__}: {exc}"
         return out
-    out.ownership = adm.ownership_error(
-        backend.namespace,
-        host,
-        None,
-        adm.well_known,
-        adm.txt_records,
-        ownership=backend.ownership,
-        url=url,
-    )
+    try:
+        out.ownership = adm.ownership_error(
+            backend.namespace,
+            host,
+            None,
+            adm.well_known,
+            adm.txt_records,
+            ownership=backend.ownership,
+            url=url,
+            registry=adm.registry_reply,
+            registry_outage_raises=True,
+        )
+    except adm.RegistryUnavailableError as exc:  # the registry, not the proof, is down
+        out.unreachable = f"MCP Registry: {exc}"
+        return out
     if out.ownership:
         return out  # no tool is called without the owner's consent
     if adm.conformance(backend) != 0:
