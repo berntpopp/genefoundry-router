@@ -10,6 +10,7 @@ import yaml
 from pydantic import ValidationError
 
 from genefoundry_router.config import (
+    COMMUNITY_REQUIRED,
     RouterSettings,
     load_community_registry,
     load_registry,
@@ -119,17 +120,62 @@ def test_core_name_or_namespace_is_a_load_error(tmp_path: Path, field: str) -> N
         _load(tmp_path, [_entry(**{field: "gnomad"})])
 
 
-def test_tombstoned_namespace_is_a_load_error(tmp_path: Path) -> None:
+@pytest.mark.parametrize("field", ["name", "namespace"])
+def test_tombstoned_name_or_namespace_is_a_load_error(tmp_path: Path, field: str) -> None:
+    entry = _entry(name="acme-db", namespace="acmedb")
     with pytest.raises(RegistryError, match="tombstone"):
-        _load(tmp_path, [_entry()], tombstones=[{"namespace": "acme", "reason": "delisted"}])
+        _load(tmp_path, [entry], tombstones=[{field: entry[field], "reason": "delisted"}])
 
 
-@pytest.mark.parametrize("missing", ["data_egress", "contact", "operator", "ownership", "url"])
+@pytest.mark.parametrize("missing", COMMUNITY_REQUIRED)
 def test_missing_required_key_is_a_load_error(tmp_path: Path, missing: str) -> None:
     entry = _entry()
     del entry[missing]
-    with pytest.raises(RegistryError, match=missing):
+    with pytest.raises(RegistryError, match=f"'{missing}'"):
         _load(tmp_path, [entry])
+
+
+def test_required_keys_are_the_standard_list() -> None:
+    assert set(COMMUNITY_REQUIRED) == {
+        "name",
+        "namespace",
+        "url",
+        "operator",
+        "contact",
+        "ownership",
+        "server_name",
+        "source_name",
+        "data_egress",
+    }
+
+
+def test_at_most_ten_community_backends(tmp_path: Path) -> None:
+    entries = [_entry(name=f"acme{i}", namespace=f"acme{i}") for i in range(11)]
+    assert len(_load(tmp_path, entries[:10])) == 10
+    with pytest.raises(RegistryError, match="at most 10"):
+        _load(tmp_path, entries)
+
+
+@pytest.mark.parametrize("trust", ["community", "core"])
+def test_core_registry_rejects_a_trust_key(tmp_path: Path, trust: str) -> None:
+    servers = tmp_path / "servers.yaml"
+    servers.write_text(
+        f"servers:\n  - {{name: acme, namespace: acme, url_env: GF_ACME_URL, trust: {trust}}}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RegistryError, match="GF_COMMUNITY_SERVERS_FILE"):
+        load_registry(servers, {})
+
+
+def test_core_registry_rejects_trust_in_defaults(tmp_path: Path) -> None:
+    servers = tmp_path / "servers.yaml"
+    servers.write_text(
+        "defaults: {trust: community}\n"
+        "servers:\n  - {name: acme, namespace: acme, url_env: GF_ACME_URL}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RegistryError, match="GF_COMMUNITY_SERVERS_FILE"):
+        load_registry(servers, {})
 
 
 def test_incomplete_data_egress_is_a_load_error(tmp_path: Path) -> None:
