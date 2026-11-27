@@ -4,6 +4,8 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+## [0.14.20] - 2026-11-27
+
 ### Changed
 
 - **Nightly: an MCP Registry outage is no longer a lost ownership proof.** When the registry itself is unavailable during the nightly re-check of an `mcp-registry:` proof (network error, timeout, 5xx or a redirect) and no other proof is valid, the backend counts as unreachable, so it is disabled only after 7 consecutive days. A registry reply that rejects the proof (404, inactive entry, mismatched URL, host or login, missing consent, malformed or oversize body) still kills at once. Admission still fails closed on every registry error. Federation Standard v1 §8 and §10 are updated.
