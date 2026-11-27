@@ -12,6 +12,8 @@ services:
       GF_ALLOWED_HOSTS: "${GF_ALLOWED_HOSTS:?set the public router hostname}"
       GF_HEALTHCHECK_HOST: "${GF_HEALTHCHECK_HOST:?set the public health-check Host}"
       GF_DRIFT_MODE: enforce
+      # Federation Standard v1 §2: the core endpoint never loads community backends.
+      GF_ALLOW_COMMUNITY_BACKENDS: "false"
       GF_REFRESH_OBSERVABILITY_DB: /data/genefoundry/refresh-observability.sqlite3
       # OAuthProxy persists its DCR client registrations, auth codes, and refresh
       # tokens as an encrypted FileTreeStore under $FASTMCP_HOME. Point it at the
@@ -42,3 +44,81 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+
+  # Federation Standard v1 §2: the community router (`/community/mcp`). Same image, but a
+  # separate container on its own bridge network with internet egress only: no link to the
+  # core containers or the identity provider, and none of the core `.env` secrets. Core
+  # backends are reached by their public URLs. The `community` profile keeps it out of a
+  # plain `docker compose up` and out of the release gate's single-service contract.
+  genefoundry-community:
+    profiles: [community]
+    image: ${GENEFOUNDRY_IMAGE:?set a verified digest-addressed image}
+    pull_policy: missing
+    container_name: genefoundry_community
+    # Public core backend URLs (non-secret); deliberately not ../.env.
+    env_file:
+      - path: ../ci/fleet-urls.env
+    environment:
+      GF_HOST: 0.0.0.0
+      GF_PORT: 8000
+      GF_MCP_PATH: /community/mcp
+      GF_DEPLOYMENT_MODE: production
+      GF_LOG_LEVEL: INFO
+      GF_ALLOWED_HOSTS: "${GF_ALLOWED_HOSTS:?set the public router hostname}"
+      GF_HEALTHCHECK_HOST: "${GF_HEALTHCHECK_HOST:?set the public health-check Host}"
+      # Anonymous endpoint: OAuth would need the identity provider this network cannot reach.
+      GF_AUTH_MODE: none
+      GF_ALLOW_INSECURE: "true"
+      GF_ALLOW_COMMUNITY_BACKENDS: "true"
+      GF_COMMUNITY_SERVERS_FILE: registry/community.yaml
+      GF_DRIFT_MODE: enforce
+      GF_POLL_INTERVAL: "300"
+      GF_KILL_SWITCH_FILE: /etc/genefoundry/kill-switch
+      GF_QUARANTINE_FILE: /data/quarantine.json
+      # Lower inbound limits than the core endpoint (per client IP with auth off).
+      GF_RATE_LIMIT_RPM: "30"
+      GF_RATE_LIMIT_IP_RPM: "30"
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f -H \"Host: $${GF_HEALTHCHECK_HOST}\" http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    volumes:
+      - community_data:/data
+      # Operator-edited kill switch (one namespace per line), re-read without restart.
+      - ./community/kill-switch:/etc/genefoundry/kill-switch:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    init: true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+          pids: 128
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - community
+
+networks:
+  community:
+    driver: bridge
+    # Fixed interface name so the host firewall can match it (docs/deployment.md).
+    driver_opts:
+      com.docker.network.bridge.name: gf-community
+
+volumes:
+  community_data:
