@@ -434,7 +434,7 @@ def load_registry(path: str | Path, environ: Mapping[str, str]) -> list[BackendD
             raise RegistryError(f"each server entry must be a mapping, got {entry!r}")
         merged = {**defaults, **entry}
         if "trust" in merged:  # Federation Standard v1 §3: community entries only via their file
-            raise RegistryError(f"{path}: 'trust' is forbidden (community: GF_COMMUNITY_SERVERS_FILE)")
+            raise RegistryError(f"{path}: no 'trust'; community goes in GF_COMMUNITY_SERVERS_FILE")
         try:
             backend = BackendDef(**merged)
         except ValidationError as exc:
