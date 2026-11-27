@@ -4,6 +4,10 @@ All notable changes to genefoundry-router are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **MCP Registry domain namespace as an admission ownership proof (#434).** An entry with `ownership: mcp-registry:<name>` is also checked against the MCP Registry: the reversed namespace must be the backend host or a parent of it (`io.github.<login>` covers only `<login>.github.io`), the active entry must list the backend URL, and its publisher-provided `genefoundry` block must name the namespace, the PR author's login and probe consent. The reply is fetched through the community egress client with a 64 KiB cap and fails closed. The nightly job re-checks it. Federation Standard v1 §8 records the rules; §10 maps them to tests. The standard stays PROPOSED until the egress check runs on the deployed instance.
+
 ### Fixed
 
 - **Federation Standard v1 conformance gaps (#418).** `servers.yaml` (and its `defaults`) rejects a `trust` key, so community entries come only from `GF_COMMUNITY_SERVERS_FILE`; the community loader refuses more than 10 backends; a community 429 now maps to `rate_limited` (the MCP SDK drops the HTTP status, so it surfaced as `upstream_error`). New tests cover every implemented-but-untested MUST of §10. The standard stays PROPOSED: the MCP Registry domain ownership proof is not implemented (#434) and the egress check has not yet run on the deployed instance.

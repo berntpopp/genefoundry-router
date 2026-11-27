@@ -11,6 +11,8 @@ from typing import Any
 import pytest
 import yaml
 
+from genefoundry_router.registry import BackendDef
+
 ROOT = Path(__file__).parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "community-admission.yml"
 SPEC = importlib.util.spec_from_file_location(
@@ -258,3 +260,202 @@ def test_ownership_without_author_skips_the_login_check() -> None:
     args = ("acme", "mcp.acme.example")
     assert adm.ownership_error(*args, None, lambda h: proof, lambda n: []) is None
     assert adm.ownership_error(*args, None, lambda h: None, lambda n: []) is not None
+
+
+# --- MCP Registry domain namespace proof (#434) ----------------------------------------------
+
+REG_NAME = "example.acme/acme-link"  # reverse-DNS namespace of acme.example, parent of the host
+REG_URL = "https://mcp.acme.example/mcp"
+
+
+def _reply(name: str = REG_NAME, url: str = REG_URL, **proof: Any) -> dict[str, Any]:
+    """Recorded shape of GET /v0/servers/<name>/versions/latest."""
+    block = {"namespace": "acme", "github_login": "alice", "probe_consent": True, **proof}
+    return {
+        "server": {
+            "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+            "name": name,
+            "version": "1.0.0",
+            "remotes": [{"type": "streamable-http", "url": url}],
+            "_meta": {
+                "io.modelcontextprotocol.registry/publisher-provided": {"genefoundry": block}
+            },
+        },
+        "_meta": {"io.modelcontextprotocol.registry/official": {"status": "active"}},
+    }
+
+
+def _registry_error(reply: Any, name: str = REG_NAME, author: str | None = "alice") -> str | None:
+    seen: list[str] = []
+
+    def registry(n: str) -> Any:
+        seen.append(n)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+    error = adm.ownership_error(
+        "acme",
+        "mcp.acme.example",
+        author,
+        lambda h: None,  # no well-known proof
+        lambda n: [],  # no DNS TXT proof
+        ownership=f"mcp-registry:{name}",
+        url=REG_URL,
+        registry=registry,
+    )
+    assert seen in ([], [name])
+    return error
+
+
+def test_registry_proof_with_valid_ownership_passes(tmp_path: Path) -> None:
+    assert _registry_error(_reply()) is None
+    assert _registry_error(_reply(), author=None) is None  # nightly re-check
+    backend = BackendDef.model_validate(
+        {**ENTRY, "ownership": f"mcp-registry:{REG_NAME}", "trust": "community"}
+    )
+    net = Net()
+    errors = adm.probe_errors(
+        backend,
+        "Alice",
+        _registry(tmp_path) / "pins",
+        resolve=lambda host, port: PUBLIC,
+        well_known=net.well_known,
+        txt_records=net.txt_records,
+        registry=lambda name: _reply(),
+        conformance=net.conformance,
+        live_pin=net.live_pin,
+    )
+    assert errors == [] and "conformance" in net.calls
+
+
+def test_registry_is_not_asked_without_a_registry_ownership() -> None:
+    assert adm.ownership_error(
+        "acme",
+        "mcp.acme.example",
+        "alice",
+        lambda h: None,
+        lambda n: [],
+        ownership="well-known",
+        registry=lambda n: pytest.fail("registry asked"),
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "url"),
+    [
+        ("example.other/acme-link", REG_URL),  # namespace of another domain
+        ("example.acme.mcp.deep/acme-link", REG_URL),  # child of the host, not a parent
+        ("io.github.alice/acme-link", REG_URL),  # a GitHub login covers only alice.github.io
+        (REG_NAME, "https://evil.example/mcp"),  # remotes do not list the entry URL
+    ],
+)
+def test_registry_proof_with_mismatched_host_fails(name: str, url: str) -> None:
+    error = _registry_error(_reply(name=name, url=url), name=name)
+    assert error and "MCP Registry" in error
+
+
+def test_io_github_namespace_covers_its_pages_host_and_binds_the_login() -> None:
+    name, url = "io.github.Alice/acme-link", "https://alice.github.io/mcp"
+    args: tuple[Any, ...] = ("acme", "alice.github.io", "alice", lambda h: None, lambda n: [])
+    ok = adm.ownership_error(
+        *args,
+        ownership=f"mcp-registry:{name}",
+        url=url,
+        registry=lambda n: _reply(name=name, url=url),
+    )
+    assert ok is None
+    other = adm.ownership_error(
+        *args,
+        ownership=f"mcp-registry:{name}",
+        url=url,
+        registry=lambda n: _reply(name=name, url=url, github_login="mallory"),
+    )
+    assert other and "mallory" in other
+
+
+def test_registry_proof_with_mismatched_login_or_no_consent_fails() -> None:
+    assert "mallory" in (_registry_error(_reply(github_login="mallory")) or "")
+    assert _registry_error(_reply(probe_consent=False))
+    assert _registry_error(_reply(namespace="other"))
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        None,
+        [],
+        "not json",
+        {"server": {"name": REG_NAME}},  # no official status
+        {**_reply(), "_meta": {"io.modelcontextprotocol.registry/official": {"status": "deleted"}}},
+        {**_reply(), "_meta": []},
+        {"server": {**_reply()["server"], "remotes": "https://mcp.acme.example/mcp"}},
+        {"server": {**_reply()["server"], "_meta": {}}, "_meta": _reply()["_meta"]},  # no block
+        {
+            "server": {**_reply()["server"], "name": "example.acme/other"},
+            "_meta": _reply()["_meta"],
+        },
+    ],
+)
+def test_malformed_registry_reply_fails_closed(reply: Any) -> None:
+    assert _registry_error(reply)
+
+
+@pytest.mark.parametrize("name", ["acme", "example.acme/../x", "example.acme/a/b", "/x", "a/b c"])
+def test_invalid_registry_name_fails_before_any_request(name: str) -> None:
+    assert _registry_error(_reply(), name=name)  # _registry_error asserts no fetch for bad names
+
+
+def _mock(handler: Any) -> Any:
+    import httpx2
+
+    return lambda name: adm.fetch_json(f"{adm.MCP_REGISTRY}/x", httpx2.MockTransport(handler))
+
+
+def test_oversize_registry_reply_fails_closed() -> None:
+    import httpx2
+
+    big = json.dumps({**_reply(), "pad": "x" * adm.MAX_PROOF_BYTES}).encode()
+    error = adm.ownership_error(
+        "acme",
+        "mcp.acme.example",
+        "alice",
+        lambda h: None,
+        lambda n: [],
+        ownership=f"mcp-registry:{REG_NAME}",
+        url=REG_URL,
+        registry=_mock(lambda request: httpx2.Response(200, content=big)),
+    )
+    assert error and f"larger than {adm.MAX_PROOF_BYTES} bytes" in error
+
+
+@pytest.mark.parametrize("status", [404, 500, 503, 302])
+def test_registry_down_or_redirecting_fails_closed(status: int) -> None:
+    import httpx2
+
+    headers = {"location": "http://169.254.169.254/"} if status == 302 else {}
+    error = adm.ownership_error(
+        "acme",
+        "mcp.acme.example",
+        "alice",
+        lambda h: None,
+        lambda n: [],
+        ownership=f"mcp-registry:{REG_NAME}",
+        url=REG_URL,
+        registry=_mock(lambda request: httpx2.Response(status, headers=headers)),
+    )
+    assert error and "MCP Registry" in error
+
+
+def test_registry_unreachable_fails_closed() -> None:
+    assert _registry_error(OSError("connection refused"))
+    assert _registry_error(TimeoutError("timed out"))
+
+
+def test_registry_reply_url_is_the_registry_api(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[str] = []
+    monkeypatch.setattr(adm, "fetch_json", lambda url, transport=None: seen.append(url))
+    adm.registry_reply("io.github.alice/x")
+    assert seen == [
+        "https://registry.modelcontextprotocol.io/v0/servers/io.github.alice%2Fx/versions/latest"
+    ]

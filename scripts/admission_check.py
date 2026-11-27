@@ -16,6 +16,7 @@ import argparse
 import asyncio
 import difflib
 import json
+import re
 import socket
 import sys
 import unicodedata
@@ -23,7 +24,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 import yaml
 
@@ -40,6 +41,11 @@ TOMBSTONES = Path("registry/tombstones.yaml")
 PINS = Path("registry/pins/community")
 ALLOWED_PATHS = (str(COMMUNITY), str(TOMBSTONES))
 MAX_PROOF_BYTES = 65_536
+MCP_REGISTRY = "https://registry.modelcontextprotocol.io/v0/servers"
+REGISTRY_OWNERSHIP = "mcp-registry:"  # entry `ownership: mcp-registry:<registry server name>`
+_REGISTRY_NAME = re.compile(r"^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/[A-Za-z0-9._-]{1,100}$")
+_OFFICIAL = "io.modelcontextprotocol.registry/official"
+_PUBLISHER = "io.modelcontextprotocol.registry/publisher-provided"
 
 
 # --- static ---------------------------------------------------------------------------------
@@ -163,12 +169,12 @@ def txt_records(name: str) -> list[str]:
     return [b"".join(record.strings).decode() for record in answer]
 
 
-def well_known(host: str) -> Any:
+def fetch_json(url: str, transport: Any = None) -> Any:
+    """GET ``url`` through the community egress client (§6 IP guard, 12 s, no redirects)."""
     from genefoundry_router.egress import community_httpx_client_factory
 
     async def get() -> bytes:
-        async with community_httpx_client_factory()() as client:
-            url = f"https://{host}/.well-known/genefoundry.json"
+        async with community_httpx_client_factory(transport)() as client:
             async with client.stream("GET", url) as response:
                 response.raise_for_status()
                 body = b""
@@ -179,6 +185,51 @@ def well_known(host: str) -> Any:
         return body
 
     return json.loads(asyncio.run(get()))
+
+
+def well_known(host: str) -> Any:
+    return fetch_json(f"https://{host}/.well-known/genefoundry.json")
+
+
+def registry_reply(name: str) -> Any:
+    return fetch_json(f"{MCP_REGISTRY}/{quote(name, safe='')}/versions/latest")
+
+
+def registry_proof(name: str, url: str, registry: Callable[[str], Any]) -> Any:
+    """The ``genefoundry`` block of the active MCP Registry entry ``name`` that serves ``url``.
+
+    The registry verified the publisher's control of the namespace (GitHub login for
+    ``io.github.<login>``, DNS or HTTP for a reverse-DNS domain); the reversed namespace must be
+    the URL host or a parent of it. Any deviation raises, so the proof fails closed.
+    """
+    if not _REGISTRY_NAME.match(name):
+        raise ValueError(f"{name!r} is not a registry server name")
+    prefix = name.partition("/")[0].lower()
+    domain = ".".join(reversed(prefix.split(".")))
+    host = (urlsplit(url).hostname or "").lower()
+    if host != domain and not host.endswith(f".{domain}"):
+        raise ValueError(f"namespace {prefix!r} does not cover host {host}")
+    reply = registry(name)
+    server = reply.get("server") if isinstance(reply, dict) else None
+    meta = reply.get("_meta") if isinstance(server, dict) else None
+    official = meta.get(_OFFICIAL) if isinstance(meta, dict) else None
+    if not isinstance(server, dict) or not isinstance(official, dict):
+        raise ValueError("reply is not a registry server entry")
+    if server.get("name") != name:
+        raise ValueError(f"reply names {server.get('name')!r}")
+    if official.get("status") != "active":
+        raise ValueError(f"entry status is {official.get('status')!r}")
+    remotes = server.get("remotes")
+    if not isinstance(remotes, list) or url not in [
+        r.get("url") for r in remotes if isinstance(r, dict)
+    ]:
+        raise ValueError(f"remotes do not include {url}")
+    publisher = (server.get("_meta") or {}).get(_PUBLISHER)
+    proof = publisher.get("genefoundry") if isinstance(publisher, dict) else None
+    login = prefix.removeprefix("io.github.") if prefix.startswith("io.github.") else None
+    if login and isinstance(proof, dict) and str(proof.get("github_login")).lower() != login:
+        raise ValueError(f"io.github.{login} names GitHub login {proof.get('github_login')!r}")
+    return proof
 
 
 def conformance(backend: BackendDef) -> int:
@@ -219,13 +270,23 @@ def ownership_error(
     author: str | None,
     well_known: Callable[[str], Any],
     txt_records: Callable[[str], list[str]],
+    *,
+    ownership: str | None = None,
+    url: str | None = None,
+    registry: Callable[[str], Any] = registry_reply,
 ) -> str | None:
-    """Why no proof names ``namespace`` (and ``author``; None, as nightly, skips the login)."""
+    """Why no proof names ``namespace`` (and ``author``; None, as nightly, skips the login).
+
+    The MCP Registry is asked only when the entry's ``ownership`` is ``mcp-registry:<name>``.
+    """
     reasons = []
     sources: list[tuple[str, Callable[[], list[Any]]]] = [
         ("DNS TXT", lambda: [_parse_txt(t) for t in txt_records(f"_genefoundry.{host}")]),
         ("well-known", lambda: [well_known(host)]),
     ]
+    if ownership and ownership.startswith(REGISTRY_OWNERSHIP):
+        name, served = ownership.removeprefix(REGISTRY_OWNERSHIP), url or f"https://{host}/mcp"
+        sources.append(("MCP Registry", lambda: [registry_proof(name, served, registry)]))
     for source, fetch in sources:
         try:
             proofs = fetch()
@@ -271,6 +332,7 @@ def probe_errors(
     resolve: Callable[[str, int], list[str]] = resolve_host,
     well_known: Callable[[str], Any] = well_known,
     txt_records: Callable[[str], list[str]] = txt_records,
+    registry: Callable[[str], Any] = registry_reply,
     conformance: Callable[[BackendDef], int] = conformance,
     live_pin: Callable[[BackendDef], str] = live_pin,
 ) -> list[str]:
@@ -280,7 +342,16 @@ def probe_errors(
     except ValueError as exc:
         return [f"{namespace}: {exc}"]
     host = urlsplit(url).hostname or ""
-    if error := ownership_error(namespace, host, author, well_known, txt_records):
+    if error := ownership_error(
+        namespace,
+        host,
+        author,
+        well_known,
+        txt_records,
+        ownership=backend.ownership,
+        url=url,
+        registry=registry,
+    ):
         return [error]  # no tool is called without the owner's consent
     errors = []
     if conformance(backend) != 0:

@@ -231,7 +231,7 @@ def _backend() -> BackendDef:
 
 def test_check_unreachable_host_is_not_a_lost_proof(monkeypatch: pytest.MonkeyPatch) -> None:
     _reachable(monkeypatch, ok=False)
-    monkeypatch.setattr(nightly.adm, "ownership_error", lambda *a: pytest.fail("not reached"))
+    monkeypatch.setattr(nightly.adm, "ownership_error", lambda *a, **k: pytest.fail("not reached"))
     out = nightly.check_backend(_backend(), Path("unused"))
     assert out.unreachable and out.ownership is None and out.conformance == []
 
@@ -240,7 +240,7 @@ def test_check_lost_proof_calls_no_tool(monkeypatch: pytest.MonkeyPatch) -> None
     _reachable(monkeypatch)
     seen: list[Any] = []
     monkeypatch.setattr(
-        nightly.adm, "ownership_error", lambda *a: seen.append(a) or "acme: no ownership proof"
+        nightly.adm, "ownership_error", lambda *a, **k: seen.append(a) or "acme: no ownership proof"
     )
     monkeypatch.setattr(nightly.adm, "conformance", lambda b: pytest.fail("no consent"))
     out = nightly.check_backend(_backend(), Path("unused"))
@@ -250,7 +250,7 @@ def test_check_lost_proof_calls_no_tool(monkeypatch: pytest.MonkeyPatch) -> None
 
 def test_check_conformance_and_pin(monkeypatch: pytest.MonkeyPatch) -> None:
     _reachable(monkeypatch)
-    monkeypatch.setattr(nightly.adm, "ownership_error", lambda *a: None)
+    monkeypatch.setattr(nightly.adm, "ownership_error", lambda *a, **k: None)
     monkeypatch.setattr(nightly.adm, "conformance", lambda b: 1)
     assert nightly.check_backend(_backend(), Path("unused")).conformance
     monkeypatch.setattr(nightly.adm, "conformance", lambda b: 0)

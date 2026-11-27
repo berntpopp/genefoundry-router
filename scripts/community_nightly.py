@@ -74,7 +74,13 @@ def check_backend(backend: BackendDef, pins_dir: Path) -> Outcome:
         out.unreachable = f"{host}:443: {type(exc).__name__}: {exc}"
         return out
     out.ownership = adm.ownership_error(
-        backend.namespace, host, None, adm.well_known, adm.txt_records
+        backend.namespace,
+        host,
+        None,
+        adm.well_known,
+        adm.txt_records,
+        ownership=backend.ownership,
+        url=url,
     )
     if out.ownership:
         return out  # no tool is called without the owner's consent
