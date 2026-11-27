@@ -317,13 +317,17 @@ async def test_every_poll_rereads_the_kill_switch(tmp_path: Path) -> None:
     assert guard.latched["acme"]["reason"] == "kill_switch"
 
 
-async def test_each_latch_emits_a_critical_event_and_a_metric(tmp_path: Path) -> None:
+async def test_each_latch_emits_a_critical_event_and_a_metric(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     fake = Fake()
     _, guard = await _served(tmp_path, fake)
     labels = {"namespace": "acme", "reason": "response_cap"}
     sample = "genefoundry_community_quarantine_total"
     before = METRICS_REGISTRY.get_sample_value(sample, labels) or 0.0
     with structlog.testing.capture_logs() as logs:
+        # A logger cached by an earlier test would bypass the capture.
+        monkeypatch.setattr(runtime_drift, "log", structlog.get_logger(__name__))
         guard.latch("acme", "response_cap")
         guard.latch("acme", "response_cap")  # already latched: no second event
     events = [e for e in logs if e["event"] == "community_backend_quarantined"]
