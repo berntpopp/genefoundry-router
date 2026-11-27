@@ -1,10 +1,8 @@
 # GeneFoundry Federation Standard v1: operator-hosted servers in the public gateway
 
 > **Status: PROPOSED, 2026-11-27.** [§10](#10-conformance-must--test) maps each MUST to the test
-> that asserts it. Two gaps remain: the MCP Registry domain ownership proof of §8 is not
-> implemented ([#434](https://github.com/berntpopp/genefoundry-router/issues/434)), and the
-> egress check has not yet run on the deployed instance. The status moves to NORMATIVE only
-> when no gap remains. No community server is loaded
+> that asserts it. One gap remains: the egress check has not yet run on the deployed instance.
+> The status moves to NORMATIVE only when no gap remains. No community server is loaded
 > on genefoundry.org until every item of the go-live checklist issue passes.
 
 Keywords MUST / SHOULD / MAY per [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
@@ -124,8 +122,30 @@ On every community result and error, in order:
 
 - Admission requires: ownership proof (DNS TXT `_genefoundry.<host>` or
   `https://<host>/.well-known/genefoundry.json` naming the namespace, the PR author's GitHub
-  login and probe consent, or a verified MCP Registry domain namespace); the conformance
+  login and probe consent, or a verified MCP Registry domain namespace, below); the conformance
   probe passing natively; the full definitions reviewed in the pin file.
+- **MCP Registry proof.** The entry sets `ownership: mcp-registry:<registry server name>`.
+  The admission and nightly checks then also read
+  `https://registry.modelcontextprotocol.io/v0/servers/<name>/versions/latest` and accept it
+  only if all of these hold:
+  - **Namespace covers the host.** The part before `/`, reversed, is the URL host or a parent
+    of it: `org.example/genes` covers `mcp.example.org`. The registry verified the publisher
+    for that namespace (DNS or HTTP for a domain, the GitHub login for `io.github.<login>`). So
+    `io.github.<login>/*` covers only `<login>.github.io` and its subdomains: a GitHub login
+    proves no control of any other host.
+  - **The entry is active and lists the URL.** `server.name` is the requested name, the
+    official status is `active`, and `remotes` contains the entry `url` exactly.
+  - **Login and consent are bound.** `server._meta["io.modelcontextprotocol.registry/publisher-provided"].genefoundry`
+    is the well-known object `{namespace, github_login, probe_consent: true}`. Only the
+    verified publisher can write it, and it is matched like the other two proofs. For
+    `io.github.<login>`, `github_login` MUST equal `<login>`.
+  - **The reply is untrusted.** The name is validated before the request. The fetch uses the
+    §6 community client (connect-time IP guard, 443, no redirects, 12 s total). The body is
+    capped at 65,536 bytes. Any network error, non-2xx status, oversize or non-JSON body or
+    schema mismatch is "no proof": the check fails closed. In the nightly run, a failed
+    registry read counts as a lost proof, as an unreadable well-known file does. An operator
+    who wants no registry dependency also publishes a DNS TXT or well-known proof; any one
+    valid proof suffices.
 - The admission workflow runs on `pull_request` (never `pull_request_target`); the job that
   contacts the candidate requires approval through a protected environment, has no secrets,
   and uses the same connect-time IP guard.
@@ -138,9 +158,9 @@ On every community result and error, in order:
 
 ## 9. Not in v1
 
-Reading the MCP Registry or Server Cards at runtime; signed metadata; per-user OAuth
-brokering; static service keys on the public community endpoint; hot reload of the community
-file.
+Reading the MCP Registry or Server Cards in the router at runtime (only the admission and
+nightly checks read the registry, §8); signed metadata; per-user OAuth brokering; static
+service keys on the public community endpoint; hot reload of the community file.
 
 ## 10. Conformance: MUST → test
 
@@ -180,7 +200,8 @@ Each MUST of §§2–8 and the test that asserts it (`tests/unit/` unless a path
 | 7 | `_meta.gf_backend` / `source` overwritten; visible header | `test_federation_provenance.py::test_router_overwrites_forged_provenance`, `::test_header_is_the_first_block_of_every_result`, `::test_errors_carry_the_header_and_router_provenance` |
 | 7 | Search labels; core wins within 10 %; truncation; ≤ half community | `test_federation_provenance.py::test_community_hits_are_labelled`, `::test_core_wins_a_tie`, `::test_core_wins_within_a_10_percent_margin`, `::test_community_description_is_truncated_to_the_core_budget`, `::test_at_most_half_the_hits_are_community` |
 | 7 | Instructions list community backends separately | `test_federation_provenance.py::test_instructions_list_community_backends_on_their_own_line` |
-| 8 | Ownership proof (DNS TXT, well-known), conformance, pin review | `test_admission_check.py::test_dns_txt_proof_is_accepted`, `::test_ownership_proof_naming_a_different_login_fails`, `::test_proof_without_probe_consent_fails`, `::test_conformance_failure_fails`, `::test_pin_differing_from_live_definitions_fails_with_a_readable_diff` (**gap:** the MCP Registry domain proof is not implemented, [#434](https://github.com/berntpopp/genefoundry-router/issues/434)) |
+| 8 | Ownership proof (DNS TXT, well-known), conformance, pin review | `test_admission_check.py::test_dns_txt_proof_is_accepted`, `::test_ownership_proof_naming_a_different_login_fails`, `::test_proof_without_probe_consent_fails`, `::test_conformance_failure_fails`, `::test_pin_differing_from_live_definitions_fails_with_a_readable_diff` |
+| 8 | MCP Registry proof: namespace covers host, active entry lists URL, login and consent bound, fail closed | `test_admission_check.py::test_registry_proof_with_valid_ownership_passes`, `::test_registry_proof_with_mismatched_host_fails`, `::test_io_github_namespace_covers_its_pages_host_and_binds_the_login`, `::test_registry_proof_with_mismatched_login_or_no_consent_fails`, `::test_malformed_registry_reply_fails_closed`, `::test_invalid_registry_name_fails_before_any_request`, `::test_oversize_registry_reply_fails_closed`, `::test_registry_down_or_redirecting_fails_closed`, `::test_registry_unreachable_fails_closed` |
 | 8 | `pull_request` only; protected environment, no secrets, same IP guard | `test_admission_check.py::test_workflow_uses_pull_request_never_pull_request_target`, `::test_network_job_requires_the_protected_environment_and_has_no_secrets`, `::test_private_address_fails_before_any_request` |
 | 8 | Nightly checks, issue + contact; kill switch and disable PR | `test_community_nightly.py::test_check_conformance_and_pin`, `::test_one_failure_opens_only_the_issue_and_mentions_the_contact`, `::test_two_consecutive_failures_kill_switch_and_disable_pr`, `::test_removed_ownership_record_kills_on_the_next_run`, `::test_seven_days_unreachable_kills` (kill switch and disable PR) |
 | 8 | Tombstoned namespaces never reassigned; at most 10 backends | `test_community_nightly.py::test_tombstoned_namespace_cannot_be_re_registered`; `test_community_registry.py::test_at_most_ten_community_backends` |

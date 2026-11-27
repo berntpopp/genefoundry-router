@@ -29,8 +29,15 @@ with a read-only token and no secrets. In order:
    - `https://<host>/.well-known/genefoundry.json`:
      `{"namespace": "<namespace>", "github_login": "<PR author>", "probe_consent": true}`
 
+   - A verified MCP Registry namespace: the entry sets
+     `ownership: mcp-registry:<registry server name>` (for example `org.example/genes`), and the
+     active registry entry lists the entry `url` in `remotes` and carries the same object under
+     `_meta["io.modelcontextprotocol.registry/publisher-provided"].genefoundry`. The reversed
+     namespace must be the host or a parent of it; `io.github.<login>/*` covers only
+     `<login>.github.io`. Rules in Federation Standard v1 §8.
+
    The login must be the PR author's (case-insensitive). Without a matching proof no tool is
-   called. (Proof through a verified MCP Registry domain namespace is reviewed by hand.)
+   called.
 3. The GTS conformance kit (`gts-conformance` v0.2.3) at the core level, `--name` set to the
    entry's `server_name`. The kit calls every tool, hence the consent.
 4. The live `tools/list`, normalised as by `genefoundry-router pin`, must equal the PR's pin
