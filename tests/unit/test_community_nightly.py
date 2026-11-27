@@ -248,6 +248,47 @@ def test_check_lost_proof_calls_no_tool(monkeypatch: pytest.MonkeyPatch) -> None
     assert seen[0][2] is None  # nightly does not know the admitting PR author
 
 
+def test_check_registry_outage_is_unreachable_not_a_lost_proof(
+    monkeypatch: pytest.MonkeyPatch, env: dict[str, Any]
+) -> None:
+    _reachable(monkeypatch)
+
+    def down(name: str) -> Any:
+        raise nightly.adm.RegistryUnavailableError("ConnectError: connection refused")
+
+    monkeypatch.setattr(nightly.adm, "registry_reply", down)
+    monkeypatch.setattr(nightly.adm, "txt_records", lambda n: [])
+    monkeypatch.setattr(nightly.adm, "well_known", lambda h: None)
+    monkeypatch.setattr(nightly.adm, "conformance", lambda b: pytest.fail("no consent"))
+    backend = BackendDef.model_validate(
+        {**ENTRY, "ownership": "mcp-registry:example.acme/acme-link", "trust": "community"}
+    )
+    out = nightly.check_backend(backend, Path("unused"))
+    assert out.ownership is None and out.unreachable and "MCP Registry" in out.unreachable
+    for offset in range(7):  # the 7-day unreachable grace applies
+        _run(env, out, DAY + timedelta(days=offset))
+    assert read_kill_switch(env["kill"]) == set() and env["gh"].prs == []
+    _run(env, out, DAY + timedelta(days=7))
+    assert read_kill_switch(env["kill"]) == {"acme"}
+    assert env["gh"].prs == ["community/disable-acme"]
+
+
+def test_check_wrong_registry_reply_kills_at_once(
+    monkeypatch: pytest.MonkeyPatch, env: dict[str, Any]
+) -> None:
+    _reachable(monkeypatch)
+    monkeypatch.setattr(nightly.adm, "registry_reply", lambda name: {"server": {}})
+    monkeypatch.setattr(nightly.adm, "txt_records", lambda n: [])
+    monkeypatch.setattr(nightly.adm, "well_known", lambda h: None)
+    backend = BackendDef.model_validate(
+        {**ENTRY, "ownership": "mcp-registry:example.acme/acme-link", "trust": "community"}
+    )
+    out = nightly.check_backend(backend, Path("unused"))
+    assert out.ownership and out.unreachable is None
+    _run(env, out)
+    assert read_kill_switch(env["kill"]) == {"acme"}
+
+
 def test_check_conformance_and_pin(monkeypatch: pytest.MonkeyPatch) -> None:
     _reachable(monkeypatch)
     monkeypatch.setattr(nightly.adm, "ownership_error", lambda *a, **k: None)

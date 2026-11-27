@@ -409,7 +409,7 @@ def test_invalid_registry_name_fails_before_any_request(name: str) -> None:
 def _mock(handler: Any) -> Any:
     import httpx2
 
-    return lambda name: adm.fetch_json(f"{adm.MCP_REGISTRY}/x", httpx2.MockTransport(handler))
+    return lambda name: adm.registry_reply(name, httpx2.MockTransport(handler))
 
 
 def test_oversize_registry_reply_fails_closed() -> None:
@@ -450,6 +450,104 @@ def test_registry_down_or_redirecting_fails_closed(status: int) -> None:
 def test_registry_unreachable_fails_closed() -> None:
     assert _registry_error(OSError("connection refused"))
     assert _registry_error(TimeoutError("timed out"))
+
+
+def _nightly_error(registry: Any) -> str | None:
+    return adm.ownership_error(
+        "acme",
+        "mcp.acme.example",
+        None,
+        lambda h: None,
+        lambda n: [],
+        ownership=f"mcp-registry:{REG_NAME}",
+        url=REG_URL,
+        registry=registry,
+        registry_outage_raises=True,
+    )
+
+
+def _refused(request: Any) -> Any:
+    import httpx2
+
+    raise httpx2.ConnectError("connection refused", request=request)
+
+
+def _timeout(request: Any) -> Any:
+    import httpx2
+
+    raise httpx2.ReadTimeout("timed out", request=request)
+
+
+@pytest.mark.parametrize(
+    "handler",
+    [
+        lambda r: __import__("httpx2").Response(500),
+        lambda r: __import__("httpx2").Response(503),
+        lambda r: __import__("httpx2").Response(302, headers={"location": "https://x.example/"}),
+        _refused,
+        _timeout,
+    ],
+)
+def test_registry_outage_in_nightly_is_not_a_verdict(handler: Any) -> None:
+    with pytest.raises(adm.RegistryUnavailableError):
+        _nightly_error(_mock(handler))
+
+
+def test_registry_outage_still_passes_with_another_valid_proof() -> None:
+    error = adm.ownership_error(
+        "acme",
+        "mcp.acme.example",
+        None,
+        lambda h: {"namespace": "acme", "github_login": "alice", "probe_consent": True},
+        lambda n: [],
+        ownership=f"mcp-registry:{REG_NAME}",
+        url=REG_URL,
+        registry=_mock(_refused),
+        registry_outage_raises=True,
+    )
+    assert error is None
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        {**_reply(), "_meta": {"io.modelcontextprotocol.registry/official": {"status": "deleted"}}},
+        _reply(url="https://evil.example/mcp"),
+        _reply(namespace="other"),
+        _reply(probe_consent=False),
+        "not json",
+    ],
+)
+def test_wrong_registry_reply_in_nightly_stays_fatal(reply: Any) -> None:
+    assert _nightly_error(lambda n: reply)
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        lambda r: __import__("httpx2").Response(404),
+        lambda r: __import__("httpx2").Response(200, content=b"{not json"),
+        lambda r: __import__("httpx2").Response(200, content=b"x" * (adm.MAX_PROOF_BYTES + 1)),
+    ],
+)
+def test_registry_404_malformed_or_oversize_in_nightly_stays_fatal(response: Any) -> None:
+    assert _nightly_error(_mock(response))
+
+
+def test_io_github_login_mismatch_in_nightly_stays_fatal() -> None:
+    name, url = "io.github.alice/acme-link", "https://alice.github.io/mcp"
+    error = adm.ownership_error(
+        "acme",
+        "alice.github.io",
+        None,
+        lambda h: None,
+        lambda n: [],
+        ownership=f"mcp-registry:{name}",
+        url=url,
+        registry=lambda n: _reply(name=name, url=url, github_login="mallory"),
+        registry_outage_raises=True,
+    )
+    assert error and "mallory" in error
 
 
 def test_registry_reply_url_is_the_registry_api(monkeypatch: pytest.MonkeyPatch) -> None:
